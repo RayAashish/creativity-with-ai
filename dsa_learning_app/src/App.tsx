@@ -8,10 +8,14 @@ import { RandomQuestionModal } from './components/sheet/RandomQuestionModal';
 import { 
   getStoredProgress, 
   saveStoredProgress, 
-  pickRandomQuestion 
+  pickRandomQuestion,
+  setProblemStatus,
+  advanceSpacedRevision,
+  markDailyChallengeDone,
+  getProblemStatus
 } from './utils/storage';
 import { QUESTIONS_450 } from './data/questions450';
-import { Question, Topic, UserProgress } from './types/dsa';
+import { Question, Topic, UserProgress, ProblemStatus } from './types/dsa';
 import confetti from 'canvas-confetti';
 import { Globe, Heart } from 'lucide-react';
 
@@ -33,17 +37,22 @@ export function App() {
 
   const handleToggleDone = (questionId: string) => {
     setProgress((prev) => {
-      const nextDone = { ...prev.doneQuestions };
-      if (nextDone[questionId]) {
-        delete nextDone[questionId];
-      } else {
-        nextDone[questionId] = true;
-      }
-      return {
-        ...prev,
-        doneQuestions: nextDone,
-      };
+      const current = getProblemStatus(prev, questionId);
+      const nextStatus: ProblemStatus = current === 'solved' ? 'not_started' : 'solved';
+      return setProblemStatus(prev, questionId, nextStatus);
     });
+  };
+
+  const handleSetProblemStatus = (questionId: string, status: ProblemStatus) => {
+    setProgress((prev) => setProblemStatus(prev, questionId, status));
+  };
+
+  const handleAdvanceRevision = (questionId: string) => {
+    setProgress((prev) => advanceSpacedRevision(prev, questionId));
+  };
+
+  const handleToggleDailyChallenge = (questionId: string) => {
+    setProgress((prev) => markDailyChallengeDone(prev, questionId));
   };
 
   const handleToggleStar = (questionId: string) => {
@@ -114,12 +123,16 @@ export function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {activeTab === 'sheet' && (
           <Dsa450Sheet
+            progress={progress}
             doneMap={progress.doneQuestions}
             starredMap={progress.starredQuestions}
             notesMap={progress.notes}
             onToggleDone={handleToggleDone}
+            onSetProblemStatus={handleSetProblemStatus}
             onToggleStar={handleToggleStar}
             onSaveNote={handleSaveNote}
+            onAdvanceRevision={handleAdvanceRevision}
+            onToggleDailyChallenge={handleToggleDailyChallenge}
           />
         )}
 

@@ -13,6 +13,7 @@ import {
 import { QUESTIONS_450 } from '../../data/questions450';
 import { TOPICS } from '../../data/topics';
 import { UserProgress } from '../../types/dsa';
+import { ActivityHeatmap } from './ActivityHeatmap';
 
 interface ProgressDashboardProps {
   progress: UserProgress;
@@ -184,6 +185,12 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
           </div>
         </div>
       </div>
+
+      <ActivityHeatmap
+        activityLog={progress.activityLog}
+        currentStreak={progress.streak}
+        longestStreak={progress.longestStreak || progress.streak}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-slate-900/90 border border-emerald-500/30 p-5 rounded-2xl">
