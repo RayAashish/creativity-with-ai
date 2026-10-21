@@ -9,12 +9,14 @@ import {
   Dice5, 
   FileText, 
   Layers, 
-  Award
+  Award,
+  Lightbulb
 } from 'lucide-react';
 import { Question, Topic, Difficulty } from '../../types/dsa';
 import { TOPICS } from '../../data/topics';
 import { QUESTIONS_450 } from '../../data/questions450';
 import { RandomQuestionModal } from './RandomQuestionModal';
+import { SolutionModal } from './SolutionModal';
 import { pickRandomQuestion } from '../../utils/storage';
 import confetti from 'canvas-confetti';
 
@@ -40,6 +42,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
   const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'unsolved' | 'done' | 'starred'>('all');
   const [expandedNotesId, setExpandedNotesId] = useState<string | null>(null);
+  const [selectedSolutionQuestion, setSelectedSolutionQuestion] = useState<Question | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [randomQuestionData, setRandomQuestionData] = useState<{
@@ -377,6 +380,15 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                       </span>
 
                       <button
+                        onClick={() => setSelectedSolutionQuestion(q)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition transform active:scale-95 whitespace-nowrap shadow-sm hover:shadow-amber-500/20"
+                        title="View Intuition, Whiteboard Pseudocode, and C++/Java/Python/JS Solutions"
+                      >
+                        <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Solution</span>
+                      </button>
+
+                      <button
                         onClick={() => setExpandedNotesId(isNotesOpen ? null : q.id)}
                         className={`p-1.5 rounded-lg border transition ${
                           hasNotes
@@ -437,6 +449,15 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
         onToggleDone={handleMarkDone}
         isDone={randomQuestionData.question ? Boolean(doneMap[randomQuestionData.question.id]) : false}
         onSelectTopic={(topic) => setModalTopic(topic)}
+        onViewSolution={(q) => setSelectedSolutionQuestion(q)}
+      />
+
+      <SolutionModal
+        isOpen={Boolean(selectedSolutionQuestion)}
+        onClose={() => setSelectedSolutionQuestion(null)}
+        question={selectedSolutionQuestion}
+        isDone={Boolean(selectedSolutionQuestion && doneMap[selectedSolutionQuestion.id])}
+        onToggleDone={handleMarkDone}
       />
     </div>
   );

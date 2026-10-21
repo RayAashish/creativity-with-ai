@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, ExternalLink, CheckCircle2, RotateCw, X, Trophy } from 'lucide-react';
+import { Sparkles, ExternalLink, CheckCircle2, RotateCw, X, Trophy, Lightbulb } from 'lucide-react';
 import { Question, Topic } from '../../types/dsa';
 import { TOPICS } from '../../data/topics';
 import confetti from 'canvas-confetti';
@@ -15,6 +15,7 @@ interface RandomQuestionModalProps {
   onToggleDone: (questionId: string) => void;
   isDone: boolean;
   onSelectTopic: (topic: Topic | 'all') => void;
+  onViewSolution?: (question: Question) => void;
 }
 
 export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
@@ -28,6 +29,7 @@ export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
   onToggleDone,
   isDone,
   onSelectTopic,
+  onViewSolution,
 }) => {
   const [includeDone, setIncludeDone] = useState<boolean>(false);
   const [isSpinning, setIsSpinning] = useState<boolean>(false);
@@ -177,6 +179,17 @@ export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
                 <span>Launch on {question.platform}</span>
                 <ExternalLink className="w-4 h-4" />
               </button>
+
+              {onViewSolution && (
+                <button
+                  onClick={() => onViewSolution(question)}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 transition transform active:scale-95"
+                  title="View step-by-step intuition, pseudocode, and 4-language code"
+                >
+                  <Lightbulb className="w-4 h-4 text-amber-400" />
+                  <span>💡 Solution</span>
+                </button>
+              )}
 
               <button
                 onClick={() => handleMarkDoneAndCelebrate(question.id)}
