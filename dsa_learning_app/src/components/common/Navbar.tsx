@@ -36,10 +36,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
 
   const navItems = [
-    { id: 'sheet' as NavTab, label: '450 DSA Sheet', icon: CheckSquare, badge: `${totalDone}/${totalQuestions}` },
-    { id: 'games' as NavTab, label: 'DSA Games Arcade', icon: Gamepad2, highlight: true },
-    { id: 'learning' as NavTab, label: 'Concept Academy', icon: BookOpen },
-    { id: 'dashboard' as NavTab, label: 'Progress & Stats', icon: BarChart3 },
+    { id: 'sheet' as NavTab, label: '450 Sheet', fullLabel: '450 DSA Sheet', icon: CheckSquare, badge: `${totalDone}/${totalQuestions}` },
+    { id: 'games' as NavTab, label: 'Arcade', fullLabel: 'DSA Games Arcade', icon: Gamepad2, highlight: true },
+    { id: 'learning' as NavTab, label: 'Academy', fullLabel: 'Concept Academy', icon: BookOpen },
+    { id: 'dashboard' as NavTab, label: 'Stats', fullLabel: 'Progress & Stats', icon: BarChart3 },
   ];
 
   const handleShare = () => {
@@ -52,34 +52,30 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/80">
+    <header className="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-xl border-b border-slate-800/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
-          {/* Logo & Brand */}
+        <div className="flex items-center justify-between gap-3 lg:gap-6 h-16 sm:h-20">
+          
+          {/* Logo & Brand (Clean & Compact) */}
           <div 
             onClick={() => onSelectTab('sheet')}
-            className="flex items-center gap-3 cursor-pointer group"
+            className="flex items-center gap-2.5 cursor-pointer group flex-shrink-0"
           >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition">
               <Rocket className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-black text-lg sm:text-xl text-white tracking-tight">
-                  DSA<span className="text-cyan-400">Space</span>
-                </span>
-                <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-md">
-                  450
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">
-                dsaspace.vercel.app • Learn, Play & Master DSA
-              </p>
+            <div className="flex items-center gap-2">
+              <span className="font-black text-lg sm:text-xl text-white tracking-tight">
+                DSA<span className="text-cyan-400">Space</span>
+              </span>
+              <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-md">
+                450
+              </span>
             </div>
           </div>
 
           {/* Navigation Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-1.5 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800">
+          <nav className="hidden md:flex items-center gap-1 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800/80 flex-shrink-0">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -88,14 +84,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   key={item.id}
                   onClick={() => onSelectTab(item.id)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center gap-2 px-3 py-1.5 lg:px-3.5 lg:py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                     isActive
                       ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.label}</span>
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <span>
+                    <span className="hidden xl:inline">{item.fullLabel}</span>
+                    <span className="xl:hidden">{item.label}</span>
+                  </span>
                   {item.badge && (
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
                       isActive ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-400'
@@ -104,22 +103,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </span>
                   )}
                   {item.highlight && !isActive && (
-                    <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
                   )}
                 </button>
               );
             })}
           </nav>
 
-          {/* Right Actions: Quick Roulette, Share & Streak */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right Actions: Cleanly Separated from Nav Tabs */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
+            {/* Visual Divider between Nav and Actions on Desktop */}
+            <div className="hidden lg:block h-6 w-px bg-slate-800/80 mr-1" />
+
             {/* Quick Roulette Button */}
             <button
               onClick={onQuickRoulette}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 text-cyan-300 border border-cyan-500/40 rounded-xl text-xs font-bold transition transform active:scale-95 shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-gradient-to-r from-cyan-500/15 to-blue-500/15 hover:from-cyan-500/25 hover:to-blue-500/25 text-cyan-300 border border-cyan-500/40 rounded-xl text-xs font-bold transition transform active:scale-95 shadow-sm group"
               title="Roll a random question right now"
             >
-              <Dice5 className="w-4 h-4 text-cyan-400" />
+              <Dice5 className="w-4 h-4 text-cyan-400 group-hover:rotate-45 transition-transform duration-200" />
               <span className="hidden sm:inline">Random Q</span>
             </button>
 
@@ -127,7 +129,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {onOpenBuyCoffee && (
               <button
                 onClick={onOpenBuyCoffee}
-                className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-xl text-xs font-bold transition transform active:scale-95 shadow-sm shadow-amber-500/10 group"
+                className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-xl text-xs font-bold transition transform active:scale-95 shadow-sm shadow-amber-500/10 group"
                 title="Support DSASpace with a Coffee"
               >
                 <Coffee className="w-4 h-4 text-amber-400 group-hover:rotate-12 transition-transform duration-200" />
@@ -139,24 +141,24 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Share / Copy Domain Link */}
             <button
               onClick={handleShare}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl text-xs font-semibold transition"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl text-xs font-semibold transition"
               title="Copy DSASpace link (dsaspace.vercel.app)"
             >
               {copiedLink ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-emerald-400 text-[11px] hidden sm:inline">Copied!</span>
+                  <span className="text-emerald-400 text-[11px] hidden md:inline">Copied!</span>
                 </>
               ) : (
                 <>
                   <Share2 className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="text-[11px] hidden sm:inline">Share</span>
+                  <span className="text-[11px] hidden md:inline">Share</span>
                 </>
               )}
             </button>
 
             {/* Streak Counter */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-400">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-400">
               <Flame className="w-4 h-4 fill-amber-500/20" />
               <span>{streak}d</span>
             </div>

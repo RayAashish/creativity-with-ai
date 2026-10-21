@@ -134,11 +134,11 @@ export const BuyMeCoffeeModal: React.FC<BuyMeCoffeeModalProps> = ({
                 </div>
 
                 {/* QR Image */}
-                <div className="p-3 bg-white rounded-2xl shadow-xl max-w-[240px] sm:max-w-[260px] w-full aspect-square flex items-center justify-center overflow-hidden border border-slate-200">
+                <div className="p-2.5 bg-white rounded-2xl shadow-xl max-w-[260px] sm:max-w-[280px] w-full flex items-center justify-center overflow-hidden border border-slate-200">
                   <img
-                    src="/support/gpay-qr.png"
+                    src="/support/upi.jpeg"
                     alt="Aashish Ray GPay QR Code"
-                    className="w-full h-full object-contain"
+                    className="w-full h-auto object-contain rounded-xl"
                     loading="eager"
                   />
                 </div>
@@ -252,11 +252,11 @@ export const BuyMeCoffeeModal: React.FC<BuyMeCoffeeModalProps> = ({
                 </div>
 
                 {/* PayPal QR Image */}
-                <div className="p-3 bg-white rounded-2xl shadow-xl max-w-[240px] sm:max-w-[260px] w-full aspect-square flex items-center justify-center overflow-hidden border border-slate-200">
+                <div className="p-2.5 bg-white rounded-2xl shadow-xl max-w-[260px] sm:max-w-[280px] w-full flex items-center justify-center overflow-hidden border border-slate-200">
                   <img
-                    src="/support/paypal-qr.png"
+                    src="/support/paypal.jpeg"
                     alt="Aashish Kumar Ray PayPal QR Code"
-                    className="w-full h-full object-contain"
+                    className="w-full h-auto object-contain rounded-xl"
                     loading="eager"
                   />
                 </div>
