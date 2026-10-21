@@ -6,6 +6,7 @@ import { LearningHub } from './components/learning/LearningHub';
 import { ProgressDashboard } from './components/dashboard/ProgressDashboard';
 import { RandomQuestionModal } from './components/sheet/RandomQuestionModal';
 import { BuyMeCoffeeModal } from './components/common/BuyMeCoffeeModal';
+import { ThemeBackgroundCanvas } from './components/common/ThemeBackgroundCanvas';
 import { 
   getStoredProgress, 
   saveStoredProgress, 
@@ -24,6 +25,22 @@ export function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('sheet');
   const [progress, setProgress] = useState<UserProgress>(getStoredProgress());
   const [isBuyCoffeeOpen, setIsBuyCoffeeOpen] = useState<boolean>(false);
+  const [currentTheme, setCurrentTheme] = useState<string>(() => {
+    try {
+      return localStorage.getItem('dsaspace_theme_v1') || 'dark';
+    } catch (e) {
+      return 'dark';
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    try {
+      localStorage.setItem('dsaspace_theme_v1', currentTheme);
+    } catch (e) {
+      // ignore
+    }
+  }, [currentTheme]);
 
   const [isQuickRouletteOpen, setIsQuickRouletteOpen] = useState<boolean>(false);
   const [quickRouletteData, setQuickRouletteData] = useState<{
@@ -112,16 +129,22 @@ export function App() {
   const totalQuestions = QUESTIONS_450.length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-white">
-      <Navbar
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-        streak={totalDone === 0 ? 0 : progress.streak}
-        totalDone={totalDone}
-        totalQuestions={totalQuestions}
-        onQuickRoulette={handleQuickRoulette}
-        onOpenBuyCoffee={() => setIsBuyCoffeeOpen(true)}
-      />
+    <div className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-white relative w-full overflow-x-hidden">
+      {/* Portfolio-Style Ambient Motion Canvas (Sakura petals, embers, aurora, matrix, ocean, constellations) */}
+      <ThemeBackgroundCanvas currentTheme={currentTheme} />
+
+      <div className="relative z-10 flex flex-col min-h-screen">
+        <Navbar
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+          streak={totalDone === 0 ? 0 : progress.streak}
+          totalDone={totalDone}
+          totalQuestions={totalQuestions}
+          onQuickRoulette={handleQuickRoulette}
+          onOpenBuyCoffee={() => setIsBuyCoffeeOpen(true)}
+          currentTheme={currentTheme}
+          onSelectTheme={setCurrentTheme}
+        />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {activeTab === 'sheet' && (
@@ -217,6 +240,7 @@ export function App() {
         isOpen={isBuyCoffeeOpen}
         onClose={() => setIsBuyCoffeeOpen(false)}
       />
+      </div>
     </div>
   );
 }
