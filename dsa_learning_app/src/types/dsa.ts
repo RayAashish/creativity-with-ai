@@ -14,7 +14,7 @@ export type Topic =
 
 export type Difficulty = 'Easy' | 'Medium' | 'Hard';
 
-export type Platform = 'LeetCode' | 'GeeksforGeeks' | 'CodeStudio' | 'HackerRank';
+export type Platform = 'LeetCode' | 'GeeksforGeeks' | 'CodeStudio' | 'HackerRank' | 'HackerEarth' | 'SPOJ';
 
 export type SupportedLanguage = 'cpp' | 'java' | 'python' | 'javascript';
 
