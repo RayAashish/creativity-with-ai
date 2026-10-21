@@ -5,6 +5,7 @@ import { GamesHub } from './components/games/GamesHub';
 import { LearningHub } from './components/learning/LearningHub';
 import { ProgressDashboard } from './components/dashboard/ProgressDashboard';
 import { RandomQuestionModal } from './components/sheet/RandomQuestionModal';
+import { BuyMeCoffeeModal } from './components/common/BuyMeCoffeeModal';
 import { 
   getStoredProgress, 
   saveStoredProgress, 
@@ -17,11 +18,12 @@ import {
 import { QUESTIONS_450 } from './data/questions450';
 import { Question, Topic, UserProgress, ProblemStatus } from './types/dsa';
 import confetti from 'canvas-confetti';
-import { Globe, Heart } from 'lucide-react';
+import { Globe, Heart, Coffee } from 'lucide-react';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('sheet');
   const [progress, setProgress] = useState<UserProgress>(getStoredProgress());
+  const [isBuyCoffeeOpen, setIsBuyCoffeeOpen] = useState<boolean>(false);
 
   const [isQuickRouletteOpen, setIsQuickRouletteOpen] = useState<boolean>(false);
   const [quickRouletteData, setQuickRouletteData] = useState<{
@@ -118,6 +120,7 @@ export function App() {
         totalDone={totalDone}
         totalQuestions={totalQuestions}
         onQuickRoulette={handleQuickRoulette}
+        onOpenBuyCoffee={() => setIsBuyCoffeeOpen(true)}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -151,6 +154,7 @@ export function App() {
             onImportProgress={handleImportProgress}
             onResetProgress={handleResetProgress}
             onNavigateToSheet={() => setActiveTab('sheet')}
+            onOpenBuyCoffee={() => setIsBuyCoffeeOpen(true)}
           />
         )}
       </main>
@@ -190,6 +194,14 @@ export function App() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-4 text-slate-400">
+            <button
+              onClick={() => setIsBuyCoffeeOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition transform active:scale-95 shadow-sm shadow-amber-500/10 group"
+            >
+              <Coffee className="w-3.5 h-3.5 text-amber-400 group-hover:rotate-12 transition-transform" />
+              <span>Buy Me a Coffee ☕</span>
+            </button>
+            <span className="hidden sm:inline text-slate-700">•</span>
             <span>Direct Jump to LeetCode & GFG</span>
             <span className="hidden sm:inline text-slate-700">•</span>
             <span className="text-cyan-400 font-mono">100% Offline Storage</span>
@@ -200,6 +212,11 @@ export function App() {
           </div>
         </div>
       </footer>
+
+      <BuyMeCoffeeModal
+        isOpen={isBuyCoffeeOpen}
+        onClose={() => setIsBuyCoffeeOpen(false)}
+      />
     </div>
   );
 }

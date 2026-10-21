@@ -8,7 +8,8 @@ import {
   Flame, 
   Dice5,
   Share2,
-  Check
+  Check,
+  Coffee
 } from 'lucide-react';
 
 export type NavTab = 'sheet' | 'games' | 'learning' | 'dashboard';
@@ -20,6 +21,7 @@ interface NavbarProps {
   totalDone: number;
   totalQuestions: number;
   onQuickRoulette: () => void;
+  onOpenBuyCoffee?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -29,6 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   totalDone,
   totalQuestions,
   onQuickRoulette,
+  onOpenBuyCoffee,
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -119,6 +122,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Dice5 className="w-4 h-4 text-cyan-400" />
               <span className="hidden sm:inline">Random Q</span>
             </button>
+
+            {/* Buy Me a Coffee Button */}
+            {onOpenBuyCoffee && (
+              <button
+                onClick={onOpenBuyCoffee}
+                className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-xl text-xs font-bold transition transform active:scale-95 shadow-sm shadow-amber-500/10 group"
+                title="Support DSASpace with a Coffee"
+              >
+                <Coffee className="w-4 h-4 text-amber-400 group-hover:rotate-12 transition-transform duration-200" />
+                <span className="hidden sm:inline">Buy Coffee</span>
+                <span className="sm:hidden text-[11px]">Coffee</span>
+              </button>
+            )}
 
             {/* Share / Copy Domain Link */}
             <button

@@ -8,7 +8,9 @@ import {
   Award, 
   Target, 
   BarChart3,
-  ExternalLink
+  ExternalLink,
+  Coffee,
+  Heart
 } from 'lucide-react';
 import { QUESTIONS_450 } from '../../data/questions450';
 import { TOPICS } from '../../data/topics';
@@ -20,6 +22,7 @@ interface ProgressDashboardProps {
   onImportProgress: (imported: UserProgress) => void;
   onResetProgress: () => void;
   onNavigateToSheet: (topicId?: string) => void;
+  onOpenBuyCoffee?: () => void;
 }
 
 export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
@@ -27,6 +30,7 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
   onImportProgress,
   onResetProgress,
   onNavigateToSheet,
+  onOpenBuyCoffee,
 }) => {
   const totalQuestions = QUESTIONS_450.length;
   const doneCount = useMemo(() => {
@@ -279,6 +283,34 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Buy Me a Coffee Callout */}
+      {onOpenBuyCoffee && (
+        <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-950/20 to-slate-900 border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-center gap-3.5 text-center sm:text-left">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center flex-shrink-0">
+              <Coffee className="w-6 h-6 text-amber-400" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-white flex items-center gap-1.5 justify-center sm:justify-start">
+                <span>Enjoying DSASpace?</span>
+                <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Support independent developer tools and keep DSASpace 100% free and ad-free!
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onOpenBuyCoffee}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold rounded-xl text-xs sm:text-sm shadow-lg shadow-amber-500/20 active:scale-95 transition flex-shrink-0"
+          >
+            <Coffee className="w-4 h-4 fill-slate-950" />
+            <span>Buy Me a Coffee ☕</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
