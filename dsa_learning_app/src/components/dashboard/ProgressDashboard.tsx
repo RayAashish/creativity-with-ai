@@ -2,8 +2,6 @@ import React, { useMemo } from 'react';
 import { 
   Trophy, 
   Flame, 
-  CheckCircle2, 
-  Clock, 
   Download, 
   Upload, 
   RotateCcw, 
@@ -36,7 +34,6 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
 
   const percentage = Math.round((doneCount / totalQuestions) * 100);
 
-  // Difficulty breakdown
   const diffStats = useMemo(() => {
     const stats = {
       Easy: { total: 0, done: 0 },
@@ -52,7 +49,6 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
     return stats;
   }, [progress.doneQuestions]);
 
-  // Topic breakdown
   const topicStats = useMemo(() => {
     return TOPICS.map(topic => {
       const topicQuestions = QUESTIONS_450.filter(q => q.topic === topic.id);
@@ -68,18 +64,16 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
     });
   }, [progress.doneQuestions]);
 
-  // Export JSON
   const handleExport = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(progress, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `dsa_progress_backup_${new Date().toISOString().slice(0, 10)}.json`);
+    downloadAnchor.setAttribute('download', `dsaspace_progress_backup_${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
   };
 
-  // Import JSON
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -100,7 +94,6 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Hero Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-purple-950/30 to-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="max-w-2xl">
@@ -108,19 +101,18 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
               <BarChart3 className="w-3.5 h-3.5" /> Performance & Consistency Tracker
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              DSA Interview Readiness Dashboard
+              DSASpace Interview Readiness
             </h2>
             <p className="text-slate-300 text-sm mt-1.5 leading-relaxed">
-              Track your journey across the legendary 450 Sheet. Identify weak topics, monitor difficulty coverage, and keep your daily problem-solving streak alive.
+              Track your journey across the legendary 450 Sheet on <span className="text-cyan-400 font-mono">dsaspace.vercel.app</span>. Identify weak topics, monitor difficulty coverage, and keep your daily problem-solving streak alive.
             </p>
           </div>
 
-          {/* Backup / Export / Import Actions */}
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleExport}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition"
-              title="Download your progress as JSON"
+              title="Download your DSASpace progress as JSON"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export</span>
@@ -134,7 +126,7 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
 
             <button
               onClick={() => {
-                if (window.confirm('Are you sure you want to reset all solved progress?')) {
+                if (window.confirm('Are you sure you want to reset all solved progress on DSASpace?')) {
                   onResetProgress();
                 }
               }}
@@ -146,7 +138,6 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
           </div>
         </div>
 
-        {/* Highlight Metrics */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-6 border-t border-slate-800">
           <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80">
             <div className="flex items-center gap-2 text-cyan-400 mb-1">
@@ -194,9 +185,7 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
         </div>
       </div>
 
-      {/* Difficulty Breakdown Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Easy */}
         <div className="bg-slate-900/90 border border-emerald-500/30 p-5 rounded-2xl">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold text-emerald-400">Easy Problems</span>
@@ -214,7 +203,6 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
           </div>
         </div>
 
-        {/* Medium */}
         <div className="bg-slate-900/90 border border-amber-500/30 p-5 rounded-2xl">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold text-amber-400">Medium Problems</span>
@@ -232,7 +220,6 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
           </div>
         </div>
 
-        {/* Hard */}
         <div className="bg-slate-900/90 border border-rose-500/30 p-5 rounded-2xl">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold text-rose-400">Hard Problems</span>
@@ -251,7 +238,6 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
         </div>
       </div>
 
-      {/* Topic-wise Breakdown Table */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl">
         <h3 className="text-lg font-bold text-white mb-4">Topic-Wise Progress Breakdown</h3>
 

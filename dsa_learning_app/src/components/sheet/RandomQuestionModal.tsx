@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, ExternalLink, CheckCircle2, RotateCw, X, AlertCircle, Trophy, BookOpen } from 'lucide-react';
+import { Sparkles, ExternalLink, CheckCircle2, RotateCw, X, Trophy } from 'lucide-react';
 import { Question, Topic } from '../../types/dsa';
 import { TOPICS } from '../../data/topics';
 import confetti from 'canvas-confetti';
@@ -75,11 +75,9 @@ export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        {/* Glow decoration */}
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
-        {/* Modal Header */}
         <div className="flex items-center justify-between mb-6 relative z-10">
           <div className="flex items-center gap-3">
             <span className="p-2.5 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-cyan-400 rounded-2xl">
@@ -101,7 +99,6 @@ export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
           </button>
         </div>
 
-        {/* Topic Scope Buttons */}
         <div className="flex items-center gap-2 mb-6 relative z-10 overflow-x-auto pb-1">
           <button
             onClick={() => {
@@ -134,7 +131,6 @@ export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
           ))}
         </div>
 
-        {/* Main Content: Either Question Card OR All Done Celebration */}
         {question ? (
           <div className={`relative z-10 bg-slate-950/80 rounded-2xl border border-slate-800 p-6 mb-6 transition-all duration-300 ${isSpinning ? 'opacity-40 scale-98' : 'opacity-100 scale-100'}`}>
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
@@ -173,7 +169,6 @@ export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
               </div>
             )}
 
-            {/* Action Buttons Inside Card */}
             <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-800/80">
               <button
                 onClick={() => handleOpenProblem(question.url)}
@@ -197,7 +192,6 @@ export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
             </div>
           </div>
         ) : (
-          /* All Done Celebration Screen */
           <div className="relative z-10 bg-slate-950/80 rounded-2xl border border-emerald-500/40 p-6 sm:p-8 mb-6 text-center">
             <div className="w-16 h-16 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-400">
               <Trophy className="w-8 h-8" />
@@ -232,7 +226,6 @@ export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
           </div>
         )}
 
-        {/* Modal Footer Controls */}
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10 pt-2 border-t border-slate-800">
           <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none">
             <input

@@ -7,14 +7,11 @@ import {
   Clock, 
   Gamepad2, 
   Sparkles, 
-  Layers, 
   Copy, 
   Check, 
-  ExternalLink,
   ChevronRight
 } from 'lucide-react';
 import { LEARNING_MODULES, LearningModule } from '../../data/learningTopics';
-import { TOPICS } from '../../data/topics';
 
 interface LearningHubProps {
   onNavigateToGames: (gameId?: string) => void;
@@ -38,7 +35,6 @@ export const LearningHub: React.FC<LearningHubProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Hero Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-teal-950/30 to-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 relative overflow-hidden">
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-teal-500/10 text-teal-400 border border-teal-500/30 rounded-full text-xs font-semibold mb-3">
@@ -53,7 +49,6 @@ export const LearningHub: React.FC<LearningHubProps> = ({
         </div>
       </div>
 
-      {/* Module Selector Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
         {Object.values(LEARNING_MODULES).map((mod) => {
           const isSelected = selectedModuleId === mod.id;
@@ -73,11 +68,8 @@ export const LearningHub: React.FC<LearningHubProps> = ({
         })}
       </div>
 
-      {/* Main Module Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Deep Dive Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Overview & Real-World Analogy */}
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
             <div className="flex items-center justify-between gap-4 mb-3">
               <h3 className="text-xl sm:text-2xl font-extrabold text-white">{currentModule.title}</h3>
@@ -98,7 +90,6 @@ export const LearningHub: React.FC<LearningHubProps> = ({
               {currentModule.overview}
             </p>
 
-            {/* Real World Analogy Box */}
             <div className="p-4 bg-teal-500/10 rounded-xl border border-teal-500/20 flex items-start gap-3">
               <Lightbulb className="w-5 h-5 text-teal-400 flex-shrink-0 mt-0.5" />
               <div>
@@ -109,7 +100,6 @@ export const LearningHub: React.FC<LearningHubProps> = ({
               </div>
             </div>
 
-            {/* Core Concepts Bullet Points */}
             <div className="mt-6">
               <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
                 Fundamental Pillars
@@ -125,7 +115,6 @@ export const LearningHub: React.FC<LearningHubProps> = ({
             </div>
           </div>
 
-          {/* High Frequency Algorithmic Patterns */}
           <div className="space-y-4">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <Code2 className="w-5 h-5 text-cyan-400" />
@@ -149,7 +138,6 @@ export const LearningHub: React.FC<LearningHubProps> = ({
                   {pat.explanation}
                 </p>
 
-                {/* Code Snippet Box */}
                 <div className="bg-slate-950 rounded-xl border border-slate-800 overflow-hidden">
                   <div className="px-4 py-2 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
                     <span>Clean Solution Pattern</span>
@@ -179,9 +167,7 @@ export const LearningHub: React.FC<LearningHubProps> = ({
           </div>
         </div>
 
-        {/* Right Col: Complexity CheatSheet & Interview Tips */}
         <div className="space-y-6">
-          {/* Complexity Cheatsheet */}
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
             <h4 className="text-sm font-bold text-white flex items-center gap-2 mb-3">
               <Clock className="w-4 h-4 text-amber-400" />
@@ -203,7 +189,6 @@ export const LearningHub: React.FC<LearningHubProps> = ({
             </div>
           </div>
 
-          {/* Interview Traps & FAANG Tips */}
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
             <h4 className="text-sm font-bold text-white flex items-center gap-2 mb-3">
               <Sparkles className="w-4 h-4 text-purple-400" />
@@ -219,7 +204,6 @@ export const LearningHub: React.FC<LearningHubProps> = ({
             </div>
           </div>
 
-          {/* Jump to 450 Sheet Questions */}
           <div className="bg-gradient-to-br from-indigo-950/50 to-slate-900 border border-indigo-500/30 rounded-2xl p-5 shadow-xl text-center">
             <h4 className="text-sm font-bold text-white mb-1.5">Ready to Test Your Skills?</h4>
             <p className="text-xs text-slate-300 mb-4">

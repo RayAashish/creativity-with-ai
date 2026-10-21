@@ -1,6 +1,8 @@
-# 🚀 AlgoMaster Pro — Interactive DSA Learning & 450 Sheet Platform
+# 🚀 DSASpace — Interactive DSA Learning & 450 Sheet Platform
 
-An all-in-one Data Structures and Algorithms learning web application built for students, interview prep candidates, and software engineers aiming for FAANG/product company coding rounds.
+🌐 **Live URL**: [https://dsaspace.vercel.app/](https://dsaspace.vercel.app/)
+
+**DSASpace** is an interactive, gamified Data Structures and Algorithms learning web application built for students, interview prep candidates, and software engineers targeting product companies and FAANG technical rounds.
 
 ---
 
@@ -71,9 +73,10 @@ Playable interactive games that build intuitive mental models for core algorithm
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Deployment
+- **Domain**: [https://dsaspace.vercel.app](https://dsaspace.vercel.app)
 - **Framework**: React 19 + TypeScript + Vite
-- **Styling**: Tailwind CSS with dark-mode aesthetic
+- **Styling**: Tailwind CSS with dark-mode space aesthetic
 - **Icons**: Lucide React
 - **Animations & Effects**: Canvas Confetti
 
@@ -92,5 +95,5 @@ npm run dev
 npm run build
 ```
 
-The application runs at **`http://localhost:5173/`**.
-All progress is stored in browser `localStorage`, so no backend configuration is required.
+The application runs locally at **`http://localhost:5173/`** and is designed for zero-config deployment on Vercel (`dsaspace.vercel.app`).
+All progress is stored in browser `localStorage`.

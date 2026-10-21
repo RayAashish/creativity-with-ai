@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Cpu, Play, RotateCcw, AlertTriangle, CheckCircle2, Sparkles, TrendingUp } from 'lucide-react';
+import { Cpu, Play, RotateCcw, AlertTriangle, CheckCircle2, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface Scenario {
@@ -44,7 +44,6 @@ export const DpCoinQuestGame: React.FC = () => {
   const [dpStep, setDpStep] = useState<number>(0);
   const [showComparison, setShowComparison] = useState<boolean>(false);
 
-  // Compute DP table for the scenario
   const target = scenario.target;
   const coins = scenario.coins;
   const dp: number[] = new Array(target + 1).fill(Infinity);
@@ -97,7 +96,7 @@ export const DpCoinQuestGame: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {SCENARIOS.map((s, idx) => (
+          {SCENARIOS.map((_, idx) => (
             <button
               key={idx}
               onClick={() => selectScenario(idx)}
@@ -119,7 +118,6 @@ export const DpCoinQuestGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Scenario Details Header */}
       <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 mb-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -144,9 +142,7 @@ export const DpCoinQuestGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Head to Head Duel: Greedy vs DP */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {/* Greedy Result Card */}
         <div className="bg-slate-950/80 p-5 rounded-2xl border border-amber-500/30 relative overflow-hidden">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -176,7 +172,6 @@ export const DpCoinQuestGame: React.FC = () => {
           </div>
         </div>
 
-        {/* DP Result Card */}
         <div className="bg-slate-950/80 p-5 rounded-2xl border border-emerald-500/40 relative overflow-hidden">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -207,7 +202,6 @@ export const DpCoinQuestGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Interactive Bottom-Up DP Table Builder */}
       <div className="p-4 bg-slate-950/90 rounded-2xl border border-slate-800 mb-6">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <div>
@@ -253,7 +247,6 @@ export const DpCoinQuestGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Explanation Banner */}
       <div className="p-4 bg-slate-800/40 rounded-xl border border-slate-700/60 text-xs sm:text-sm text-slate-300 flex items-start gap-3">
         <Sparkles className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
         <div>

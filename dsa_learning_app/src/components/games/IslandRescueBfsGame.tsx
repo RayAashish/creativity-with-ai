@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Compass, Play, RotateCcw, Award, CheckCircle2, Flag, User, AlertTriangle } from 'lucide-react';
+import { Compass, Play, RotateCcw, Award, Flag, User } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface Cell {
@@ -21,7 +21,6 @@ export const IslandRescueBfsGame: React.FC = () => {
   const [targetPos, setTargetPos] = useState<{ r: number; c: number }>({ r: ROWS - 1, c: COLS - 1 });
   const [queue, setQueue] = useState<{ r: number; c: number; dist: number; parent?: { r: number; c: number } }[]>([]);
   const [parentMap, setParentMap] = useState<Record<string, { r: number; c: number }>>({});
-  const [currentStep, setCurrentStep] = useState<number>(0);
   const [isDone, setIsDone] = useState<boolean>(false);
   const [statusMsg, setStatusMsg] = useState<string>('');
 
@@ -30,7 +29,6 @@ export const IslandRescueBfsGame: React.FC = () => {
     const target = { r: ROWS - 1, c: COLS - 1 };
     setTargetPos(target);
 
-    // Generate obstacles avoiding start and target
     for (let r = 0; r < ROWS; r++) {
       const row: Cell[] = [];
       for (let c = 0; c < COLS; c++) {
@@ -53,7 +51,6 @@ export const IslandRescueBfsGame: React.FC = () => {
     setGrid(newGrid);
     setQueue([{ r: 0, c: 0, dist: 0 }]);
     setParentMap({});
-    setCurrentStep(0);
     setIsDone(false);
     setStatusMsg('Click "Step BFS Wave" to advance queue level by level and reach the rescue beacon!');
   };
@@ -65,7 +62,6 @@ export const IslandRescueBfsGame: React.FC = () => {
   const stepBfs = () => {
     if (queue.length === 0 || isDone) return;
 
-    // Process all nodes at current distance level (one full BFS wave)
     const currentDist = queue[0].dist;
     const waveNodes: { r: number; c: number; dist: number; parent?: { r: number; c: number } }[] = [];
     const remainingQueue: { r: number; c: number; dist: number; parent?: { r: number; c: number } }[] = [];
@@ -84,10 +80,10 @@ export const IslandRescueBfsGame: React.FC = () => {
     let foundTarget = false;
 
     const dirs = [
-      [-1, 0], // Up
-      [1, 0],  // Down
-      [0, -1], // Left
-      [0, 1],  // Right
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
     ];
 
     for (const curr of waveNodes) {
@@ -125,11 +121,9 @@ export const IslandRescueBfsGame: React.FC = () => {
     setParentMap(newParents);
     setGrid(newGrid);
     setQueue(nextWaveQueue);
-    setCurrentStep(prev => prev + 1);
 
     if (foundTarget) {
       setIsDone(true);
-      // Reconstruct shortest path
       let curr = targetPos;
       const pathCells: { r: number; c: number }[] = [curr];
       while (curr && !(curr.r === 0 && curr.c === 0)) {
@@ -269,7 +263,6 @@ export const IslandRescueBfsGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid Canvas */}
       <div className="flex justify-center p-4 bg-slate-950/80 rounded-2xl border border-slate-800 mb-6 overflow-x-auto">
         <div className="grid grid-rows-7 gap-2">
           {grid.map((row, r) => (
@@ -319,7 +312,6 @@ export const IslandRescueBfsGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Queue & Status Footer */}
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-950/70 rounded-xl border border-slate-800">
         <div className="flex items-center gap-2 text-sm text-slate-300">
           <Award className="w-4 h-4 text-emerald-400" />

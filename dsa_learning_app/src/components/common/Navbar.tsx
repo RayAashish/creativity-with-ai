@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  Terminal, 
+  Rocket, 
   Gamepad2, 
   BookOpen, 
   CheckSquare, 
   BarChart3, 
   Flame, 
   Dice5,
-  Sparkles
+  Share2,
+  Check
 } from 'lucide-react';
 
 export type NavTab = 'sheet' | 'games' | 'learning' | 'dashboard';
@@ -29,12 +30,23 @@ export const Navbar: React.FC<NavbarProps> = ({
   totalQuestions,
   onQuickRoulette,
 }) => {
+  const [copiedLink, setCopiedLink] = useState(false);
+
   const navItems = [
     { id: 'sheet' as NavTab, label: '450 DSA Sheet', icon: CheckSquare, badge: `${totalDone}/${totalQuestions}` },
     { id: 'games' as NavTab, label: 'DSA Games Arcade', icon: Gamepad2, highlight: true },
     { id: 'learning' as NavTab, label: 'Concept Academy', icon: BookOpen },
     { id: 'dashboard' as NavTab, label: 'Progress & Stats', icon: BarChart3 },
   ];
+
+  const handleShare = () => {
+    const siteUrl = 'https://dsaspace.vercel.app';
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(siteUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/80">
@@ -46,19 +58,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center gap-3 cursor-pointer group"
           >
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition">
-              <Terminal className="w-5 h-5 text-white" />
+              <Rocket className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-black text-lg sm:text-xl text-white tracking-tight">
-                  AlgoMaster<span className="text-cyan-400">Pro</span>
+                  DSA<span className="text-cyan-400">Space</span>
                 </span>
                 <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-md">
-                  DSA 450
+                  450
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 hidden sm:block">
-                Master Patterns with Games & 450 Sheet
+                dsaspace.vercel.app • Learn, Play & Master DSA
               </p>
             </div>
           </div>
@@ -96,8 +108,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* Right Actions: Quick Roulette & Streak */}
-          <div className="flex items-center gap-3">
+          {/* Right Actions: Quick Roulette, Share & Streak */}
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Quick Roulette Button */}
             <button
               onClick={onQuickRoulette}
@@ -106,6 +118,25 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Dice5 className="w-4 h-4 text-cyan-400" />
               <span className="hidden sm:inline">Random Q</span>
+            </button>
+
+            {/* Share / Copy Domain Link */}
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl text-xs font-semibold transition"
+              title="Copy DSASpace link (dsaspace.vercel.app)"
+            >
+              {copiedLink ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-400 text-[11px] hidden sm:inline">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-[11px] hidden sm:inline">Share</span>
+                </>
+              )}
             </button>
 
             {/* Streak Counter */}

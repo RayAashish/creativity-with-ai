@@ -13,7 +13,6 @@ export const TwoPointerGame: React.FC = () => {
   const [feedback, setFeedback] = useState<string>('');
 
   const generateLevel = () => {
-    // Generate 10 sorted unique numbers
     const len = 10;
     const nums: number[] = [];
     let cur = Math.floor(Math.random() * 5) + 2;
@@ -22,7 +21,6 @@ export const TwoPointerGame: React.FC = () => {
       nums.push(cur);
     }
 
-    // Pick 2 random indices to form a guaranteed solution
     const i1 = Math.floor(Math.random() * 4);
     const i2 = Math.floor(Math.random() * 4) + 5;
     const solutionTarget = nums[i1] + nums[i2];
@@ -41,7 +39,6 @@ export const TwoPointerGame: React.FC = () => {
     setIsGameOver(false);
   }, []);
 
-  // Timer countdown
   useEffect(() => {
     if (isGameOver || timeLeft <= 0) return;
     const timer = setInterval(() => {
@@ -157,7 +154,6 @@ export const TwoPointerGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Stepping Stones Array Track */}
       <div className="relative py-6 px-4 bg-slate-950/80 rounded-2xl border border-slate-800/80 mb-6 overflow-x-auto">
         <div className="flex items-center justify-between gap-3 min-w-[600px]">
           {array.map((num, idx) => {
@@ -176,7 +172,6 @@ export const TwoPointerGame: React.FC = () => {
 
             return (
               <div key={idx} className="flex-1 flex flex-col items-center">
-                {/* Pointer Tag */}
                 <div className="h-6 mb-1 text-xs font-bold font-mono">
                   {isL && <span className="text-cyan-400">Pointer L ⬇</span>}
                   {isR && <span className="text-purple-400">Pointer R ⬇</span>}
@@ -194,7 +189,6 @@ export const TwoPointerGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Live Computation Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-950/90 rounded-xl border border-slate-800 mb-6">
         <div className="flex items-center gap-3 font-mono text-base">
           <span className="text-cyan-400 font-bold">arr[{left}] ({array[left]})</span>
@@ -213,7 +207,6 @@ export const TwoPointerGame: React.FC = () => {
           </span>
         </div>
 
-        {/* Action Controls */}
         <div className="flex items-center gap-2">
           <button
             onClick={moveLeftRight}
@@ -239,7 +232,6 @@ export const TwoPointerGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Dynamic Feedback Banner */}
       <div className="flex items-center justify-between text-sm px-4 py-3 bg-slate-800/40 rounded-xl border border-slate-700/50 text-slate-300">
         <div className="flex items-center gap-2">
           <Trophy className="w-4 h-4 text-amber-400" />

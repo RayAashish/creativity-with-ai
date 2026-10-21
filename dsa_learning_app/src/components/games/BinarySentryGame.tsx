@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, RotateCcw, Award, Sparkles, AlertCircle, ArrowRight } from 'lucide-react';
+import { Target, RotateCcw, Award, Sparkles, ArrowRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface Vault {
@@ -23,7 +23,6 @@ export const BinarySentryGame: React.FC = () => {
   const maxOptimalMoves = Math.floor(Math.log2(arraySize)) + 1; // 4 moves for 15 elements
 
   const initGame = () => {
-    // Generate 15 distinct sorted numbers
     const base = Math.floor(Math.random() * 20) + 10;
     const nums: number[] = [];
     let current = base;
@@ -65,7 +64,6 @@ export const BinarySentryGame: React.FC = () => {
     const nextAttempts = attempts + 1;
     setAttempts(nextAttempts);
 
-    // Mark inspected
     setVaults(prev => prev.map(v => v.index === index ? { ...v, isInspected: true } : v));
 
     if (val === target) {
@@ -81,7 +79,6 @@ export const BinarySentryGame: React.FC = () => {
     }
 
     if (val < target) {
-      // Eliminate left half including index
       const newLow = index + 1;
       setLow(newLow);
       setVaults(prev => prev.map(v => v.index <= index ? { ...v, isEliminated: true } : v));
@@ -94,7 +91,6 @@ export const BinarySentryGame: React.FC = () => {
         setMessage('Search space exhausted without finding target.');
       }
     } else {
-      // val > target -> Eliminate right half including index
       const newHigh = index - 1;
       setHigh(newHigh);
       setVaults(prev => prev.map(v => v.index >= index ? { ...v, isEliminated: true } : v));
@@ -144,7 +140,6 @@ export const BinarySentryGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Pointer Boundaries Indicator */}
       <div className="flex items-center justify-between bg-slate-950/60 p-3 rounded-xl border border-slate-800 mb-6 text-xs sm:text-sm font-mono">
         <div className="flex items-center gap-2 text-emerald-400">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -160,7 +155,6 @@ export const BinarySentryGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Vault Array Grid */}
       <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-15 gap-2 mb-6">
         {vaults.map((vault) => {
           const isMid = vault.index === mid && gameState === 'playing';
@@ -199,7 +193,6 @@ export const BinarySentryGame: React.FC = () => {
         })}
       </div>
 
-      {/* Action Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-950/70 rounded-xl border border-slate-800 mb-6">
         <div className="flex items-center gap-2 text-sm text-slate-300">
           <Sparkles className="w-4 h-4 text-cyan-400" />
@@ -223,7 +216,6 @@ export const BinarySentryGame: React.FC = () => {
         )}
       </div>
 
-      {/* Algorithmic Log */}
       <div>
         <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Algorithm Execution Log</h4>
         <div className="bg-slate-950 rounded-xl p-3 border border-slate-800 max-h-32 overflow-y-auto font-mono text-xs text-slate-300 space-y-1">

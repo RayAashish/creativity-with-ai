@@ -59,7 +59,6 @@ export const GamesHub: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 relative overflow-hidden">
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full text-xs font-semibold mb-3">
@@ -74,7 +73,6 @@ export const GamesHub: React.FC = () => {
         </div>
       </div>
 
-      {/* Game Selector Tabs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {games.map((g) => {
           const Icon = g.icon;
@@ -108,7 +106,6 @@ export const GamesHub: React.FC = () => {
         })}
       </div>
 
-      {/* Active Game Stage */}
       <div className="mt-4">
         {activeGame === 'binary' && <BinarySentryGame />}
         {activeGame === 'two-pointer' && <TwoPointerGame />}

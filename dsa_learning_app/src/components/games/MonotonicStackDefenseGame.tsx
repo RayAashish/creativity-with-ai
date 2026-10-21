@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layers, Shield, Play, RotateCcw, Check, Sparkles, AlertCircle, ArrowUp } from 'lucide-react';
+import { Layers, RotateCcw, Sparkles, ArrowUp } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface Asteroid {
@@ -10,14 +10,13 @@ interface Asteroid {
 
 export const MonotonicStackDefenseGame: React.FC = () => {
   const [asteroids, setAsteroids] = useState<Asteroid[]>([]);
-  const [stack, setStack] = useState<number[]>([]); // stores asteroid values
+  const [stack, setStack] = useState<number[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [score, setScore] = useState<number>(0);
   const [isGameOver, setIsGameOver] = useState<boolean>(false);
   const [statusText, setStatusText] = useState<string>('');
 
   const initGame = () => {
-    // Generate 7 asteroid heights
     const raw = [3, 1, 5, 2, 7, 4, 6];
     setAsteroids(raw.map((h, i) => ({ id: i, height: h, nge: null })));
     setStack([]);
@@ -40,7 +39,6 @@ export const MonotonicStackDefenseGame: React.FC = () => {
     }
     const top = stack[stack.length - 1];
     if (currentAsteroid && top <= currentAsteroid.height) {
-      // Correct pop
       setStack(prev => prev.slice(0, prev.length - 1));
       setScore(prev => prev + 10);
       setStatusText(`✅ Popped ${top} because it is <= incoming ${currentAsteroid.height}. Monotonic invariant maintained!`);
@@ -58,7 +56,6 @@ export const MonotonicStackDefenseGame: React.FC = () => {
       return;
     }
 
-    // Set NGE for current asteroid if applicable, or we're building stack
     setStack(prev => [...prev, currentAsteroid.height]);
     setScore(prev => prev + 15);
 
@@ -107,9 +104,7 @@ export const MonotonicStackDefenseGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Battlefield & Visual Stack Display */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        {/* Asteroids Stream */}
         <div className="md:col-span-2 bg-slate-950/80 p-5 rounded-2xl border border-slate-800">
           <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
             Incoming Asteroid Stream
@@ -147,7 +142,6 @@ export const MonotonicStackDefenseGame: React.FC = () => {
           </div>
         </div>
 
-        {/* Laser Monotonic Stack Container */}
         <div className="bg-slate-950/90 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -181,7 +175,6 @@ export const MonotonicStackDefenseGame: React.FC = () => {
             </div>
           </div>
 
-          {/* Action buttons */}
           <div className="flex gap-2 mt-4">
             <button
               onClick={handlePop}
@@ -201,7 +194,6 @@ export const MonotonicStackDefenseGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Status Bar */}
       <div className="p-4 bg-slate-950/70 rounded-xl border border-slate-800 text-sm text-slate-300 flex items-center gap-3">
         <Sparkles className="w-5 h-5 text-amber-400 flex-shrink-0" />
         <span>{statusText}</span>

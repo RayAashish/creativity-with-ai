@@ -1,10 +1,11 @@
 import { Question, Topic, UserProgress } from '../types/dsa';
 
-const STORAGE_KEY = 'algo_master_user_progress_v1';
+const STORAGE_KEY = 'dsaspace_user_progress_v1';
+const LEGACY_STORAGE_KEY = 'algo_master_user_progress_v1';
 
 export function getStoredProgress(): UserProgress {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       return {

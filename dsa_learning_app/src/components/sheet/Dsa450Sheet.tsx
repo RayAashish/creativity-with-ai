@@ -5,17 +5,13 @@ import {
   Star, 
   ExternalLink, 
   Search, 
-  Filter, 
   Sparkles, 
   Dice5, 
   FileText, 
-  BookOpen, 
   Layers, 
-  Award,
-  ChevronDown,
-  ChevronUp
+  Award
 } from 'lucide-react';
-import { Question, Topic, Difficulty, Platform } from '../../types/dsa';
+import { Question, Topic, Difficulty } from '../../types/dsa';
 import { TOPICS } from '../../data/topics';
 import { QUESTIONS_450 } from '../../data/questions450';
 import { RandomQuestionModal } from './RandomQuestionModal';
@@ -45,7 +41,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
   const [statusFilter, setStatusFilter] = useState<'all' | 'unsolved' | 'done' | 'starred'>('all');
   const [expandedNotesId, setExpandedNotesId] = useState<string | null>(null);
 
-  // Random Question Modal State
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [randomQuestionData, setRandomQuestionData] = useState<{
     question: Question | null;
@@ -54,18 +49,14 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
   }>({ question: null, totalRemaining: 0, totalInPool: 0 });
   const [modalTopic, setModalTopic] = useState<Topic | 'all'>('arrays');
 
-  // Filtered Questions list
   const filteredQuestions = useMemo(() => {
     return QUESTIONS_450.filter((q) => {
-      // Topic match
       if (selectedTopic !== 'all' && q.topic !== selectedTopic) {
         return false;
       }
-      // Difficulty match
       if (difficultyFilter !== 'all' && q.difficulty !== difficultyFilter) {
         return false;
       }
-      // Status match
       if (statusFilter === 'unsolved' && doneMap[q.id]) {
         return false;
       }
@@ -75,7 +66,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
       if (statusFilter === 'starred' && !starredMap[q.id]) {
         return false;
       }
-      // Search match
       if (searchQuery.trim() !== '') {
         const query = searchQuery.toLowerCase();
         const matchesTitle = q.title.toLowerCase().includes(query);
@@ -89,13 +79,11 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
     });
   }, [selectedTopic, difficultyFilter, statusFilter, searchQuery, doneMap, starredMap]);
 
-  // Overall statistics
   const totalQuestions = QUESTIONS_450.length;
   const totalDone = useMemo(() => {
     return QUESTIONS_450.filter(q => doneMap[q.id]).length;
   }, [doneMap]);
 
-  // Current category statistics
   const categoryQuestions = useMemo(() => {
     if (selectedTopic === 'all') return QUESTIONS_450;
     return QUESTIONS_450.filter(q => q.topic === selectedTopic);
@@ -109,7 +97,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
     ? Math.round((categoryDone / categoryQuestions.length) * 100) 
     : 0;
 
-  // Trigger Random Question Picker
   const triggerRandomPicker = (topicToRoll: Topic | 'all', includeDone: boolean = false) => {
     setModalTopic(topicToRoll);
     const result = pickRandomQuestion(QUESTIONS_450, doneMap, topicToRoll, includeDone);
@@ -144,7 +131,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Banner & Quick Random Actions */}
       <div className="bg-gradient-to-r from-slate-900 via-cyan-950/30 to-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 relative overflow-hidden">
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="max-w-2xl">
@@ -159,7 +145,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
             </p>
           </div>
 
-          {/* Random Question Action Card */}
           <div className="flex flex-col sm:flex-row items-stretch gap-3">
             <button
               onClick={() => triggerRandomPicker(selectedTopic)}
@@ -181,7 +166,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
           </div>
         </div>
 
-        {/* Progress summary bar */}
         <div className="mt-6 pt-6 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
             <span className="text-xs text-slate-400 block">Total 450 Solved</span>
@@ -217,7 +201,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
         </div>
       </div>
 
-      {/* Topic Selection Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
         <button
           onClick={() => setSelectedTopic('all')}
@@ -258,7 +241,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
         })}
       </div>
 
-      {/* Filter and Search Controls */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/90 p-4 rounded-2xl border border-slate-800">
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -272,7 +254,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Status filter */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
@@ -284,7 +265,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
             <option value="starred">Status: Starred</option>
           </select>
 
-          {/* Difficulty filter */}
           <select
             value={difficultyFilter}
             onChange={(e) => setDifficultyFilter(e.target.value as any)}
@@ -298,7 +278,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
         </div>
       </div>
 
-      {/* Questions Table / List */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
         <div className="p-4 border-b border-slate-800/80 flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider">
           <div className="flex items-center gap-3">
@@ -320,7 +299,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
               <p className="text-xs text-slate-500 mt-1">Try clearing your filters or search query.</p>
             </div>
           ) : (
-            filteredQuestions.map((q, idx) => {
+            filteredQuestions.map((q) => {
               const isDone = Boolean(doneMap[q.id]);
               const isStarred = Boolean(starredMap[q.id]);
               const isNotesOpen = expandedNotesId === q.id;
@@ -329,7 +308,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
               return (
                 <div key={q.id} className="transition-colors hover:bg-slate-800/40">
                   <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    {/* Left: Checkbox + Star + Title */}
                     <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
                       <button
                         onClick={() => handleMarkDone(q.id)}
@@ -370,7 +348,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                           <ExternalLink className="w-3.5 h-3.5 text-slate-500 inline flex-shrink-0" />
                         </div>
 
-                        {/* Companies pills */}
                         {q.companies && q.companies.length > 0 && (
                           <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                             {q.companies.map((comp, cIdx) => (
@@ -386,7 +363,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                       </div>
                     </div>
 
-                    {/* Right: Platform, Difficulty, Direct Link, Notes toggle */}
                     <div className="flex items-center justify-between sm:justify-end gap-3 pl-8 sm:pl-0">
                       <span className="text-xs font-mono font-medium px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
                         {q.platform}
@@ -424,7 +400,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                     </div>
                   </div>
 
-                  {/* Expandable Notes Drawer */}
                   {isNotesOpen && (
                     <div className="px-6 py-4 bg-slate-950/70 border-t border-slate-800/60 animate-in fade-in duration-200">
                       <div className="max-w-3xl">
@@ -448,7 +423,6 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
         </div>
       </div>
 
-      {/* Random Question Modal with Strict Done Filter */}
       <RandomQuestionModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

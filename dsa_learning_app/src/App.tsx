@@ -13,12 +13,12 @@ import {
 import { QUESTIONS_450 } from './data/questions450';
 import { Question, Topic, UserProgress } from './types/dsa';
 import confetti from 'canvas-confetti';
+import { Globe, Heart } from 'lucide-react';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('sheet');
   const [progress, setProgress] = useState<UserProgress>(getStoredProgress());
 
-  // Global Quick Roulette Modal
   const [isQuickRouletteOpen, setIsQuickRouletteOpen] = useState<boolean>(false);
   const [quickRouletteData, setQuickRouletteData] = useState<{
     question: Question | null;
@@ -27,12 +27,10 @@ export function App() {
   }>({ question: null, totalRemaining: 0, totalInPool: 0 });
   const [quickRouletteTopic, setQuickRouletteTopic] = useState<Topic | 'all'>('all');
 
-  // Sync progress to localStorage whenever it changes
   useEffect(() => {
     saveStoredProgress(progress);
   }, [progress]);
 
-  // Handle Done Toggle
   const handleToggleDone = (questionId: string) => {
     setProgress((prev) => {
       const nextDone = { ...prev.doneQuestions };
@@ -48,7 +46,6 @@ export function App() {
     });
   };
 
-  // Handle Star Toggle
   const handleToggleStar = (questionId: string) => {
     setProgress((prev) => {
       const nextStarred = { ...prev.starredQuestions };
@@ -64,7 +61,6 @@ export function App() {
     });
   };
 
-  // Handle Note Save
   const handleSaveNote = (questionId: string, note: string) => {
     setProgress((prev) => ({
       ...prev,
@@ -75,14 +71,12 @@ export function App() {
     }));
   };
 
-  // Trigger Global Quick Roulette
   const handleQuickRoulette = () => {
     const res = pickRandomQuestion(QUESTIONS_450, progress.doneQuestions, quickRouletteTopic, false);
     setQuickRouletteData(res);
     setIsQuickRouletteOpen(true);
   };
 
-  // Reset Progress
   const handleResetProgress = () => {
     const fresh: UserProgress = {
       doneQuestions: {},
@@ -94,7 +88,6 @@ export function App() {
     setProgress(fresh);
   };
 
-  // Import Progress
   const handleImportProgress = (imported: UserProgress) => {
     setProgress(imported);
     try {
@@ -109,7 +102,6 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-white">
-      {/* Navbar */}
       <Navbar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
@@ -119,7 +111,6 @@ export function App() {
         onQuickRoulette={handleQuickRoulette}
       />
 
-      {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {activeTab === 'sheet' && (
           <Dsa450Sheet
@@ -151,7 +142,6 @@ export function App() {
         )}
       </main>
 
-      {/* Global Quick Roulette Modal */}
       <RandomQuestionModal
         isOpen={isQuickRouletteOpen}
         onClose={() => setIsQuickRouletteOpen(false)}
@@ -168,13 +158,32 @@ export function App() {
         onSelectTopic={(topic) => setQuickRouletteTopic(topic)}
       />
 
-      {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-slate-950 py-6 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span>AlgoMaster Pro • Ultimate DSA Interview Preparation & 450 Sheet Platform</span>
-          <div className="flex items-center gap-4">
-            <span className="text-slate-400">Direct links to LeetCode & GeeksforGeeks</span>
-            <span className="text-cyan-500 font-mono">100% Offline Local Storage</span>
+      <footer className="border-t border-slate-800/80 bg-slate-950 py-6 text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="font-extrabold text-slate-200">
+              DSA<span className="text-cyan-400">Space</span>
+            </span>
+            <span className="text-slate-700">•</span>
+            <a 
+              href="https://dsaspace.vercel.app" 
+              target="_blank" 
+              rel="noreferrer" 
+              className="text-cyan-400 hover:text-cyan-300 font-mono flex items-center gap-1 transition"
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>dsaspace.vercel.app</span>
+            </a>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-4 text-slate-400">
+            <span>Direct Jump to LeetCode & GFG</span>
+            <span className="hidden sm:inline text-slate-700">•</span>
+            <span className="text-cyan-400 font-mono">100% Offline Storage</span>
+            <span className="hidden sm:inline text-slate-700">•</span>
+            <span className="flex items-center gap-1">
+              Built with <Heart className="w-3 h-3 text-rose-500 fill-rose-500" /> for DSA Learners
+            </span>
           </div>
         </div>
       </footer>
