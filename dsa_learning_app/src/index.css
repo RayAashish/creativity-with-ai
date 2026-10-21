@@ -124,7 +124,7 @@ html, body {
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: var(--bg-page, #090d16);
+  background-color: var(--bg-page, #090d16) !important;
   color: var(--text-primary, #f1f5f9);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
@@ -148,6 +148,15 @@ body {
   background: #475569;
 }
 
+/* Hide scrollbar utility */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Glassmorphism helpers */
 .glass-panel {
   background: var(--bg-card, rgba(15, 23, 42, 0.75));
@@ -162,65 +171,107 @@ body {
   border: 1px solid var(--border-color, rgba(255, 255, 255, 0.06));
 }
 
-/* Theme Adaptation for Tailwind Slate Classes */
+/* Theme Adaptation for Tailwind Slate Classes (supports opacity variants /80, /90, /95) */
+[data-theme="sakura"] [class*="bg-slate-950"],
 [data-theme="sakura"] .bg-slate-950 {
-  background-color: rgba(21, 9, 20, 0.9) !important;
+  background-color: rgba(21, 9, 20, 0.94) !important;
 }
+[data-theme="sakura"] [class*="bg-slate-900"],
 [data-theme="sakura"] .bg-slate-900 {
-  background-color: rgba(34, 14, 30, 0.85) !important;
+  background-color: rgba(34, 14, 30, 0.9) !important;
 }
+[data-theme="sakura"] [class*="border-slate-800"],
 [data-theme="sakura"] .border-slate-800 {
-  border-color: rgba(244, 114, 182, 0.22) !important;
+  border-color: rgba(244, 114, 182, 0.25) !important;
+}
+[data-theme="sakura"] [class*="border-slate-700"],
+[data-theme="sakura"] .border-slate-700 {
+  border-color: rgba(244, 114, 182, 0.35) !important;
 }
 
+[data-theme="cyberpunk"] [class*="bg-slate-950"],
 [data-theme="cyberpunk"] .bg-slate-950 {
-  background-color: rgba(6, 6, 17, 0.92) !important;
+  background-color: rgba(6, 6, 17, 0.94) !important;
 }
+[data-theme="cyberpunk"] [class*="bg-slate-900"],
 [data-theme="cyberpunk"] .bg-slate-900 {
-  background-color: rgba(15, 15, 34, 0.88) !important;
+  background-color: rgba(15, 15, 34, 0.92) !important;
 }
+[data-theme="cyberpunk"] [class*="border-slate-800"],
 [data-theme="cyberpunk"] .border-slate-800 {
-  border-color: rgba(0, 240, 255, 0.22) !important;
+  border-color: rgba(0, 240, 255, 0.25) !important;
+}
+[data-theme="cyberpunk"] [class*="border-slate-700"],
+[data-theme="cyberpunk"] .border-slate-700 {
+  border-color: rgba(0, 240, 255, 0.35) !important;
 }
 
+[data-theme="ember"] [class*="bg-slate-950"],
 [data-theme="ember"] .bg-slate-950 {
-  background-color: rgba(18, 6, 4, 0.92) !important;
+  background-color: rgba(18, 6, 4, 0.95) !important;
 }
+[data-theme="ember"] [class*="bg-slate-900"],
 [data-theme="ember"] .bg-slate-900 {
-  background-color: rgba(30, 10, 7, 0.88) !important;
+  background-color: rgba(30, 10, 7, 0.92) !important;
 }
+[data-theme="ember"] [class*="border-slate-800"],
 [data-theme="ember"] .border-slate-800 {
-  border-color: rgba(255, 87, 34, 0.22) !important;
+  border-color: rgba(255, 87, 34, 0.25) !important;
+}
+[data-theme="ember"] [class*="border-slate-700"],
+[data-theme="ember"] .border-slate-700 {
+  border-color: rgba(255, 87, 34, 0.35) !important;
 }
 
+[data-theme="aurora"] [class*="bg-slate-950"],
 [data-theme="aurora"] .bg-slate-950 {
-  background-color: rgba(4, 17, 26, 0.92) !important;
+  background-color: rgba(4, 17, 26, 0.95) !important;
 }
+[data-theme="aurora"] [class*="bg-slate-900"],
 [data-theme="aurora"] .bg-slate-900 {
-  background-color: rgba(7, 26, 38, 0.86) !important;
+  background-color: rgba(7, 26, 38, 0.9) !important;
 }
+[data-theme="aurora"] [class*="border-slate-800"],
 [data-theme="aurora"] .border-slate-800 {
-  border-color: rgba(45, 212, 191, 0.22) !important;
+  border-color: rgba(45, 212, 191, 0.25) !important;
+}
+[data-theme="aurora"] [class*="border-slate-700"],
+[data-theme="aurora"] .border-slate-700 {
+  border-color: rgba(45, 212, 191, 0.35) !important;
 }
 
+[data-theme="ocean"] [class*="bg-slate-950"],
 [data-theme="ocean"] .bg-slate-950 {
-  background-color: rgba(2, 13, 28, 0.92) !important;
+  background-color: rgba(2, 13, 28, 0.95) !important;
 }
+[data-theme="ocean"] [class*="bg-slate-900"],
 [data-theme="ocean"] .bg-slate-900 {
-  background-color: rgba(5, 24, 46, 0.88) !important;
+  background-color: rgba(5, 24, 46, 0.92) !important;
 }
+[data-theme="ocean"] [class*="border-slate-800"],
 [data-theme="ocean"] .border-slate-800 {
-  border-color: rgba(56, 189, 248, 0.22) !important;
+  border-color: rgba(56, 189, 248, 0.25) !important;
+}
+[data-theme="ocean"] [class*="border-slate-700"],
+[data-theme="ocean"] .border-slate-700 {
+  border-color: rgba(56, 189, 248, 0.35) !important;
 }
 
+[data-theme="matrix"] [class*="bg-slate-950"],
 [data-theme="matrix"] .bg-slate-950 {
-  background-color: rgba(2, 9, 4, 0.94) !important;
+  background-color: rgba(2, 9, 4, 0.96) !important;
 }
+[data-theme="matrix"] [class*="bg-slate-900"],
 [data-theme="matrix"] .bg-slate-900 {
-  background-color: rgba(4, 20, 8, 0.9) !important;
+  background-color: rgba(4, 20, 8, 0.94) !important;
 }
+[data-theme="matrix"] [class*="border-slate-800"],
 [data-theme="matrix"] .border-slate-800 {
-  border-color: rgba(0, 255, 102, 0.22) !important;
+  border-color: rgba(0, 255, 102, 0.25) !important;
+}
+[data-theme="matrix"] [class*="border-slate-700"],
+[data-theme="matrix"] .border-slate-700 {
+  border-color: rgba(0, 255, 102, 0.35) !important;
 }
 
 /* Prism Tokyo Night / One Dark IDE Syntax Highlighting */

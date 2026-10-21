@@ -27,8 +27,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('dsaspace_theme_v1') || 'dark';
+          document.documentElement.setAttribute('data-theme', t);
+        } catch(e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-cyan-500 selection:text-white">
+  <body class="text-slate-100 antialiased selection:bg-cyan-500 selection:text-white">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

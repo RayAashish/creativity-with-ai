@@ -65,7 +65,7 @@ export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({
       <div className="absolute -top-16 -right-16 w-44 h-44 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-16 -left-16 w-44 h-44 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         <div className="space-y-2.5 flex-1 min-w-0">
           {/* Top metadata tags */}
           <div className="flex items-center gap-2 flex-wrap text-xs">
@@ -130,7 +130,7 @@ export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 flex-shrink-0 pt-2 md:pt-0">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 flex-shrink-0 pt-2 lg:pt-0">
           <button
             onClick={() => onViewSolution(question)}
             className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold transition transform active:scale-95 shadow-sm"
