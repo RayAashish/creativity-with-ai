@@ -59,12 +59,12 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold">
             <Flame className="w-4 h-4 fill-amber-500/30 text-amber-400" />
-            <span>Current: {currentStreak}d</span>
+            <span>Current: {totalSolvedPeriod === 0 ? 0 : currentStreak}d</span>
           </div>
 
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-bold">
             <Trophy className="w-4 h-4 text-cyan-400" />
-            <span>Best: {longestStreak}d</span>
+            <span>Best: {totalSolvedPeriod === 0 ? 0 : longestStreak}d</span>
           </div>
         </div>
       </div>

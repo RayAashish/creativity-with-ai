@@ -114,7 +114,7 @@ export function App() {
       <Navbar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
-        streak={progress.streak}
+        streak={totalDone === 0 ? 0 : progress.streak}
         totalDone={totalDone}
         totalQuestions={totalQuestions}
         onQuickRoulette={handleQuickRoulette}

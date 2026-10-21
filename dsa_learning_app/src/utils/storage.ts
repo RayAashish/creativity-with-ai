@@ -55,10 +55,30 @@ export function getStoredProgress(): UserProgress {
         }
       });
 
+      const totalDoneCount = Object.keys(doneQuestions).filter(k => doneQuestions[k]).length;
+
+      // If no problems are done, reset phantom streak and activity
+      if (totalDoneCount === 0) {
+        return {
+          doneQuestions: {},
+          starredQuestions: parsed.starredQuestions || {},
+          notes: parsed.notes || {},
+          lastActiveDate: today,
+          streak: 0,
+          longestStreak: parsed.longestStreak || 0,
+          problemStatuses,
+          activityLog: {},
+          revisions: parsed.revisions || {},
+          dailyChallengeSolved: parsed.dailyChallengeSolved || {},
+          dailyChallengeStreak: parsed.dailyChallengeStreak || 0,
+          savedFilters: parsed.savedFilters,
+        };
+      }
+
       // Activity log backfill
       const activityLog: Record<string, number> = parsed.activityLog || {};
-      if (Object.keys(activityLog).length === 0 && Object.keys(doneQuestions).length > 0) {
-        activityLog[today] = Object.keys(doneQuestions).length;
+      if (Object.keys(activityLog).length === 0 && totalDoneCount > 0) {
+        activityLog[today] = totalDoneCount;
       }
 
       return {
@@ -85,10 +105,10 @@ export function getStoredProgress(): UserProgress {
     starredQuestions: {},
     notes: {},
     lastActiveDate: today,
-    streak: 1,
-    longestStreak: 1,
+    streak: 0,
+    longestStreak: 0,
     problemStatuses: {},
-    activityLog: { [today]: 0 },
+    activityLog: {},
     revisions: {},
     dailyChallengeSolved: {},
     dailyChallengeStreak: 0,
@@ -127,7 +147,7 @@ export function setProblemStatus(
   const today = getTodayString();
   const nextStatuses = { ...(prev.problemStatuses || {}) };
   const nextDone = { ...prev.doneQuestions };
-  const nextActivity = { ...(prev.activityLog || {}) };
+  let nextActivity = { ...(prev.activityLog || {}) };
   const nextRevisions = { ...(prev.revisions || {}) };
 
   const currentStatus = getProblemStatus(prev, questionId);
@@ -148,7 +168,9 @@ export function setProblemStatus(
     const daysSinceLast = diffDays(today, lastActive);
     if (daysSinceLast === 1) {
       nextStreak = (prev.streak || 0) + 1;
-    } else if (daysSinceLast > 1) {
+    } else if (daysSinceLast === 0 && (prev.streak || 0) > 0) {
+      nextStreak = prev.streak;
+    } else {
       nextStreak = 1;
     }
     nextLongest = Math.max(nextLongest, nextStreak);
@@ -166,21 +188,43 @@ export function setProblemStatus(
         delete nextRevisions[questionId];
       }
     }
-  } else if (newStatus === 'revise_later') {
-    delete nextDone[questionId];
-    // Schedule first spaced revision (after 3 days)
-    nextRevisions[questionId] = {
-      questionId,
-      markedAt: new Date().toISOString(),
-      intervalDays: REVISION_INTERVALS[0],
-      stage: 0,
-      dueAt: addDaysToDate(today, REVISION_INTERVALS[0]),
-      revisedDates: [],
-    };
   } else {
-    // 'not_started'
+    // If it was previously solved, decrement activity on today
+    if (currentStatus === 'solved') {
+      if (nextActivity[today] && nextActivity[today] > 1) {
+        nextActivity[today] -= 1;
+      } else {
+        delete nextActivity[today];
+      }
+    }
+
     delete nextDone[questionId];
-    delete nextRevisions[questionId];
+
+    const remainingDone = Object.keys(nextDone).filter(k => nextDone[k]).length;
+    if (remainingDone === 0) {
+      nextStreak = 0;
+      nextActivity = {};
+    } else if (!nextActivity[today]) {
+      const yesterday = addDaysToDate(today, -1);
+      if (!nextActivity[yesterday]) {
+        nextStreak = 0;
+      }
+    }
+
+    if (newStatus === 'revise_later') {
+      // Schedule first spaced revision (after 3 days)
+      nextRevisions[questionId] = {
+        questionId,
+        markedAt: new Date().toISOString(),
+        intervalDays: REVISION_INTERVALS[0],
+        stage: 0,
+        dueAt: addDaysToDate(today, REVISION_INTERVALS[0]),
+        revisedDates: [],
+      };
+    } else {
+      // 'not_started'
+      delete nextRevisions[questionId];
+    }
   }
 
   return {

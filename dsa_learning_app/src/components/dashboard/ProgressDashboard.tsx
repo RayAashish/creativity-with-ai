@@ -157,7 +157,7 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
               <span className="text-xs uppercase tracking-wider font-semibold">Active Streak</span>
             </div>
             <div className="text-2xl font-black text-amber-400">
-              {progress.streak} <span className="text-sm font-normal text-slate-400">days</span>
+              {doneCount === 0 ? 0 : progress.streak} <span className="text-sm font-normal text-slate-400">days</span>
             </div>
             <div className="text-xs text-slate-400 mt-1">Keep it burning! 🔥</div>
           </div>
