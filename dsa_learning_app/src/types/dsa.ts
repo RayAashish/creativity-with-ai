@@ -36,6 +36,27 @@ export interface StoredFilters {
   searchQuery: string;
 }
 
+export type SolutionTier = 'brute' | 'better' | 'optimal';
+
+export interface SolutionApproach {
+  name: string;
+  tier: SolutionTier;
+  badge: string;
+  intuition: string[];
+  pseudocode?: string[];
+  timeComplexity: string;
+  spaceComplexity: string;
+  complexityExplanation: string;
+  code: {
+    cpp: string;
+    java: string;
+    python: string;
+    javascript: string;
+  };
+  highlightLines?: number[];
+  edgeCases?: string[];
+}
+
 export interface ProblemSolution {
   questionId: string;
   pattern: string;
@@ -52,6 +73,11 @@ export interface ProblemSolution {
     javascript: string;
   };
   interviewProTips?: string[];
+  approaches?: {
+    brute?: SolutionApproach;
+    better?: SolutionApproach;
+    optimal?: SolutionApproach;
+  };
 }
 
 export interface Question {

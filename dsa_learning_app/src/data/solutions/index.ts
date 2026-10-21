@@ -1,4 +1,5 @@
 import { ProblemSolution, Question, Topic } from '../../types/dsa';
+import { ensureComprehensiveApproaches } from './approachBuilder';
 import { ARRAYS_SOLUTIONS } from './arraysSolutions';
 import { STRINGS_SOLUTIONS } from './stringsSolutions';
 import { LINKED_LIST_SOLUTIONS } from './linkedListSolutions';
@@ -186,8 +187,6 @@ function ${functionName}(nums) {
 }
 
 export function getSolutionForQuestion(question: Question): ProblemSolution {
-  if (SOLUTIONS_MAP[question.id]) {
-    return SOLUTIONS_MAP[question.id];
-  }
-  return generateDynamicSolution(question);
+  const base = SOLUTIONS_MAP[question.id] || generateDynamicSolution(question);
+  return ensureComprehensiveApproaches(question, base);
 }

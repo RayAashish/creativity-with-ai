@@ -3,7 +3,6 @@ import {
   X, 
   Lightbulb, 
   Code2, 
-  Copy, 
   Check, 
   ExternalLink, 
   CheckCircle2, 
@@ -12,13 +11,14 @@ import {
   Sparkles, 
   AlertCircle, 
   ChevronRight,
-  BookOpen,
   Terminal,
-  HelpCircle,
-  Cpu
+  Cpu,
+  Layers,
+  ArrowRight
 } from 'lucide-react';
-import { Question, SupportedLanguage, ProblemSolution } from '../../types/dsa';
+import { Question, ProblemSolution, SolutionTier, SolutionApproach } from '../../types/dsa';
 import { getSolutionForQuestion } from '../../data/solutions';
+import { IdeCodeBlock } from '../code/IdeCodeBlock';
 
 interface SolutionModalProps {
   isOpen: boolean;
@@ -28,13 +28,6 @@ interface SolutionModalProps {
   onToggleDone: (questionId: string) => void;
 }
 
-const LANGUAGES: { id: SupportedLanguage; label: string; icon: string; ext: string }[] = [
-  { id: 'cpp', label: 'C++', icon: '⚡', ext: '.cpp' },
-  { id: 'java', label: 'Java', icon: '☕', ext: '.java' },
-  { id: 'python', label: 'Python', icon: '🐍', ext: '.py' },
-  { id: 'javascript', label: 'JavaScript', icon: '🟨', ext: '.js' },
-];
-
 export const SolutionModal: React.FC<SolutionModalProps> = ({
   isOpen,
   onClose,
@@ -42,24 +35,51 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
   isDone,
   onToggleDone,
 }) => {
-  const [selectedLang, setSelectedLang] = useState<SupportedLanguage>('cpp');
-  const [copied, setCopied] = useState<boolean>(false);
+  const [activeTier, setActiveTier] = useState<SolutionTier>('optimal');
   const [activeTab, setActiveTab] = useState<'all' | 'intuition' | 'code' | 'complexity'>('all');
 
   if (!isOpen || !question) return null;
 
   const solution: ProblemSolution = getSolutionForQuestion(question);
-  const currentCode = solution.code[selectedLang] || '// Implementation in progress';
 
-  const handleCopyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(currentCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy code: ', err);
+  // Fallback approaches in case any tier is missing
+  const approaches = solution.approaches || {
+    brute: {
+      name: 'Brute Force (Exhaustive)',
+      tier: 'brute' as SolutionTier,
+      badge: '🥉 Brute Force',
+      intuition: solution.intuition,
+      pseudocode: solution.pseudocode,
+      timeComplexity: 'O(N²)',
+      spaceComplexity: 'O(1)',
+      complexityExplanation: 'Evaluates candidate combinations directly with nested loops or recursion.',
+      code: solution.code
+    },
+    better: {
+      name: 'Better (Intermediate)',
+      tier: 'better' as SolutionTier,
+      badge: '🥈 Better',
+      intuition: solution.intuition,
+      pseudocode: solution.pseudocode,
+      timeComplexity: 'O(N log N)',
+      spaceComplexity: 'O(N)',
+      complexityExplanation: 'Improves execution time by sorting or using auxiliary Hash Map storage.',
+      code: solution.code
+    },
+    optimal: {
+      name: solution.pattern ? `Optimal (${solution.pattern})` : 'Optimal (Target)',
+      tier: 'optimal' as SolutionTier,
+      badge: '🥇 Optimal',
+      intuition: solution.intuition,
+      pseudocode: solution.pseudocode,
+      timeComplexity: solution.timeComplexity,
+      spaceComplexity: solution.spaceComplexity,
+      complexityExplanation: solution.complexityExplanation,
+      code: solution.code
     }
   };
+
+  const activeApproach: SolutionApproach = approaches[activeTier] || approaches.optimal;
 
   const getDifficultyBadge = (diff: string) => {
     switch (diff) {
@@ -127,7 +147,7 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
           </button>
         </div>
 
-        {/* Navigation Tabs */}
+        {/* View Navigation Tabs */}
         <div className="px-6 py-2.5 border-b border-slate-800/80 bg-slate-950/60 flex items-center justify-between gap-3 overflow-x-auto relative z-10">
           <div className="flex items-center gap-1.5 text-xs font-semibold">
             <button
@@ -160,7 +180,7 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
               }`}
             >
               <Code2 className="w-3.5 h-3.5" />
-              4-Language Code
+              IDE Code (4 Languages)
             </button>
             <button
               onClick={() => setActiveTab('complexity')}
@@ -182,17 +202,124 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
 
         {/* Scrollable Modal Content */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 relative z-10 custom-scrollbar">
+
+          {/* Approach Tier Switcher Bar: 🥉 Brute vs 🥈 Better vs 🥇 Optimal */}
+          <div className="bg-slate-950/80 p-3 sm:p-3.5 rounded-2xl border border-slate-800/90 shadow-xl">
+            <div className="flex items-center justify-between mb-2.5 px-1">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+                <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Interview Progression Tiers:</span>
+              </div>
+              <span className="text-[11px] text-cyan-400 font-mono font-semibold">
+                Active: {activeApproach.badge}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+              {/* Brute Force */}
+              <button
+                onClick={() => setActiveTier('brute')}
+                className={`p-3 rounded-xl border text-left transition-all duration-150 relative flex flex-col justify-between ${
+                  activeTier === 'brute'
+                    ? 'bg-gradient-to-br from-amber-500/20 via-orange-950/30 to-slate-950 border-amber-500/60 shadow-lg shadow-amber-500/10 ring-1 ring-amber-500/40'
+                    : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1 mb-1.5">
+                  <span className="text-base">🥉</span>
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold">
+                    {approaches.brute?.timeComplexity || 'O(N²)'}
+                  </span>
+                </div>
+                <div className="font-bold text-xs sm:text-sm text-slate-100 truncate">
+                  {approaches.brute?.name || 'Brute Force'}
+                </div>
+                <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-between font-mono">
+                  <span>Space: {approaches.brute?.spaceComplexity || 'O(1)'}</span>
+                  <span className="text-[9px] text-amber-400 uppercase font-sans">Baseline</span>
+                </div>
+              </button>
+
+              {/* Better */}
+              <button
+                onClick={() => setActiveTier('better')}
+                className={`p-3 rounded-xl border text-left transition-all duration-150 relative flex flex-col justify-between ${
+                  activeTier === 'better'
+                    ? 'bg-gradient-to-br from-cyan-500/20 via-blue-950/30 to-slate-950 border-cyan-500/60 shadow-lg shadow-cyan-500/10 ring-1 ring-cyan-500/40'
+                    : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1 mb-1.5">
+                  <span className="text-base">🥈</span>
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">
+                    {approaches.better?.timeComplexity || 'O(N log N)'}
+                  </span>
+                </div>
+                <div className="font-bold text-xs sm:text-sm text-slate-100 truncate">
+                  {approaches.better?.name || 'Better / Auxiliary'}
+                </div>
+                <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-between font-mono">
+                  <span>Space: {approaches.better?.spaceComplexity || 'O(N)'}</span>
+                  <span className="text-[9px] text-cyan-400 uppercase font-sans">Trade-off</span>
+                </div>
+              </button>
+
+              {/* Optimal */}
+              <button
+                onClick={() => setActiveTier('optimal')}
+                className={`p-3 rounded-xl border text-left transition-all duration-150 relative flex flex-col justify-between ${
+                  activeTier === 'optimal'
+                    ? 'bg-gradient-to-br from-emerald-500/20 via-teal-950/30 to-slate-950 border-emerald-500/60 shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-500/40'
+                    : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1 mb-1.5">
+                  <span className="text-base">🥇</span>
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">
+                    {approaches.optimal?.timeComplexity || 'O(N)'}
+                  </span>
+                </div>
+                <div className="font-bold text-xs sm:text-sm text-slate-100 truncate">
+                  {approaches.optimal?.name || 'Optimal Solution'}
+                </div>
+                <div className="text-[10px] text-emerald-400 mt-1 flex items-center justify-between font-mono">
+                  <span>Space: {approaches.optimal?.spaceComplexity || 'O(1)'}</span>
+                  <span className="text-[9px] text-emerald-400 uppercase font-sans font-bold">Target</span>
+                </div>
+              </button>
+            </div>
+
+            {/* Micro Progression Breadcrumb */}
+            <div className="mt-2.5 pt-2 border-t border-slate-800/60 flex items-center justify-center gap-2 text-[11px] font-mono text-slate-400">
+              <span className={activeTier === 'brute' ? 'text-amber-400 font-bold' : ''}>
+                🥉 {approaches.brute?.timeComplexity || 'O(N²)'}
+              </span>
+              <ArrowRight className="w-3 h-3 text-slate-600" />
+              <span className={activeTier === 'better' ? 'text-cyan-400 font-bold' : ''}>
+                🥈 {approaches.better?.timeComplexity || 'O(N log N)'}
+              </span>
+              <ArrowRight className="w-3 h-3 text-slate-600" />
+              <span className={activeTier === 'optimal' ? 'text-emerald-400 font-bold' : ''}>
+                🥇 {approaches.optimal?.timeComplexity || 'O(N)'} (Optimal)
+              </span>
+            </div>
+          </div>
           
           {/* Section 1: Intuition & Mental Model */}
           {(activeTab === 'all' || activeTab === 'intuition') && (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-bold text-cyan-300">
-                <Lightbulb className="w-4 h-4 text-amber-400" />
-                <span>1. Step-by-Step Intuition & Mental Model</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-bold text-cyan-300">
+                  <Lightbulb className="w-4 h-4 text-amber-400" />
+                  <span>1. {activeApproach.name} — Intuition & Flow</span>
+                </div>
+                <span className="text-xs px-2.5 py-0.5 rounded-lg bg-slate-800/80 text-slate-300 font-mono border border-slate-700">
+                  {activeApproach.timeComplexity}
+                </span>
               </div>
 
               <div className="grid grid-cols-1 gap-2.5">
-                {solution.intuition.map((point, idx) => (
+                {activeApproach.intuition.map((point, idx) => (
                   <div
                     key={idx}
                     className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700 transition"
@@ -208,100 +335,52 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
               </div>
 
               {/* Whiteboard Pseudocode */}
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-                    <Terminal className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>Whiteboard Pseudocode (Algorithm Flow)</span>
-                  </div>
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono">Language-Agnostic</span>
-                </div>
-                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800/90 font-mono text-xs text-indigo-200 leading-relaxed shadow-inner overflow-x-auto">
-                  {solution.pseudocode.map((line, idx) => (
-                    <div key={idx} className="flex gap-3">
-                      <span className="text-slate-600 select-none text-right w-6 flex-shrink-0">{idx + 1}</span>
-                      <span className={line.startsWith('FUNCTION') || line.startsWith('CLASS') ? 'text-cyan-300 font-bold' : line.includes('//') ? 'text-slate-500 italic' : 'text-slate-200'}>
-                        {line}
-                      </span>
+              {activeApproach.pseudocode && activeApproach.pseudocode.length > 0 && (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+                      <Terminal className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Whiteboard Pseudocode ({activeApproach.badge})</span>
                     </div>
-                  ))}
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono">Language-Agnostic</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800/90 font-mono text-xs text-indigo-200 leading-relaxed shadow-inner overflow-x-auto">
+                    {activeApproach.pseudocode.map((line, idx) => (
+                      <div key={idx} className="flex gap-3">
+                        <span className="text-slate-600 select-none text-right w-6 flex-shrink-0">{idx + 1}</span>
+                        <span className={line.startsWith('FUNCTION') || line.startsWith('CLASS') ? 'text-cyan-300 font-bold' : line.includes('//') ? 'text-slate-500 italic' : 'text-slate-200'}>
+                          {line}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
-          {/* Section 2: Multi-Language Code Implementations */}
+          {/* Section 2: Multi-Language Code Implementations with IDE Highlighting */}
           {(activeTab === 'all' || activeTab === 'code') && (
             <div className="space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2 text-sm font-bold text-cyan-300">
                   <Code2 className="w-4 h-4 text-cyan-400" />
-                  <span>2. Production Solutions (C++, Java, Python, JS)</span>
+                  <span>2. Production Solutions — {activeApproach.name}</span>
                 </div>
 
-                <button
-                  onClick={handleCopyCode}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition active:scale-95"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-400">Copied to Clipboard!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Copy Solution</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Language Switcher Tabs */}
-              <div className="flex items-center gap-1.5 p-1 bg-slate-950 border border-slate-800 rounded-2xl overflow-x-auto">
-                {LANGUAGES.map((lang) => {
-                  const isActive = selectedLang === lang.id;
-                  return (
-                    <button
-                      key={lang.id}
-                      onClick={() => setSelectedLang(lang.id)}
-                      className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition flex-1 justify-center whitespace-nowrap ${
-                        isActive
-                          ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                          : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
-                      }`}
-                    >
-                      <span>{lang.icon}</span>
-                      <span>{lang.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* IDE Code Window */}
-              <div className="rounded-2xl border border-slate-800/90 bg-slate-950 overflow-hidden shadow-2xl">
-                {/* IDE Bar */}
-                <div className="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 rounded-full bg-rose-500/80" />
-                      <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-                      <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-                    </div>
-                    <span className="font-mono text-slate-300 text-[11px] ml-2">
-                      solution{LANGUAGES.find(l => l.id === selectedLang)?.ext}
-                    </span>
-                  </div>
-                  <span className="text-[11px] font-mono text-slate-500">
-                    UTF-8 • {selectedLang.toUpperCase()}
-                  </span>
+                <div className="flex items-center gap-2 text-[11px] text-slate-400 font-mono">
+                  <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>One Dark IDE Syntax Highlighting</span>
                 </div>
-
-                {/* Code Body */}
-                <pre className="p-4 sm:p-5 font-mono text-xs sm:text-[13px] text-slate-200 leading-relaxed overflow-x-auto max-h-[400px]">
-                  <code>{currentCode}</code>
-                </pre>
               </div>
+
+              {/* IDE Code Block with Prism Syntax Highlighting, Line Numbers, Tabs */}
+              <IdeCodeBlock
+                title={`${question.id}_${activeTier}_solution`}
+                codeMap={activeApproach.code}
+                defaultLanguage="java"
+                showLanguageTabs={true}
+              />
             </div>
           )}
 
@@ -310,7 +389,7 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm font-bold text-cyan-300">
                 <Cpu className="w-4 h-4 text-emerald-400" />
-                <span>3. Complexity Analysis & Technical Trade-offs</span>
+                <span>3. Complexity Analysis & Technical Trade-offs ({activeApproach.badge})</span>
               </div>
 
               {/* Complexity Badges Grid */}
@@ -321,10 +400,10 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
                     <span className="font-semibold uppercase tracking-wider">Time Complexity</span>
                   </div>
                   <div className="text-lg font-black font-mono text-emerald-400 mb-1">
-                    {solution.timeComplexity}
+                    {activeApproach.timeComplexity}
                   </div>
                   <p className="text-xs text-slate-300 leading-relaxed">
-                    {solution.complexityExplanation}
+                    {activeApproach.complexityExplanation}
                   </p>
                 </div>
 
@@ -334,23 +413,23 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
                     <span className="font-semibold uppercase tracking-wider">Space Complexity</span>
                   </div>
                   <div className="text-lg font-black font-mono text-cyan-400 mb-1">
-                    {solution.spaceComplexity}
+                    {activeApproach.spaceComplexity}
                   </div>
                   <p className="text-xs text-slate-300 leading-relaxed">
-                    Auxiliary memory overhead utilized during runtime execution.
+                    Auxiliary memory overhead utilized during runtime execution for this tier.
                   </p>
                 </div>
               </div>
 
               {/* Edge Cases Card */}
-              {solution.edgeCases && solution.edgeCases.length > 0 && (
+              {((activeApproach.edgeCases && activeApproach.edgeCases.length > 0) || (solution.edgeCases && solution.edgeCases.length > 0)) && (
                 <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/90">
                   <div className="flex items-center gap-2 text-xs font-bold text-amber-300 mb-2">
                     <AlertCircle className="w-4 h-4 text-amber-400" />
                     <span>Crucial Edge Cases to Mention in Interviews</span>
                   </div>
                   <ul className="space-y-1.5 pl-2">
-                    {solution.edgeCases.map((edge, eIdx) => (
+                    {(activeApproach.edgeCases || solution.edgeCases).map((edge, eIdx) => (
                       <li key={eIdx} className="text-xs text-slate-300 flex items-start gap-2">
                         <span className="text-amber-400 mt-1">•</span>
                         <span>{edge}</span>

@@ -78,7 +78,224 @@ function reverseArray(arr) {
     interviewProTips: [
       'Always mention that strings in Java and Python are immutable, so you must convert them to a character array or list before in-place reversal.',
       'In C++, `std::reverse(arr.begin(), arr.end())` is the STL idiom.'
-    ]
+    ],
+    approaches: {
+      brute: {
+        name: 'Auxiliary Array Copy',
+        tier: 'brute',
+        badge: '🥉 Brute Force',
+        intuition: [
+          'Create a new auxiliary array of size N.',
+          'Iterate through the original array from the end to the beginning, copying elements into the new array.',
+          'Copy the new array back into the original array.',
+          'While intuitive, it takes O(N) extra space which is rejected by interviewers when O(1) in-place is possible.'
+        ],
+        pseudocode: [
+          'FUNCTION reverseArray_brute(arr):',
+          '  n = arr.length',
+          '  temp = new Array(n)',
+          '  FOR i from 0 TO n - 1:',
+          '    temp[i] = arr[n - 1 - i]',
+          '  FOR i from 0 TO n - 1:',
+          '    arr[i] = temp[i]',
+          '  RETURN arr'
+        ],
+        timeComplexity: 'O(N)',
+        spaceComplexity: 'O(N)',
+        complexityExplanation: 'Requires allocating an auxiliary array of size N, taking O(N) auxiliary space.',
+        code: {
+          cpp: `// Brute Force - Auxiliary Array Copy
+#include <vector>
+
+void reverseArrayBrute(std::vector<int>& arr) {
+    int n = arr.size();
+    std::vector<int> temp(n);
+    for (int i = 0; i < n; i++) {
+        temp[i] = arr[n - 1 - i];
+    }
+    for (int i = 0; i < n; i++) {
+        arr[i] = temp[i];
+    }
+}`,
+          java: `// Brute Force - Auxiliary Array Copy
+public class Solution {
+    public void reverseArrayBrute(int[] arr) {
+        int n = arr.length;
+        int[] temp = new int[n];
+        for (int i = 0; i < n; i++) {
+            temp[i] = arr[n - 1 - i];
+        }
+        for (int i = 0; i < n; i++) {
+            arr[i] = temp[i];
+        }
+    }
+}`,
+          python: `# Brute Force - Auxiliary List Copy
+def reverseArrayBrute(arr: list[int]) -> list[int]:
+    n = len(arr)
+    temp = [0] * n
+    for i in range(n):
+        temp[i] = arr[n - 1 - i]
+    for i in range(n):
+        arr[i] = temp[i]
+    return arr`,
+          javascript: `// Brute Force - Auxiliary Array Copy
+function reverseArrayBrute(arr) {
+  const n = arr.length;
+  const temp = new Array(n);
+  for (let i = 0; i < n; i++) {
+    temp[i] = arr[n - 1 - i];
+  }
+  for (let i = 0; i < n; i++) {
+    arr[i] = temp[i];
+  }
+  return arr;
+}`
+        }
+      },
+      better: {
+        name: 'Stack-Based Reversal',
+        tier: 'better',
+        badge: '🥈 Better / Stack Buffer',
+        intuition: [
+          'Push all elements of the array onto a Last-In, First-Out (LIFO) Stack.',
+          'Pop elements off the stack one by one and write them back into the array from index 0.',
+          'Because the stack reverses insertion order, the array is naturally reversed.',
+          'Demonstrates understanding of LIFO data structures, but still uses O(N) auxiliary stack memory.'
+        ],
+        pseudocode: [
+          'FUNCTION reverseArray_stack(arr):',
+          '  stack = new Stack()',
+          '  FOR EACH elem IN arr:',
+          '    stack.push(elem)',
+          '  FOR i from 0 TO arr.length - 1:',
+          '    arr[i] = stack.pop()',
+          '  RETURN arr'
+        ],
+        timeComplexity: 'O(N)',
+        spaceComplexity: 'O(N)',
+        complexityExplanation: 'Two sequential passes (N pushes, N pops) with O(N) auxiliary stack memory.',
+        code: {
+          cpp: `// Better - Stack Based Reversal
+#include <vector>
+#include <stack>
+
+void reverseArrayStack(std::vector<int>& arr) {
+    std::stack<int> st;
+    for (int num : arr) {
+        st.push(num);
+    }
+    for (size_t i = 0; i < arr.size(); i++) {
+        arr[i] = st.top();
+        st.pop();
+    }
+}`,
+          java: `// Better - Stack Based Reversal
+import java.util.Stack;
+
+public class Solution {
+    public void reverseArrayStack(int[] arr) {
+        Stack<Integer> stack = new Stack<>();
+        for (int num : arr) {
+            stack.push(num);
+        }
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = stack.pop();
+        }
+    }
+}`,
+          python: `# Better - Stack Based Reversal
+def reverseArrayStack(arr: list[int]) -> list[int]:
+    stack = []
+    for num in arr:
+        stack.append(num)
+    for i in range(len(arr)):
+        arr[i] = stack.pop()
+    return arr`,
+          javascript: `// Better - Stack Based Reversal
+function reverseArrayStack(arr) {
+  const stack = [];
+  for (const num of arr) {
+    stack.push(num);
+  }
+  for (let i = 0; i < arr.length; i++) {
+    arr[i] = stack.pop();
+  }
+  return arr;
+}`
+        }
+      },
+      optimal: {
+        name: 'In-Place Two Pointers',
+        tier: 'optimal',
+        badge: '🥇 Optimal (In-Place O(1) Memory)',
+        intuition: [
+          'Place pointer `left = 0` at the start and `right = n - 1` at the end.',
+          'Swap elements at left and right indices directly in-place.',
+          'Increment `left++` and decrement `right--` until pointers meet or cross.',
+          'Requires only N/2 swaps, linear O(N) time, and strictly zero auxiliary memory O(1).'
+        ],
+        pseudocode: [
+          'FUNCTION reverseArray_optimal(arr):',
+          '  left = 0, right = arr.length - 1',
+          '  WHILE left < right:',
+          '    SWAP(arr[left], arr[right])',
+          '    left++, right--',
+          '  RETURN arr'
+        ],
+        timeComplexity: 'O(N)',
+        spaceComplexity: 'O(1)',
+        complexityExplanation: 'Operates directly in-place with exactly N/2 swaps and no extra memory allocated.',
+        code: {
+          cpp: `// Optimal - In-place Two Pointers
+#include <vector>
+#include <algorithm>
+
+void reverseArray(std::vector<int>& arr) {
+    int left = 0;
+    int right = arr.size() - 1;
+    while (left < right) {
+        std::swap(arr[left], arr[right]);
+        left++;
+        right--;
+    }
+}`,
+          java: `// Optimal - In-place Two Pointers
+public class Solution {
+    public void reverseArray(int[] arr) {
+        int left = 0;
+        int right = arr.length - 1;
+        while (left < right) {
+            int temp = arr[left];
+            arr[left] = arr[right];
+            arr[right] = temp;
+            left++;
+            right--;
+        }
+    }
+}`,
+          python: `# Optimal - In-place Two Pointers
+def reverseArray(arr: list[int]) -> list[int]:
+    left, right = 0, len(arr) - 1
+    while left < right:
+        arr[left], arr[right] = arr[right], arr[left]
+        left += 1
+        right -= 1
+    return arr`,
+          javascript: `// Optimal - In-place Two Pointers
+function reverseArray(arr) {
+  let left = 0;
+  let right = arr.length - 1;
+  while (left < right) {
+    [arr[left], arr[right]] = [arr[right], arr[left]];
+    left++;
+    right--;
+  }
+  return arr;
+}`
+        }
+      }
+    }
   },
 
   'arr-2': {
@@ -324,7 +541,231 @@ function sortColors(nums) {
     },
     interviewProTips: [
       'The common bug is incrementing `mid` when swapping with `high`. Emphasize that the element swapped from `high` has not been checked yet, so `mid` must NOT be incremented.'
-    ]
+    ],
+    approaches: {
+      brute: {
+        name: 'Standard Comparison Sort',
+        tier: 'brute',
+        badge: '🥉 Brute Force',
+        intuition: [
+          'Use standard comparison-based sorting (such as Merge Sort or Dual-Pivot QuickSort) to sort the array of numbers.',
+          'While completely functional, it ignores the special constraint that the array only contains three discrete values (0, 1, 2).',
+          'Comparison sorts are bound by the theoretical lower limit of Omega(N log N) comparisons.',
+          'Interviewers explicitly disallow library sort for this problem to test partitioning knowledge.'
+        ],
+        pseudocode: [
+          'FUNCTION sortColors_brute(nums):',
+          '  // Standard library or quicksort',
+          '  sort(nums.begin(), nums.end())',
+          '  RETURN nums'
+        ],
+        timeComplexity: 'O(N log N)',
+        spaceComplexity: 'O(1)',
+        complexityExplanation: 'Standard comparison sorting takes O(N log N) time and O(1) auxiliary space (or O(log N) recursion stack).',
+        code: {
+          cpp: `// Brute Force - Standard Comparison Sort O(N log N)
+#include <vector>
+#include <algorithm>
+
+void sortColorsBrute(std::vector<int>& nums) {
+    std::sort(nums.begin(), nums.end());
+}`,
+          java: `// Brute Force - Standard Comparison Sort O(N log N)
+import java.util.Arrays;
+
+public class Solution {
+    public void sortColorsBrute(int[] nums) {
+        Arrays.sort(nums);
+    }
+}`,
+          python: `# Brute Force - Standard Comparison Sort O(N log N)
+def sortColorsBrute(nums: list[int]) -> None:
+    nums.sort()`,
+          javascript: `// Brute Force - Standard Comparison Sort O(N log N)
+function sortColorsBrute(nums) {
+  nums.sort((a, b) => a - b);
+}`
+        }
+      },
+      better: {
+        name: 'Two-Pass Counting Sort',
+        tier: 'better',
+        badge: '🥈 Better (2-Pass Count)',
+        intuition: [
+          'First pass: count the frequency of 0s, 1s, and 2s by iterating through the array once.',
+          'Second pass: overwrite the array with the counted number of 0s, followed by 1s, then 2s.',
+          'Brings the time complexity down from O(N log N) to linear O(N) using only three scalar counters.',
+          'However, it still requires two full passes through the array instead of a single in-place pass.'
+        ],
+        pseudocode: [
+          'FUNCTION sortColors_counting(nums):',
+          '  c0 = 0, c1 = 0, c2 = 0',
+          '  FOR EACH x IN nums:',
+          '    IF x == 0: c0++',
+          '    ELSE IF x == 1: c1++',
+          '    ELSE: c2++',
+          '  idx = 0',
+          '  WHILE c0-- > 0: nums[idx++] = 0',
+          '  WHILE c1-- > 0: nums[idx++] = 1',
+          '  WHILE c2-- > 0: nums[idx++] = 2'
+        ],
+        timeComplexity: 'O(N)',
+        spaceComplexity: 'O(1)',
+        complexityExplanation: 'Two linear passes (2N iterations) using three scalar integer counters.',
+        code: {
+          cpp: `// Better - Two-Pass Counting Sort O(N)
+#include <vector>
+
+void sortColorsCounting(std::vector<int>& nums) {
+    int count0 = 0, count1 = 0, count2 = 0;
+    for (int num : nums) {
+        if (num == 0) count0++;
+        else if (num == 1) count1++;
+        else count2++;
+    }
+    int idx = 0;
+    while (count0--) nums[idx++] = 0;
+    while (count1--) nums[idx++] = 1;
+    while (count2--) nums[idx++] = 2;
+}`,
+          java: `// Better - Two-Pass Counting Sort O(N)
+public class Solution {
+    public void sortColorsCounting(int[] nums) {
+        int count0 = 0, count1 = 0, count2 = 0;
+        for (int num : nums) {
+            if (num == 0) count0++;
+            else if (num == 1) count1++;
+            else count2++;
+        }
+        int idx = 0;
+        while (count0-- > 0) nums[idx++] = 0;
+        while (count1-- > 0) nums[idx++] = 1;
+        while (count2-- > 0) nums[idx++] = 2;
+    }
+}`,
+          python: `# Better - Two-Pass Counting Sort O(N)
+def sortColorsCounting(nums: list[int]) -> None:
+    c0 = c1 = c2 = 0
+    for num in nums:
+        if num == 0: c0 += 1
+        elif num == 1: c1 += 1
+        else: c2 += 1
+    idx = 0
+    for _ in range(c0):
+        nums[idx] = 0; idx += 1
+    for _ in range(c1):
+        nums[idx] = 1; idx += 1
+    for _ in range(c2):
+        nums[idx] = 2; idx += 1`,
+          javascript: `// Better - Two-Pass Counting Sort O(N)
+function sortColorsCounting(nums) {
+  let c0 = 0, c1 = 0, c2 = 0;
+  for (const num of nums) {
+    if (num === 0) c0++;
+    else if (num === 1) c1++;
+    else c2++;
+  }
+  let idx = 0;
+  while (c0-- > 0) nums[idx++] = 0;
+  while (c1-- > 0) nums[idx++] = 1;
+  while (c2-- > 0) nums[idx++] = 2;
+}`
+        }
+      },
+      optimal: {
+        name: 'Dutch National Flag 3-Way Partitioning',
+        tier: 'optimal',
+        badge: '🥇 Optimal (Single Pass In-Place)',
+        intuition: [
+          'Maintain 3 pointers: `low` (boundary for 0s), `mid` (current element), and `high` (boundary for 2s).',
+          'Invariant: [0 .. low-1] are 0s, [low .. mid-1] are 1s, [mid .. high] are unexamined, [high+1 .. n-1] are 2s.',
+          'If `nums[mid] == 0`: swap with `nums[low]`, increment both `low++` and `mid++`.',
+          'If `nums[mid] == 1`: just advance `mid++`.',
+          'If `nums[mid] == 2`: swap with `nums[high]`, decrement `high--` (re-examine swapped element at mid).',
+          'Completes in a strictly single pass O(N) with O(1) in-place memory.'
+        ],
+        pseudocode: [
+          'FUNCTION sortColors_optimal(nums):',
+          '  low = 0, mid = 0, high = nums.length - 1',
+          '  WHILE mid <= high:',
+          '    IF nums[mid] == 0:',
+          '      SWAP(nums[low++], nums[mid++])',
+          '    ELSE IF nums[mid] == 1:',
+          '      mid++',
+          '    ELSE:',
+          '      SWAP(nums[mid], nums[high--])'
+        ],
+        timeComplexity: 'O(N)',
+        spaceComplexity: 'O(1)',
+        complexityExplanation: 'Single linear pass with exactly one traversal: each step either increments mid or decrements high.',
+        code: {
+          cpp: `// Optimal - Dutch National Flag 3-Way Partition
+#include <vector>
+#include <algorithm>
+
+void sortColors(std::vector<int>& nums) {
+    int low = 0, mid = 0, high = nums.size() - 1;
+    while (mid <= high) {
+        if (nums[mid] == 0) {
+            std::swap(nums[low++], nums[mid++]);
+        } else if (nums[mid] == 1) {
+            mid++;
+        } else {
+            std::swap(nums[mid], nums[high--]);
+        }
+    }
+}`,
+          java: `// Optimal - Dutch National Flag 3-Way Partition
+public class Solution {
+    public void sortColors(int[] nums) {
+        int low = 0, mid = 0, high = nums.length - 1;
+        while (mid <= high) {
+            if (nums[mid] == 0) {
+                int temp = nums[low];
+                nums[low++] = nums[mid];
+                nums[mid++] = temp;
+            } else if (nums[mid] == 1) {
+                mid++;
+            } else {
+                int temp = nums[mid];
+                nums[mid] = nums[high];
+                nums[high--] = temp;
+            }
+        }
+    }
+}`,
+          python: `# Optimal - Dutch National Flag 3-Way Partition
+def sortColors(nums: list[int]) -> None:
+    low, mid, high = 0, 0, len(nums) - 1
+    while mid <= high:
+        if nums[mid] == 0:
+            nums[low], nums[mid] = nums[mid], nums[low]
+            low += 1
+            mid += 1
+        elif nums[mid] == 1:
+            mid += 1
+        else:
+            nums[mid], nums[high] = nums[high], nums[mid]
+            high -= 1`,
+          javascript: `// Optimal - Dutch National Flag 3-Way Partition
+function sortColors(nums) {
+  let low = 0, mid = 0, high = nums.length - 1;
+  while (mid <= high) {
+    if (nums[mid] === 0) {
+      [nums[low], nums[mid]] = [nums[mid], nums[low]];
+      low++;
+      mid++;
+    } else if (nums[mid] === 1) {
+      mid++;
+    } else {
+      [nums[mid], nums[high]] = [nums[high], nums[mid]];
+      high--;
+    }
+  }
+}`
+        }
+      }
+    }
   },
 
   'arr-8': {
