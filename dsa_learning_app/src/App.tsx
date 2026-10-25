@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar, NavTab } from './components/common/Navbar';
 import { Dsa450Sheet } from './components/sheet/Dsa450Sheet';
+import { MasterArena } from './components/arena/MasterArena';
 import { GamesHub } from './components/games/GamesHub';
 import { LearningHub } from './components/learning/LearningHub';
 import { ProgressDashboard } from './components/dashboard/ProgressDashboard';
@@ -179,6 +180,14 @@ export function App() {
             onSaveNote={handleSaveNote}
             onAdvanceRevision={handleAdvanceRevision}
             onToggleDailyChallenge={handleToggleDailyChallenge}
+          />
+        )}
+
+        {activeTab === 'arena' && (
+          <MasterArena
+            progress={progress}
+            onToggleDone={handleToggleDone}
+            onSetProblemStatus={handleSetProblemStatus}
           />
         )}
 

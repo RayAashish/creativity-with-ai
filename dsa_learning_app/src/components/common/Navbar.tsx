@@ -12,10 +12,11 @@ import {
   Coffee,
   Sun,
   Moon,
-  Palette
+  Palette,
+  Zap
 } from 'lucide-react';
 
-export type NavTab = 'sheet' | 'games' | 'learning' | 'dashboard';
+export type NavTab = 'sheet' | 'arena' | 'learning' | 'games' | 'dashboard';
 
 interface NavbarProps {
   activeTab: NavTab;
@@ -51,6 +52,13 @@ export const Navbar: React.FC<NavbarProps> = ({
       fullLabel: '450 DSA Sheet', 
       icon: CheckSquare,
       badge: `${totalDone}/${totalQuestions}`
+    },
+    { 
+      id: 'arena' as NavTab, 
+      label: 'Arena', 
+      fullLabel: 'Master Arena', 
+      icon: Zap,
+      badge: 'Crazy'
     },
     { 
       id: 'learning' as NavTab, 

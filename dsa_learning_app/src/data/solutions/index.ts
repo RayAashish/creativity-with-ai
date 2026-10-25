@@ -9,6 +9,7 @@ import { GRAPHS_SOLUTIONS } from './graphsSolutions';
 import { DP_SOLUTIONS } from './dpSolutions';
 import { HEAPS_GREEDY_SOLUTIONS } from './heapsGreedySolutions';
 import { BACKTRACKING_BIT_SOLUTIONS } from './backtrackingBitSolutions';
+import { VAULT_SOLUTIONS } from './vaultSolutions';
 
 export const SOLUTIONS_MAP: Record<string, ProblemSolution> = {
   ...ARRAYS_SOLUTIONS,
@@ -20,6 +21,7 @@ export const SOLUTIONS_MAP: Record<string, ProblemSolution> = {
   ...DP_SOLUTIONS,
   ...HEAPS_GREEDY_SOLUTIONS,
   ...BACKTRACKING_BIT_SOLUTIONS,
+  ...VAULT_SOLUTIONS,
 };
 
 // Algorithmic pattern generator based on topic and problem semantics
