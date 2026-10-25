@@ -111,8 +111,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Navigation Links (Desktop) */}
-          <nav className="hidden lg:flex items-center gap-1 bg-[var(--bg-subtle)] p-1 rounded-lg border border-[var(--border-subtle)] flex-shrink-0">
+          {/* Navigation Links (Desktop - only when wide screen has plenty of room) */}
+          <nav className="hidden xl:flex items-center gap-1 bg-[var(--bg-subtle)] p-1 rounded-lg border border-[var(--border-subtle)] flex-shrink-0">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -122,17 +122,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                   key={item.id}
                   type="button"
                   onClick={() => onSelectTab(item.id)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
                     isActive
                       ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm border border-[var(--border-subtle)] font-semibold'
                       : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>
-                    <span className="hidden xl:inline">{item.fullLabel}</span>
-                    <span className="xl:hidden">{item.label}</span>
-                  </span>
+                  <span>{item.label}</span>
                   {item.badge && (
                     <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
                       isActive 
@@ -156,11 +153,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={onQuickRoulette}
-              className="btn-outline flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs"
+              className="btn-outline flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
               title="Roll a random question right now"
             >
               <Dice5 className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Random Q</span>
+              <span className="hidden 2xl:inline">Random Q</span>
             </button>
 
             {/* Buy Me a Coffee Button */}
@@ -168,11 +165,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={onOpenBuyCoffee}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25 rounded-lg text-xs font-medium transition"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-500/10 hover:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25 rounded-lg text-xs font-medium transition"
                 title="Support DSASpace with a Coffee"
               >
                 <Coffee className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline">Buy Coffee</span>
+                <span className="hidden 2xl:inline">Buy Coffee</span>
               </button>
             )}
 
@@ -186,13 +183,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               {copiedLink ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-[var(--status-green)]" />
-                  <span className="text-[var(--status-green)] text-xs hidden xl:inline font-mono">Copied</span>
+                  <span className="text-[var(--status-green)] text-xs hidden 2xl:inline font-mono">Copied</span>
                 </>
               ) : (
-                <>
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span className="hidden xl:inline text-xs">Share</span>
-                </>
+                <Share2 className="w-3.5 h-3.5" />
               )}
             </button>
 
@@ -202,48 +196,48 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>{streak}d</span>
             </div>
 
-            {/* 3-Way Minimalist Theme Segmented Control (Desktop / Tablet) */}
+            {/* 3-Way Minimalist Theme Segmented Control (Always Compact Icons, Never Overflow) */}
             <div className="hidden sm:inline-flex items-center p-0.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-subtle)] text-xs font-mono">
               <button
                 type="button"
                 onClick={() => onSetTheme ? onSetTheme('dark') : onToggleTheme?.()}
-                className={`px-2 py-1 rounded-md transition flex items-center gap-1 ${
+                className={`p-1.5 rounded-md transition flex items-center justify-center ${
                   theme === 'dark' 
                     ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-xs font-bold border border-[var(--border-subtle)]' 
                     : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                 }`}
                 title="Obsidian Dark Theme"
+                aria-label="Obsidian Dark Theme"
               >
-                <Moon className="w-3 h-3" />
-                <span className="hidden xl:inline text-[10px]">Dark</span>
+                <Moon className="w-3.5 h-3.5" />
               </button>
 
               <button
                 type="button"
                 onClick={() => onSetTheme ? onSetTheme('beige') : onToggleTheme?.()}
-                className={`px-2 py-1 rounded-md transition flex items-center gap-1 ${
+                className={`p-1.5 rounded-md transition flex items-center justify-center ${
                   theme === 'beige' 
                     ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-xs font-bold border border-[var(--border-subtle)]' 
                     : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                 }`}
                 title="Warm Beige / Editorial Paper Theme"
+                aria-label="Warm Beige / Editorial Paper Theme"
               >
-                <Palette className="w-3 h-3" />
-                <span className="hidden xl:inline text-[10px]">Beige</span>
+                <Palette className="w-3.5 h-3.5" />
               </button>
 
               <button
                 type="button"
                 onClick={() => onSetTheme ? onSetTheme('light') : onToggleTheme?.()}
-                className={`px-2 py-1 rounded-md transition flex items-center gap-1 ${
+                className={`p-1.5 rounded-md transition flex items-center justify-center ${
                   theme === 'light' 
                     ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-xs font-bold border border-[var(--border-subtle)]' 
                     : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                 }`}
                 title="Swiss Paper Light Theme"
+                aria-label="Swiss Paper Light Theme"
               >
-                <Sun className="w-3 h-3" />
-                <span className="hidden xl:inline text-[10px]">Light</span>
+                <Sun className="w-3.5 h-3.5" />
               </button>
             </div>
 
@@ -265,8 +259,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Mobile Navigation Bar */}
-        <div className="flex lg:hidden items-center justify-around py-2 border-t border-[var(--border-subtle)]">
+        {/* Secondary Navigation Row (For Tablets and Medium Laptops < 1280px) */}
+        <div className="flex xl:hidden items-center justify-around py-2 border-t border-[var(--border-subtle)]">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -276,12 +270,26 @@ export const Navbar: React.FC<NavbarProps> = ({
                 key={item.id}
                 type="button"
                 onClick={() => onSelectTab(item.id)}
-                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg text-[10px] font-medium transition ${
-                  isActive ? 'text-[var(--text-primary)] font-bold' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                className={`flex items-center sm:gap-2 gap-1 py-1 px-2.5 sm:px-4 rounded-lg text-xs font-medium transition ${
+                  isActive 
+                    ? 'bg-[var(--bg-subtle)] text-[var(--text-primary)] font-bold border border-[var(--border-subtle)]' 
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                 }`}
               >
                 <Icon className="w-4 h-4" />
-                <span>{item.label}</span>
+                <span className="text-[11px] sm:text-xs">{item.label}</span>
+                {item.badge && (
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono hidden sm:inline ${
+                    isActive 
+                      ? 'bg-[var(--text-primary)] text-[var(--text-inverse)]' 
+                      : 'bg-[var(--badge-bg)] text-[var(--text-secondary)]'
+                  }`}>
+                    {item.badge}
+                  </span>
+                )}
+                {item.highlight && !isActive && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--status-green)]" />
+                )}
               </button>
             );
           })}
