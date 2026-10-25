@@ -52,26 +52,26 @@ export const SpacedRevisionSection: React.FC<SpacedRevisionSectionProps> = ({
   };
 
   return (
-    <div className="rounded-3xl border border-indigo-500/30 bg-gradient-to-r from-slate-900 via-indigo-950/30 to-slate-900 p-5 sm:p-6 shadow-xl relative overflow-hidden">
+    <div className="rounded-2xl border border-indigo-500/25 bg-[#0d1017]/80 backdrop-blur-xl p-4 sm:p-5 shadow-lg relative overflow-hidden">
       {/* Background glow */}
-      <div className="absolute -top-16 -right-16 w-36 h-36 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-16 -right-16 w-36 h-36 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3.5 pb-3 border-b border-white/[0.06]">
         <div className="flex items-center gap-2.5">
-          <span className="p-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300">
-            <Clock className="w-5 h-5 animate-pulse" />
+          <span className="p-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/25 text-indigo-300">
+            <Clock className="w-4 h-4" />
           </span>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base sm:text-lg font-black text-white">
+              <h3 className="text-sm sm:text-base font-bold text-white">
                 Due for Spaced Revision Today
               </h3>
-              <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-bold">
+              <span className="px-2 py-0.2 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-xs font-semibold">
                 {dueList.length} problem{dueList.length > 1 ? 's' : ''}
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-zinc-400 mt-0.5">
               Science-backed retention curve: Resurfacing problems at 3, 7, and 14-day intervals moves DSA concepts into permanent long-term memory.
             </p>
           </div>
@@ -79,7 +79,7 @@ export const SpacedRevisionSection: React.FC<SpacedRevisionSectionProps> = ({
       </div>
 
       {/* Due Problems List */}
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {dueList.map(({ question, revision }) => {
           const isDone = isQuestionDone(question.id);
           const stageBadge = getStageBadge(revision.stage);
@@ -87,7 +87,7 @@ export const SpacedRevisionSection: React.FC<SpacedRevisionSectionProps> = ({
           return (
             <div
               key={question.id}
-              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-slate-950/70 border border-slate-800/90 hover:border-slate-700 transition"
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition"
             >
               <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
                 <div className="flex-1 min-w-0">

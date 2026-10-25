@@ -25,24 +25,6 @@ export function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('sheet');
   const [progress, setProgress] = useState<UserProgress>(getStoredProgress());
   const [isBuyCoffeeOpen, setIsBuyCoffeeOpen] = useState<boolean>(false);
-  const [currentTheme, setCurrentTheme] = useState<string>(() => {
-    try {
-      const saved = localStorage.getItem('dsaspace_theme_v1');
-      if (saved === 'retro') return 'retro';
-      return 'modern';
-    } catch (e) {
-      return 'modern';
-    }
-  });
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', currentTheme);
-    try {
-      localStorage.setItem('dsaspace_theme_v1', currentTheme);
-    } catch (e) {
-      // ignore
-    }
-  }, [currentTheme]);
 
   const [isQuickRouletteOpen, setIsQuickRouletteOpen] = useState<boolean>(false);
   const [quickRouletteData, setQuickRouletteData] = useState<{
@@ -131,9 +113,9 @@ export function App() {
   const totalQuestions = QUESTIONS_450.length;
 
   return (
-    <div className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-white relative w-full overflow-x-hidden">
-      {/* Portfolio-Style Ambient Motion Canvas (Sakura petals, embers, aurora, matrix, ocean, constellations) */}
-      <ThemeBackgroundCanvas currentTheme={currentTheme} />
+    <div className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white relative w-full overflow-x-hidden">
+      {/* World-Class Ambient Mesh Glow */}
+      <ThemeBackgroundCanvas />
 
       <div className="relative z-10 flex flex-col min-h-screen">
         <Navbar
@@ -144,8 +126,6 @@ export function App() {
           totalQuestions={totalQuestions}
           onQuickRoulette={handleQuickRoulette}
           onOpenBuyCoffee={() => setIsBuyCoffeeOpen(true)}
-          currentTheme={currentTheme}
-          onSelectTheme={setCurrentTheme}
         />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">

@@ -3,8 +3,21 @@
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   color-scheme: dark;
+
+  /* World-Class Design Tokens (Linear / Vercel Aesthetic) */
+  --bg-page: #08090d;
+  --bg-card: rgba(15, 18, 26, 0.72);
+  --bg-card-hover: rgba(22, 26, 38, 0.85);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(99, 102, 241, 0.45);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-indigo: #6366f1;
+  --accent-cyan: #06b6d4;
+  --accent-emerald: #10b981;
 }
 
 html, body {
@@ -13,79 +26,36 @@ html, body {
   width: 100%;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   THEME DESIGN SYSTEM: MINIMAL MODERN (Default) & RETRO VIBE
-   ═══════════════════════════════════════════════════════════ */
-
-/* 1. MINIMAL MODERN (Default) — Ultra-clean, distraction-free modern dark (Linear / Vercel style) */
-:root, [data-theme="modern"], [data-theme="dark"] {
-  --bg-page: #080b11;
-  --bg-card: rgba(15, 23, 42, 0.65);
-  --bg-card-solid: #0d131f;
-  --border-card: rgba(255, 255, 255, 0.08);
-  --border-card-hover: rgba(6, 182, 212, 0.45);
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --accent-primary: #06b6d4;
-  --accent-secondary: #3b82f6;
-  --accent-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
-  --glow-accent: rgba(6, 182, 212, 0.15);
-}
-
-/* 2. RETRO VIBE — Authentic 80s Synthwave & Arcade Nostalgia */
-[data-theme="retro"] {
-  --bg-page: #090514;
-  --bg-card: rgba(22, 13, 41, 0.78);
-  --bg-card-solid: #150a28;
-  --border-card: rgba(255, 42, 133, 0.35);
-  --border-card-hover: #00f0ff;
-  --text-main: #fff5fa;
-  --text-muted: #d8b4e2;
-  --accent-primary: #ff2a85;
-  --accent-secondary: #00f0ff;
-  --accent-gradient: linear-gradient(135deg, #ff2a85 0%, #a855f7 50%, #00f0ff 100%);
-  --glow-accent: rgba(255, 42, 133, 0.35);
-}
-
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: var(--bg-page, #080b11) !important;
-  color: var(--text-main, #f1f5f9);
+  background-color: var(--bg-page) !important;
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-  width: 100%;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
+    radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 24px 24px;
 }
 
-/* Custom scrollbars */
+/* Custom Minimal Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(10, 15, 28, 0.8);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: rgba(148, 163, 184, 0.4);
 }
 
-[data-theme="retro"] ::-webkit-scrollbar-track {
-  background: rgba(15, 8, 30, 0.9);
-}
-[data-theme="retro"] ::-webkit-scrollbar-thumb {
-  background: #6b21a8;
-  border-radius: 4px;
-}
-[data-theme="retro"] ::-webkit-scrollbar-thumb:hover {
-  background: #ff2a85;
-}
-
-/* Hide scrollbar utility */
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
@@ -94,114 +64,30 @@ body {
   scrollbar-width: none;
 }
 
-/* Glassmorphism helpers */
+/* World-Class Glass Panels */
 .glass-panel {
-  background: var(--bg-card, rgba(15, 23, 42, 0.65));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
 }
 
 .glass-card {
-  background: var(--bg-card, rgba(30, 41, 59, 0.5));
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.06));
+  background: rgba(18, 22, 33, 0.6);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
 }
 
-/* CRT Scanline Overlay for Retro Vibe */
-.crt-scanlines {
-  background: linear-gradient(
-    rgba(18, 16, 38, 0) 50%, 
-    rgba(0, 0, 0, 0.35) 50%
-  );
-  background-size: 100% 4px;
-  pointer-events: none;
+/* Subtle Hover Glow */
+.hover-glow {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-/* ═══════════════════════════════════════════════════════════
-   RETRO THEME ADAPTATION (Dynamic component-wide re-skin)
-   ═══════════════════════════════════════════════════════════ */
-
-/* Surface & Container Colors */
-[data-theme="retro"] [class*="bg-slate-950"],
-[data-theme="retro"] .bg-slate-950 {
-  background-color: rgba(12, 6, 24, 0.92) !important;
-}
-
-[data-theme="retro"] [class*="bg-slate-900"],
-[data-theme="retro"] .bg-slate-900 {
-  background-color: rgba(22, 13, 41, 0.82) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-}
-
-[data-theme="retro"] [class*="border-slate-800"],
-[data-theme="retro"] .border-slate-800 {
-  border-color: rgba(255, 42, 133, 0.28) !important;
-}
-
-[data-theme="retro"] [class*="border-slate-700"],
-[data-theme="retro"] .border-slate-700 {
-  border-color: rgba(0, 240, 255, 0.3) !important;
-}
-
-/* Buttons & Gradients in Retro Mode */
-[data-theme="retro"] .bg-gradient-to-r.from-cyan-500.to-blue-600,
-[data-theme="retro"] .bg-gradient-to-tr.from-cyan-500.to-blue-600 {
-  background-image: linear-gradient(135deg, #ff2a85 0%, #9333ea 50%, #00f0ff 100%) !important;
-  box-shadow: 0 0 20px rgba(255, 42, 133, 0.35) !important;
-}
-
-[data-theme="retro"] .bg-gradient-to-r.from-slate-900.via-cyan-950\/40.to-slate-900 {
-  background-image: linear-gradient(135deg, rgba(22, 11, 42, 0.92) 0%, rgba(88, 28, 135, 0.3) 50%, rgba(18, 8, 36, 0.92) 100%) !important;
-  border-color: rgba(255, 42, 133, 0.45) !important;
-  box-shadow: 0 0 25px rgba(255, 42, 133, 0.12) !important;
-}
-
-/* Neon Text & Border Accents in Retro Mode */
-[data-theme="retro"] .text-cyan-400,
-[data-theme="retro"] .text-cyan-300 {
-  color: #ff2a85 !important;
-}
-
-[data-theme="retro"] .border-cyan-500\/40,
-[data-theme="retro"] .border-cyan-500\/30,
-[data-theme="retro"] .border-cyan-500\/25,
-[data-theme="retro"] .border-cyan-500\/50 {
-  border-color: rgba(255, 42, 133, 0.42) !important;
-}
-
-[data-theme="retro"] .bg-cyan-500\/10,
-[data-theme="retro"] .bg-cyan-500\/15 {
-  background-color: rgba(255, 42, 133, 0.16) !important;
-  color: #ff70a6 !important;
-  border-color: rgba(255, 42, 133, 0.35) !important;
-}
-
-[data-theme="retro"] .text-indigo-400,
-[data-theme="retro"] .text-indigo-300 {
-  color: #00f0ff !important;
-}
-
-[data-theme="retro"] .bg-indigo-500\/15 {
-  background-color: rgba(0, 240, 255, 0.15) !important;
-  color: #00f0ff !important;
-  border-color: rgba(0, 240, 255, 0.35) !important;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   MINIMAL MODERN REFINEMENT (Linear / Vercel Elegance)
-   ═══════════════════════════════════════════════════════════ */
-[data-theme="modern"] [class*="bg-slate-900"],
-[data-theme="modern"] .bg-slate-900 {
-  background-color: rgba(13, 19, 31, 0.72) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-}
-
-[data-theme="modern"] [class*="bg-slate-950"],
-[data-theme="modern"] .bg-slate-950 {
-  background-color: rgba(8, 11, 18, 0.85) !important;
+.hover-glow:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 8px 30px -4px rgba(99, 102, 241, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
 }
 
 /* Prism Tokyo Night / One Dark IDE Syntax Highlighting */
