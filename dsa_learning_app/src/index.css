@@ -231,71 +231,74 @@ pre[class*="language-"] {
   word-break: normal;
   tab-size: 2;
   hyphens: none;
+  color: #e6edf3 !important;
 }
 
-.token.comment,
-.token.prolog,
-.token.doctype,
-.token.cdata {
-  color: #71717a;
+/* Scoped IDE Syntax Highlighting - Independent of Theme */
+.ide-code-block,
+.ide-code-block span,
+.ide-code-block div {
+  color: #e6edf3 !important;
+}
+
+.ide-code-block .token.comment,
+.ide-code-block .token.prolog,
+.ide-code-block .token.doctype,
+.ide-code-block .token.cdata {
+  color: #8b949e !important;
   font-style: italic;
 }
 
-.token.punctuation {
-  color: #a1a1aa;
+.ide-code-block .token.punctuation {
+  color: #c9d1d9 !important;
 }
 
-.token.property,
-.token.tag,
-.token.boolean,
-.token.number,
-.token.constant,
-.token.symbol {
-  color: #eab308;
+.ide-code-block .token.property,
+.ide-code-block .token.tag,
+.ide-code-block .token.boolean,
+.ide-code-block .token.number,
+.ide-code-block .token.constant,
+.ide-code-block .token.symbol {
+  color: #79c0ff !important;
 }
 
-.token.selector,
-.token.attr-name,
-.token.string,
-.token.char,
-.token.builtin {
-  color: #22c55e;
+.ide-code-block .token.selector,
+.ide-code-block .token.attr-name,
+.ide-code-block .token.string,
+.ide-code-block .token.char,
+.ide-code-block .token.builtin {
+  color: #7ee787 !important;
 }
 
-.token.operator,
-.token.entity,
-.token.url {
-  color: #06b6d4;
+.ide-code-block .token.operator,
+.ide-code-block .token.entity,
+.ide-code-block .token.url {
+  color: #ff7b72 !important;
 }
 
-.token.atrule,
-.token.attr-value,
-.token.keyword {
-  color: #a855f7;
+.ide-code-block .token.atrule,
+.ide-code-block .token.attr-value,
+.ide-code-block .token.keyword {
+  color: #ff7b72 !important;
   font-weight: 600;
 }
 
-.token.function,
-.token.class-name {
-  color: #3b82f6;
+.ide-code-block .token.function,
+.ide-code-block .token.class-name {
+  color: #d2a8ff !important;
   font-weight: 600;
 }
 
-.token.regex,
-.token.important,
-.token.variable {
-  color: #ec4899;
+.ide-code-block .token.regex,
+.ide-code-block .token.important,
+.ide-code-block .token.variable {
+  color: #ffa657 !important;
 }
 
-.token.important,
-.token.bold {
+.ide-code-block .token.bold {
   font-weight: bold;
 }
 
-.token.italic {
+.ide-code-block .token.italic {
   font-style: italic;
-}
-
-.token.entity {
-  cursor: help;
 }

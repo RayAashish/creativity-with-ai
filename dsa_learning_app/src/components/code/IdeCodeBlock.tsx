@@ -113,19 +113,19 @@ export const IdeCodeBlock: React.FC<IdeCodeBlockProps> = ({
   const filename = title || `Solution${config.ext}`;
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden shadow-2xl transition hover:border-slate-700/80">
+    <div className="rounded-2xl border border-[#30363d] bg-[#0d1117] overflow-hidden shadow-2xl transition hover:border-[#484f58]">
       {/* IDE Top Window Bar */}
-      <div className="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+      <div className="px-4 py-2.5 bg-[#161b22] border-b border-[#30363d] flex flex-wrap items-center justify-between gap-3">
         {/* Left: Window Dots & Filename */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-[#ff5f56] shadow-sm shadow-red-500/30" />
-            <div className="w-3 h-3 rounded-full bg-[#ffbd2e] shadow-sm shadow-amber-500/30" />
-            <div className="w-3 h-3 rounded-full bg-[#27c93f] shadow-sm shadow-emerald-500/30" />
+            <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
+            <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+            <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs font-mono text-slate-300">
-            <Terminal className="w-3.5 h-3.5 text-slate-500" />
+          <div className="flex items-center gap-1.5 text-xs font-mono text-[#c9d1d9]">
+            <Terminal className="w-3.5 h-3.5 text-[#8b949e]" />
             <span className="font-semibold">{filename}</span>
           </div>
         </div>
@@ -133,7 +133,7 @@ export const IdeCodeBlock: React.FC<IdeCodeBlockProps> = ({
         {/* Right: Language Switcher Tabs & Copy Button */}
         <div className="flex items-center gap-2">
           {showLanguageTabs && codeMap && (
-            <div className="flex items-center gap-1 p-0.5 bg-slate-950 rounded-xl border border-slate-800/80">
+            <div className="flex items-center gap-1 p-0.5 bg-[#0d1117] rounded-xl border border-[#30363d]">
               {(['java', 'python', 'cpp', 'javascript'] as CodeLanguage[]).map((lang) => {
                 const isActive = activeLang === lang;
                 const langConf = LANGUAGE_CONFIG[lang];
@@ -143,8 +143,8 @@ export const IdeCodeBlock: React.FC<IdeCodeBlockProps> = ({
                     onClick={() => handleSelectLanguage(lang)}
                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap ${
                       isActive
-                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                        ? 'bg-[#388bfd]/20 text-[#58a6ff] border border-[#388bfd]/40 shadow-sm'
+                        : 'text-[#8b949e] hover:text-[#f0f6fc] hover:bg-[#161b22]'
                     }`}
                   >
                     <span className="text-[11px]">{langConf.icon}</span>
@@ -157,17 +157,17 @@ export const IdeCodeBlock: React.FC<IdeCodeBlockProps> = ({
 
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1 bg-[#21262d] hover:bg-[#30363d] text-[#c9d1d9] border border-[#30363d] rounded-xl text-xs font-semibold transition active:scale-95"
             title="Copy code to clipboard"
           >
             {copied ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-400 font-bold">Copied!</span>
+                <Check className="w-3.5 h-3.5 text-[#3fb950]" />
+                <span className="text-[#3fb950] font-bold">Copied!</span>
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5 text-slate-400" />
+                <Copy className="w-3.5 h-3.5 text-[#8b949e]" />
                 <span>Copy</span>
               </>
             )}
@@ -176,7 +176,7 @@ export const IdeCodeBlock: React.FC<IdeCodeBlockProps> = ({
       </div>
 
       {/* Code Body with Line Numbers & Annotations */}
-      <div className="overflow-x-auto p-4 custom-scrollbar text-xs sm:text-[13px] font-mono leading-relaxed bg-[#0b0f19]">
+      <div className="ide-code-block overflow-x-auto p-4 custom-scrollbar text-xs sm:text-[13px] font-mono leading-relaxed bg-[#0d1117] text-[#e6edf3]">
         <div className="min-w-fit">
           {highlightedHtmlLines.map((lineHtml, idx) => {
             const lineNum = idx + 1;
@@ -187,29 +187,29 @@ export const IdeCodeBlock: React.FC<IdeCodeBlockProps> = ({
               <div
                 key={idx}
                 className={`flex items-start group transition-colors rounded ${
-                  isHighlighted ? 'bg-cyan-500/15 border-l-2 border-cyan-400' : 'hover:bg-slate-800/25'
+                  isHighlighted ? 'bg-[#388bfd]/15 border-l-2 border-[#58a6ff]' : 'hover:bg-[#161b22]/50'
                 }`}
               >
                 {/* Line Number Gutter */}
                 <span
                   className={`select-none text-right pr-4 pl-2 w-10 flex-shrink-0 text-xs ${
-                    isHighlighted ? 'text-cyan-400 font-bold' : 'text-slate-600'
+                    isHighlighted ? 'text-[#58a6ff] font-bold' : 'text-[#6e7681]'
                   }`}
                 >
                   {lineNum}
                 </span>
 
                 {/* Code Line */}
-                <div className="flex-1 whitespace-pre pr-4">
+                <div className="flex-1 whitespace-pre pr-4 text-[#e6edf3]">
                   <span
                     dangerouslySetInnerHTML={{ __html: lineHtml || ' ' }}
-                    className="inline-block"
+                    className="inline-block text-[#e6edf3]"
                   />
                   
                   {/* Inline Annotation / Comment Badge */}
                   {annotationText && (
-                    <span className="inline-flex items-center gap-1.5 ml-4 px-2 py-0.5 rounded-md bg-indigo-950/80 text-indigo-300 border border-indigo-500/40 text-[11px] font-sans font-semibold">
-                      <Sparkles className="w-3 h-3 text-indigo-400 flex-shrink-0" />
+                    <span className="inline-flex items-center gap-1.5 ml-4 px-2 py-0.5 rounded-md bg-[#1f6feb]/25 text-[#79c0ff] border border-[#388bfd]/40 text-[11px] font-sans font-semibold">
+                      <Sparkles className="w-3 h-3 text-[#58a6ff] flex-shrink-0" />
                       <span>{annotationText}</span>
                     </span>
                   )}
