@@ -14,57 +14,57 @@ html, body {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   THEME PALETTES: MINIMAL MODERN (Default) & RETRO VIBE
+   THEME DESIGN SYSTEM: MINIMAL MODERN (Default) & RETRO VIBE
    ═══════════════════════════════════════════════════════════ */
 
-/* 1. MINIMAL MODERN (Default) — Ultra-clean, distraction-free modern developer dark */
+/* 1. MINIMAL MODERN (Default) — Ultra-clean, distraction-free modern dark (Linear / Vercel style) */
 :root, [data-theme="modern"], [data-theme="dark"] {
-  --bg-page: #090d16;
-  --bg-card: rgba(15, 23, 42, 0.75);
-  --bg-card-hover: rgba(30, 41, 59, 0.9);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-hover: #06b6d4;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --accent-1: #06b6d4;
-  --accent-2: #6366f1;
-  --accent-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #6366f1 100%);
-  --glow: rgba(6, 182, 212, 0.2);
+  --bg-page: #080b11;
+  --bg-card: rgba(15, 23, 42, 0.65);
+  --bg-card-solid: #0d131f;
+  --border-card: rgba(255, 255, 255, 0.08);
+  --border-card-hover: rgba(6, 182, 212, 0.45);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent-primary: #06b6d4;
+  --accent-secondary: #3b82f6;
+  --accent-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+  --glow-accent: rgba(6, 182, 212, 0.15);
 }
 
-/* 2. RETRO VIBE — 80s Synthwave & Arcade Nostalgia */
+/* 2. RETRO VIBE — Authentic 80s Synthwave & Arcade Nostalgia */
 [data-theme="retro"] {
-  --bg-page: #0a0614;
-  --bg-card: rgba(20, 13, 38, 0.85);
-  --bg-card-hover: rgba(34, 20, 62, 0.95);
-  --border-color: rgba(255, 42, 133, 0.25);
-  --border-hover: #00f5d4;
-  --text-primary: #fff0f8;
-  --text-secondary: #d8b4e2;
-  --accent-1: #ff2a85;
-  --accent-2: #00f5d4;
-  --accent-gradient: linear-gradient(135deg, #ff2a85 0%, #b5179e 50%, #00f5d4 100%);
-  --glow: rgba(255, 42, 133, 0.35);
+  --bg-page: #090514;
+  --bg-card: rgba(22, 13, 41, 0.78);
+  --bg-card-solid: #150a28;
+  --border-card: rgba(255, 42, 133, 0.35);
+  --border-card-hover: #00f0ff;
+  --text-main: #fff5fa;
+  --text-muted: #d8b4e2;
+  --accent-primary: #ff2a85;
+  --accent-secondary: #00f0ff;
+  --accent-gradient: linear-gradient(135deg, #ff2a85 0%, #a855f7 50%, #00f0ff 100%);
+  --glow-accent: rgba(255, 42, 133, 0.35);
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: var(--bg-page, #090d16) !important;
-  color: var(--text-primary, #f1f5f9);
+  background-color: var(--bg-page, #080b11) !important;
+  color: var(--text-main, #f1f5f9);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   width: 100%;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: rgba(10, 15, 28, 0.8);
 }
 ::-webkit-scrollbar-thumb {
   background: #334155;
@@ -74,8 +74,11 @@ body {
   background: #475569;
 }
 
+[data-theme="retro"] ::-webkit-scrollbar-track {
+  background: rgba(15, 8, 30, 0.9);
+}
 [data-theme="retro"] ::-webkit-scrollbar-thumb {
-  background: #4c1d6b;
+  background: #6b21a8;
   border-radius: 4px;
 }
 [data-theme="retro"] ::-webkit-scrollbar-thumb:hover {
@@ -93,44 +96,112 @@ body {
 
 /* Glassmorphism helpers */
 .glass-panel {
-  background: var(--bg-card, rgba(15, 23, 42, 0.75));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  background: var(--bg-card, rgba(15, 23, 42, 0.65));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
 }
 
 .glass-card {
-  background: var(--bg-card, rgba(30, 41, 59, 0.6));
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.06));
+  background: var(--bg-card, rgba(30, 41, 59, 0.5));
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.06));
 }
 
-/* CRT Scanline Effect for Retro Vibe */
+/* CRT Scanline Overlay for Retro Vibe */
 .crt-scanlines {
   background: linear-gradient(
     rgba(18, 16, 38, 0) 50%, 
-    rgba(0, 0, 0, 0.28) 50%
+    rgba(0, 0, 0, 0.35) 50%
   );
   background-size: 100% 4px;
   pointer-events: none;
 }
 
-/* Retro Theme Adaptations for Tailwind Slate Classes */
+/* ═══════════════════════════════════════════════════════════
+   RETRO THEME ADAPTATION (Dynamic component-wide re-skin)
+   ═══════════════════════════════════════════════════════════ */
+
+/* Surface & Container Colors */
 [data-theme="retro"] [class*="bg-slate-950"],
 [data-theme="retro"] .bg-slate-950 {
-  background-color: rgba(10, 6, 20, 0.95) !important;
+  background-color: rgba(12, 6, 24, 0.92) !important;
 }
+
 [data-theme="retro"] [class*="bg-slate-900"],
 [data-theme="retro"] .bg-slate-900 {
-  background-color: rgba(20, 13, 38, 0.9) !important;
+  background-color: rgba(22, 13, 41, 0.82) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
 }
+
 [data-theme="retro"] [class*="border-slate-800"],
 [data-theme="retro"] .border-slate-800 {
-  border-color: rgba(255, 42, 133, 0.22) !important;
+  border-color: rgba(255, 42, 133, 0.28) !important;
 }
+
 [data-theme="retro"] [class*="border-slate-700"],
 [data-theme="retro"] .border-slate-700 {
+  border-color: rgba(0, 240, 255, 0.3) !important;
+}
+
+/* Buttons & Gradients in Retro Mode */
+[data-theme="retro"] .bg-gradient-to-r.from-cyan-500.to-blue-600,
+[data-theme="retro"] .bg-gradient-to-tr.from-cyan-500.to-blue-600 {
+  background-image: linear-gradient(135deg, #ff2a85 0%, #9333ea 50%, #00f0ff 100%) !important;
+  box-shadow: 0 0 20px rgba(255, 42, 133, 0.35) !important;
+}
+
+[data-theme="retro"] .bg-gradient-to-r.from-slate-900.via-cyan-950\/40.to-slate-900 {
+  background-image: linear-gradient(135deg, rgba(22, 11, 42, 0.92) 0%, rgba(88, 28, 135, 0.3) 50%, rgba(18, 8, 36, 0.92) 100%) !important;
+  border-color: rgba(255, 42, 133, 0.45) !important;
+  box-shadow: 0 0 25px rgba(255, 42, 133, 0.12) !important;
+}
+
+/* Neon Text & Border Accents in Retro Mode */
+[data-theme="retro"] .text-cyan-400,
+[data-theme="retro"] .text-cyan-300 {
+  color: #ff2a85 !important;
+}
+
+[data-theme="retro"] .border-cyan-500\/40,
+[data-theme="retro"] .border-cyan-500\/30,
+[data-theme="retro"] .border-cyan-500\/25,
+[data-theme="retro"] .border-cyan-500\/50 {
+  border-color: rgba(255, 42, 133, 0.42) !important;
+}
+
+[data-theme="retro"] .bg-cyan-500\/10,
+[data-theme="retro"] .bg-cyan-500\/15 {
+  background-color: rgba(255, 42, 133, 0.16) !important;
+  color: #ff70a6 !important;
   border-color: rgba(255, 42, 133, 0.35) !important;
+}
+
+[data-theme="retro"] .text-indigo-400,
+[data-theme="retro"] .text-indigo-300 {
+  color: #00f0ff !important;
+}
+
+[data-theme="retro"] .bg-indigo-500\/15 {
+  background-color: rgba(0, 240, 255, 0.15) !important;
+  color: #00f0ff !important;
+  border-color: rgba(0, 240, 255, 0.35) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MINIMAL MODERN REFINEMENT (Linear / Vercel Elegance)
+   ═══════════════════════════════════════════════════════════ */
+[data-theme="modern"] [class*="bg-slate-900"],
+[data-theme="modern"] .bg-slate-900 {
+  background-color: rgba(13, 19, 31, 0.72) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+[data-theme="modern"] [class*="bg-slate-950"],
+[data-theme="modern"] .bg-slate-950 {
+  background-color: rgba(8, 11, 18, 0.85) !important;
 }
 
 /* Prism Tokyo Night / One Dark IDE Syntax Highlighting */
@@ -212,14 +283,4 @@ pre[class*="language-"] {
 
 .token.entity {
   cursor: help;
-}
-
-/* Subtle glow pulse utility */
-@keyframes soft-pulse {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 1; }
-}
-
-.animate-soft-pulse {
-  animation: soft-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

@@ -85,7 +85,7 @@ export const ThemeBackgroundCanvas: React.FC<ThemeBackgroundCanvasProps> = ({ cu
         // ----------------------------------------
         // RETRO SYNTHWAVE / ARCADE VIBE
         // ----------------------------------------
-        const horizonY = Math.floor(height * 0.58);
+        const horizonY = Math.floor(height * 0.45);
 
         // 1. Sky Gradient (Deep arcade violet to horizon glow)
         const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
@@ -128,13 +128,17 @@ export const ThemeBackgroundCanvas: React.FC<ThemeBackgroundCanvasProps> = ({ cu
         ctx.fillStyle = beamGrad;
         ctx.fillRect(0, horizonY - 25, width, 50);
 
-        // Bright horizon line
+        // Bright glowing horizon line
+        ctx.save();
+        ctx.shadowColor = 'rgba(255, 42, 133, 0.8)';
+        ctx.shadowBlur = 10;
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(255, 42, 133, 0.8)';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(255, 42, 133, 0.95)';
+        ctx.lineWidth = 2;
         ctx.moveTo(0, horizonY);
         ctx.lineTo(width, horizonY);
         ctx.stroke();
+        ctx.restore();
 
         // 5. 3D Perspective Retro Grid
         ctx.save();
@@ -142,19 +146,19 @@ export const ThemeBackgroundCanvas: React.FC<ThemeBackgroundCanvasProps> = ({ cu
         ctx.rect(0, horizonY, width, height - horizonY);
         ctx.clip();
 
-        gridOffset = (gridOffset + 0.45) % 36;
+        gridOffset = (gridOffset + 0.55) % 36;
         const groundHeight = height - horizonY;
-        const numHorizLines = 16;
+        const numHorizLines = 18;
 
         // Moving horizontal perspective lines
         for (let i = 0; i <= numHorizLines; i++) {
-          const ratio = Math.pow((i + gridOffset / 36) / numHorizLines, 2.2);
+          const ratio = Math.pow((i + gridOffset / 36) / numHorizLines, 2.0);
           const y = horizonY + ratio * groundHeight;
-          const alpha = Math.min(0.55, ratio * 0.7);
+          const alpha = Math.min(0.8, ratio * 1.1);
 
           ctx.beginPath();
           ctx.strokeStyle = `rgba(255, 42, 133, ${alpha})`;
-          ctx.lineWidth = Math.max(0.8, ratio * 2);
+          ctx.lineWidth = Math.max(1, ratio * 2.5);
           ctx.moveTo(0, y);
           ctx.lineTo(width, y);
           ctx.stroke();
@@ -162,18 +166,18 @@ export const ThemeBackgroundCanvas: React.FC<ThemeBackgroundCanvasProps> = ({ cu
 
         // Perspective vertical lines radiating from vanishing point
         const vanishingX = width / 2;
-        const lineSpacing = Math.max(45, width / 22);
+        const lineSpacing = Math.max(40, width / 24);
         const totalLines = Math.ceil(width / lineSpacing) * 2;
 
         for (let i = -totalLines; i <= totalLines; i++) {
-          const bottomX = vanishingX + i * lineSpacing * 1.8;
+          const bottomX = vanishingX + i * lineSpacing * 1.9;
           ctx.beginPath();
           const distFromCenter = Math.abs(i) / totalLines;
-          const alpha = Math.max(0.08, 0.45 * (1 - distFromCenter * 0.6));
+          const alpha = Math.max(0.2, 0.7 * (1 - distFromCenter * 0.55));
           ctx.strokeStyle = i % 2 === 0 
-            ? `rgba(0, 245, 212, ${alpha * 0.8})` 
-            : `rgba(255, 42, 133, ${alpha * 0.7})`;
-          ctx.lineWidth = 1;
+            ? `rgba(0, 245, 212, ${alpha})` 
+            : `rgba(255, 42, 133, ${alpha})`;
+          ctx.lineWidth = 1.2;
           ctx.moveTo(vanishingX, horizonY);
           ctx.lineTo(bottomX, height);
           ctx.stroke();
