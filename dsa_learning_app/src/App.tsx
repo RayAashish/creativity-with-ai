@@ -188,6 +188,8 @@ export function App() {
             progress={progress}
             onToggleDone={handleToggleDone}
             onSetProblemStatus={handleSetProblemStatus}
+            onToggleStar={handleToggleStar}
+            onSaveNote={handleSaveNote}
           />
         )}
 
