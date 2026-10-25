@@ -8,8 +8,10 @@
    ═══════════════════════════════════════════════════════════ */
 
 :root {
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Text', Roboto, 'Segoe UI', sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, 'Space Mono', 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
+  --font-heading: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  --font-body: 'DM Mono', 'JetBrains Mono', 'SF Mono', Menlo, Monaco, Consolas, monospace;
+  --font-sans: var(--font-body);
+  --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
 }
 
 /* ── DARK THEME (DEFAULT) — Deep Obsidian / Minimal Monochrome ── */
@@ -33,6 +35,29 @@
   --status-green-subtle: rgba(34, 197, 94, 0.12);
   --nav-bg: rgba(9, 10, 12, 0.95);
   color-scheme: dark;
+}
+
+/* ── BEIGE / WARM STONE THEME — Bauhaus Editorial Sand & Moleskine Paper ── */
+[data-theme="beige"] {
+  --bg-page: #f4f1ea;
+  --bg-subtle: #ebe6db;
+  --bg-card: #fcfbf9;
+  --bg-card-hover: #ffffff;
+  --border-subtle: #ded8cb;
+  --border-strong: #c8c0af;
+  --border-active: #1c1917;
+  --text-primary: #1c1917;
+  --text-secondary: #57534e;
+  --text-muted: #78716c;
+  --text-inverse: #f4f1ea;
+  --accent: #1c1917;
+  --accent-contrast: #f4f1ea;
+  --badge-bg: #eae5d9;
+  --badge-text: #1c1917;
+  --status-green: #15803d;
+  --status-green-subtle: rgba(21, 128, 61, 0.12);
+  --nav-bg: rgba(244, 241, 234, 0.97);
+  color-scheme: light;
 }
 
 /* ── LIGHT THEME — Swiss High-Contrast Paper / Pure Obsidian Ink ── */
@@ -69,11 +94,25 @@ body {
   min-height: 100vh;
   background-color: var(--bg-page) !important;
   color: var(--text-primary);
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
+  font-weight: 300;
+  line-height: 1.68;
+  font-size: 14px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+h1, h2, h3, h4, h5, h6,
+.font-heading {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+}
+
+strong, b {
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 /* High-Contrast Selection */
@@ -103,6 +142,32 @@ body {
 }
 [data-theme="light"] ::-webkit-scrollbar-thumb:hover {
   background: #a1a1aa;
+}
+
+[data-theme="beige"] ::-webkit-scrollbar-thumb {
+  background: #ded8cb;
+}
+[data-theme="beige"] ::-webkit-scrollbar-thumb:hover {
+  background: #c8c0af;
+}
+
+.category-scroll-container {
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+.category-scroll-container::-webkit-scrollbar {
+  height: 4px;
+}
+.category-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.category-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 9999px;
+}
+.category-scroll-container:hover::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
 }
 
 .scrollbar-none::-webkit-scrollbar {

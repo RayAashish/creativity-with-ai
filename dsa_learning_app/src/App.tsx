@@ -25,10 +25,10 @@ export function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('sheet');
   const [progress, setProgress] = useState<UserProgress>(getStoredProgress());
   const [isBuyCoffeeOpen, setIsBuyCoffeeOpen] = useState<boolean>(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+  const [theme, setTheme] = useState<'dark' | 'beige' | 'light'>(() => {
     try {
       const stored = localStorage.getItem('akr-dsa-theme');
-      if (stored === 'light' || stored === 'dark') return stored;
+      if (stored === 'light' || stored === 'dark' || stored === 'beige') return stored;
       return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
     } catch (e) {
       return 'dark';
@@ -37,12 +37,13 @@ export function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.classList.remove('dark', 'beige', 'light');
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
+    } else if (theme === 'beige') {
+      document.documentElement.classList.add('beige');
     } else {
       document.documentElement.classList.add('light');
-      document.documentElement.classList.remove('dark');
     }
     try {
       localStorage.setItem('akr-dsa-theme', theme);
@@ -52,7 +53,15 @@ export function App() {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+    setTheme(prev => {
+      if (prev === 'dark') return 'beige';
+      if (prev === 'beige') return 'light';
+      return 'dark';
+    });
+  };
+
+  const handleSetTheme = (newTheme: 'dark' | 'beige' | 'light') => {
+    setTheme(newTheme);
   };
 
   const [isQuickRouletteOpen, setIsQuickRouletteOpen] = useState<boolean>(false);
@@ -154,6 +163,7 @@ export function App() {
           onOpenBuyCoffee={() => setIsBuyCoffeeOpen(true)}
           theme={theme}
           onToggleTheme={toggleTheme}
+          onSetTheme={handleSetTheme}
         />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">

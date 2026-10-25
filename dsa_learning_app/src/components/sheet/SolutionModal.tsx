@@ -101,18 +101,18 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white dark:bg-[#131417] border border-zinc-200 dark:border-zinc-800 rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl relative overflow-hidden">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl relative overflow-hidden">
         {/* Modal Header */}
-        <div className="p-5 sm:p-6 border-b border-zinc-200 dark:border-zinc-800 relative z-10 flex items-start justify-between gap-4 bg-white dark:bg-[#131417]">
+        <div className="p-5 sm:p-6 border-b border-[var(--border-subtle)] relative z-10 flex items-start justify-between gap-4 bg-[var(--bg-card)]">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap mb-2">
               <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-lg border ${getDifficultyBadge(question.difficulty)}`}>
                 {question.difficulty}
               </span>
-              <span className="text-xs font-mono font-medium px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+              <span className="text-xs font-mono font-medium px-2 py-0.5 rounded bg-[var(--bg-subtle)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
                 {question.platform}
               </span>
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 uppercase">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-lg bg-[var(--badge-bg)] text-[var(--text-primary)] border border-[var(--border-subtle)] uppercase">
                 {question.topic}
               </span>
               {isDone && (
@@ -122,21 +122,21 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
               )}
             </div>
 
-            <h2 className="text-lg sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight flex items-center gap-2">
+            <h2 className="text-lg sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
               <span>{question.title}</span>
             </h2>
 
             {/* Pattern Badge */}
-            <div className="mt-2.5 inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 text-xs font-medium">
-              <Sparkles className="w-3.5 h-3.5 text-zinc-500" />
+            <div className="mt-2.5 inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-[var(--bg-subtle)] text-[var(--text-primary)] border border-[var(--border-subtle)] text-xs font-medium">
+              <Sparkles className="w-3.5 h-3.5 text-[var(--text-muted)]" />
               <span>Core Pattern:</span>
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">{solution.pattern}</span>
+              <span className="font-semibold text-[var(--text-primary)]">{solution.pattern}</span>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl transition flex-shrink-0"
+            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-subtle)] border border-[var(--border-subtle)] rounded-xl transition flex-shrink-0"
             title="Close modal (Esc)"
           >
             <X className="w-5 h-5" />
@@ -144,24 +144,24 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
         </div>
 
         {/* View Navigation Tabs */}
-        <div className="px-6 py-2.5 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40 flex items-center justify-between gap-3 overflow-x-auto relative z-10 scrollbar-none">
+        <div className="px-6 py-2.5 border-b border-[var(--border-subtle)] bg-[var(--bg-subtle)] flex items-center justify-between gap-3 overflow-x-auto relative z-10 category-scroll-container">
           <div className="flex items-center gap-1.5 text-xs font-medium">
             <button
               onClick={() => setActiveTab('all')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap ${
                 activeTab === 'all'
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-sm'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-zinc-800/60'
+                  ? 'btn-solid font-semibold shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)]'
               }`}
             >
               Full Reference Guide
             </button>
             <button
               onClick={() => setActiveTab('intuition')}
-              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap ${
                 activeTab === 'intuition'
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-sm'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-zinc-800/60'
+                  ? 'btn-solid font-semibold shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)]'
               }`}
             >
               <Lightbulb className="w-3.5 h-3.5" />
@@ -169,10 +169,10 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('code')}
-              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap ${
                 activeTab === 'code'
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-sm'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-zinc-800/60'
+                  ? 'btn-solid font-semibold shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)]'
               }`}
             >
               <Code2 className="w-3.5 h-3.5" />
@@ -180,10 +180,10 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('complexity')}
-              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap ${
                 activeTab === 'complexity'
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-sm'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-zinc-800/60'
+                  ? 'btn-solid font-semibold shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)]'
               }`}
             >
               <Cpu className="w-3.5 h-3.5" />
@@ -196,13 +196,13 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 relative z-10 custom-scrollbar">
 
           {/* Approach Tier Switcher Bar: 🥉 Brute vs 🥈 Better vs 🥇 Optimal */}
-          <div className="bg-zinc-50 dark:bg-zinc-900/60 p-3 sm:p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <div className="bg-[var(--bg-subtle)] p-3 sm:p-3.5 rounded-2xl border border-[var(--border-subtle)] shadow-sm">
             <div className="flex items-center justify-between mb-2.5 px-1">
-              <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                <Layers className="w-3.5 h-3.5 text-zinc-500" />
+              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
+                <Layers className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                 <span>Interview Progression Tiers:</span>
               </div>
-              <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-mono font-medium">
+              <span className="text-[11px] text-[var(--text-secondary)] font-mono font-medium">
                 Active: {activeApproach.badge}
               </span>
             </div>
@@ -213,20 +213,20 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
                 onClick={() => setActiveTier('brute')}
                 className={`p-3 rounded-xl border text-left transition-all duration-150 relative flex flex-col justify-between ${
                   activeTier === 'brute'
-                    ? 'bg-white dark:bg-zinc-800 border-zinc-900 dark:border-zinc-100 shadow-sm'
-                    : 'bg-zinc-100/60 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700'
+                    ? 'bg-[var(--bg-card)] border-[var(--border-active)] shadow-sm'
+                    : 'bg-[var(--bg-card)]/50 border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]'
                 }`}
               >
                 <div className="flex items-center justify-between gap-1 mb-1.5">
                   <span className="text-base">🥉</span>
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold">
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[var(--bg-subtle)] text-[var(--text-primary)] font-bold">
                     {approaches.brute?.timeComplexity || 'O(N²)'}
                   </span>
                 </div>
-                <div className="font-semibold text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 truncate">
+                <div className="font-semibold text-xs sm:text-sm text-[var(--text-primary)] truncate">
                   {approaches.brute?.name || 'Brute Force'}
                 </div>
-                <div className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1 flex items-center justify-between font-mono">
+                <div className="text-[10px] text-[var(--text-secondary)] mt-1 flex items-center justify-between font-mono">
                   <span>Space: {approaches.brute?.spaceComplexity || 'O(1)'}</span>
                   <span className="text-[9px] uppercase font-sans">Baseline</span>
                 </div>
@@ -237,20 +237,20 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
                 onClick={() => setActiveTier('better')}
                 className={`p-3 rounded-xl border text-left transition-all duration-150 relative flex flex-col justify-between ${
                   activeTier === 'better'
-                    ? 'bg-white dark:bg-zinc-800 border-zinc-900 dark:border-zinc-100 shadow-sm'
-                    : 'bg-zinc-100/60 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700'
+                    ? 'bg-[var(--bg-card)] border-[var(--border-active)] shadow-sm'
+                    : 'bg-[var(--bg-card)]/50 border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]'
                 }`}
               >
                 <div className="flex items-center justify-between gap-1 mb-1.5">
                   <span className="text-base">🥈</span>
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold">
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[var(--bg-subtle)] text-[var(--text-primary)] font-bold">
                     {approaches.better?.timeComplexity || 'O(N log N)'}
                   </span>
                 </div>
-                <div className="font-semibold text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 truncate">
+                <div className="font-semibold text-xs sm:text-sm text-[var(--text-primary)] truncate">
                   {approaches.better?.name || 'Better / Auxiliary'}
                 </div>
-                <div className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1 flex items-center justify-between font-mono">
+                <div className="text-[10px] text-[var(--text-secondary)] mt-1 flex items-center justify-between font-mono">
                   <span>Space: {approaches.better?.spaceComplexity || 'O(N)'}</span>
                   <span className="text-[9px] uppercase font-sans">Trade-off</span>
                 </div>
@@ -261,8 +261,8 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
                 onClick={() => setActiveTier('optimal')}
                 className={`p-3 rounded-xl border text-left transition-all duration-150 relative flex flex-col justify-between ${
                   activeTier === 'optimal'
-                    ? 'bg-white dark:bg-zinc-800 border-zinc-900 dark:border-zinc-100 shadow-sm'
-                    : 'bg-zinc-100/60 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700'
+                    ? 'bg-[var(--bg-card)] border-[var(--border-active)] shadow-sm'
+                    : 'bg-[var(--bg-card)]/50 border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]'
                 }`}
               >
                 <div className="flex items-center justify-between gap-1 mb-1.5">
@@ -271,10 +271,10 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
                     {approaches.optimal?.timeComplexity || 'O(N)'}
                   </span>
                 </div>
-                <div className="font-semibold text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 truncate">
+                <div className="font-semibold text-xs sm:text-sm text-[var(--text-primary)] truncate">
                   {approaches.optimal?.name || 'Optimal Solution'}
                 </div>
-                <div className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1 flex items-center justify-between font-mono">
+                <div className="text-[10px] text-[var(--text-secondary)] mt-1 flex items-center justify-between font-mono">
                   <span>Space: {approaches.optimal?.spaceComplexity || 'O(1)'}</span>
                   <span className="text-[9px] uppercase font-sans font-bold text-emerald-600 dark:text-emerald-400">Target</span>
                 </div>
@@ -282,16 +282,16 @@ export const SolutionModal: React.FC<SolutionModalProps> = ({
             </div>
 
             {/* Micro Progression Breadcrumb */}
-            <div className="mt-2.5 pt-2 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-center gap-2 text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
-              <span className={activeTier === 'brute' ? 'text-zinc-900 dark:text-zinc-100 font-bold' : ''}>
+            <div className="mt-2.5 pt-2 border-t border-[var(--border-subtle)] flex items-center justify-center gap-2 text-[11px] font-mono text-[var(--text-secondary)]">
+              <span className={activeTier === 'brute' ? 'text-[var(--text-primary)] font-bold' : ''}>
                 🥉 {approaches.brute?.timeComplexity || 'O(N²)'}
               </span>
-              <ArrowRight className="w-3 h-3 text-zinc-400" />
-              <span className={activeTier === 'better' ? 'text-zinc-900 dark:text-zinc-100 font-bold' : ''}>
+              <ArrowRight className="w-3 h-3 text-[var(--text-muted)]" />
+              <span className={activeTier === 'better' ? 'text-[var(--text-primary)] font-bold' : ''}>
                 🥈 {approaches.better?.timeComplexity || 'O(N log N)'}
               </span>
-              <ArrowRight className="w-3 h-3 text-zinc-400" />
-              <span className={activeTier === 'optimal' ? 'text-emerald-600 dark:text-emerald-400 font-bold' : ''}>
+              <ArrowRight className="w-3 h-3 text-[var(--text-muted)]" />
+              <span className={activeTier === 'optimal' ? 'text-[var(--status-green)] font-bold' : ''}>
                 🥇 {approaches.optimal?.timeComplexity || 'O(N)'} (Optimal)
               </span>
             </div>

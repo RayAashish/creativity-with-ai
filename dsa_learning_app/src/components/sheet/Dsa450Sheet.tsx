@@ -14,7 +14,9 @@ import {
   Clock,
   RotateCcw,
   Check,
-  ChevronDown
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { 
   Question, 
@@ -86,6 +88,39 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
     totalInPool: number;
   }>({ question: null, totalRemaining: 0, totalInPool: 0 });
   const [modalTopic, setModalTopic] = useState<Topic | 'all'>('arrays');
+
+  // Category Tabs Scrolling
+  const tabsRef = React.useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkTabsScroll = () => {
+    if (!tabsRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = tabsRef.current;
+    setCanScrollLeft(scrollLeft > 6);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 6);
+  };
+
+  useEffect(() => {
+    checkTabsScroll();
+    window.addEventListener('resize', checkTabsScroll);
+    return () => window.removeEventListener('resize', checkTabsScroll);
+  }, []);
+
+  const scrollTabs = (direction: 'left' | 'right') => {
+    if (!tabsRef.current) return;
+    const offset = direction === 'left' ? -280 : 280;
+    tabsRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+    setTimeout(checkTabsScroll, 320);
+  };
+
+  const handleTabsWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!tabsRef.current) return;
+    if (e.deltaY !== 0) {
+      tabsRef.current.scrollLeft += e.deltaY * 1.1;
+      checkTabsScroll();
+    }
+  };
 
   // Persist filter changes
   useEffect(() => {
@@ -223,18 +258,18 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
       />
 
       {/* 3. Streamlined Command & Progress Header */}
-      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#131417] p-5 sm:p-6 shadow-sm relative overflow-hidden">
+      <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 sm:p-6 shadow-sm relative overflow-hidden transition-colors">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-[11px] font-mono font-medium uppercase px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+              <span className="text-[11px] font-mono font-medium uppercase px-2 py-0.5 rounded bg-[var(--badge-bg)] text-[var(--badge-text)] border border-[var(--border-subtle)]">
                 Curated Sheet
               </span>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+              <span className="text-xs text-[var(--text-secondary)] font-medium">
                 450 Problems across 12 Core Patterns
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
               450 DSA Sheet
             </h1>
           </div>
@@ -255,117 +290,154 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
               onClick={() => triggerRandomPicker('all')}
               className="btn-outline flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium"
             >
-              <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
+              <Sparkles className="w-3.5 h-3.5 text-[var(--text-muted)]" />
               <span>Global 450</span>
             </button>
           </div>
         </div>
 
         {/* Unified Metrics Bar */}
-        <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800 grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="mt-5 pt-4 border-t border-[var(--border-subtle)] grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
-            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block font-medium">Overall Progress</span>
+            <span className="text-[11px] text-[var(--text-muted)] block font-medium">Overall Progress</span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{totalDone} / {totalQuestions}</span>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono font-semibold">
+              <span className="text-lg font-bold text-[var(--text-primary)]">{totalDone} / {totalQuestions}</span>
+              <span className="text-xs text-[var(--text-secondary)] font-mono font-semibold">
                 ({Math.round((totalDone / totalQuestions) * 100)}%)
               </span>
             </div>
           </div>
 
           <div>
-            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block font-medium">{currentTopicMeta?.name || 'Category'} Solved</span>
+            <span className="text-[11px] text-[var(--text-muted)] block font-medium">{currentTopicMeta?.name || 'Category'} Solved</span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{categoryDone} / {categoryQuestions.length}</span>
-              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-mono font-semibold">
+              <span className="text-lg font-bold text-[var(--status-green)]">{categoryDone} / {categoryQuestions.length}</span>
+              <span className="text-xs text-[var(--status-green)] font-mono font-semibold">
                 ({categoryPercentage}%)
               </span>
             </div>
           </div>
 
           <div>
-            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block font-medium">Due for Revision</span>
+            <span className="text-[11px] text-[var(--text-muted)] block font-medium">Due for Revision</span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{dueRevisions.length}</span>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">pending</span>
+              <span className="text-lg font-bold text-[var(--text-primary)]">{dueRevisions.length}</span>
+              <span className="text-xs text-[var(--text-muted)]">pending</span>
             </div>
           </div>
 
           <div>
-            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block font-medium">Starred Questions</span>
+            <span className="text-[11px] text-[var(--text-muted)] block font-medium">Starred Questions</span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
               <span className="text-lg font-bold text-amber-500 dark:text-amber-400">{Object.values(starredMap).filter(Boolean).length}</span>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">saved</span>
+              <span className="text-xs text-[var(--text-muted)]">saved</span>
             </div>
           </div>
         </div>
 
         {/* Global Progress Track */}
         <div className="mt-3.5 pt-2">
-          <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+          <div className="w-full bg-[var(--bg-subtle)] h-1.5 rounded-full overflow-hidden border border-[var(--border-subtle)]">
             <div
-              className="bg-zinc-900 dark:bg-zinc-100 h-full transition-all duration-500 rounded-full"
+              className="bg-[var(--text-primary)] h-full transition-all duration-500 rounded-full"
               style={{ width: `${Math.round((totalDone / totalQuestions) * 100)}%` }}
             />
           </div>
         </div>
       </div>
 
-      {/* 4. Category Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
-        <button
-          onClick={() => setSelectedTopic('all')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all border flex items-center gap-2 ${
-            selectedTopic === 'all'
-              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent shadow-sm font-semibold'
-              : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border-zinc-200 dark:border-zinc-800'
-          }`}
+      {/* 4. Category Tabs with Left/Right Arrows & Smooth Mouse-Wheel Scroll */}
+      <div className="relative group">
+        {/* Left Arrow Button */}
+        {canScrollLeft && (
+          <button
+            type="button"
+            onClick={() => scrollTabs('left')}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-[var(--bg-card)] border border-[var(--border-strong)] text-[var(--text-primary)] shadow-md flex items-center justify-center hover:scale-105 active:scale-95 transition"
+            title="Scroll categories left"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        )}
+
+        <div 
+          ref={tabsRef}
+          onScroll={checkTabsScroll}
+          onWheel={handleTabsWheel}
+          className="category-scroll-container flex items-center gap-1.5 pb-2.5 px-0.5"
         >
-          <Layers className="w-3.5 h-3.5" />
-          <span>All Topics</span>
-          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-200/60 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
-            {totalDone}/{totalQuestions}
-          </span>
-        </button>
+          <button
+            onClick={() => setSelectedTopic('all')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all border flex items-center gap-2 flex-shrink-0 ${
+              selectedTopic === 'all'
+                ? 'btn-solid shadow-sm font-semibold'
+                : 'btn-outline text-[var(--text-secondary)]'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>All Topics</span>
+            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
+              selectedTopic === 'all'
+                ? 'bg-[var(--text-inverse)]/20 text-[var(--text-inverse)]'
+                : 'bg-[var(--bg-subtle)] text-[var(--text-secondary)] border border-[var(--border-subtle)]'
+            }`}>
+              {totalDone}/{totalQuestions}
+            </span>
+          </button>
 
-        {TOPICS.map((topic) => {
-          const isSelected = selectedTopic === topic.id;
-          const count = QUESTIONS_450.filter(q => q.topic === topic.id).length;
-          const doneC = QUESTIONS_450.filter(q => q.topic === topic.id && getProblemStatus(progress, q.id) === 'solved').length;
+          {TOPICS.map((topic) => {
+            const isSelected = selectedTopic === topic.id;
+            const count = QUESTIONS_450.filter(q => q.topic === topic.id).length;
+            const doneC = QUESTIONS_450.filter(q => q.topic === topic.id && getProblemStatus(progress, q.id) === 'solved').length;
 
-          return (
-            <button
-              key={topic.id}
-              onClick={() => setSelectedTopic(topic.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all border flex items-center gap-1.5 ${
-                isSelected
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent shadow-sm font-semibold'
-                  : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border-zinc-200 dark:border-zinc-800'
-              }`}
-            >
-              <span>{topic.name}</span>
-              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
-                doneC === count && count > 0 
-                  ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
-                  : 'bg-zinc-200/60 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
-              }`}>
-                {doneC}/{count}
-              </span>
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={topic.id}
+                onClick={() => setSelectedTopic(topic.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all border flex items-center gap-1.5 flex-shrink-0 ${
+                  isSelected
+                    ? 'btn-solid shadow-sm font-semibold'
+                    : 'btn-outline text-[var(--text-secondary)]'
+                }`}
+              >
+                <span>{topic.name}</span>
+                <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
+                  isSelected
+                    ? 'bg-[var(--text-inverse)]/20 text-[var(--text-inverse)]'
+                    : doneC === count && count > 0 
+                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' 
+                    : 'bg-[var(--bg-subtle)] text-[var(--text-secondary)] border border-[var(--border-subtle)]'
+                }`}>
+                  {doneC}/{count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right Arrow Button */}
+        {canScrollRight && (
+          <button
+            type="button"
+            onClick={() => scrollTabs('right')}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-[var(--bg-card)] border border-[var(--border-strong)] text-[var(--text-primary)] shadow-md flex items-center justify-center hover:scale-105 active:scale-95 transition"
+            title="Scroll categories right"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* 5. Minimalist Filter & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-[#131417] p-3 sm:p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[var(--bg-card)] p-3 sm:p-3.5 rounded-2xl border border-[var(--border-subtle)] shadow-sm">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Filter problems by title, company (Google, Amazon...), platform..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition"
+            className="w-full pl-10 pr-4 py-2 bg-[var(--bg-subtle)] border border-[var(--border-subtle)] rounded-xl text-xs sm:text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--border-active)] transition"
           />
         </div>
 
@@ -374,7 +446,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 cursor-pointer font-medium"
+            className="bg-[var(--bg-subtle)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)] cursor-pointer font-medium"
           >
             <option value="all">All Statuses</option>
             <option value="not_started">⚪ Not Started</option>
@@ -388,7 +460,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
           <select
             value={difficultyFilter}
             onChange={(e) => setDifficultyFilter(e.target.value as any)}
-            className="bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 cursor-pointer font-medium"
+            className="bg-[var(--bg-subtle)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)] cursor-pointer font-medium"
           >
             <option value="all">All Difficulties</option>
             <option value="Easy">Easy</option>
@@ -399,8 +471,8 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
       </div>
 
       {/* 6. Clean Problem Table / List */}
-      <div className="bg-white dark:bg-[#131417] border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
-        <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-mono">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider font-mono">
           <div className="flex items-center gap-4">
             <span>Status</span>
             <span>Problem Title</span>
@@ -412,12 +484,12 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
           </div>
         </div>
 
-        <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+        <div className="divide-y divide-[var(--border-subtle)]">
           {filteredQuestions.length === 0 ? (
-            <div className="p-12 text-center text-zinc-500">
-              <Award className="w-10 h-10 text-zinc-400 mx-auto mb-3" />
-              <p className="text-base font-semibold text-zinc-700 dark:text-zinc-300">No matching questions found</p>
-              <p className="text-xs text-zinc-500 mt-1">Try clearing your filters or search query.</p>
+            <div className="p-12 text-center text-[var(--text-muted)]">
+              <Award className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-3" />
+              <p className="text-base font-semibold text-[var(--text-primary)]">No matching questions found</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">Try clearing your filters or search query.</p>
             </div>
           ) : (
             filteredQuestions.map((q) => {
@@ -429,19 +501,19 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
               const revision = progress.revisions?.[q.id];
 
               return (
-                <div key={q.id} className="transition-colors hover:bg-zinc-50/70 dark:hover:bg-zinc-800/30">
+                <div key={q.id} className="transition-colors hover:bg-[var(--bg-card-hover)]">
                   <div className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
                       {/* Checkbox */}
                       <button
                         onClick={() => handleMarkDone(q.id)}
                         title={isDone ? 'Mark as Not Started' : 'Mark as Solved'}
-                        className="mt-0.5 sm:mt-0 text-zinc-400 hover:text-emerald-500 transition active:scale-90"
+                        className="mt-0.5 sm:mt-0 text-[var(--text-muted)] hover:text-[var(--status-green)] transition active:scale-90"
                       >
                         {isDone ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                          <CheckCircle2 className="w-5 h-5 text-[var(--status-green)]" />
                         ) : (
-                          <Circle className="w-5 h-5 text-zinc-400 hover:border-zinc-500" />
+                          <Circle className="w-5 h-5 text-[var(--text-muted)] hover:border-[var(--text-secondary)]" />
                         )}
                       </button>
 
@@ -453,7 +525,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                       >
                         <Star
                           className={`w-4 h-4 ${
-                            isStarred ? 'text-amber-500 fill-amber-500' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                            isStarred ? 'text-amber-500 fill-amber-500' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                           }`}
                         />
                       </button>
@@ -466,19 +538,19 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                             target="_blank"
                             rel="noopener noreferrer"
                             className={`font-medium text-sm transition hover:opacity-75 ${
-                              isDone ? 'text-zinc-400 dark:text-zinc-500 line-through' : 'text-zinc-900 dark:text-zinc-100'
+                              isDone ? 'text-[var(--text-muted)] line-through' : 'text-[var(--text-primary)]'
                             }`}
                           >
                             {q.title}
                           </a>
-                          <ExternalLink className="w-3.5 h-3.5 text-zinc-400 inline flex-shrink-0" />
+                          <ExternalLink className="w-3.5 h-3.5 text-[var(--text-muted)] inline flex-shrink-0" />
 
                           {revision && (
                             <span 
                               className={`text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1 font-mono ${
                                 isRevisionDue(revision)
                                   ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 font-bold animate-pulse'
-                                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700'
+                                  : 'bg-[var(--bg-subtle)] text-[var(--text-secondary)] border border-[var(--border-subtle)]'
                               }`}
                               title={isRevisionDue(revision) ? 'Revision due today!' : `Revision due on ${revision.dueAt}`}
                             >
@@ -493,7 +565,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                             {q.companies.map((comp, cIdx) => (
                               <span
                                 key={cIdx}
-                                className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"
+                                className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-subtle)] text-[var(--text-secondary)] border border-[var(--border-subtle)] font-mono"
                               >
                                 {comp}
                               </span>
@@ -513,8 +585,8 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                           status === 'solved'
                             ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
                             : status === 'revise_later'
-                            ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-300 dark:border-zinc-700'
-                            : 'bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200'
+                            ? 'bg-zinc-100 dark:bg-zinc-800 text-[var(--text-primary)] border-[var(--border-strong)]'
+                            : 'bg-[var(--bg-subtle)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                         }`}
                       >
                         <option value="not_started">⚪ Not Started</option>
@@ -522,7 +594,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                         <option value="revise_later">⏰ Revise Later</option>
                       </select>
 
-                      <span className="text-xs font-mono px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
+                      <span className="text-xs font-mono px-2 py-0.5 rounded bg-[var(--bg-subtle)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
                         {q.platform}
                       </span>
 
@@ -549,7 +621,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                         onClick={() => setExpandedNotesId(isNotesOpen ? null : q.id)}
                         className={`p-1.5 rounded-xl border transition ${
                           hasNotes
-                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent'
+                            ? 'btn-solid'
                             : 'btn-outline'
                         }`}
                         title="Add/View Problem Notes"
@@ -572,20 +644,20 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
 
                   {/* Notes Drawer */}
                   {isNotesOpen && (
-                    <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900/60 border-t border-zinc-200 dark:border-zinc-800 animate-in fade-in duration-200">
+                    <div className="px-6 py-4 bg-[var(--bg-subtle)] border-t border-[var(--border-subtle)] animate-in fade-in duration-200">
                       <div className="max-w-3xl">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
-                            <FileText className="w-3.5 h-3.5 text-zinc-500" /> Private Problem Notes
+                          <span className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                            <FileText className="w-3.5 h-3.5 text-[var(--text-muted)]" /> Private Problem Notes
                           </span>
-                          <span className="text-[10px] text-zinc-500 font-mono">Saved locally in browser</span>
+                          <span className="text-[10px] text-[var(--text-muted)] font-mono">Saved locally in browser</span>
                         </div>
                         <textarea
                           rows={3}
                           placeholder="Write down tricky edge cases, your approach intuition, time complexity..."
                           value={notesMap[q.id] || ''}
                           onChange={(e) => onSaveNote(q.id, e.target.value)}
-                          className="w-full p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 font-mono"
+                          className="w-full p-3 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--border-active)] font-mono"
                         />
                       </div>
                     </div>

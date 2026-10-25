@@ -11,7 +11,8 @@ import {
   Check,
   Coffee,
   Sun,
-  Moon
+  Moon,
+  Palette
 } from 'lucide-react';
 
 export type NavTab = 'sheet' | 'games' | 'learning' | 'dashboard';
@@ -24,8 +25,9 @@ interface NavbarProps {
   totalQuestions: number;
   onQuickRoulette: () => void;
   onOpenBuyCoffee?: () => void;
-  theme?: 'dark' | 'light';
+  theme?: 'dark' | 'beige' | 'light';
   onToggleTheme?: () => void;
+  onSetTheme?: (theme: 'dark' | 'beige' | 'light') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -38,6 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenBuyCoffee,
   theme = 'dark',
   onToggleTheme,
+  onSetTheme,
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -82,19 +85,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-[var(--nav-bg)] backdrop-blur-md border-b border-[var(--border-subtle)] w-full transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-3 sm:gap-6 h-15 sm:h-16">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between gap-2 sm:gap-4 h-15 sm:h-16">
           
           {/* Logo & Brand (Editorial Swiss Style) */}
           <div 
             onClick={() => onSelectTab('sheet')}
-            className="flex items-center gap-3 cursor-pointer group flex-shrink-0"
+            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group flex-shrink-0"
           >
             <div className="w-8 h-8 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)] group-hover:border-[var(--border-active)] transition">
               <Rocket className="w-4 h-4" />
             </div>
             <div>
-              <div className="flex items-baseline gap-2">
+              <div className="flex items-baseline gap-1.5 sm:gap-2">
                 <span className="font-bold text-base sm:text-lg text-[var(--text-primary)] tracking-tight">
                   DSASpace
                 </span>
@@ -102,7 +105,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   :: 450
                 </span>
               </div>
-              <p className="text-[11px] text-[var(--text-secondary)] hidden sm:block font-normal leading-none mt-0.5">
+              <p className="text-[11px] text-[var(--text-secondary)] hidden md:block font-normal leading-none mt-0.5">
                 Learn, Play & Master DSA
               </p>
             </div>
@@ -147,17 +150,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* Right Actions: Quick Roulette, Buy Coffee, Share, Streak & Theme Toggle */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Right Actions: Quick Roulette, Buy Coffee, Share, Streak & Theme Controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             {/* Quick Roulette Button */}
             <button
               type="button"
               onClick={onQuickRoulette}
-              className="btn-outline flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs"
+              className="btn-outline flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs"
               title="Roll a random question right now"
             >
               <Dice5 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Random Q</span>
+              <span className="hidden md:inline">Random Q</span>
             </button>
 
             {/* Buy Me a Coffee Button */}
@@ -165,11 +168,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={onOpenBuyCoffee}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 rounded-lg text-xs font-medium transition"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25 rounded-lg text-xs font-medium transition"
                 title="Support DSASpace with a Coffee"
               >
                 <Coffee className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Buy Coffee</span>
+                <span className="hidden lg:inline">Buy Coffee</span>
               </button>
             )}
 
@@ -183,34 +186,82 @@ export const Navbar: React.FC<NavbarProps> = ({
               {copiedLink ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-[var(--status-green)]" />
-                  <span className="text-[var(--status-green)] text-xs hidden lg:inline font-mono">Copied</span>
+                  <span className="text-[var(--status-green)] text-xs hidden xl:inline font-mono">Copied</span>
                 </>
               ) : (
                 <>
                   <Share2 className="w-3.5 h-3.5" />
-                  <span className="hidden lg:inline text-xs">Share</span>
+                  <span className="hidden xl:inline text-xs">Share</span>
                 </>
               )}
             </button>
 
             {/* Streak Counter */}
-            <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-subtle)] text-xs font-mono font-medium text-[var(--text-secondary)]">
+            <div className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-subtle)] text-xs font-mono font-medium text-[var(--text-secondary)]">
               <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500/30" />
               <span>{streak}d</span>
             </div>
 
-            {/* Minimalist Light / Dark Mode Toggle (Exact Portfolio Match) */}
-            {onToggleTheme && (
+            {/* 3-Way Minimalist Theme Segmented Control (Desktop / Tablet) */}
+            <div className="hidden sm:inline-flex items-center p-0.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-subtle)] text-xs font-mono">
               <button
                 type="button"
-                onClick={onToggleTheme}
-                className="w-8 h-8 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)] flex items-center justify-center transition active:scale-95"
-                aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-                title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                onClick={() => onSetTheme ? onSetTheme('dark') : onToggleTheme?.()}
+                className={`px-2 py-1 rounded-md transition flex items-center gap-1 ${
+                  theme === 'dark' 
+                    ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-xs font-bold border border-[var(--border-subtle)]' 
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                }`}
+                title="Obsidian Dark Theme"
               >
-                {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+                <Moon className="w-3 h-3" />
+                <span className="hidden xl:inline text-[10px]">Dark</span>
               </button>
-            )}
+
+              <button
+                type="button"
+                onClick={() => onSetTheme ? onSetTheme('beige') : onToggleTheme?.()}
+                className={`px-2 py-1 rounded-md transition flex items-center gap-1 ${
+                  theme === 'beige' 
+                    ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-xs font-bold border border-[var(--border-subtle)]' 
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                }`}
+                title="Warm Beige / Editorial Paper Theme"
+              >
+                <Palette className="w-3 h-3" />
+                <span className="hidden xl:inline text-[10px]">Beige</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onSetTheme ? onSetTheme('light') : onToggleTheme?.()}
+                className={`px-2 py-1 rounded-md transition flex items-center gap-1 ${
+                  theme === 'light' 
+                    ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-xs font-bold border border-[var(--border-subtle)]' 
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                }`}
+                title="Swiss Paper Light Theme"
+              >
+                <Sun className="w-3 h-3" />
+                <span className="hidden xl:inline text-[10px]">Light</span>
+              </button>
+            </div>
+
+            {/* Mobile 1-Touch Theme Cycle Button */}
+            <button
+              type="button"
+              onClick={onToggleTheme}
+              className="w-8 h-8 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center transition active:scale-95 sm:hidden"
+              title={`Current theme: ${theme}. Click to cycle Dark -> Beige -> Light.`}
+            >
+              {theme === 'dark' ? (
+                <Moon className="w-3.5 h-3.5" />
+              ) : theme === 'beige' ? (
+                <Palette className="w-3.5 h-3.5" />
+              ) : (
+                <Sun className="w-3.5 h-3.5" />
+              )}
+            </button>
           </div>
         </div>
 

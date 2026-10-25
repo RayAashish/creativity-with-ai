@@ -76,29 +76,29 @@ export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-[#131417] border border-zinc-200 dark:border-zinc-800 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative overflow-hidden">
         <div className="flex items-center justify-between mb-6 relative z-10">
           <div className="flex items-center gap-3">
-            <span className="p-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-2xl">
+            <span className="p-2.5 bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-2xl">
               <Sparkles className="w-5 h-5" />
             </span>
             <div>
-              <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">DSA Problem Roulette</h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                Pool: <span className="font-semibold text-zinc-800 dark:text-zinc-200">{topicName}</span> • Unsolved Available:{' '}
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">{totalRemaining}</span> / {totalInPool}
+              <h3 className="text-xl font-bold text-[var(--text-primary)]">DSA Problem Roulette</h3>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                Pool: <span className="font-semibold text-[var(--text-primary)]">{topicName}</span> • Unsolved Available:{' '}
+                <span className="text-[var(--status-green)] font-bold">{totalRemaining}</span> / {totalInPool}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 rounded-xl transition"
+            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-subtle)] rounded-xl transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex items-center gap-2 mb-6 relative z-10 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex items-center gap-2 mb-6 relative z-10 overflow-x-auto pb-1 category-scroll-container">
           <button
             onClick={() => {
               onSelectTopic('all');
@@ -106,8 +106,8 @@ export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
             }}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
               currentTopic === 'all'
-                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent shadow-sm'
-                : 'bg-zinc-100 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:text-zinc-900 dark:hover:text-white'
+                ? 'btn-solid shadow-sm'
+                : 'btn-outline text-[var(--text-secondary)]'
             }`}
           >
             All 450 Sheet
@@ -121,8 +121,8 @@ export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
               }}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold border whitespace-nowrap transition ${
                 currentTopic === t.id
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent shadow-sm'
-                  : 'bg-zinc-100 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:text-zinc-900 dark:hover:text-white'
+                  ? 'btn-solid shadow-sm'
+                  : 'btn-outline text-[var(--text-secondary)]'
               }`}
             >
               {t.name}
@@ -131,36 +131,36 @@ export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
         </div>
 
         {question ? (
-          <div className={`relative z-10 bg-zinc-50 dark:bg-zinc-900/60 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 mb-6 transition-all duration-300 ${isSpinning ? 'opacity-40 scale-98' : 'opacity-100 scale-100'}`}>
+          <div className={`relative z-10 bg-[var(--bg-subtle)] rounded-2xl border border-[var(--border-subtle)] p-6 mb-6 transition-all duration-300 ${isSpinning ? 'opacity-40 scale-98' : 'opacity-100 scale-100'}`}>
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${getDifficultyColor(question.difficulty)}`}>
                 {question.difficulty}
               </span>
-              <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-medium bg-zinc-200/70 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-700">
+              <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-medium bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
                 {question.platform}
               </span>
-              <span className="px-2.5 py-1 rounded-lg text-xs font-mono text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 uppercase">
+              <span className="px-2.5 py-1 rounded-lg text-xs font-mono text-[var(--text-muted)] bg-[var(--bg-card)] border border-[var(--border-subtle)] uppercase">
                 {TOPICS.find(t => t.id === question.topic)?.name || question.topic}
               </span>
             </div>
 
-            <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-2 leading-snug">
+            <h4 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] mb-2 leading-snug">
               {question.title}
             </h4>
 
             {question.description && (
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4 leading-relaxed">
+              <p className="text-sm text-[var(--text-secondary)] mb-4 leading-relaxed">
                 {question.description}
               </p>
             )}
 
             {question.companies && question.companies.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5 mb-4">
-                <span className="text-xs text-zinc-400">Asked at:</span>
+                <span className="text-xs text-[var(--text-muted)]">Asked at:</span>
                 {question.companies.map((comp, idx) => (
                   <span
                     key={idx}
-                    className="text-[11px] px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+                    className="text-[11px] px-2 py-0.5 rounded-md bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)] font-mono"
                   >
                     {comp}
                   </span>
@@ -168,7 +168,7 @@ export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
               </div>
             )}
 
-            <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+            <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-[var(--border-subtle)]">
               <button
                 onClick={() => handleOpenProblem(question.url)}
                 className="btn-solid flex-1 flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-semibold rounded-xl"
@@ -202,15 +202,15 @@ export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
             </div>
           </div>
         ) : (
-          <div className="relative z-10 bg-zinc-50 dark:bg-zinc-900/60 rounded-2xl border border-emerald-500/30 p-6 sm:p-8 mb-6 text-center">
-            <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-500">
+          <div className="relative z-10 bg-[var(--bg-subtle)] rounded-2xl border border-emerald-500/30 p-6 sm:p-8 mb-6 text-center">
+            <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-4 text-[var(--status-green)]">
               <Trophy className="w-7 h-7" />
             </div>
-            <h4 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
+            <h4 className="text-xl font-bold text-[var(--text-primary)] mb-2">
               All Questions in this Category Completed!
             </h4>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-md mx-auto mb-5 leading-relaxed">
-              Incredible work! You have marked all questions in <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{topicName}</span> as completed.
+            <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto mb-5 leading-relaxed">
+              Incredible work! You have marked all questions in <span className="text-[var(--status-green)] font-semibold">{topicName}</span> as completed.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-3">
@@ -236,13 +236,13 @@ export const RandomQuestionModal: React.FC<RandomQuestionModalProps> = ({
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-4 relative z-10 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-          <label className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 cursor-pointer select-none">
+        <div className="flex flex-wrap items-center justify-between gap-4 relative z-10 pt-2 border-t border-[var(--border-subtle)]">
+          <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)] cursor-pointer select-none">
             <input
               type="checkbox"
               checked={includeDone}
               onChange={(e) => setIncludeDone(e.target.checked)}
-              className="rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-0 w-4 h-4 cursor-pointer"
+              className="rounded border-[var(--border-strong)] text-[var(--text-primary)] focus:ring-0 w-4 h-4 cursor-pointer"
             />
             <span>Include completed questions in random pool (Revision Mode)</span>
           </label>
