@@ -1,0 +1,709 @@
+[
+  {
+    "id": "dp-6",
+    "title": "Matrix Chain Multiplication",
+    "topic": "dp",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/matrix-chain-multiplication0303/1",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Flipkart"
+    ],
+    "description": "Find the most efficient way to multiply a given sequence of matrices using interval DP in O(N^3)."
+  },
+  {
+    "id": "dp-7",
+    "title": "Edit Distance",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/edit-distance/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft"
+    ],
+    "description": "Given two strings word1 and word2, return minimum edit operations to convert word1 to word2."
+  },
+  {
+    "id": "dp-8",
+    "title": "Subset Sum Problem (Partition Equal Subset Sum)",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/partition-equal-subset-sum/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google"
+    ],
+    "description": "Determine if array can be partitioned into two subsets such that the sum of elements in both subsets is equal."
+  },
+  {
+    "id": "dp-9",
+    "title": "Friends Pairing Problem",
+    "topic": "dp",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/friends-pairing-problem5425/1",
+    "companies": [
+      "Amazon",
+      "Goldman Sachs"
+    ],
+    "description": "Count total ways to pair up n friends where each friend can remain single or pair up with another friend."
+  },
+  {
+    "id": "dp-10",
+    "title": "Gold Mine Problem",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/gold-mine-problem2608/1",
+    "companies": [
+      "Amazon",
+      "Samsung"
+    ],
+    "description": "Find maximum gold miner can collect starting from any row in first column moving right, right-up, or right-down."
+  },
+  {
+    "id": "dp-11",
+    "title": "Assembly Line Scheduling Problem",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/assembly-line-scheduling-dp-34/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find minimum time to build product on two assembly lines with workstation and transfer costs."
+  },
+  {
+    "id": "dp-12",
+    "title": "Painting the Fence problem",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/painting-the-fence3727/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Count ways to paint fence with n posts using k colors such that no more than two adjacent posts have same color."
+  },
+  {
+    "id": "dp-13",
+    "title": "Maximize The Cut Segments",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/cutted-segments1642/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Find maximum number of cut segments of lengths x, y, and z into which rod of length N can be cut."
+  },
+  {
+    "id": "dp-14",
+    "title": "Longest Common Subsequence",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/longest-common-subsequence/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google"
+    ],
+    "description": "Given two strings, return the length of their longest common subsequence."
+  },
+  {
+    "id": "dp-15",
+    "title": "Longest Repeated Subsequence",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/longest-repeating-subsequence2004/1",
+    "companies": [
+      "Amazon",
+      "Google"
+    ],
+    "description": "Find the length of longest subsequence that appears at least twice without using same character index."
+  },
+  {
+    "id": "dp-16",
+    "title": "Longest Increasing Subsequence",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/longest-increasing-subsequence/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google"
+    ],
+    "description": "Find length of longest strictly increasing subsequence in O(N log N) using patience sorting and binary search."
+  },
+  {
+    "id": "dp-17",
+    "title": "Space Optimized Solution of LCS",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/space-optimized-solution-lcs/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Compute LCS length using only two rows of dynamic programming table in O(min(N, M)) space."
+  },
+  {
+    "id": "dp-18",
+    "title": "LCS (Longest Common Subsequence) of three strings",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/lcs-of-three-strings0028/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find length of longest common subsequence of three given strings using 3D dynamic programming."
+  },
+  {
+    "id": "dp-19",
+    "title": "Maximum Sum Increasing Subsequence",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/maximum-sum-increasing-subsequence4749/1",
+    "companies": [
+      "Amazon",
+      "Morgan Stanley"
+    ],
+    "description": "Find maximum sum of a subsequence such that all elements in subsequence are sorted in strictly increasing order."
+  },
+  {
+    "id": "dp-20",
+    "title": "Count all subsequences having product less than K",
+    "topic": "dp",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/count-subsequences-product-less-k/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find number of non-empty subsequences of positive integers having product strictly less than K."
+  },
+  {
+    "id": "dp-21",
+    "title": "Longest subsequence such that difference between adjacent is one",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/longest-subsequence-such-that-difference-between-adjacents-is-one4724/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find the length of longest subsequence where absolute difference between consecutive elements is 1."
+  },
+  {
+    "id": "dp-22",
+    "title": "Maximum subsequence sum such that no three are consecutive",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/maximum-subsequence-sum-such-that-no-three-are-consecutive/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find maximum sum subsequence from array such that no three elements picked are adjacent."
+  },
+  {
+    "id": "dp-23",
+    "title": "Egg Dropping Puzzle",
+    "topic": "dp",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/super-egg-drop/",
+    "companies": [
+      "Google",
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Find minimum number of moves required to determine critical floor using k eggs and n floors."
+  },
+  {
+    "id": "dp-24",
+    "title": "Maximum Length Chain of Pairs",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/maximum-length-of-pair-chain/",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Find the longest chain of pairs (a, b) and (c, d) where b < c using greedy sorting or DP."
+  },
+  {
+    "id": "dp-25",
+    "title": "Maximal Square (Maximum size square sub-matrix with all 1s)",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/maximal-square/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Apple"
+    ],
+    "description": "Find the largest square containing only 1s in a binary matrix and return its area."
+  },
+  {
+    "id": "dp-26",
+    "title": "Maximum sum of pairs with specific difference",
+    "topic": "dp",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/pairs-with-specific-difference/0",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Pair elements such that difference is strictly less than K to maximize total sum of paired elements."
+  },
+  {
+    "id": "dp-27",
+    "title": "Min Cost Path Problem",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/minimum-path-sum/",
+    "companies": [
+      "Amazon",
+      "Google"
+    ],
+    "description": "Find a path from top left to bottom right of m x n grid which minimizes sum of all numbers along its path."
+  },
+  {
+    "id": "dp-28",
+    "title": "Maximum difference of zeros and ones in binary string",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/maximum-difference-of-zeros-and-ones-in-binary-string4111/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find substring with maximum (count of 0s - count of 1s) by converting 0 to +1 and 1 to -1 using Kadane."
+  },
+  {
+    "id": "dp-29",
+    "title": "Jump Game II (Minimum number of jumps to reach end)",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/jump-game-ii/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft"
+    ],
+    "description": "Return minimum number of jumps to reach last index of nums in O(N) time using greedy interval BFS."
+  },
+  {
+    "id": "dp-30",
+    "title": "Minimum cost to fill given weight in a bag",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/minimum-cost-to-fill-given-weight-in-a-bag1956/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find minimum cost to buy exactly W kg of oranges given costs of 1kg, 2kg, ... packets using unbounded knapsack."
+  },
+  {
+    "id": "dp-31",
+    "title": "Minimum removals from array to make max - min <= K",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/minimum-removals-array-make-max-min-k/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find minimum removals from array so that difference between max and min remaining elements is at most K."
+  },
+  {
+    "id": "dp-32",
+    "title": "Longest Common Substring",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/longest-common-substring1449/1",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "TCS"
+    ],
+    "description": "Find length of the longest contiguous substring common to both given strings S1 and S2."
+  },
+  {
+    "id": "dp-33",
+    "title": "Count number of ways to reach a given score in a game",
+    "topic": "dp",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/reach-a-given-score-1587115621/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Count number of distinct combinations to reach score n using point moves 3, 5, and 10."
+  },
+  {
+    "id": "dp-34",
+    "title": "Count Balanced Binary Trees of Height h",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/bbt-counter4914/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Count number of balanced binary trees of height h: dp[h] = dp[h-1]*(2*dp[h-2] + dp[h-1]) mod 10^9+7."
+  },
+  {
+    "id": "dp-35",
+    "title": "Largest sum contiguous subarray (Kadane's Algorithm)",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/maximum-subarray/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft"
+    ],
+    "description": "Find contiguous subarray with maximum sum in O(N) time and O(1) space."
+  },
+  {
+    "id": "dp-36",
+    "title": "Smallest sum contiguous subarray",
+    "topic": "dp",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/smallest-sum-contiguous-subarray/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find contiguous subarray with smallest sum using modified Kadane's algorithm."
+  },
+  {
+    "id": "dp-37",
+    "title": "Unbounded Knapsack (Repetition of items allowed)",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/knapsack-with-duplicate-items4201/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Maximize total value in knapsack where unlimited copies of each item are available."
+  },
+  {
+    "id": "dp-38",
+    "title": "Word Break Problem (DP)",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/word-break/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook"
+    ],
+    "description": "Determine if string s can be segmented into space-separated sequence of dictionary words using 1D DP."
+  },
+  {
+    "id": "dp-39",
+    "title": "Largest Independent Set Problem",
+    "topic": "dp",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/largest-independent-set-problem-dp-26/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find size of largest subset of vertices in binary tree such that no two vertices are adjacent."
+  },
+  {
+    "id": "dp-40",
+    "title": "Partition Equal Subset Sum",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/partition-equal-subset-sum/",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Check whether array can be partitioned into two subsets of equal sum."
+  },
+  {
+    "id": "dp-41",
+    "title": "Longest Palindromic Subsequence",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/longest-palindromic-subsequence/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google"
+    ],
+    "description": "Find the length of the longest palindromic subsequence in string s using LCS(s, rev(s))."
+  },
+  {
+    "id": "dp-42",
+    "title": "Count Palindromic Subsequences",
+    "topic": "dp",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/count-palindromic-subsequences/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Count all palindromic subsequences in string modulo 10^9+7 using 2D DP."
+  },
+  {
+    "id": "dp-43",
+    "title": "Longest Palindromic Substring (DP approach)",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/longest-palindromic-substring/",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Find the longest contiguous palindromic substring using boolean DP table."
+  },
+  {
+    "id": "dp-44",
+    "title": "Longest alternating subsequence (Wiggle Subsequence)",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/wiggle-subsequence/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Return length of longest subsequence where differences between successive elements strictly alternate between positive and negative."
+  },
+  {
+    "id": "dp-45",
+    "title": "Weighted Job Scheduling",
+    "topic": "dp",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/maximum-profit-in-job-scheduling/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook"
+    ],
+    "description": "Find maximum profit non-overlapping subset of jobs using sorting, binary search, and dynamic programming in O(N log N)."
+  },
+  {
+    "id": "dp-46",
+    "title": "Coin game winner where every player has three choices",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/coin-game-winner-every-player-three-choices/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Determine winner of game where players can pick 1, x, or y coins in each turn using game-theory DP."
+  },
+  {
+    "id": "dp-47",
+    "title": "Count Derangements",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/count-derangements/0",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Count permutations of n elements where no element appears in its original position: d(n) = (n-1)*(d(n-1) + d(n-2))."
+  },
+  {
+    "id": "dp-48",
+    "title": "Best Time to Buy and Sell Stock IV (At most K transactions)",
+    "topic": "dp",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iv/",
+    "companies": [
+      "Amazon",
+      "Google"
+    ],
+    "description": "Find maximum profit from stock prices completing at most k transactions."
+  },
+  {
+    "id": "dp-49",
+    "title": "Find minimum number of coins to make a given value",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/coin-change/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft"
+    ],
+    "description": "Return fewest number of coins that you need to make up amount using bottom-up DP."
+  },
+  {
+    "id": "dp-50",
+    "title": "Optimal Strategy for a Game (Predict the Winner)",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/predict-the-winner/",
+    "companies": [
+      "Amazon",
+      "Google"
+    ],
+    "description": "Two players take turns picking either front or end of array; determine if first player can win using minimax DP."
+  },
+  {
+    "id": "dp-51",
+    "title": "Optimal Binary Search Tree",
+    "topic": "dp",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/optimal-binary-search-tree-dp-35/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Construct BST of keys with search frequencies such that total cost of all searches is minimized."
+  },
+  {
+    "id": "dp-52",
+    "title": "Palindrome Partitioning II (Minimum cuts needed)",
+    "topic": "dp",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/palindrome-partitioning-ii/",
+    "companies": [
+      "Amazon",
+      "Google"
+    ],
+    "description": "Return minimum cuts needed for palindrome partitioning of string s in O(N^2) time."
+  },
+  {
+    "id": "dp-53",
+    "title": "Word Wrap Problem (DP)",
+    "topic": "dp",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/word-wrap1646/1",
+    "companies": [
+      "Amazon",
+      "Flipkart"
+    ],
+    "description": "Optimize extra space line wrapping using dynamic programming."
+  },
+  {
+    "id": "dp-54",
+    "title": "Mobile Numeric Keypad Problem",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/mobile-numeric-keypad5456/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Count possible numbers of length N on numeric keypad moving to adjacent keys or staying on same key."
+  },
+  {
+    "id": "dp-55",
+    "title": "Boolean Parenthesization Problem",
+    "topic": "dp",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/boolean-parenthesization5610/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Count number of ways to parenthesize boolean expression with symbols T, F and operators &, |, ^ to evaluate to True."
+  },
+  {
+    "id": "dp-56",
+    "title": "Largest rectangular sub-matrix whose sum is 0",
+    "topic": "dp",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/largest-rectangular-sub-matrix-whose-sum-is-0/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find largest rectangular sub-matrix in 2D array having sum equal to 0 using 1D zero-sum hash map on column pairs."
+  },
+  {
+    "id": "dp-57",
+    "title": "Largest area rectangular sub-matrix with equal number of 1\u2019s and 0\u2019s",
+    "topic": "dp",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/largest-area-rectangular-sub-matrix-equal-number-1s-0s/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find largest area sub-matrix with equal 1s and 0s by converting 0 to -1 and finding largest zero-sum sub-matrix."
+  },
+  {
+    "id": "dp-58",
+    "title": "Maximum sum rectangle in a 2D matrix",
+    "topic": "dp",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/maximum-sum-rectangle2948/1",
+    "companies": [
+      "Amazon",
+      "Samsung"
+    ],
+    "description": "Find maximum sum rectangular submatrix in 2D matrix using Kadane's algorithm across row/column bounds in O(C*C*R)."
+  },
+  {
+    "id": "dp-59",
+    "title": "Best Time to Buy and Sell Stock III (At most two transactions)",
+    "topic": "dp",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iii/",
+    "companies": [
+      "Amazon",
+      "Google"
+    ],
+    "description": "Find maximum profit completing at most two transactions using dynamic forward and backward profit arrays."
+  },
+  {
+    "id": "dp-60",
+    "title": "Interleaving String",
+    "topic": "dp",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/interleaving-string/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Yahoo"
+    ],
+    "description": "Determine whether s3 is formed by an interleaving of strings s1 and s2 using 2D boolean DP."
+  }
+]

@@ -1,0 +1,246 @@
+[
+  {
+    "id": "bst-4",
+    "title": "Find inorder predecessor and successor for a given key in BST",
+    "topic": "bst",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/predecessor-and-successor/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Find inorder predecessor and successor of given key in BST in O(H) time and O(1) space."
+  },
+  {
+    "id": "bst-5",
+    "title": "Check if a tree is a BST or not (Validate BST)",
+    "topic": "bst",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/validate-binary-search-tree/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google",
+      "Facebook"
+    ],
+    "description": "Determine if binary tree is valid BST with strictly bounded ranges [minVal, maxVal]."
+  },
+  {
+    "id": "bst-6",
+    "title": "Populate Inorder Successor for all nodes",
+    "topic": "bst",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/populate-inorder-successor-for-all-nodes/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Populate next pointer for all nodes to point to their inorder successor using reverse inorder traversal."
+  },
+  {
+    "id": "bst-7",
+    "title": "Find LCA of 2 nodes in a BST",
+    "topic": "bst",
+    "difficulty": "Easy",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Twitter"
+    ],
+    "description": "Find LCA of two nodes in BST in O(H) time by comparing node values with root value."
+  },
+  {
+    "id": "bst-8",
+    "title": "Construct BST from preorder traversal",
+    "topic": "bst",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/construct-binary-search-tree-from-preorder-traversal/",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Construct BST from preorder traversal array in O(N) time using upper bound limits."
+  },
+  {
+    "id": "bst-9",
+    "title": "Convert Binary tree into BST",
+    "topic": "bst",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/binary-tree-to-bst/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Convert binary tree to BST preserving original tree structure using sorted inorder traversal array."
+  },
+  {
+    "id": "bst-10",
+    "title": "Convert a normal BST to Balanced BST",
+    "topic": "bst",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/balance-a-binary-search-tree/",
+    "companies": [
+      "Amazon",
+      "Facebook"
+    ],
+    "description": "Convert unbalanced BST to balanced BST in O(N) time by extracting sorted inorder array and binary building."
+  },
+  {
+    "id": "bst-11",
+    "title": "Merge two BSTs",
+    "topic": "bst",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/merge-two-bst-s/1",
+    "companies": [
+      "Amazon",
+      "Google"
+    ],
+    "description": "Merge two BSTs into a single balanced BST or sorted list in O(M+N) time."
+  },
+  {
+    "id": "bst-12",
+    "title": "Find Kth largest element in BST",
+    "topic": "bst",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/kth-largest-element-in-bst/1",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Samsung"
+    ],
+    "description": "Find kth largest element in BST in O(H + K) time using reverse inorder traversal (Right -> Root -> Left)."
+  },
+  {
+    "id": "bst-13",
+    "title": "Find Kth smallest element in BST",
+    "topic": "bst",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/kth-smallest-element-in-a-bst/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook"
+    ],
+    "description": "Find kth smallest element in BST using inorder traversal stack."
+  },
+  {
+    "id": "bst-14",
+    "title": "Count pairs from 2 BST whose sum is equal to given value 'X'",
+    "topic": "bst",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/brothers-from-different-root/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Count pairs (node1 from bst1, node2 from bst2) such that node1.data + node2.data = X using two BST iterators."
+  },
+  {
+    "id": "bst-15",
+    "title": "Find the median of BST in O(n) time and O(1) space",
+    "topic": "bst",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/find-median-bst-time-o1-space/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find median of BST using Morris Inorder Traversal to count nodes and find middle element in O(1) space."
+  },
+  {
+    "id": "bst-16",
+    "title": "Count BST nodes that lie in a given range",
+    "topic": "bst",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/count-bst-nodes-that-lie-in-a-given-range/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Count number of nodes in BST that fall within range [low, high] with optimal pruning."
+  },
+  {
+    "id": "bst-17",
+    "title": "Replace every element with the least greater element on its right",
+    "topic": "bst",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/replace-every-element-with-the-least-greater-element-on-its-right/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Insert elements from right to left into a BST and track inorder successor for each inserted node."
+  },
+  {
+    "id": "bst-18",
+    "title": "Given 'n' appointments, find the conflicting appointments",
+    "topic": "bst",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/given-n-appointments-find-conflicting-appointments/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Identify conflicting appointments using an Interval Tree or BST of intervals."
+  },
+  {
+    "id": "bst-19",
+    "title": "Check preorder valid for BST or not",
+    "topic": "bst",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/preorder-to-postorder4423/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Check if an array represents valid preorder traversal of a BST using monotonic stack in O(N) time."
+  },
+  {
+    "id": "bst-20",
+    "title": "Check whether BST contains Dead End",
+    "topic": "bst",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/check-whether-bst-contains-dead-end/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Check whether BST contains node where no other integer node can be inserted (i.e. min == max)."
+  },
+  {
+    "id": "bst-21",
+    "title": "Largest BST in a Binary Tree",
+    "topic": "bst",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/largest-bst/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Find size of largest subtree in binary tree which is also a valid BST using bottom-up postorder DFS."
+  },
+  {
+    "id": "bst-22",
+    "title": "Flatten BST to sorted list",
+    "topic": "bst",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/flatten-bst-to-sorted-list-increasing-order/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Flatten BST to sorted linked list (or right-skewed tree) in-place without auxiliary memory."
+  }
+]

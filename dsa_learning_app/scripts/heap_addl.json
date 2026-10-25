@@ -1,0 +1,344 @@
+[
+  {
+    "id": "heap-3",
+    "title": "Maximum of all subarrays of size k (Sliding Window Maximum)",
+    "topic": "heaps-hashing",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/sliding-window-maximum/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft"
+    ],
+    "description": "Find maximum element in each sliding window of size k using max-heap or monotonic deque."
+  },
+  {
+    "id": "heap-4",
+    "title": "'k' largest elements in an array",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/kth-largest-element-in-an-array/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook"
+    ],
+    "description": "Find the k largest elements in an array using a Min-Heap of size k in O(N log k) time."
+  },
+  {
+    "id": "heap-5",
+    "title": "Kth smallest element in an unsorted array",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/kth-smallest-element5635/1",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Snapdeal"
+    ],
+    "description": "Find kth smallest element in array using Max-Heap of size k or QuickSelect in O(N) average time."
+  },
+  {
+    "id": "heap-6",
+    "title": "Merge 'K' sorted arrays",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/merge-k-sorted-arrays/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Merge k sorted arrays into one single sorted array using Min-Heap of size k containing pointers."
+  },
+  {
+    "id": "heap-7",
+    "title": "Merge 2 Binary Max Heaps",
+    "topic": "heaps-hashing",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/merge-two-binary-max-heap0144/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Merge two binary max heaps into a single max heap by concatenating arrays and applying buildHeap in O(N+M)."
+  },
+  {
+    "id": "heap-8",
+    "title": "Kth largest sum continuous subarrays",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/k-th-largest-sum-contiguous-subarray/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find kth largest contiguous subarray sum using prefix sums and Min-Heap of size k."
+  },
+  {
+    "id": "heap-9",
+    "title": "Reorganize String (Rearrange characters)",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/reorganize-string/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook"
+    ],
+    "description": "Rearrange characters of string such that no two adjacent characters are identical using Max-Heap."
+  },
+  {
+    "id": "heap-10",
+    "title": "Merge K sorted linked lists",
+    "topic": "heaps-hashing",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/merge-k-sorted-lists/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook",
+      "Microsoft"
+    ],
+    "description": "Merge k sorted linked lists into one sorted linked list using a Min-Heap of node pointers."
+  },
+  {
+    "id": "heap-11",
+    "title": "Smallest range in K lists",
+    "topic": "heaps-hashing",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/smallest-range-covering-elements-from-k-lists/",
+    "companies": [
+      "Amazon",
+      "Google"
+    ],
+    "description": "Find smallest range [a, b] that includes at least one number from each of the k sorted lists using Min-Heap."
+  },
+  {
+    "id": "heap-12",
+    "title": "Median in a stream of running integers",
+    "topic": "heaps-hashing",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/find-median-from-data-stream/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Apple"
+    ],
+    "description": "Maintain running median of numeric stream in O(log N) insert time using balanced max-heap and min-heap."
+  },
+  {
+    "id": "heap-13",
+    "title": "Check if a Binary Tree is Heap",
+    "topic": "heaps-hashing",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/is-binary-tree-heap/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Verify that binary tree is complete binary tree and satisfies max-heap property at all nodes."
+  },
+  {
+    "id": "heap-14",
+    "title": "Connect 'n' ropes with minimum cost",
+    "topic": "heaps-hashing",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/minimum-cost-of-ropes-1587115620/1",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Goldman Sachs"
+    ],
+    "description": "Connect ropes with minimum total cost using a priority queue."
+  },
+  {
+    "id": "heap-15",
+    "title": "Convert BST to Min Heap",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/convert-bst-min-heap/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Convert BST into Min-Heap such that values in left subtree are smaller than right subtree using preorder assignment."
+  },
+  {
+    "id": "heap-16",
+    "title": "Convert min Heap to max Heap",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/convert-min-heap-to-max-heap/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Convert Min-Heap array representation into Max-Heap in O(N) time using bottom-up maxHeapify."
+  },
+  {
+    "id": "heap-17",
+    "title": "Rearrange characters in string such that no two adjacent are same",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/rearrange-characters4649/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Check if valid rearrangement exists and construct it using character frequencies and priority queue."
+  },
+  {
+    "id": "heap-18",
+    "title": "Minimum sum of two numbers formed from digits of an array",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/min-sum-formed-by-digits3305/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Form two numbers using digits from array such that their sum is minimized by alternating sorted digits."
+  },
+  {
+    "id": "heap-19",
+    "title": "Top K Frequent Elements",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/top-k-frequent-elements/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook"
+    ],
+    "description": "Return the k most frequent elements in an array using frequency map and bucket sort or Min-Heap."
+  },
+  {
+    "id": "heap-20",
+    "title": "Find whether an array is subset of another array (Hashing)",
+    "topic": "heaps-hashing",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/array-subset-of-another-array2317/1",
+    "companies": [
+      "Amazon",
+      "Cisco"
+    ],
+    "description": "Determine if array arr2 is a subset of arr1 using hash map count verification."
+  },
+  {
+    "id": "heap-21",
+    "title": "Zero Sum Subarrays (Count subarrays with zero sum)",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/zero-sum-subarrays1825/1",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Paytm"
+    ],
+    "description": "Count total number of subarrays having sum equal to zero using prefix sum frequency map in O(N)."
+  },
+  {
+    "id": "heap-22",
+    "title": "Count distinct elements in every window of size k",
+    "topic": "heaps-hashing",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/count-distinct-elements-in-every-window/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Count distinct elements in every sliding window of size k using hash map to track counts."
+  },
+  {
+    "id": "heap-23",
+    "title": "Longest Consecutive Subsequence (Hashing)",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/longest-consecutive-sequence/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Spotify"
+    ],
+    "description": "Find length of longest consecutive elements sequence in O(N) time using HashSet lookup."
+  },
+  {
+    "id": "heap-24",
+    "title": "Array Pair Sum Divisibility Problem",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/array-pair-sum-divisibility-problem3257/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Determine if array of integers can be divided into pairs such that sum of every pair is divisible by k."
+  },
+  {
+    "id": "heap-25",
+    "title": "Find itinerary from a given list of tickets",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/reconstruct-itinerary/",
+    "companies": [
+      "Amazon",
+      "Google"
+    ],
+    "description": "Reconstruct itinerary in order from list of airline tickets using hash map graph and Hierholzer's algorithm."
+  },
+  {
+    "id": "heap-26",
+    "title": "Check if two arrays are equal or not",
+    "topic": "heaps-hashing",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/check-if-two-arrays-are-equal-or-not3847/1",
+    "companies": [
+      "Amazon",
+      "Goldman Sachs"
+    ],
+    "description": "Check if two arrays are equal (contain same elements with same frequencies) using frequency hash map."
+  },
+  {
+    "id": "heap-27",
+    "title": "Group Anagrams",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/group-anagrams/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook"
+    ],
+    "description": "Group an array of strings into anagram clusters using sorted word or character count hash keys."
+  },
+  {
+    "id": "heap-28",
+    "title": "Smallest subarray with all occurrences of a most frequent element",
+    "topic": "heaps-hashing",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/degree-of-an-array/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find smallest subarray containing all occurrences of the maximum frequency element using hash tracking of first/last index."
+  }
+]

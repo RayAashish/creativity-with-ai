@@ -191,11 +191,11 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
   const getDifficultyBadge = (diff: Difficulty) => {
     switch (diff) {
       case 'Easy':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
       case 'Medium':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
       case 'Hard':
-        return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+        return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
     }
   };
 
@@ -223,19 +223,19 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
       />
 
       {/* 3. Streamlined Command & Progress Header */}
-      <div className="rounded-2xl border border-white/[0.08] bg-[#0d1017]/70 backdrop-blur-xl p-5 sm:p-6 shadow-md relative overflow-hidden">
+      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#131417] p-5 sm:p-6 shadow-sm relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-[11px] font-mono font-medium uppercase px-2 py-0.5 rounded bg-white/[0.06] text-zinc-300 border border-white/[0.08]">
+              <span className="text-[11px] font-mono font-medium uppercase px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
                 Curated Sheet
               </span>
-              <span className="text-xs text-zinc-400 font-medium">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
                 450 Problems across 12 Core Patterns
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              Love Babbar 450 DSA Sheet
+            <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
+              450 DSA Sheet
             </h1>
           </div>
 
@@ -243,7 +243,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
           <div className="flex items-center gap-2.5 flex-wrap">
             <button
               onClick={() => triggerRandomPicker(selectedTopic)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold text-xs rounded-xl shadow-sm shadow-cyan-500/20 transition active:scale-95"
+              className="btn-solid flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold"
             >
               <Dice5 className="w-4 h-4" />
               <span>
@@ -253,58 +253,58 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
 
             <button
               onClick={() => triggerRandomPicker('all')}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white font-medium text-xs rounded-xl border border-white/[0.08] transition active:scale-95"
+              className="btn-outline flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium"
             >
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
               <span>Global 450</span>
             </button>
           </div>
         </div>
 
         {/* Unified Metrics Bar */}
-        <div className="mt-5 pt-4 border-t border-white/[0.06] grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800 grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
-            <span className="text-[11px] text-zinc-400 block font-medium">Overall Progress</span>
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block font-medium">Overall Progress</span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-lg font-bold text-white">{totalDone} / {totalQuestions}</span>
-              <span className="text-xs text-cyan-400 font-mono font-semibold">
+              <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{totalDone} / {totalQuestions}</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono font-semibold">
                 ({Math.round((totalDone / totalQuestions) * 100)}%)
               </span>
             </div>
           </div>
 
           <div>
-            <span className="text-[11px] text-zinc-400 block font-medium">{currentTopicMeta?.name || 'Category'} Solved</span>
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block font-medium">{currentTopicMeta?.name || 'Category'} Solved</span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-lg font-bold text-emerald-400">{categoryDone} / {categoryQuestions.length}</span>
-              <span className="text-xs text-emerald-400 font-mono font-semibold">
+              <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{categoryDone} / {categoryQuestions.length}</span>
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-mono font-semibold">
                 ({categoryPercentage}%)
               </span>
             </div>
           </div>
 
           <div>
-            <span className="text-[11px] text-zinc-400 block font-medium">Due for Revision</span>
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block font-medium">Due for Revision</span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-lg font-bold text-indigo-400">{dueRevisions.length}</span>
-              <span className="text-xs text-zinc-500">pending</span>
+              <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{dueRevisions.length}</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">pending</span>
             </div>
           </div>
 
           <div>
-            <span className="text-[11px] text-zinc-400 block font-medium">Starred Questions</span>
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block font-medium">Starred Questions</span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-lg font-bold text-amber-400">{Object.values(starredMap).filter(Boolean).length}</span>
-              <span className="text-xs text-zinc-500">saved</span>
+              <span className="text-lg font-bold text-amber-500 dark:text-amber-400">{Object.values(starredMap).filter(Boolean).length}</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">saved</span>
             </div>
           </div>
         </div>
 
         {/* Global Progress Track */}
         <div className="mt-3.5 pt-2">
-          <div className="w-full bg-white/[0.05] h-1.5 rounded-full overflow-hidden">
+          <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
             <div
-              className="bg-gradient-to-r from-cyan-500 to-indigo-500 h-full transition-all duration-500 rounded-full"
+              className="bg-zinc-900 dark:bg-zinc-100 h-full transition-all duration-500 rounded-full"
               style={{ width: `${Math.round((totalDone / totalQuestions) * 100)}%` }}
             />
           </div>
@@ -317,13 +317,13 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
           onClick={() => setSelectedTopic('all')}
           className={`px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all border flex items-center gap-2 ${
             selectedTopic === 'all'
-              ? 'bg-white/10 text-white border-white/20 shadow-sm font-semibold'
-              : 'bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/[0.06] border-white/[0.06]'
+              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent shadow-sm font-semibold'
+              : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border-zinc-200 dark:border-zinc-800'
           }`}
         >
-          <Layers className="w-3.5 h-3.5 text-zinc-400" />
+          <Layers className="w-3.5 h-3.5" />
           <span>All Topics</span>
-          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/[0.06] text-zinc-300">
+          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-200/60 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
             {totalDone}/{totalQuestions}
           </span>
         </button>
@@ -339,15 +339,15 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
               onClick={() => setSelectedTopic(topic.id)}
               className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all border flex items-center gap-1.5 ${
                 isSelected
-                  ? 'bg-white/10 text-white border-white/20 shadow-sm font-semibold'
-                  : 'bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/[0.06] border-white/[0.06]'
+                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent shadow-sm font-semibold'
+                  : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border-zinc-200 dark:border-zinc-800'
               }`}
             >
               <span>{topic.name}</span>
               <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
                 doneC === count && count > 0 
-                  ? 'bg-emerald-500/20 text-emerald-300' 
-                  : 'bg-white/[0.06] text-zinc-400'
+                  ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
+                  : 'bg-zinc-200/60 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
               }`}>
                 {doneC}/{count}
               </span>
@@ -357,15 +357,15 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
       </div>
 
       {/* 5. Minimalist Filter & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#0d1017]/70 backdrop-blur-xl p-3 sm:p-3.5 rounded-2xl border border-white/[0.08]">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-[#131417] p-3 sm:p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Filter problems by title, company (Google, Amazon...), platform..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white/[0.04] border border-white/[0.08] rounded-xl text-xs sm:text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500/50 transition"
+            className="w-full pl-10 pr-4 py-2 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition"
           />
         </div>
 
@@ -374,7 +374,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:border-cyan-500/50 cursor-pointer font-medium"
+            className="bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 cursor-pointer font-medium"
           >
             <option value="all">All Statuses</option>
             <option value="not_started">⚪ Not Started</option>
@@ -388,7 +388,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
           <select
             value={difficultyFilter}
             onChange={(e) => setDifficultyFilter(e.target.value as any)}
-            className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:border-cyan-500/50 cursor-pointer font-medium"
+            className="bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 cursor-pointer font-medium"
           >
             <option value="all">All Difficulties</option>
             <option value="Easy">Easy</option>
@@ -399,8 +399,8 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
       </div>
 
       {/* 6. Clean Problem Table / List */}
-      <div className="bg-[#0d1017]/80 backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-xl">
-        <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between text-[11px] font-semibold text-zinc-400 uppercase tracking-wider font-mono">
+      <div className="bg-white dark:bg-[#131417] border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-mono">
           <div className="flex items-center gap-4">
             <span>Status</span>
             <span>Problem Title</span>
@@ -412,11 +412,11 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
           </div>
         </div>
 
-        <div className="divide-y divide-white/[0.04]">
+        <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
           {filteredQuestions.length === 0 ? (
-            <div className="p-12 text-center text-zinc-400">
-              <Award className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
-              <p className="text-base font-semibold text-zinc-200">No matching questions found</p>
+            <div className="p-12 text-center text-zinc-500">
+              <Award className="w-10 h-10 text-zinc-400 mx-auto mb-3" />
+              <p className="text-base font-semibold text-zinc-700 dark:text-zinc-300">No matching questions found</p>
               <p className="text-xs text-zinc-500 mt-1">Try clearing your filters or search query.</p>
             </div>
           ) : (
@@ -429,19 +429,19 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
               const revision = progress.revisions?.[q.id];
 
               return (
-                <div key={q.id} className="transition-colors hover:bg-white/[0.02]">
+                <div key={q.id} className="transition-colors hover:bg-zinc-50/70 dark:hover:bg-zinc-800/30">
                   <div className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
                       {/* Checkbox */}
                       <button
                         onClick={() => handleMarkDone(q.id)}
                         title={isDone ? 'Mark as Not Started' : 'Mark as Solved'}
-                        className="mt-0.5 sm:mt-0 text-zinc-500 hover:text-emerald-400 transition active:scale-90"
+                        className="mt-0.5 sm:mt-0 text-zinc-400 hover:text-emerald-500 transition active:scale-90"
                       >
                         {isDone ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-400 fill-emerald-500/20" />
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                         ) : (
-                          <Circle className="w-5 h-5 text-zinc-600 hover:border-zinc-400" />
+                          <Circle className="w-5 h-5 text-zinc-400 hover:border-zinc-500" />
                         )}
                       </button>
 
@@ -453,7 +453,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                       >
                         <Star
                           className={`w-4 h-4 ${
-                            isStarred ? 'text-amber-400 fill-amber-400' : 'text-zinc-600 hover:text-zinc-400'
+                            isStarred ? 'text-amber-500 fill-amber-500' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
                           }`}
                         />
                       </button>
@@ -461,27 +461,24 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                       {/* Title & Tags */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-mono text-zinc-500 select-none">
-                            {q.id}
-                          </span>
                           <a
                             href={q.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className={`font-semibold text-sm transition hover:underline ${
-                              isDone ? 'text-zinc-500 line-through' : 'text-zinc-100 hover:text-cyan-400'
+                            className={`font-medium text-sm transition hover:opacity-75 ${
+                              isDone ? 'text-zinc-400 dark:text-zinc-500 line-through' : 'text-zinc-900 dark:text-zinc-100'
                             }`}
                           >
                             {q.title}
                           </a>
-                          <ExternalLink className="w-3.5 h-3.5 text-zinc-600 inline flex-shrink-0" />
+                          <ExternalLink className="w-3.5 h-3.5 text-zinc-400 inline flex-shrink-0" />
 
                           {revision && (
                             <span 
-                              className={`text-[10px] px-2 py-0.2 rounded-full border flex items-center gap-1 font-mono ${
+                              className={`text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1 font-mono ${
                                 isRevisionDue(revision)
-                                  ? 'bg-rose-500/15 text-rose-300 border-rose-500/30 font-bold animate-pulse'
-                                  : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/25'
+                                  ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 font-bold animate-pulse'
+                                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700'
                               }`}
                               title={isRevisionDue(revision) ? 'Revision due today!' : `Revision due on ${revision.dueAt}`}
                             >
@@ -496,7 +493,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                             {q.companies.map((comp, cIdx) => (
                               <span
                                 key={cIdx}
-                                className="text-[10px] px-1.5 py-0.2 rounded bg-white/[0.04] text-zinc-400 border border-white/[0.06]"
+                                className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"
                               >
                                 {comp}
                               </span>
@@ -514,10 +511,10 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                         onChange={(e) => onSetProblemStatus(q.id, e.target.value as ProblemStatus)}
                         className={`text-xs font-medium px-2.5 py-1 rounded-xl border cursor-pointer focus:outline-none transition ${
                           status === 'solved'
-                            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
                             : status === 'revise_later'
-                            ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30'
-                            : 'bg-white/[0.03] text-zinc-400 border-white/[0.08] hover:text-zinc-200'
+                            ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-300 dark:border-zinc-700'
+                            : 'bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200'
                         }`}
                       >
                         <option value="not_started">⚪ Not Started</option>
@@ -525,7 +522,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                         <option value="revise_later">⏰ Revise Later</option>
                       </select>
 
-                      <span className="text-xs font-mono px-2 py-0.5 rounded bg-white/[0.04] text-zinc-400 border border-white/[0.06]">
+                      <span className="text-xs font-mono px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
                         {q.platform}
                       </span>
 
@@ -540,10 +537,10 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                       {/* Solution Trigger */}
                       <button
                         onClick={() => setSelectedSolutionQuestion(q)}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-amber-300 border border-white/[0.08] text-xs font-medium transition active:scale-95 shadow-sm"
+                        className="btn-outline flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium"
                         title="View Intuition, Pseudocode, and C++/Java/Python/JS Solutions"
                       >
-                        <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+                        <Lightbulb className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
                         <span>Solution</span>
                       </button>
 
@@ -552,8 +549,8 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                         onClick={() => setExpandedNotesId(isNotesOpen ? null : q.id)}
                         className={`p-1.5 rounded-xl border transition ${
                           hasNotes
-                            ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30'
-                            : 'bg-white/[0.03] text-zinc-400 border-white/[0.08] hover:text-white'
+                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent'
+                            : 'btn-outline'
                         }`}
                         title="Add/View Problem Notes"
                       >
@@ -565,7 +562,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                         href={q.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 px-2.5 py-1 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/25 rounded-xl text-xs font-semibold transition"
+                        className="btn-solid flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold"
                       >
                         <span>Solve</span>
                         <ExternalLink className="w-3 h-3" />
@@ -575,11 +572,11 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
 
                   {/* Notes Drawer */}
                   {isNotesOpen && (
-                    <div className="px-6 py-4 bg-black/30 border-t border-white/[0.06] animate-in fade-in duration-200">
+                    <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900/60 border-t border-zinc-200 dark:border-zinc-800 animate-in fade-in duration-200">
                       <div className="max-w-3xl">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
-                            <FileText className="w-3.5 h-3.5 text-indigo-400" /> Private Problem Notes
+                          <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                            <FileText className="w-3.5 h-3.5 text-zinc-500" /> Private Problem Notes
                           </span>
                           <span className="text-[10px] text-zinc-500 font-mono">Saved locally in browser</span>
                         </div>
@@ -588,7 +585,7 @@ export const Dsa450Sheet: React.FC<Dsa450SheetProps> = ({
                           placeholder="Write down tricky edge cases, your approach intuition, time complexity..."
                           value={notesMap[q.id] || ''}
                           onChange={(e) => onSaveNote(q.id, e.target.value)}
-                          className="w-full p-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500/50 font-mono"
+                          className="w-full p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 font-mono"
                         />
                       </div>
                     </div>

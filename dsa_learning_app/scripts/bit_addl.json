@@ -1,0 +1,157 @@
+[
+  {
+    "id": "bit-4",
+    "title": "Count total set bits in all numbers from 1 to n",
+    "topic": "bit-manipulation",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/count-total-set-bits-1587115620/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Count total set bits in binary representation of all integers from 1 to N in O(log N) time."
+  },
+  {
+    "id": "bit-5",
+    "title": "Program to find whether a no is power of two",
+    "topic": "bit-manipulation",
+    "difficulty": "Easy",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/power-of-two/",
+    "companies": [
+      "Amazon",
+      "Google"
+    ],
+    "description": "Check if an integer is a power of two using bitwise AND operation (n & (n - 1)) == 0 in O(1) time."
+  },
+  {
+    "id": "bit-6",
+    "title": "Find position of the only set bit",
+    "topic": "bit-manipulation",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/find-position-of-set-bit3706/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Given a number having only one set bit, find the 1-based position of the bit using log2."
+  },
+  {
+    "id": "bit-7",
+    "title": "Copy set bits in a range",
+    "topic": "bit-manipulation",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/copy-set-bits-in-range0607/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Copy set bits of integer y into x in the range [l, r] using a bitmask."
+  },
+  {
+    "id": "bit-8",
+    "title": "Divide two integers without using multiplication, division and mod operator",
+    "topic": "bit-manipulation",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/divide-two-integers/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Facebook"
+    ],
+    "description": "Divide two integers using bitwise left shifts to subtract multiples of divisor in O(log N) time."
+  },
+  {
+    "id": "bit-9",
+    "title": "Calculate square of a number without using *, / and pow()",
+    "topic": "bit-manipulation",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/calculate-square-of-a-number-without-using-and-pow/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Compute n^2 using bit shifts: if n is even (n/2)^2 * 4, if odd 4*(n/2)^2 + 4*(n/2) + 1."
+  },
+  {
+    "id": "bit-10",
+    "title": "Power Set: Print all possible subsets of a string/set using bitwise operations",
+    "topic": "bit-manipulation",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/power-set4302/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Generate all 2^N subsets of string using numbers from 0 to 2^N-1 and bit checking."
+  },
+  {
+    "id": "bit-11",
+    "title": "Find the two non-repeating elements in an array of repeating elements",
+    "topic": "bit-manipulation",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/single-number-iii/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft"
+    ],
+    "description": "Find two numbers appearing once while all other numbers appear twice using overall XOR and lowest set bit."
+  },
+  {
+    "id": "bit-12",
+    "title": "Bit Difference (Sum of bit differences among all pairs)",
+    "topic": "bit-manipulation",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/find-sum-of-different-corresponding-bits-for-all-pairs4652/1",
+    "companies": [
+      "Amazon",
+      "Google"
+    ],
+    "description": "Calculate sum of bit differences between all pairs in array in O(32*N) time by counting set bits at each bit position."
+  },
+  {
+    "id": "bit-13",
+    "title": "Swap two numbers without using a temporary variable",
+    "topic": "bit-manipulation",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/swap-two-numbers3844/1",
+    "companies": [
+      "Amazon",
+      "Samsung"
+    ],
+    "description": "Swap two numbers in-place using XOR: a = a ^ b, b = a ^ b, a = a ^ b."
+  },
+  {
+    "id": "bit-14",
+    "title": "Find XOR of numbers from 1 to n",
+    "topic": "bit-manipulation",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/calculate-xor-1-n/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Calculate 1 ^ 2 ^ ... ^ n in O(1) time based on n % 4 pattern."
+  },
+  {
+    "id": "bit-15",
+    "title": "Reverse Bits of a 32-bit unsigned integer",
+    "topic": "bit-manipulation",
+    "difficulty": "Easy",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/reverse-bits/",
+    "companies": [
+      "Amazon",
+      "Apple",
+      "Microsoft"
+    ],
+    "description": "Reverse bits of a given 32 bits unsigned integer using bit shifting and masking."
+  }
+]

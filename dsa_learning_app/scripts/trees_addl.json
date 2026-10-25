@@ -1,0 +1,400 @@
+[
+  {
+    "id": "tree-6",
+    "title": "Inorder Traversal of a tree both using recursion and iteration",
+    "topic": "trees",
+    "difficulty": "Easy",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/binary-tree-inorder-traversal/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google"
+    ],
+    "description": "Perform inorder traversal (Left -> Node -> Right) iteratively using explicit node stack."
+  },
+  {
+    "id": "tree-7",
+    "title": "Preorder Traversal of a tree both using recursion and iteration",
+    "topic": "trees",
+    "difficulty": "Easy",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/binary-tree-preorder-traversal/",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Perform preorder traversal (Node -> Left -> Right) iteratively using stack."
+  },
+  {
+    "id": "tree-8",
+    "title": "Postorder Traversal of a tree both using recursion and iteration",
+    "topic": "trees",
+    "difficulty": "Easy",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/binary-tree-postorder-traversal/",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Perform postorder traversal (Left -> Right -> Node) using two stacks or single stack with prev pointer."
+  },
+  {
+    "id": "tree-9",
+    "title": "Left View of a tree",
+    "topic": "trees",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/left-view-of-binary-tree/1",
+    "companies": [
+      "Amazon",
+      "Flipkart",
+      "Paytm"
+    ],
+    "description": "Print nodes visible from the left side of a binary tree using level order traversal or max level tracker."
+  },
+  {
+    "id": "tree-10",
+    "title": "Right View of a Tree",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/binary-tree-right-side-view/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook"
+    ],
+    "description": "Return the values of nodes you can see ordered from top to bottom standing on the right side."
+  },
+  {
+    "id": "tree-11",
+    "title": "Top View of a tree",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/top-view-of-binary-tree/1",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Paytm"
+    ],
+    "description": "Print nodes visible from the top of a binary tree using horizontal distance and BFS queue."
+  },
+  {
+    "id": "tree-12",
+    "title": "Bottom View of a tree",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/bottom-view-of-binary-tree/1",
+    "companies": [
+      "Amazon",
+      "Paytm"
+    ],
+    "description": "Print bottom-most nodes for each horizontal distance coordinate from root using BFS."
+  },
+  {
+    "id": "tree-13",
+    "title": "Zig-Zag traversal of a binary tree",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/binary-tree-zigzag-level-order-traversal/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Bloomberg"
+    ],
+    "description": "Return zigzag level order traversal of binary tree alternating left-to-right and right-to-left."
+  },
+  {
+    "id": "tree-14",
+    "title": "Check if a tree is balanced or not",
+    "topic": "trees",
+    "difficulty": "Easy",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/balanced-binary-tree/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook"
+    ],
+    "description": "Determine if binary tree is height-balanced (depth difference between two subtrees <= 1 at every node)."
+  },
+  {
+    "id": "tree-15",
+    "title": "Diagonal Traversal of a Binary tree",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/diagonal-traversal-of-binary-tree/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Perform diagonal traversal of binary tree grouped by diagonal slope level."
+  },
+  {
+    "id": "tree-16",
+    "title": "Boundary traversal of a Binary tree",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/boundary-traversal-of-binary-tree/1",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Flipkart"
+    ],
+    "description": "Print boundary nodes of binary tree anti-clockwise: left boundary, leaves, and reverse right boundary."
+  },
+  {
+    "id": "tree-17",
+    "title": "Construct Binary Tree from String with bracket representation",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/construct-binary-tree-string-bracket-representation/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Construct binary tree from string like '4(2(3)(1))(6(5))' using stack or recursive parsing."
+  },
+  {
+    "id": "tree-18",
+    "title": "Convert Binary tree into Doubly Linked List",
+    "topic": "trees",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/binary-tree-to-dll/1",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Goldman Sachs"
+    ],
+    "description": "Convert binary tree to circular/linear doubly linked list in-place according to inorder traversal."
+  },
+  {
+    "id": "tree-19",
+    "title": "Convert Binary tree into Sum tree",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/transform-to-sum-tree/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Convert binary tree so every node stores sum of left and right subtrees in original tree."
+  },
+  {
+    "id": "tree-20",
+    "title": "Construct Binary tree from Inorder and Preorder traversal",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/construct-binary-tree-from-preorder-and-inorder-traversal/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google"
+    ],
+    "description": "Construct binary tree given preorder and inorder traversal arrays using index hash map in O(N)."
+  },
+  {
+    "id": "tree-21",
+    "title": "Find minimum swaps required to convert a Binary tree into BST",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/minimum-swap-required-convert-binary-tree-binary-search-tree/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Compute inorder traversal and find minimum cycle swaps required to sort that array."
+  },
+  {
+    "id": "tree-22",
+    "title": "Check if Binary tree is Sum tree or not",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/sum-tree/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Check if value of every non-leaf node equals sum of nodes in its left and right subtrees."
+  },
+  {
+    "id": "tree-23",
+    "title": "Check if all leaf nodes are at same level or not",
+    "topic": "trees",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/leaf-at-same-level/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Check whether all leaf nodes of a binary tree are at the exact same level."
+  },
+  {
+    "id": "tree-24",
+    "title": "Check if a given tree is Subtree of another tree",
+    "topic": "trees",
+    "difficulty": "Easy",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/subtree-of-another-tree/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook"
+    ],
+    "description": "Check if root has a subtree with the exact same structure and node values as subRoot."
+  },
+  {
+    "id": "tree-25",
+    "title": "Check if a binary tree has duplicate subtrees of size 2 or more",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/duplicate-subtree-in-binary-tree/1",
+    "companies": [
+      "Amazon",
+      "Google"
+    ],
+    "description": "Find if there exists duplicate subtrees of size 2 or more in binary tree using serialization."
+  },
+  {
+    "id": "tree-26",
+    "title": "Check if two trees are Mirror of each other (Symmetric Tree)",
+    "topic": "trees",
+    "difficulty": "Easy",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/symmetric-tree/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "LinkedIn"
+    ],
+    "description": "Check whether binary tree is a symmetric mirror of itself around its center."
+  },
+  {
+    "id": "tree-27",
+    "title": "Sum of Nodes on the Longest path from root to leaf node",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/sum-of-the-longest-bloodline-of-a-tree/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find the sum of all nodes on the longest path from root to any leaf node."
+  },
+  {
+    "id": "tree-28",
+    "title": "Check if given graph is tree or not",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/graph-valid-tree/",
+    "companies": [
+      "Google",
+      "Amazon",
+      "Facebook"
+    ],
+    "description": "Given n nodes labeled 0 to n-1 and list of undirected edges, check if edges form valid tree (no cycles, connected)."
+  },
+  {
+    "id": "tree-29",
+    "title": "Find Largest subtree sum in a tree",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/find-largest-subtree-sum-tree/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find the maximum subtree sum among all subtrees in a given binary tree using postorder DFS."
+  },
+  {
+    "id": "tree-30",
+    "title": "Maximum Sum of nodes in Binary tree such that no two are adjacent",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/house-robber-iii/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Uber"
+    ],
+    "description": "Determine maximum amount of money thief can rob from binary tree houses where adjacent houses cannot be robbed."
+  },
+  {
+    "id": "tree-31",
+    "title": "Print all 'K' sum paths in a binary tree",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/path-sum-iii/",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Find number of paths where the sum of values along path equals targetSum using prefix sum hash map."
+  },
+  {
+    "id": "tree-32",
+    "title": "Find LCA in a Binary tree",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google",
+      "Facebook"
+    ],
+    "description": "Find lowest common ancestor (LCA) of two given nodes p and q in binary tree."
+  },
+  {
+    "id": "tree-33",
+    "title": "Find distance between two nodes in a Binary tree",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/min-distance-between-two-given-nodes-of-a-binary-tree/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Find minimum distance between two given nodes a and b: dist(root, a) + dist(root, b) - 2*dist(root, LCA)."
+  },
+  {
+    "id": "tree-34",
+    "title": "Kth Ancestor of node in a Binary tree",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/kth-ancestor-in-a-tree/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find the kth ancestor of a given node in binary tree using binary lifting or backtracking."
+  },
+  {
+    "id": "tree-35",
+    "title": "Find all Duplicate subtrees in a Binary tree",
+    "topic": "trees",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/find-duplicate-subtrees/",
+    "companies": [
+      "Amazon",
+      "Google"
+    ],
+    "description": "Return all duplicate subtrees in a binary tree by serializing subtrees into string IDs."
+  }
+]

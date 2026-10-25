@@ -1,0 +1,451 @@
+[
+  {
+    "id": "sq-6",
+    "title": "Check the expression has valid or Balanced parenthesis or not",
+    "topic": "stacks-queues",
+    "difficulty": "Easy",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/valid-parentheses/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook",
+      "Microsoft"
+    ],
+    "description": "Given string containing bracket characters, determine if brackets close in correct order."
+  },
+  {
+    "id": "sq-7",
+    "title": "Reverse a String using Stack",
+    "topic": "stacks-queues",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/reverse-a-string-using-stack/1",
+    "companies": [
+      "Amazon",
+      "Paytm"
+    ],
+    "description": "Reverse a string using LIFO property of stack."
+  },
+  {
+    "id": "sq-8",
+    "title": "Design a stack that supports getMin() in O(1) time and O(1) extra space",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/min-stack/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Bloomberg",
+      "Google"
+    ],
+    "description": "Implement MinStack with push, pop, top, and getMin in O(1) time using encoded elements 2*val - min."
+  },
+  {
+    "id": "sq-9",
+    "title": "Find the Next Greater Element (NGE)",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/next-greater-element-i/",
+    "companies": [
+      "Amazon",
+      "Flipkart",
+      "Microsoft"
+    ],
+    "description": "Find next greater element for every element in an array using a monotonic decreasing stack."
+  },
+  {
+    "id": "sq-10",
+    "title": "The Celebrity Problem",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/the-celebrity-problem/1",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Flipkart"
+    ],
+    "description": "Find person in party known by everyone but who knows nobody using stack or two pointers in O(N) time."
+  },
+  {
+    "id": "sq-11",
+    "title": "Evaluation of Postfix Expression",
+    "topic": "stacks-queues",
+    "difficulty": "Easy",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/evaluate-reverse-polish-notation/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft"
+    ],
+    "description": "Evaluate the value of an arithmetic expression in Reverse Polish Notation (RPN) using operand stack."
+  },
+  {
+    "id": "sq-12",
+    "title": "Insert an element at the bottom of a stack without extra space (Recursion)",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/insert-an-element-at-the-bottom-of-a-stack/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Insert element at bottom of stack using call stack recursion."
+  },
+  {
+    "id": "sq-13",
+    "title": "Reverse a stack using recursion",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/reverse-a-stack-using-recursion/",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Reverse stack using call stack frames and insertAtBottom helper without auxiliary loops."
+  },
+  {
+    "id": "sq-14",
+    "title": "Sort a stack using recursion",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/sort-a-stack/1",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Goldman Sachs"
+    ],
+    "description": "Sort stack elements such that top element is the greatest using recursive sortedInsert."
+  },
+  {
+    "id": "sq-15",
+    "title": "Merge Overlapping Intervals using stack",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/merge-intervals/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook",
+      "Microsoft"
+    ],
+    "description": "Given an array of intervals, merge all overlapping intervals using sorted order and interval stack."
+  },
+  {
+    "id": "sq-16",
+    "title": "Largest Rectangular Area in Histogram",
+    "topic": "stacks-queues",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/largest-rectangle-in-histogram/",
+    "companies": [
+      "Google",
+      "Amazon",
+      "Facebook",
+      "Microsoft"
+    ],
+    "description": "Find area of largest rectangle in histogram using monotonic stack to find previous and next smaller bounds in O(N)."
+  },
+  {
+    "id": "sq-17",
+    "title": "Length of the Longest Valid Substring of parentheses",
+    "topic": "stacks-queues",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/longest-valid-parentheses/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook"
+    ],
+    "description": "Find the length of the longest valid (well-formed) parentheses substring using index stack or left-right counters."
+  },
+  {
+    "id": "sq-18",
+    "title": "Expression contains redundant bracket or not",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/expression-contains-redundant-bracket-not/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Check if expression contains duplicate or unnecessary pairs of parenthesis enclosing operators."
+  },
+  {
+    "id": "sq-19",
+    "title": "Implement Stack using Queues",
+    "topic": "stacks-queues",
+    "difficulty": "Easy",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/implement-stack-using-queues/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Bloomberg"
+    ],
+    "description": "Implement a last-in-first-out (LIFO) stack using only two standard FIFO queues."
+  },
+  {
+    "id": "sq-20",
+    "title": "Implement Queue using Stacks",
+    "topic": "stacks-queues",
+    "difficulty": "Easy",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/implement-queue-using-stacks/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Bloomberg",
+      "Google"
+    ],
+    "description": "Implement a first-in-first-out (FIFO) queue using two LIFO stacks with amortized O(1) operations."
+  },
+  {
+    "id": "sq-21",
+    "title": "Implement 'k' Queues in a single array",
+    "topic": "stacks-queues",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/efficiently-implement-k-queues-single-array/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Efficiently implement k queues in a single array of size N using front, rear, and next index arrays."
+  },
+  {
+    "id": "sq-22",
+    "title": "Implement Circular Queue",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/design-circular-queue/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Facebook"
+    ],
+    "description": "Design circular queue buffer where last position connects back to first position to make use of spaces."
+  },
+  {
+    "id": "sq-23",
+    "title": "Implement LRU Cache",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/lru-cache/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Facebook",
+      "Apple"
+    ],
+    "description": "Design data structure that follows Least Recently Used (LRU) cache constraints with O(1) get and put using Hash Map + DLL."
+  },
+  {
+    "id": "sq-24",
+    "title": "Reverse a Queue using recursion",
+    "topic": "stacks-queues",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/queue-reversal/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Reverse all elements of a queue using call stack recursion."
+  },
+  {
+    "id": "sq-25",
+    "title": "Reverse the first 'K' elements of a queue",
+    "topic": "stacks-queues",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/reverse-first-k-elements-of-queue/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Reverse order of first k elements of queue while keeping order of remaining elements intact."
+  },
+  {
+    "id": "sq-26",
+    "title": "Interleave the first half of the queue with second half",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/interleave-first-half-queue-second-half/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Rearrange queue [q1, q2, ..., qk, qk+1, ..., q2k] into [q1, qk+1, q2, qk+2, ...] using auxiliary stack or queue."
+  },
+  {
+    "id": "sq-27",
+    "title": "Gas Station (Circular Tour)",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/gas-station/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft"
+    ],
+    "description": "Find starting gas station index from which car can travel around circle once clockwise in O(N) time."
+  },
+  {
+    "id": "sq-28",
+    "title": "Rotting Oranges (Min time to rot all oranges)",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/rotting-oranges/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google"
+    ],
+    "description": "Return minimum minutes until no fresh orange remains in grid using multi-source BFS queue."
+  },
+  {
+    "id": "sq-29",
+    "title": "Distance of nearest cell having 1 in a binary matrix",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/01-matrix/",
+    "companies": [
+      "Amazon",
+      "Google"
+    ],
+    "description": "Find distance of nearest 0/1 for each cell in binary matrix using multi-source queue BFS."
+  },
+  {
+    "id": "sq-30",
+    "title": "First negative integer in every window of size k",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/first-negative-integer-in-every-window-of-size-k3345/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find first negative integer for each and every contiguous window of size k using sliding window deque."
+  },
+  {
+    "id": "sq-31",
+    "title": "Check if all levels of two trees are anagrams or not",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/check-if-all-levels-of-two-trees-are-anagrams-or-not/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Determine if two binary trees are level-by-level anagrams using two level-order queues."
+  },
+  {
+    "id": "sq-32",
+    "title": "Sum of minimum and maximum elements of all subarrays of size k",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/sum-minimum-maximum-elements-subarrays-size-k/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Calculate sum of min and max elements of all subarrays of size k using two double-ended queues."
+  },
+  {
+    "id": "sq-33",
+    "title": "Game of Strings (Min sum of squares of character counts)",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/game-with-string4100/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Minimize sum of squares of character frequencies after removing k characters using Max Priority Queue."
+  },
+  {
+    "id": "sq-34",
+    "title": "Queue based approach for first non-repeating character in a stream",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/first-non-repeating-character-in-a-stream1216/1",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Flipkart"
+    ],
+    "description": "Use queue and frequency count map to answer first non-repeating character queries dynamically."
+  },
+  {
+    "id": "sq-35",
+    "title": "Next Smaller Element",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/next-smaller-element/",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Find next smaller element for every element in an array using monotonic stack."
+  },
+  {
+    "id": "sq-36",
+    "title": "Trapping Rain Water using Stack",
+    "topic": "stacks-queues",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/trapping-rain-water/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Facebook"
+    ],
+    "description": "Compute how much water it can trap after raining using monotonic stack to find bounded basins."
+  },
+  {
+    "id": "sq-37",
+    "title": "Sliding Window Maximum (Maximum of all subarrays of size k)",
+    "topic": "stacks-queues",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/sliding-window-maximum/",
+    "companies": [
+      "Google",
+      "Amazon",
+      "Microsoft",
+      "Uber"
+    ],
+    "description": "Return max sliding window for array nums with window size k in O(N) time using monotonic deque."
+  },
+  {
+    "id": "sq-38",
+    "title": "Minimum number of bracket reversals to make balanced",
+    "topic": "stacks-queues",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/count-the-reversals0401/1",
+    "companies": [
+      "Amazon",
+      "Paytm"
+    ],
+    "description": "Find minimum reversals of parentheses needed to make the expression balanced using stack cancellation."
+  }
+]

@@ -1,0 +1,225 @@
+[
+  {
+    "id": "bck-3",
+    "title": "Word Break Problem using Backtracking",
+    "topic": "backtracking",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/word-break-ii/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google"
+    ],
+    "description": "Return all possible space-separated sentences where each word is a valid dictionary word using backtracking."
+  },
+  {
+    "id": "bck-4",
+    "title": "Remove Invalid Parentheses",
+    "topic": "backtracking",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/remove-invalid-parentheses/",
+    "companies": [
+      "Facebook",
+      "Amazon",
+      "Google"
+    ],
+    "description": "Remove the minimum number of invalid parentheses to make the input string valid using DFS/BFS."
+  },
+  {
+    "id": "bck-5",
+    "title": "Sudoku Solver",
+    "topic": "backtracking",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/sudoku-solver/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google"
+    ],
+    "description": "Write a program to solve a 9x9 Sudoku puzzle by filling empty cells with valid digits 1-9."
+  },
+  {
+    "id": "bck-6",
+    "title": "m Coloring Problem",
+    "topic": "backtracking",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/m-coloring-problem-1587115620/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Determine if undirected graph can be colored with at most M colors such that no two adjacent vertices have same color."
+  },
+  {
+    "id": "bck-7",
+    "title": "Print all palindromic partitions of a string",
+    "topic": "backtracking",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/palindrome-partitioning/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Bloomberg"
+    ],
+    "description": "Partition string s such that every substring of partition is a palindrome; return all possible partitions."
+  },
+  {
+    "id": "bck-8",
+    "title": "Subset Sum Problem (Print all subsets with given sum)",
+    "topic": "backtracking",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/subset-sum-problem2014/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Find all subsets of given array that sum up to target value using recursion and pruning."
+  },
+  {
+    "id": "bck-9",
+    "title": "The Knight's tour problem",
+    "topic": "backtracking",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/the-knights-tour-problem-backtracking-set-1/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Move knight on N x N chessboard so that it visits every single square exactly once."
+  },
+  {
+    "id": "bck-10",
+    "title": "Tug of War",
+    "topic": "backtracking",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/tug-of-war/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Divide set of n integers into two subsets of size n/2 and (n-1)/2 or n/2 such that sum difference is minimized."
+  },
+  {
+    "id": "bck-11",
+    "title": "Find shortest safe route in a path with landmines",
+    "topic": "backtracking",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/find-shortest-safe-route-in-a-path-with-landmines/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find shortest path from any cell in first column to any cell in last column avoiding landmines and adjacent cells."
+  },
+  {
+    "id": "bck-12",
+    "title": "Combinational Sum",
+    "topic": "backtracking",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/combination-sum/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Facebook"
+    ],
+    "description": "Given candidates and target, return list of all unique combinations where candidate numbers sum to target."
+  },
+  {
+    "id": "bck-13",
+    "title": "Find Maximum number possible by doing at-most K swaps",
+    "topic": "backtracking",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/largest-number-in-k-swaps-1587115620/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Find largest number possible by swapping digits of given positive number at most K times."
+  },
+  {
+    "id": "bck-14",
+    "title": "Print all permutations of a string (Backtracking)",
+    "topic": "backtracking",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/permutations/",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google"
+    ],
+    "description": "Generate all possible permutations of an array/string using in-place swap backtracking."
+  },
+  {
+    "id": "bck-15",
+    "title": "Find if there is a path of more than k length from a source",
+    "topic": "backtracking",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/find-if-there-is-a-path-of-more-than-k-length-from-a-source/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Check if there is a simple path from given source vertex with total weight greater than or equal to k."
+  },
+  {
+    "id": "bck-16",
+    "title": "Longest Possible Route in a Matrix with Hurdles",
+    "topic": "backtracking",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/longest-possible-route-in-a-matrix-with-hurdles/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find length of longest safe route from source cell to destination cell in matrix containing blocked hurdles."
+  },
+  {
+    "id": "bck-17",
+    "title": "Print all possible paths from top left to bottom right of a mXn matrix",
+    "topic": "backtracking",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/print-all-possible-paths-from-top-left-to-bottom-right-of-a-mxn-matrix/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Print all paths from (0,0) to (m-1,n-1) moving only down and right."
+  },
+  {
+    "id": "bck-18",
+    "title": "Partition of a set into K subsets with equal sum",
+    "topic": "backtracking",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/partition-to-k-equal-sum-subsets/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "LinkedIn"
+    ],
+    "description": "Determine if array can be partitioned into k subsets whose sums are all equal."
+  },
+  {
+    "id": "bck-19",
+    "title": "Find the K-th Permutation Sequence of first N natural numbers",
+    "topic": "backtracking",
+    "difficulty": "Hard",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/permutation-sequence/",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Given n and k, return kth permutation sequence of numbers [1, 2, ..., n] using factorial number system in O(N^2)."
+  }
+]

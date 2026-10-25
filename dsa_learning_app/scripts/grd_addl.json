@@ -1,0 +1,412 @@
+[
+  {
+    "id": "grd-3",
+    "title": "Huffman Coding",
+    "topic": "greedy",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/huffman-encoding3345/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Construct optimal prefix-free binary tree for characters using Min-Heap priority queue."
+  },
+  {
+    "id": "grd-4",
+    "title": "Water Connection Problem",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/water-connection-problem5822/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find efficient water tank and tap placements for network of pipes using DFS path traversal."
+  },
+  {
+    "id": "grd-5",
+    "title": "Fractional Knapsack Problem",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/fractional-knapsack-1587115620/1",
+    "companies": [
+      "Amazon",
+      "Microsoft"
+    ],
+    "description": "Maximize knapsack value where items can be broken into fractional amounts by sorting value-to-weight ratio."
+  },
+  {
+    "id": "grd-6",
+    "title": "Greedy Algorithm to find minimum number of Coins",
+    "topic": "greedy",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/min-coin5549/1",
+    "companies": [
+      "Amazon",
+      "Paytm"
+    ],
+    "description": "Find minimum coins/notes to make value V for canonical currency denominations."
+  },
+  {
+    "id": "grd-7",
+    "title": "Maximum trains for which stoppage can be provided",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/maximum-trains-stoppage-can-provided/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Maximize train stoppages on N platforms without schedule collisions using greedy activity selection."
+  },
+  {
+    "id": "grd-8",
+    "title": "Minimum Platforms problem",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/minimum-platforms-1587115620/1",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Paytm",
+      "Google"
+    ],
+    "description": "Find minimum number of platforms required for railway station so no train waits using two-pointer sorting."
+  },
+  {
+    "id": "grd-9",
+    "title": "Buy Maximum Stocks if i stocks can be bought on i-th day",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/buy-maximum-stocks-stocks-can-bought-th-day/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Maximize stocks bought with budget K where on day i one can buy at most i stocks at price arr[i]."
+  },
+  {
+    "id": "grd-10",
+    "title": "Shop in Candy Store (Find min and max cash to buy all candies)",
+    "topic": "greedy",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/shop-in-candy-store1145/1",
+    "companies": [
+      "Amazon",
+      "Flipkart"
+    ],
+    "description": "Find minimum and maximum amount of money to buy all N candies when 1 candy purchase gives K free candies."
+  },
+  {
+    "id": "grd-11",
+    "title": "Minimize Cash Flow among a given set of friends",
+    "topic": "greedy",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/minimize-cash-flow-among-given-set-friends-borrowed-money/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Minimize total cash flow between friends by repeatedly matching maximum debtor with maximum creditor."
+  },
+  {
+    "id": "grd-12",
+    "title": "Minimum Cost to cut a board into squares (Board Cutting)",
+    "topic": "greedy",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/minimum-cost-cut-board-squares/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find minimum cost to break m x n chocolate board into 1x1 squares by greedily picking costliest cut first."
+  },
+  {
+    "id": "grd-13",
+    "title": "Check if it is possible to survive on Island",
+    "topic": "greedy",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/check-if-it-is-possible-to-survive-on-island4922/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Determine if person can survive S days requiring M food daily when shop is closed on Sundays."
+  },
+  {
+    "id": "grd-14",
+    "title": "Find maximum meetings in one room (N meetings in one room)",
+    "topic": "greedy",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/n-meetings-in-one-room-1587115620/1",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Flipkart"
+    ],
+    "description": "Find maximum number of meetings that can be accommodated in one room by sorting by finish time."
+  },
+  {
+    "id": "grd-15",
+    "title": "Maximum product subset of an array",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/maximum-product-subset-of-an-array/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find the maximum product of a non-empty subset of numbers modulo 10^9+7."
+  },
+  {
+    "id": "grd-16",
+    "title": "Maximize array sum after K negations",
+    "topic": "greedy",
+    "difficulty": "Easy",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/maximize-sum-of-array-after-k-negations/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Maximize sum of array after modifying array by choosing any element and replacing with -nums[i] k times."
+  },
+  {
+    "id": "grd-17",
+    "title": "Maximize the sum of arr[i]*i",
+    "topic": "greedy",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/maximize-arrii-of-an-array0026/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Maximize sum of arr[i]*i for all 0 <= i < N by sorting elements in ascending order."
+  },
+  {
+    "id": "grd-18",
+    "title": "Maximum sum of absolute difference of any permutation",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/maximum-sum-absolute-difference-array/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Rearrange array to maximize sum of absolute differences between consecutive circular elements."
+  },
+  {
+    "id": "grd-19",
+    "title": "Maximize sum of consecutive differences in a circular array",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/swap-and-maximize5859/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Maximize sum of |arr[i] - arr[i+1]| in circular array using alternate minimum and maximum placement."
+  },
+  {
+    "id": "grd-20",
+    "title": "Minimum sum of absolute differences of two arrays",
+    "topic": "greedy",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/minimum-sum-of-absolute-differences-of-pairs/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Sort both arrays in ascending order and pair corresponding indices to minimize sum of absolute differences."
+  },
+  {
+    "id": "grd-21",
+    "title": "Program for Shortest Job First (or SJF) CPU Scheduling",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/program-for-shortest-job-first-or-sjf-cpu-scheduling-set-1-non-preemptive/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Schedule processes to minimize average waiting time by executing shortest burst times first."
+  },
+  {
+    "id": "grd-22",
+    "title": "Program for Least Recently Used (LRU) Page Replacement",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/program-for-least-recently-used-lru-page-replacement-algorithm/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Count page faults in OS paging using LRU cache eviction policy."
+  },
+  {
+    "id": "grd-23",
+    "title": "Smallest subset with sum greater than all other elements",
+    "topic": "greedy",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/smallest-subset-with-greater-sum/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find minimum number of elements such that their sum is strictly greater than sum of remaining elements."
+  },
+  {
+    "id": "grd-24",
+    "title": "Chocolate Distribution Problem",
+    "topic": "greedy",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/chocolate-distribution-problem3825/1",
+    "companies": [
+      "Amazon",
+      "Flipkart"
+    ],
+    "description": "Distribute M packets among M students such that difference between max and min chocolates is minimized."
+  },
+  {
+    "id": "grd-25",
+    "title": "DEFKIN - Defense of a Kingdom",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "SPOJ",
+    "url": "https://www.spoj.com/problems/DEFKIN/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find the maximum undefended rectangular area on grid guarded by towers at given coordinates."
+  },
+  {
+    "id": "grd-26",
+    "title": "DIEHARD - DIE HARD",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "SPOJ",
+    "url": "https://www.spoj.com/problems/DIEHARD/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Maximize survival time moving between Air, Water, and Fire with specified health and armor transitions."
+  },
+  {
+    "id": "grd-27",
+    "title": "GERGOVIA - Wine trading in Gergovia",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "SPOJ",
+    "url": "https://www.spoj.com/problems/GERGOVIA/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Calculate minimum work units to balance all wine buy and sell demands on a street."
+  },
+  {
+    "id": "grd-28",
+    "title": "Picking Up Chicks (Google Code Jam)",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "SPOJ",
+    "url": "https://www.spoj.com/problems/GCJ101BB/",
+    "companies": [
+      "Google"
+    ],
+    "description": "Calculate minimum swaps to let at least K chicks reach the barn in T seconds."
+  },
+  {
+    "id": "grd-29",
+    "title": "CHOCOLA - Chocolate Problem",
+    "topic": "greedy",
+    "difficulty": "Hard",
+    "platform": "SPOJ",
+    "url": "https://www.spoj.com/problems/CHOCOLA/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Break chocolate bar into 1x1 pieces with minimal cost using greedy cuts."
+  },
+  {
+    "id": "grd-30",
+    "title": "ARRANGE - Arranging Amplifiers",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "SPOJ",
+    "url": "https://www.spoj.com/problems/ARRANGE/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Arrange amplifiers so that output a1^(a2^(a3...)) is maximized."
+  },
+  {
+    "id": "grd-31",
+    "title": "K Centers Problem",
+    "topic": "greedy",
+    "difficulty": "Hard",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/k-centers-problem-set-1-greedy-approximate-algorithm/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Greedy 2-approximation algorithm for K-centers problem picking farthest point in each step."
+  },
+  {
+    "id": "grd-32",
+    "title": "Minimum Cost of ropes",
+    "topic": "greedy",
+    "difficulty": "Easy",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/minimum-cost-of-ropes-1587115620/1",
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Goldman Sachs"
+    ],
+    "description": "Connect N ropes with minimum cost using Min-Heap priority queue repeatedly combining 2 smallest ropes."
+  },
+  {
+    "id": "grd-33",
+    "title": "Find smallest number with given number of digits and sum of digits",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://practice.geeksforgeeks.org/problems/smallest-number5829/1",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Construct smallest number with D digits and digit sum S by greedily placing 9s from the right."
+  },
+  {
+    "id": "grd-34",
+    "title": "Rearrange characters in string such that no two adjacent are same (Greedy)",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "LeetCode",
+    "url": "https://leetcode.com/problems/reorganize-string/",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Facebook"
+    ],
+    "description": "Reorganize characters using max frequency character pairing."
+  },
+  {
+    "id": "grd-35",
+    "title": "Maximum trains stoppage at a station",
+    "topic": "greedy",
+    "difficulty": "Medium",
+    "platform": "GeeksforGeeks",
+    "url": "https://www.geeksforgeeks.org/maximum-trains-stoppage-can-provided/",
+    "companies": [
+      "Amazon"
+    ],
+    "description": "Find maximum number of trains that can be given stoppage on given platforms."
+  }
+]

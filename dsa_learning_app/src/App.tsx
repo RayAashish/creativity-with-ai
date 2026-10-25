@@ -25,6 +25,35 @@ export function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('sheet');
   const [progress, setProgress] = useState<UserProgress>(getStoredProgress());
   const [isBuyCoffeeOpen, setIsBuyCoffeeOpen] = useState<boolean>(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const stored = localStorage.getItem('akr-dsa-theme');
+      if (stored === 'light' || stored === 'dark') return stored;
+      return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    } catch (e) {
+      return 'dark';
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
+    try {
+      localStorage.setItem('akr-dsa-theme', theme);
+    } catch (e) {
+      // ignore
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
 
   const [isQuickRouletteOpen, setIsQuickRouletteOpen] = useState<boolean>(false);
   const [quickRouletteData, setQuickRouletteData] = useState<{
@@ -113,10 +142,7 @@ export function App() {
   const totalQuestions = QUESTIONS_450.length;
 
   return (
-    <div className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white relative w-full overflow-x-hidden">
-      {/* World-Class Ambient Mesh Glow */}
-      <ThemeBackgroundCanvas />
-
+    <div className="min-h-screen text-[var(--text-primary)] flex flex-col font-sans relative w-full overflow-x-hidden">
       <div className="relative z-10 flex flex-col min-h-screen">
         <Navbar
           activeTab={activeTab}
@@ -126,6 +152,8 @@ export function App() {
           totalQuestions={totalQuestions}
           onQuickRoulette={handleQuickRoulette}
           onOpenBuyCoffee={() => setIsBuyCoffeeOpen(true)}
+          theme={theme}
+          onToggleTheme={toggleTheme}
         />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">

@@ -2,22 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  color-scheme: dark;
+/* ═══════════════════════════════════════════════════════════
+   EDITORIAL / SWISS MINIMALIST SYSTEM
+   Architectural precision, high-contrast typography, zero synthetic gimmicks
+   ═══════════════════════════════════════════════════════════ */
 
-  /* World-Class Design Tokens (Linear / Vercel Aesthetic) */
-  --bg-page: #08090d;
-  --bg-card: rgba(15, 18, 26, 0.72);
-  --bg-card-hover: rgba(22, 26, 38, 0.85);
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Text', Roboto, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'Space Mono', 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
+}
+
+/* ── DARK THEME (DEFAULT) — Deep Obsidian / Minimal Monochrome ── */
+[data-theme="dark"], :root {
+  --bg-page: #090a0c;
+  --bg-subtle: #111215;
+  --bg-card: #131417;
+  --bg-card-hover: #181a1e;
   --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(99, 102, 241, 0.45);
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --accent-indigo: #6366f1;
-  --accent-cyan: #06b6d4;
-  --accent-emerald: #10b981;
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-active: #ffffff;
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --text-inverse: #090a0c;
+  --accent: #f4f4f5;
+  --accent-contrast: #090a0c;
+  --badge-bg: rgba(255, 255, 255, 0.06);
+  --badge-text: #e4e4e7;
+  --status-green: #22c55e;
+  --status-green-subtle: rgba(34, 197, 94, 0.12);
+  --nav-bg: rgba(9, 10, 12, 0.95);
+  color-scheme: dark;
+}
+
+/* ── LIGHT THEME — Swiss High-Contrast Paper / Pure Obsidian Ink ── */
+[data-theme="light"] {
+  --bg-page: #ffffff;
+  --bg-subtle: #f7f7f8;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f4f4f5;
+  --border-subtle: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --border-active: #090a0c;
+  --text-primary: #090a0c;
+  --text-secondary: #52525b;
+  --text-muted: #71717a;
+  --text-inverse: #ffffff;
+  --accent: #090a0c;
+  --accent-contrast: #ffffff;
+  --badge-bg: #f4f4f5;
+  --badge-text: #18181b;
+  --status-green: #16a34a;
+  --status-green-subtle: rgba(22, 163, 74, 0.1);
+  --nav-bg: rgba(255, 255, 255, 0.98);
+  color-scheme: light;
 }
 
 html, body {
@@ -31,16 +69,20 @@ body {
   min-height: 100vh;
   background-color: var(--bg-page) !important;
   color: var(--text-primary);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
-    radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 100% 100%, 24px 24px;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Custom Minimal Scrollbar */
+/* High-Contrast Selection */
+::selection {
+  background: var(--text-primary);
+  color: var(--text-inverse);
+}
+
+/* Custom Minimal Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -49,11 +91,18 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
+  background: rgba(148, 163, 184, 0.25);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgba(148, 163, 184, 0.45);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
 }
 
 .scrollbar-none::-webkit-scrollbar {
@@ -64,36 +113,51 @@ body {
   scrollbar-width: none;
 }
 
-/* World-Class Glass Panels */
-.glass-panel {
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+/* Swiss Minimal Cards */
+.swiss-card {
+  background-color: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.glass-card {
-  background: rgba(18, 22, 33, 0.6);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
+.swiss-card:hover {
+  border-color: var(--border-strong);
 }
 
-/* Subtle Hover Glow */
-.hover-glow {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+/* High-Contrast Button Utilities */
+.btn-solid {
+  background-color: var(--text-primary);
+  color: var(--text-inverse);
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: opacity 0.15s ease, transform 0.1s ease;
 }
-.hover-glow:hover {
-  border-color: rgba(99, 102, 241, 0.35);
-  box-shadow: 0 8px 30px -4px rgba(99, 102, 241, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+.btn-solid:hover {
+  opacity: 0.9;
+}
+.btn-solid:active {
+  transform: scale(0.98);
 }
 
-/* Prism Tokyo Night / One Dark IDE Syntax Highlighting */
+.btn-outline {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+.btn-outline:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--border-strong);
+}
+.btn-outline:active {
+  transform: scale(0.98);
+}
+
+/* Prism Tokyo Night / Minimal IDE Syntax Highlighting */
 code[class*="language-"],
 pre[class*="language-"] {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: var(--font-mono);
   font-size: 0.8125rem;
   line-height: 1.6;
   text-align: left;
@@ -108,12 +172,12 @@ pre[class*="language-"] {
 .token.prolog,
 .token.doctype,
 .token.cdata {
-  color: #64748b;
+  color: #71717a;
   font-style: italic;
 }
 
 .token.punctuation {
-  color: #94a3b8;
+  color: #a1a1aa;
 }
 
 .token.property,
@@ -122,7 +186,7 @@ pre[class*="language-"] {
 .token.number,
 .token.constant,
 .token.symbol {
-  color: #f59e0b;
+  color: #eab308;
 }
 
 .token.selector,
@@ -130,25 +194,25 @@ pre[class*="language-"] {
 .token.string,
 .token.char,
 .token.builtin {
-  color: #10b981;
+  color: #22c55e;
 }
 
 .token.operator,
 .token.entity,
 .token.url {
-  color: #38bdf8;
+  color: #06b6d4;
 }
 
 .token.atrule,
 .token.attr-value,
 .token.keyword {
-  color: #c084fc;
+  color: #a855f7;
   font-weight: 600;
 }
 
 .token.function,
 .token.class-name {
-  color: #60a5fa;
+  color: #3b82f6;
   font-weight: 600;
 }
 
