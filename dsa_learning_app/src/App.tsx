@@ -27,9 +27,11 @@ export function App() {
   const [isBuyCoffeeOpen, setIsBuyCoffeeOpen] = useState<boolean>(false);
   const [currentTheme, setCurrentTheme] = useState<string>(() => {
     try {
-      return localStorage.getItem('dsaspace_theme_v1') || 'dark';
+      const saved = localStorage.getItem('dsaspace_theme_v1');
+      if (saved === 'retro') return 'retro';
+      return 'modern';
     } catch (e) {
-      return 'dark';
+      return 'modern';
     }
   });
 

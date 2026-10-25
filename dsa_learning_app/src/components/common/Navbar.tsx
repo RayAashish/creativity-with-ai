@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { 
   Rocket, 
   Gamepad2, 
@@ -10,27 +10,10 @@ import {
   Share2,
   Check,
   Coffee,
-  Palette
+  Sparkles
 } from 'lucide-react';
 
 export type NavTab = 'sheet' | 'games' | 'learning' | 'dashboard';
-
-export interface SiteTheme {
-  id: string;
-  name: string;
-  icon: string;
-  gradient: string;
-}
-
-export const THEMES: SiteTheme[] = [
-  { id: 'dark', name: 'Dark Space', icon: '🌌', gradient: 'linear-gradient(135deg, #6366f1, #06b6d4)' },
-  { id: 'sakura', name: 'Sakura Petals', icon: '🌸', gradient: 'linear-gradient(135deg, #f472b6, #fb7185)' },
-  { id: 'cyberpunk', name: 'Cyberpunk Neon', icon: '⚡', gradient: 'linear-gradient(135deg, #00f0ff, #ff007f)' },
-  { id: 'aurora', name: 'Aurora Borealis', icon: '✨', gradient: 'linear-gradient(135deg, #2dd4bf, #a78bfa)' },
-  { id: 'ember', name: 'Ember Fire', icon: '🔥', gradient: 'linear-gradient(135deg, #ff5722, #ffb300)' },
-  { id: 'ocean', name: 'Ocean Depths', icon: '🌊', gradient: 'linear-gradient(135deg, #38bdf8, #34d399)' },
-  { id: 'matrix', name: 'Terminal Matrix', icon: '💻', gradient: 'linear-gradient(135deg, #00ff66, #39ff14)' },
-];
 
 interface NavbarProps {
   activeTab: NavTab;
@@ -52,43 +35,42 @@ export const Navbar: React.FC<NavbarProps> = ({
   totalQuestions,
   onQuickRoulette,
   onOpenBuyCoffee,
-  currentTheme = 'dark',
+  currentTheme = 'modern',
   onSelectTheme,
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
-  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
-  const themeMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const isRetro = currentTheme === 'retro';
 
   const navItems = [
-    { id: 'sheet' as NavTab, label: '450 Sheet', fullLabel: '450 DSA Sheet', icon: CheckSquare, badge: `${totalDone}/${totalQuestions}` },
-    { id: 'games' as NavTab, label: 'Arcade', fullLabel: 'DSA Games Arcade', icon: Gamepad2, highlight: true },
-    { id: 'learning' as NavTab, label: 'Academy', fullLabel: 'Concept Academy', icon: BookOpen },
-    { id: 'dashboard' as NavTab, label: 'Stats', fullLabel: 'Progress & Stats', icon: BarChart3 },
+    { 
+      id: 'sheet' as NavTab, 
+      label: '450 Sheet', 
+      fullLabel: 'Love Babbar 450', 
+      icon: CheckSquare,
+      badge: `${totalDone}/${totalQuestions}`
+    },
+    { 
+      id: 'learning' as NavTab, 
+      label: 'Academy', 
+      fullLabel: 'Concept Academy', 
+      icon: BookOpen,
+      highlight: true
+    },
+    { 
+      id: 'games' as NavTab, 
+      label: 'Games', 
+      fullLabel: 'Algo Games', 
+      icon: Gamepad2,
+      badge: 'Play'
+    },
+    { 
+      id: 'dashboard' as NavTab, 
+      label: 'Progress', 
+      fullLabel: 'Analytics', 
+      icon: BarChart3 
+    },
   ];
-
-  const currentThemeObj = THEMES.find(t => t.id === currentTheme) || THEMES[0];
-
-  // Close dropdown on outside click or Escape key
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (themeMenuRef.current && !themeMenuRef.current.contains(e.target as Node)) {
-        setThemeMenuOpen(false);
-      }
-    };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setThemeMenuOpen(false);
-      }
-    };
-    if (themeMenuOpen) {
-      document.addEventListener('mousedown', handleOutsideClick);
-      document.addEventListener('keydown', handleKeyDown);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [themeMenuOpen]);
 
   const handleShare = () => {
     const siteUrl = 'https://dsaspace.vercel.app';
@@ -100,7 +82,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/80 w-full">
+    <header className={`sticky top-0 z-40 backdrop-blur-xl border-b w-full transition-colors duration-300 ${
+      isRetro 
+        ? 'bg-slate-950/92 border-pink-500/25 shadow-lg shadow-pink-500/5' 
+        : 'bg-slate-950/90 border-slate-800/80 shadow-sm'
+    }`}>
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-2 sm:gap-4 lg:gap-6 h-16 sm:h-20">
           
@@ -109,26 +95,38 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onSelectTab('sheet')}
             className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group flex-shrink-0"
           >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition flex-shrink-0">
+            <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center transition-all duration-300 flex-shrink-0 ${
+              isRetro 
+                ? 'bg-gradient-to-tr from-pink-500 to-purple-600 shadow-lg shadow-pink-500/30 group-hover:scale-105' 
+                : 'bg-gradient-to-tr from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20 group-hover:scale-105'
+            }`}>
               <Rocket className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <span className="font-black text-lg sm:text-xl text-white tracking-tight">
-                  DSA<span className="text-cyan-400">Space</span>
+                  DSA<span className={isRetro ? 'text-pink-400 font-mono tracking-normal' : 'text-cyan-400'}>Space</span>
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-md">
-                  450
+                <span className={`text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded-md border ${
+                  isRetro 
+                    ? 'bg-pink-500/15 text-pink-300 border-pink-500/40 font-mono' 
+                    : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30 font-sans'
+                }`}>
+                  {isRetro ? '8-BIT' : '450'}
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 hidden 2xl:block font-medium leading-none mt-0.5">
-                Learn, Play & Master DSA
+                {isRetro ? '// RETRO ARCADE EDITION' : 'Learn, Play & Master DSA'}
               </p>
             </div>
           </div>
 
           {/* Navigation Links (Desktop) */}
-          <nav className="hidden lg:flex items-center gap-1 bg-slate-900/80 p-1 sm:p-1.5 rounded-2xl border border-slate-800/80 flex-shrink-0">
+          <nav className={`hidden lg:flex items-center gap-1 p-1 sm:p-1.5 rounded-2xl border flex-shrink-0 transition-colors ${
+            isRetro 
+              ? 'bg-purple-950/40 border-pink-500/25' 
+              : 'bg-slate-900/80 border-slate-800/80'
+          }`}>
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -140,7 +138,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={() => onSelectTab(item.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 xl:px-3.5 xl:py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                     isActive
-                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20'
+                      ? isRetro
+                        ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/25'
+                        : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                   }`}
                 >
@@ -157,76 +157,54 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </span>
                   )}
                   {item.highlight && !isActive && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                    <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isRetro ? 'bg-pink-400' : 'bg-indigo-400'}`} />
                   )}
                 </button>
               );
             })}
           </nav>
 
-          {/* Right Actions: Theme Selector, Quick Roulette, Buy Coffee, Share & Streak */}
+          {/* Right Actions: Segmented Theme Toggle, Quick Roulette, Buy Coffee, Share & Streak */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <div className="hidden xl:block h-5 w-px bg-slate-800/80 mr-0.5" />
 
-            {/* Portfolio-Style Theme Selector Dropdown */}
+            {/* Curated Theme Switcher: Minimal Modern vs Retro Vibe */}
             {onSelectTheme && (
-              <div className="relative" ref={themeMenuRef}>
+              <div 
+                className={`flex items-center p-0.5 sm:p-1 rounded-xl border transition-all ${
+                  isRetro 
+                    ? 'bg-purple-950/60 border-pink-500/30' 
+                    : 'bg-slate-900/90 border-slate-800'
+                }`}
+                role="group"
+                aria-label="Theme Selector"
+              >
                 <button
                   type="button"
-                  onClick={() => setThemeMenuOpen((prev) => !prev)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold transition border ${
-                    themeMenuOpen
-                      ? 'bg-slate-800 text-white border-cyan-500/50 ring-1 ring-cyan-500/30'
-                      : 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 border-slate-800 hover:border-slate-700'
+                  onClick={() => onSelectTheme('modern')}
+                  className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    !isRetro
+                      ? 'bg-slate-800 text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/10 font-bold'
+                      : 'text-slate-400 hover:text-slate-200'
                   }`}
-                  title={`Visual Theme: ${currentThemeObj.name} (Click to switch)`}
-                  aria-label="Change Background Theme"
-                  aria-expanded={themeMenuOpen}
+                  title="Minimal Modern Mode (Clean, sleek, distraction-free)"
                 >
-                  <div
-                    className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm"
-                    style={{ background: currentThemeObj.gradient }}
-                  />
-                  <span className="text-sm leading-none">{currentThemeObj.icon}</span>
-                  <span className="hidden sm:inline font-bold text-xs">{currentThemeObj.name.split(' ')[0]}</span>
-                  <span className="text-[9px] text-slate-400 leading-none">▾</span>
+                  <Sparkles className={`w-3.5 h-3.5 ${!isRetro ? 'text-cyan-400' : 'text-slate-400'}`} />
+                  <span className="hidden md:inline">Modern</span>
                 </button>
-
-                {themeMenuOpen && (
-                  <div 
-                    className="absolute right-0 top-full mt-2 w-52 py-2 bg-slate-900/98 backdrop-blur-2xl border border-slate-700/80 rounded-2xl shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150"
-                  >
-                    <div className="px-3.5 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider border-b border-slate-800/80 mb-1 flex items-center justify-between">
-                      <span>Visual Themes</span>
-                      <span className="text-[9px] font-mono text-cyan-400 font-bold">{THEMES.length} themes</span>
-                    </div>
-                    <div className="max-h-72 overflow-y-auto py-1">
-                      {THEMES.map((th) => (
-                        <button
-                          key={th.id}
-                          type="button"
-                          onClick={() => {
-                            onSelectTheme(th.id);
-                            setThemeMenuOpen(false);
-                          }}
-                          className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-bold text-left transition ${
-                            th.id === currentTheme
-                              ? 'bg-cyan-500/15 text-cyan-300 border-l-2 border-cyan-400'
-                              : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
-                          }`}
-                        >
-                          <span className="text-base">{th.icon}</span>
-                          <div
-                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                            style={{ background: th.gradient }}
-                          />
-                          <span className="flex-1 truncate">{th.name}</span>
-                          {th.id === currentTheme && <Check className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={() => onSelectTheme('retro')}
+                  className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    isRetro
+                      ? 'bg-pink-950/80 text-pink-300 border border-pink-500/50 shadow-sm shadow-pink-500/20 font-bold'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                  title="Retro Arcade Vibe (80s synthwave perspective grid & neon glow)"
+                >
+                  <Gamepad2 className={`w-3.5 h-3.5 ${isRetro ? 'text-pink-400' : 'text-slate-400'}`} />
+                  <span className="hidden md:inline">Retro</span>
+                </button>
               </div>
             )}
 
@@ -234,10 +212,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={onQuickRoulette}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 bg-gradient-to-r from-cyan-500/15 to-blue-500/15 hover:from-cyan-500/25 hover:to-blue-500/25 text-cyan-300 border border-cyan-500/40 rounded-xl text-xs font-bold transition transform active:scale-95 shadow-sm group"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 border rounded-xl text-xs font-bold transition transform active:scale-95 shadow-sm group ${
+                isRetro 
+                  ? 'bg-gradient-to-r from-pink-500/15 to-purple-500/15 hover:from-pink-500/25 hover:to-purple-500/25 text-pink-300 border-pink-500/40' 
+                  : 'bg-gradient-to-r from-cyan-500/15 to-blue-500/15 hover:from-cyan-500/25 hover:to-blue-500/25 text-cyan-300 border-cyan-500/40'
+              }`}
               title="Roll a random question right now"
             >
-              <Dice5 className="w-4 h-4 text-cyan-400 group-hover:rotate-45 transition-transform duration-200" />
+              <Dice5 className={`w-4 h-4 group-hover:rotate-45 transition-transform duration-200 ${
+                isRetro ? 'text-pink-400' : 'text-cyan-400'
+              }`} />
               <span className="hidden xl:inline">Random Q</span>
             </button>
 
@@ -276,7 +260,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {/* Streak Counter */}
-            <div className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-400">
+            <div className={`flex items-center gap-1 px-2 sm:px-2.5 py-1.5 border rounded-xl text-xs font-bold ${
+              isRetro 
+                ? 'bg-amber-500/10 border-amber-500/35 text-amber-300 font-mono' 
+                : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+            }`}>
               <Flame className="w-3.5 h-3.5 fill-amber-500/20" />
               <span>{streak}d</span>
             </div>
@@ -295,7 +283,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 type="button"
                 onClick={() => onSelectTab(item.id)}
                 className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg text-[10px] font-semibold transition ${
-                  isActive ? 'text-cyan-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+                  isActive 
+                    ? isRetro ? 'text-pink-400 font-bold' : 'text-cyan-400 font-bold' 
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 <Icon className="w-4 h-4" />

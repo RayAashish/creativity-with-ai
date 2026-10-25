@@ -25,384 +25,214 @@ export const ThemeBackgroundCanvas: React.FC<ThemeBackgroundCanvasProps> = ({ cu
     };
     window.addEventListener('resize', handleResize);
 
-    const mouse = { x: -1000, y: -1000 };
+    const mouse = { x: width / 2, y: height / 2, targetX: width / 2, targetY: height / 2 };
     const handleMouseMove = (e: MouseEvent) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
+      mouse.targetX = e.clientX;
+      mouse.targetY = e.clientY;
     };
     window.addEventListener('mousemove', handleMouseMove);
 
     // ==========================================
-    // SCENE INITIALIZATION & UPDATE
+    // RETRO & MODERN SCENE DATA
     // ==========================================
-    let particles: any[] = [];
-    let matrixDrops: number[] = [];
-    const matrixChars = '0101010101ABCDEF0123456789アイウエオカキクケコサシスセソタチツテトナニヌネハヒフヘホ';
+    let stars: Array<{ x: number; y: number; r: number; alpha: number; pulse: number; speed: number }> = [];
+    let modernDots: Array<{ x: number; y: number; vx: number; vy: number; r: number; alpha: number }> = [];
+    let gridOffset = 0;
 
     function initScene() {
-      particles = [];
-      const area = width * height;
+      // 8-bit / Synthwave Stars for Retro
+      stars = [];
+      const starCount = Math.floor(Math.min(90, width / 16));
+      for (let i = 0; i < starCount; i++) {
+        stars.push({
+          x: Math.random() * width,
+          y: Math.random() * (height * 0.6),
+          r: Math.random() * 1.5 + 0.5,
+          alpha: Math.random() * 0.8 + 0.2,
+          pulse: Math.random() * Math.PI * 2,
+          speed: Math.random() * 0.04 + 0.01,
+        });
+      }
 
-      if (currentTheme === 'matrix') {
-        const colWidth = 18;
-        const cols = Math.floor(width / colWidth);
-        matrixDrops = new Array(cols).fill(0).map(() => Math.floor(Math.random() * -50));
-      } else if (currentTheme === 'aurora') {
-        const count = Math.min(120, Math.floor(area / 10000));
-        for (let i = 0; i < count; i++) {
-          particles.push({
-            x: Math.random() * width,
-            y: Math.random() * height,
-            radius: Math.random() * 2.5 + 0.8,
-            speedY: Math.random() * 1.2 + 0.5,
-            speedX: Math.random() * 0.6 - 0.3,
-            sway: Math.random() * 0.03 + 0.01,
-            swayOffset: Math.random() * Math.PI * 2,
-            opacity: Math.random() * 0.7 + 0.3,
-            isStar: Math.random() > 0.65
-          });
-        }
-      } else if (currentTheme === 'sakura') {
-        const count = Math.min(65, Math.floor(area / 16000));
-        for (let i = 0; i < count; i++) {
-          particles.push({
-            x: Math.random() * width,
-            y: Math.random() * height,
-            rx: Math.random() * 5 + 4,
-            ry: Math.random() * 2.5 + 2,
-            angle: Math.random() * Math.PI * 2,
-            angularSpeed: (Math.random() - 0.5) * 0.04,
-            speedY: Math.random() * 1.4 + 0.8,
-            speedX: Math.random() * 0.8 - 0.2,
-            sway: Math.random() * 0.02 + 0.01,
-            swayOffset: Math.random() * Math.PI * 2,
-            opacity: Math.random() * 0.55 + 0.45,
-            color: Math.random() > 0.4 ? 'rgba(244, 114, 182,' : 'rgba(251, 113, 133,'
-          });
-        }
-      } else if (currentTheme === 'ember') {
-        const count = Math.min(110, Math.floor(area / 11000));
-        for (let i = 0; i < count; i++) {
-          particles.push({
-            x: Math.random() * width,
-            y: height + Math.random() * 100,
-            radius: Math.random() * 2.8 + 0.8,
-            speedY: -(Math.random() * 1.8 + 0.8),
-            speedX: (Math.random() - 0.5) * 0.8,
-            life: Math.random() * 120 + 60,
-            maxLife: Math.random() * 120 + 60,
-            hue: Math.random() > 0.4 ? 25 : 45
-          });
-        }
-      } else if (currentTheme === 'ocean') {
-        const count = Math.min(80, Math.floor(area / 14000));
-        for (let i = 0; i < count; i++) {
-          particles.push({
-            x: Math.random() * width,
-            y: Math.random() * height,
-            radius: Math.random() * 3.5 + 1,
-            speedY: -(Math.random() * 0.8 + 0.3),
-            speedX: (Math.random() - 0.5) * 0.4,
-            sway: Math.random() * 0.02 + 0.01,
-            swayOffset: Math.random() * Math.PI * 2,
-            opacity: Math.random() * 0.6 + 0.2,
-            color: Math.random() > 0.5 ? '56, 189, 248' : '52, 211, 153'
-          });
-        }
-      } else if (currentTheme === 'cyberpunk') {
-        const count = Math.min(70, Math.floor(area / 16000));
-        for (let i = 0; i < count; i++) {
-          particles.push({
-            x: Math.random() * width,
-            y: Math.random() * height,
-            radius: Math.random() * 2.2 + 1,
-            speedX: (Math.random() - 0.5) * 0.9,
-            speedY: (Math.random() - 0.5) * 0.9,
-            isSquare: Math.random() > 0.6,
-            color: Math.random() > 0.5 ? '#00f0ff' : '#ff007f'
-          });
-        }
-      } else {
-        // Midnight Dark (Default): Constellation starfield
-        const count = Math.min(85, Math.floor(area / 14000));
-        for (let i = 0; i < count; i++) {
-          particles.push({
-            x: Math.random() * width,
-            y: Math.random() * height,
-            radius: Math.random() * 2 + 0.6,
-            speedX: (Math.random() - 0.5) * 0.5,
-            speedY: (Math.random() - 0.5) * 0.5,
-            baseAlpha: Math.random() * 0.6 + 0.2,
-            pulse: Math.random() * 0.03 + 0.01,
-            pulsePhase: Math.random() * Math.PI * 2
-          });
-        }
+      // Minimal Modern Floating Dust for Modern
+      modernDots = [];
+      const dotCount = Math.floor(Math.min(45, width / 28));
+      for (let i = 0; i < dotCount; i++) {
+        modernDots.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.25,
+          vy: (Math.random() - 0.5) * 0.25,
+          r: Math.random() * 1.5 + 0.5,
+          alpha: Math.random() * 0.35 + 0.1,
+        });
       }
     }
 
     initScene();
 
-    let frameCount = 0;
-
+    // ==========================================
+    // RENDER LOOP
+    // ==========================================
     const render = () => {
-      frameCount++;
+      // Smooth mouse follow
+      mouse.x += (mouse.targetX - mouse.x) * 0.05;
+      mouse.y += (mouse.targetY - mouse.y) * 0.05;
 
-      if (currentTheme === 'matrix') {
-        ctx.fillStyle = 'rgba(2, 9, 4, 0.16)';
-        ctx.fillRect(0, 0, width, height);
+      ctx.clearRect(0, 0, width, height);
 
-        ctx.font = '14px "Fira Code", monospace';
-        const colWidth = 18;
+      if (currentTheme === 'retro') {
+        // ----------------------------------------
+        // RETRO SYNTHWAVE / ARCADE VIBE
+        // ----------------------------------------
+        const horizonY = Math.floor(height * 0.58);
 
-        for (let i = 0; i < matrixDrops.length; i++) {
-          const char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
-          const x = i * colWidth;
-          const y = matrixDrops[i] * 18;
+        // 1. Sky Gradient (Deep arcade violet to horizon glow)
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+        skyGrad.addColorStop(0, '#06030c');
+        skyGrad.addColorStop(0.65, '#0d0618');
+        skyGrad.addColorStop(1, '#1b0a2a');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, width, horizonY);
 
-          ctx.fillStyle = '#f0fff0';
-          ctx.shadowColor = '#00ff66';
-          ctx.shadowBlur = 8;
-          ctx.fillText(char, x, y);
+        // 2. Retro Neon Stars in Sky
+        for (const star of stars) {
+          star.pulse += star.speed;
+          const a = star.alpha * (0.6 + 0.4 * Math.sin(star.pulse));
+          ctx.fillStyle = `rgba(255, 235, 255, ${a})`;
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+          ctx.fill();
 
-          if (matrixDrops[i] > 1) {
-            ctx.fillStyle = '#00ff66';
-            ctx.shadowBlur = 4;
-            const prevChar = matrixChars[Math.floor(Math.random() * matrixChars.length)];
-            ctx.fillText(prevChar, x, y - 18);
+          // Occasional cyan/magenta star twinkle
+          if (star.r > 1.4) {
+            ctx.fillStyle = `rgba(0, 245, 212, ${a * 0.5})`;
+            ctx.fillRect(star.x - 2, star.y, 5, 0.8);
+            ctx.fillRect(star.x, star.y - 2, 0.8, 5);
           }
-
-          ctx.shadowBlur = 0;
-
-          if (y > height && Math.random() > 0.985) {
-            matrixDrops[i] = 0;
-          }
-          matrixDrops[i]++;
         }
-      } else if (currentTheme === 'aurora') {
-        ctx.clearRect(0, 0, width, height);
 
-        const grad = ctx.createLinearGradient(0, 0, width, height);
-        grad.addColorStop(0, 'rgba(45, 212, 191, 0.03)');
-        grad.addColorStop(0.5, 'rgba(167, 139, 250, 0.04)');
-        grad.addColorStop(1, 'rgba(56, 189, 248, 0.02)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, width, height);
+        // 3. Ground Background (Deep space floor)
+        const groundGrad = ctx.createLinearGradient(0, horizonY, 0, height);
+        groundGrad.addColorStop(0, '#10051e');
+        groundGrad.addColorStop(0.4, '#0a0314');
+        groundGrad.addColorStop(1, '#05020a');
+        ctx.fillStyle = groundGrad;
+        ctx.fillRect(0, horizonY, width, height - horizonY);
 
-        particles.forEach(p => {
-          p.swayOffset += p.sway;
-          p.x += Math.sin(p.swayOffset) * 0.8 + p.speedX;
-          p.y += p.speedY;
+        // 4. Horizon Glow Beam
+        const beamGrad = ctx.createLinearGradient(0, horizonY - 25, 0, horizonY + 25);
+        beamGrad.addColorStop(0, 'rgba(255, 42, 133, 0)');
+        beamGrad.addColorStop(0.5, 'rgba(255, 42, 133, 0.35)');
+        beamGrad.addColorStop(1, 'rgba(0, 245, 212, 0)');
+        ctx.fillStyle = beamGrad;
+        ctx.fillRect(0, horizonY - 25, width, 50);
 
-          if (p.y > height + 10) {
-            p.y = -10;
-            p.x = Math.random() * width;
-          }
-          if (p.x < -10) p.x = width + 10;
-          if (p.x > width + 10) p.x = -10;
+        // Bright horizon line
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255, 42, 133, 0.8)';
+        ctx.lineWidth = 1.5;
+        ctx.moveTo(0, horizonY);
+        ctx.lineTo(width, horizonY);
+        ctx.stroke();
 
-          ctx.save();
-          ctx.translate(p.x, p.y);
-          ctx.fillStyle = `rgba(230, 250, 247, ${p.opacity})`;
-          ctx.shadowColor = '#2dd4bf';
-          ctx.shadowBlur = p.isStar ? 6 : 2;
+        // 5. 3D Perspective Retro Grid
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, horizonY, width, height - horizonY);
+        ctx.clip();
 
-          if (p.isStar) {
-            ctx.beginPath();
-            ctx.moveTo(0, -p.radius * 2);
-            ctx.lineTo(p.radius * 0.5, -p.radius * 0.5);
-            ctx.lineTo(p.radius * 2, 0);
-            ctx.lineTo(p.radius * 0.5, p.radius * 0.5);
-            ctx.lineTo(0, p.radius * 2);
-            ctx.lineTo(-p.radius * 0.5, p.radius * 0.5);
-            ctx.lineTo(-p.radius * 2, 0);
-            ctx.lineTo(-p.radius * 0.5, -p.radius * 0.5);
-            ctx.closePath();
-            ctx.fill();
-          } else {
-            ctx.beginPath();
-            ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
-            ctx.fill();
-          }
-          ctx.restore();
-        });
-      } else if (currentTheme === 'sakura') {
-        ctx.clearRect(0, 0, width, height);
+        gridOffset = (gridOffset + 0.45) % 36;
+        const groundHeight = height - horizonY;
+        const numHorizLines = 16;
 
-        particles.forEach(p => {
-          p.swayOffset += p.sway;
-          p.angle += p.angularSpeed;
-          p.x += Math.sin(p.swayOffset) * 1.2 + p.speedX;
-          p.y += p.speedY;
+        // Moving horizontal perspective lines
+        for (let i = 0; i <= numHorizLines; i++) {
+          const ratio = Math.pow((i + gridOffset / 36) / numHorizLines, 2.2);
+          const y = horizonY + ratio * groundHeight;
+          const alpha = Math.min(0.55, ratio * 0.7);
 
-          if (p.y > height + 20) {
-            p.y = -20;
-            p.x = Math.random() * width;
-          }
-          if (p.x < -20) p.x = width + 20;
-          if (p.x > width + 20) p.x = -20;
-
-          ctx.save();
-          ctx.translate(p.x, p.y);
-          ctx.rotate(p.angle);
           ctx.beginPath();
-          ctx.ellipse(0, 0, p.rx, p.ry, 0, 0, Math.PI * 2);
-          ctx.fillStyle = `${p.color} ${p.opacity})`;
-          ctx.shadowColor = '#f472b6';
-          ctx.shadowBlur = 4;
-          ctx.fill();
-          ctx.restore();
-        });
-      } else if (currentTheme === 'ember') {
-        ctx.clearRect(0, 0, width, height);
-
-        particles.forEach(p => {
-          p.x += p.speedX + (Math.random() - 0.5) * 0.6;
-          p.y += p.speedY;
-          p.life--;
-
-          const progress = p.life / p.maxLife;
-          const currentRadius = Math.max(0.2, p.radius * progress);
-
-          if (p.life <= 0 || p.y < -20) {
-            p.x = Math.random() * width;
-            p.y = height + 10;
-            p.life = p.maxLife;
-          }
-
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, currentRadius, 0, Math.PI * 2);
-          const alpha = Math.max(0, progress * 0.8);
-          ctx.fillStyle = `hsla(${p.hue}, 100%, 60%, ${alpha})`;
-          ctx.shadowColor = '#ff5722';
-          ctx.shadowBlur = 8;
-          ctx.fill();
-          ctx.restore();
-        });
-      } else if (currentTheme === 'ocean') {
-        ctx.clearRect(0, 0, width, height);
-
-        particles.forEach(p => {
-          p.swayOffset += p.sway;
-          p.x += Math.sin(p.swayOffset) * 0.6 + p.speedX;
-          p.y += p.speedY;
-
-          if (p.y < -20) {
-            p.y = height + 20;
-            p.x = Math.random() * width;
-          }
-
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(${p.color}, ${p.opacity * 0.8})`;
-          ctx.lineWidth = 1.2;
+          ctx.strokeStyle = `rgba(255, 42, 133, ${alpha})`;
+          ctx.lineWidth = Math.max(0.8, ratio * 2);
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
           ctx.stroke();
-
-          ctx.fillStyle = `rgba(${p.color}, ${p.opacity * 0.35})`;
-          ctx.shadowColor = '#38bdf8';
-          ctx.shadowBlur = 6;
-          ctx.fill();
-          ctx.restore();
-        });
-      } else if (currentTheme === 'cyberpunk') {
-        ctx.clearRect(0, 0, width, height);
-
-        for (let i = 0; i < particles.length; i++) {
-          for (let j = i + 1; j < particles.length; j++) {
-            const dx = particles[i].x - particles[j].x;
-            const dy = particles[i].y - particles[j].y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 130) {
-              const alpha = (1 - dist / 130) * 0.25;
-              ctx.beginPath();
-              ctx.moveTo(particles[i].x, particles[i].y);
-              ctx.lineTo(particles[j].x, particles[j].y);
-              ctx.strokeStyle = `rgba(0, 240, 255, ${alpha})`;
-              ctx.lineWidth = 0.8;
-              ctx.shadowColor = '#00f0ff';
-              ctx.shadowBlur = 4;
-              ctx.stroke();
-              ctx.shadowBlur = 0;
-            }
-          }
         }
 
-        particles.forEach(p => {
-          p.x += p.speedX;
-          p.y += p.speedY;
+        // Perspective vertical lines radiating from vanishing point
+        const vanishingX = width / 2;
+        const lineSpacing = Math.max(45, width / 22);
+        const totalLines = Math.ceil(width / lineSpacing) * 2;
 
-          if (p.x < 0 || p.x > width) p.speedX *= -1;
-          if (p.y < 0 || p.y > height) p.speedY *= -1;
-
-          ctx.save();
-          ctx.fillStyle = p.color;
-          ctx.shadowColor = p.color;
-          ctx.shadowBlur = 8;
-          if (p.isSquare) {
-            ctx.fillRect(p.x - p.radius, p.y - p.radius, p.radius * 2, p.radius * 2);
-          } else {
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-            ctx.fill();
-          }
-          ctx.restore();
-        });
-      } else {
-        // Midnight Dark (Default)
-        ctx.clearRect(0, 0, width, height);
-        const strokeColor = '99, 102, 241';
-        const starColor = '248, 250, 252';
-
-        for (let i = 0; i < particles.length; i++) {
-          for (let j = i + 1; j < particles.length; j++) {
-            const dx = particles[i].x - particles[j].x;
-            const dy = particles[i].y - particles[j].y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 115) {
-              const alpha = (1 - dist / 115) * 0.18;
-              ctx.beginPath();
-              ctx.moveTo(particles[i].x, particles[i].y);
-              ctx.lineTo(particles[j].x, particles[j].y);
-              ctx.strokeStyle = `rgba(${strokeColor}, ${alpha})`;
-              ctx.lineWidth = 0.6;
-              ctx.stroke();
-            }
-          }
-
-          const mdx = particles[i].x - mouse.x;
-          const mdy = particles[i].y - mouse.y;
-          const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
-          if (mdist < 150) {
-            const malpha = (1 - mdist / 150) * 0.35;
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(mouse.x, mouse.y);
-            ctx.strokeStyle = `rgba(${strokeColor}, ${malpha})`;
-            ctx.lineWidth = 0.8;
-            ctx.stroke();
-          }
-        }
-
-        particles.forEach(p => {
-          p.x += p.speedX;
-          p.y += p.speedY;
-
-          if (p.x < 0 || p.x > width) p.speedX *= -1;
-          if (p.y < 0 || p.y > height) p.speedY *= -1;
-
-          p.pulsePhase += p.pulse;
-          const alpha = p.baseAlpha + Math.sin(p.pulsePhase) * 0.2;
-
-          ctx.save();
+        for (let i = -totalLines; i <= totalLines; i++) {
+          const bottomX = vanishingX + i * lineSpacing * 1.8;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${starColor}, ${Math.max(0.1, alpha)})`;
-          ctx.shadowColor = '#6366f1';
-          ctx.shadowBlur = 5;
+          const distFromCenter = Math.abs(i) / totalLines;
+          const alpha = Math.max(0.08, 0.45 * (1 - distFromCenter * 0.6));
+          ctx.strokeStyle = i % 2 === 0 
+            ? `rgba(0, 245, 212, ${alpha * 0.8})` 
+            : `rgba(255, 42, 133, ${alpha * 0.7})`;
+          ctx.lineWidth = 1;
+          ctx.moveTo(vanishingX, horizonY);
+          ctx.lineTo(bottomX, height);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+
+        // 6. Subtle cursor retro neon halo
+        const retroHalo = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 280);
+        retroHalo.addColorStop(0, 'rgba(255, 42, 133, 0.08)');
+        retroHalo.addColorStop(0.6, 'rgba(0, 245, 212, 0.03)');
+        retroHalo.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = retroHalo;
+        ctx.fillRect(0, 0, width, height);
+
+      } else {
+        // ----------------------------------------
+        // MINIMAL MODERN VIBE (Default / Sleek Dark)
+        // ----------------------------------------
+        // 1. Deep Obsidian Base
+        const modernBg = ctx.createLinearGradient(0, 0, width, height);
+        modernBg.addColorStop(0, '#090d16');
+        modernBg.addColorStop(0.5, '#0b0f19');
+        modernBg.addColorStop(1, '#080c14');
+        ctx.fillStyle = modernBg;
+        ctx.fillRect(0, 0, width, height);
+
+        // 2. Subtle Interactive Radial Glow (Linear/Raycast style)
+        const aura = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 450);
+        aura.addColorStop(0, 'rgba(6, 182, 212, 0.06)');
+        aura.addColorStop(0.4, 'rgba(99, 102, 241, 0.03)');
+        aura.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = aura;
+        ctx.fillRect(0, 0, width, height);
+
+        // Static ambient top-right subtle indigo aura
+        const topAura = ctx.createRadialGradient(width * 0.85, 0, 0, width * 0.85, 0, 500);
+        topAura.addColorStop(0, 'rgba(99, 102, 241, 0.05)');
+        topAura.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = topAura;
+        ctx.fillRect(0, 0, width, height);
+
+        // 3. Ultra-subtle ambient drifting particles
+        ctx.fillStyle = 'rgba(148, 163, 184, 0.35)';
+        for (const dot of modernDots) {
+          dot.x += dot.vx;
+          dot.y += dot.vy;
+
+          if (dot.x < 0) dot.x = width;
+          if (dot.x > width) dot.x = 0;
+          if (dot.y < 0) dot.y = height;
+          if (dot.y > height) dot.y = 0;
+
+          ctx.globalAlpha = dot.alpha;
+          ctx.beginPath();
+          ctx.arc(dot.x, dot.y, dot.r, 0, Math.PI * 2);
           ctx.fill();
-          ctx.restore();
-        });
+        }
+        ctx.globalAlpha = 1.0;
       }
 
       animId = requestAnimationFrame(render);
@@ -418,18 +248,19 @@ export const ThemeBackgroundCanvas: React.FC<ThemeBackgroundCanvasProps> = ({ cu
   }, [currentTheme]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="theme-motion-canvas"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 0
-      }}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        aria-hidden="true"
+        className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-500"
+      />
+      {/* Subtle CRT Scanline overlay only active in Retro mode */}
+      {currentTheme === 'retro' && (
+        <div 
+          aria-hidden="true" 
+          className="fixed inset-0 pointer-events-none z-10 crt-scanlines opacity-20"
+        />
+      )}
+    </>
   );
 };
