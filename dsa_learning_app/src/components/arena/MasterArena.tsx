@@ -3,6 +3,7 @@ import {
   CuratedQuestion, 
   CURATED_VAULT_QUESTIONS 
 } from '../../data/curatedVault';
+import { QUESTIONS_450 } from '../../data/questions450';
 import { PatternRadar } from './PatternRadar';
 import { BlitzGauntlet } from './BlitzGauntlet';
 import { CodeSandbox } from './CodeSandbox';
@@ -111,7 +112,12 @@ export const MasterArena: React.FC<MasterArenaProps> = ({
   };
 
   const handleOpenArchetypeFromRadar = (archetypeId: string) => {
-    const found = CURATED_VAULT_QUESTIONS.find(q => q.id === archetypeId);
+    const found = 
+      CURATED_VAULT_QUESTIONS.find(q => q.id === archetypeId) ||
+      QUESTIONS_450.find(q => q.id === archetypeId) ||
+      CURATED_VAULT_QUESTIONS.find(q => q.id.includes(archetypeId)) ||
+      CURATED_VAULT_QUESTIONS.find(q => q.title.toLowerCase().includes(archetypeId.toLowerCase())) ||
+      CURATED_VAULT_QUESTIONS[0];
     if (found) {
       setSelectedQuestion(found);
       setIsSolutionModalOpen(true);

@@ -26,10 +26,10 @@ interface LanguageDefinition {
 }
 
 const LANGUAGES: LanguageDefinition[] = [
-  { id: 'javascript', name: 'JavaScript', icon: '🟨', fileName: 'Solution.js', compiler: 'V8 Engine (ES2023)', color: 'text-amber-400' },
-  { id: 'python', name: 'Python', icon: '🐍', fileName: 'solution.py', compiler: 'Python 3.11 Runtime', color: 'text-sky-400' },
   { id: 'java', name: 'Java', icon: '☕', fileName: 'Solution.java', compiler: 'OpenJDK 21 (javac)', color: 'text-orange-400' },
   { id: 'cpp', name: 'C++', icon: '⚡', fileName: 'solution.cpp', compiler: 'GCC 13 (g++ -std=c++20)', color: 'text-blue-400' },
+  { id: 'python', name: 'Python', icon: '🐍', fileName: 'solution.py', compiler: 'Python 3.11 Runtime', color: 'text-sky-400' },
+  { id: 'javascript', name: 'JavaScript', icon: '🟨', fileName: 'Solution.js', compiler: 'V8 Engine (ES2023)', color: 'text-amber-400' },
 ];
 
 interface MultiLangCode {
@@ -407,7 +407,7 @@ public:
 
 export const CodeSandbox: React.FC = () => {
   const [selectedSnippetId, setSelectedSnippetId] = useState<string>('two-sum');
-  const [activeLang, setActiveLang] = useState<SandboxLanguage>('javascript');
+  const [activeLang, setActiveLang] = useState<SandboxLanguage>('java');
   
   const activeSnippet = SANDBOX_SNIPPETS.find(s => s.id === selectedSnippetId) || SANDBOX_SNIPPETS[0];
   const activeLangDef = LANGUAGES.find(l => l.id === activeLang) || LANGUAGES[0];

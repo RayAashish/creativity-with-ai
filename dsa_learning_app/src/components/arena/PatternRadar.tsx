@@ -24,6 +24,7 @@ export const PatternRadar: React.FC<PatternRadarProps> = ({
   onOpenArchetype
 }) => {
   const [selectedPatternId, setSelectedPatternId] = useState<string>(ALGORITHMIC_PATTERNS[0].id);
+  const [templateLang, setTemplateLang] = useState<'java' | 'cpp' | 'python' | 'javascript'>('java');
   const [copied, setCopied] = useState<boolean>(false);
 
   const activePattern = ALGORITHMIC_PATTERNS.find(p => p.id === selectedPatternId) || ALGORITHMIC_PATTERNS[0];
@@ -194,18 +195,64 @@ export const PatternRadar: React.FC<PatternRadarProps> = ({
 
           {/* Right Column: Golden Boilerplate Code */}
           <div className="lg:col-span-7 space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono font-semibold text-[var(--text-primary)]">
                   Golden Blueprint Template
                 </span>
-                <span className="text-[10px] font-mono text-[var(--text-muted)]">
-                  JavaScript / Multi-language concept
-                </span>
               </div>
+
+              {/* Multi-Language Navigable Switcher (Java Default) */}
+              <div className="flex items-center gap-1 bg-[var(--bg-subtle)] p-1 rounded-lg border border-[var(--border-subtle)]">
+                <button
+                  type="button"
+                  onClick={() => setTemplateLang('java')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${
+                    templateLang === 'java'
+                      ? 'bg-[var(--bg-card)] text-[var(--text-primary)] font-bold border border-[var(--border-subtle)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                  }`}
+                >
+                  ☕ Java
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTemplateLang('cpp')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${
+                    templateLang === 'cpp'
+                      ? 'bg-[var(--bg-card)] text-[var(--text-primary)] font-bold border border-[var(--border-subtle)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                  }`}
+                >
+                  ⚡ C++
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTemplateLang('python')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${
+                    templateLang === 'python'
+                      ? 'bg-[var(--bg-card)] text-[var(--text-primary)] font-bold border border-[var(--border-subtle)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                  }`}
+                >
+                  🐍 Python
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTemplateLang('javascript')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${
+                    templateLang === 'javascript'
+                      ? 'bg-[var(--bg-card)] text-[var(--text-primary)] font-bold border border-[var(--border-subtle)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                  }`}
+                >
+                  🟨 JS
+                </button>
+              </div>
+
               <button
                 type="button"
-                onClick={() => handleCopy(activePattern.templateCode)}
+                onClick={() => handleCopy(activePattern.templateCodes[templateLang])}
                 className="flex items-center gap-1 text-[11px] font-mono text-[var(--text-muted)] hover:text-[var(--text-primary)] transition"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -215,7 +262,7 @@ export const PatternRadar: React.FC<PatternRadarProps> = ({
 
             <div className="rounded-lg bg-[#0d1117] border border-[#30363d] p-3.5 overflow-x-auto text-xs font-mono text-[#e6edf3] leading-relaxed shadow-inner">
               <pre>
-                <code>{activePattern.templateCode}</code>
+                <code>{activePattern.templateCodes[templateLang]}</code>
               </pre>
             </div>
           </div>
