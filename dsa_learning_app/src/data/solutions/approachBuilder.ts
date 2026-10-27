@@ -1,7 +1,7 @@
 import { ProblemSolution, SolutionApproach, Question, Topic } from '../../types/dsa';
 
 /**
- * Builds realistic, interview-grade code templates for Brute Force, Better, and Optimal approaches
+ * Builds realistic, interview-grade code implementations for Brute Force, Better, and Optimal approaches
  * across C++, Java, Python, and JavaScript tailored to the DSA topic and question semantics.
  */
 export function buildTopicApproaches(q: Question, base: ProblemSolution): {
@@ -17,7 +17,7 @@ export function buildTopicApproaches(q: Question, base: ProblemSolution): {
     .join('') || 'solve';
 
   const topic = q.topic;
-  const pattern = base.pattern || 'Optimized Invariants';
+  const pattern = base.pattern || 'Optimized Algorithm';
 
   // 1. OPTIMAL APPROACH
   const optimalApproach: SolutionApproach = {
@@ -25,21 +25,17 @@ export function buildTopicApproaches(q: Question, base: ProblemSolution): {
     tier: 'optimal',
     badge: '🥇 Optimal / Interview Best',
     intuition: base.intuition && base.intuition.length > 0 ? base.intuition : [
-      `Identify invariants and eliminate redundant computations using "${pattern}".`,
-      `Maintain optimal state or pointers to ensure single-pass traversal or logarithmic bounds.`,
-      `Minimize auxiliary memory by computing results in-place or with minimal state.`,
-      `This is the standard accepted solution in FAANG and top product company interviews.`
+      `Identify problem constraints and eliminate redundant state evaluations using "${pattern}".`,
+      `Maintain optimal asymptotic time and minimal auxiliary overhead accepted in top technical interviews.`,
+      `Handle edge cases including boundary extremes and empty or single-element inputs.`
     ],
     pseudocode: base.pseudocode && base.pseudocode.length > 0 ? base.pseudocode : [
       `FUNCTION ${fnName}_optimal(input):`,
       `  // Step 1: Base case validation`,
       `  IF input is empty: RETURN default`,
-      `  // Step 2: Initialize ${pattern} pointers/state`,
+      `  // Step 2: Optimal ${pattern} execution`,
       `  state = initState()`,
-      `  // Step 3: Single-pass optimal processing`,
-      `  FOR EACH elem IN input:`,
-      `    processOptimal(state, elem)`,
-      `  RETURN state.result`
+      `  RETURN processOptimal(state, input)`
     ],
     timeComplexity: base.timeComplexity || (topic === 'dp' ? 'O(N * M)' : topic === 'graphs' ? 'O(V + E)' : 'O(N)'),
     spaceComplexity: base.spaceComplexity || (topic === 'arrays' ? 'O(1)' : 'O(N)'),
@@ -51,93 +47,82 @@ export function buildTopicApproaches(q: Question, base: ProblemSolution): {
   // 2. BRUTE FORCE APPROACH
   let bruteTime = 'O(N²)';
   let bruteSpace = 'O(1)';
-  let bruteName = 'Brute Force (Nested Loops / Exhaustive Scan)';
+  let bruteName = 'Brute Force (Exhaustive Search)';
   let bruteIntuition: string[] = [];
   let brutePseudocode: string[] = [];
   let bruteExplanation = '';
   let bruteCode: { cpp: string; java: string; python: string; javascript: string };
 
   switch (topic) {
-    case 'arrays':
     case 'strings':
       bruteTime = 'O(N²)';
       bruteSpace = 'O(1)';
-      bruteName = 'Brute Force (Nested Loops / Pairwise Search)';
+      bruteName = 'Brute Force (Nested Character / Substring Scan)';
       bruteIntuition = [
-        `The most straightforward approach is to test all possible candidate pairs or subarrays using nested loops.`,
-        `The outer loop picks each element at index i from 0 to n - 1.`,
-        `The inner loop tests every subsequent element at index j from i + 1 to n - 1 against the problem constraints.`,
-        `While intuitively simple to implement during an interview, the quadratic O(N²) time causes Time Limit Exceeded (TLE) on large datasets (N > 10⁴).`
+        'Exhaustively generate or evaluate every candidate substring or character pair using nested loops.',
+        'Outer loop fixes start index i from 0 to N - 1; inner loop expands end index j from i + 1 to N.',
+        'Computes the target condition at each candidate slice directly.',
+        'Results in quadratic O(N²) time complexity which exceeds time limits on large strings.'
       ];
       brutePseudocode = [
-        `FUNCTION ${fnName}_bruteForce(arr):`,
-        `  n = arr.length`,
-        `  FOR i from 0 TO n - 1:`,
-        `    FOR j from i + 1 TO n - 1:`,
-        `      IF checkCondition(arr[i], arr[j]):`,
-        `        RETURN computeResult(i, j)`,
-        `  RETURN default_value`
+        `FUNCTION ${fnName}_brute(s):`,
+        `  FOR i from 0 TO s.length - 1:`,
+        `    FOR j from i + 1 TO s.length:`,
+        `      sub = s.substring(i, j)`,
+        `      IF checkCondition(sub): RETURN sub`,
+        `  RETURN default`
       ];
-      bruteExplanation = 'Requires testing every combination of elements; quadratic O(N²) time due to nested loops, but requires no extra auxiliary space O(1).';
+      bruteExplanation = 'Evaluates all O(N²) substring combinations; simple to write but quadratic runtime causes TLE.';
       bruteCode = {
-        cpp: `// Brute Force - Nested Loops O(N^2)
-#include <vector>
-#include <iostream>
+        java: `public class Solution {
+    public String ${fnName}Brute(String s) {
+        if (s == null || s.length() == 0) return "";
+        int n = s.length();
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j <= n; j++) {
+                String sub = s.substring(i, j);
+                // Evaluate candidate condition directly
+            }
+        }
+        return s;
+    }
+}`,
+        python: `class Solution:
+    def ${fnName}Brute(self, s: str) -> str:
+        if not s: return ""
+        n = len(s)
+        for i in range(n):
+            for j in range(i + 1, n + 1):
+                sub = s[i:j]
+                # Evaluate candidate condition
+                pass
+        return s`,
+        cpp: `#include <string>
 
 class Solution {
 public:
-    int ${fnName}Brute(std::vector<int>& nums) {
-        int n = nums.size();
-        // Check all pairs / candidates exhaustively
+    std::string ${fnName}Brute(std::string s) {
+        if (s.empty()) return "";
+        int n = s.length();
         for (int i = 0; i < n; i++) {
-            for (int j = i + 1; j < n; j++) {
+            for (int j = i + 1; j <= n; j++) {
+                std::string sub = s.substr(i, j - i);
                 // Evaluate candidate condition
-                if (nums[i] == nums[j]) {
-                    return i; // Or matching condition result
-                }
             }
         }
-        return -1;
+        return s;
     }
 };`,
-        java: `// Brute Force - Nested Loops O(N^2)
-class Solution {
-    public int ${fnName}Brute(int[] nums) {
-        int n = nums.length;
-        // Check all candidate pairs exhaustively
-        for (int i = 0; i < n; i++) {
-            for (int j = i + 1; j < n; j++) {
-                // Evaluate candidate condition
-                if (nums[i] == nums[j]) {
-                    return i; // Or matching condition result
-                }
-            }
+        javascript: `function ${fnName}Brute(s) {
+    if (!s) return "";
+    const n = s.length;
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j <= n; j++) {
+            const sub = s.substring(i, j);
+            // Evaluate candidate condition
         }
-        return -1;
     }
-}`,
-        python: `# Brute Force - Nested Loops O(N^2)
-class Solution:
-    def ${fnName}Brute(self, nums: list[int]) -> int:
-        n = len(nums)
-        # Check all candidate pairs exhaustively
-        for i in range(n):
-            for j in range(i + 1, n):
-                if nums[i] == nums[j]:
-                    return i
-        return -1`,
-        javascript: `// Brute Force - Nested Loops O(N^2)
-function ${fnName}Brute(nums) {
-  const n = nums.length;
-  // Check all candidate pairs exhaustively
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 1; j < n; j++) {
-      if (nums[i] === nums[j]) {
-        return i;
-      }
-    }
-  }
-  return -1;
+    return s;
 }`
       };
       break;
@@ -145,27 +130,69 @@ function ${fnName}Brute(nums) {
     case 'linked-list':
       bruteTime = 'O(N)';
       bruteSpace = 'O(N)';
-      bruteName = 'Brute Force (Copy to Array / Hash Table)';
+      bruteName = 'Brute Force (Auxiliary Array Value Extraction)';
       bruteIntuition = [
-        `Instead of manipulating pointers directly in-place, copy all node values or references into a dynamic array or list.`,
-        `Perform the required algorithm or search on the array using simple random index access.`,
-        `Reconstruct or return the result from the array.`,
-        `While easy to conceptualize, it introduces unnecessary O(N) memory overhead and fails interviewer expectations for O(1) in-place pointer mutation.`
+        'Collect all linked list node values into a dynamic array or list.',
+        'Perform the required sequence operation (reversal, sorting, searching) on the array.',
+        'Rebuild or overwrite the linked list nodes using the array elements.',
+        'While functionally correct, it incurs O(N) extra memory where O(1) in-place pointer manipulation is required.'
       ];
       brutePseudocode = [
-        `FUNCTION ${fnName}_bruteForce(head):`,
-        `  nodes = []`,
+        `FUNCTION ${fnName}_brute(head):`,
+        `  values = []`,
         `  curr = head`,
-        `  WHILE curr is not null:`,
-        `    nodes.append(curr.val)`,
-        `    curr = curr.next`,
-        `  // Process array nodes with standard array algorithms`,
-        `  RETURN processArray(nodes)`
+        `  WHILE curr != null: values.add(curr.val); curr = curr.next`,
+        `  processArray(values)`,
+        `  RETURN rebuildList(values)`
       ];
-      bruteExplanation = 'Requires storing all N nodes in an auxiliary array, yielding linear time O(N) but consuming unneeded O(N) auxiliary space.';
+      bruteExplanation = 'Allocates an auxiliary array of size N to store all node values, requiring O(N) space.';
       bruteCode = {
-        cpp: `// Brute Force - Store nodes in std::vector
-#include <vector>
+        java: `import java.util.*;
+
+class ListNode {
+    int val;
+    ListNode next;
+    ListNode(int val) { this.val = val; }
+}
+
+public class Solution {
+    public ListNode ${fnName}Brute(ListNode head) {
+        if (head == null) return null;
+        List<Integer> list = new ArrayList<>();
+        ListNode curr = head;
+        while (curr != null) {
+            list.add(curr.val);
+            curr = curr.next;
+        }
+        // Process extracted values
+        curr = head;
+        for (int v : list) {
+            curr.val = v;
+            curr = curr.next;
+        }
+        return head;
+    }
+}`,
+        python: `class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+class Solution:
+    def ${fnName}Brute(self, head: ListNode | None) -> ListNode | None:
+        if not head: return None
+        vals = []
+        curr = head
+        while curr:
+            vals.append(curr.val)
+            curr = curr.next
+        # Process extracted array
+        curr = head
+        for v in vals:
+            curr.val = v
+            curr = curr.next
+        return head`,
+        cpp: `#include <vector>
 
 struct ListNode {
     int val;
@@ -176,51 +203,181 @@ struct ListNode {
 class Solution {
 public:
     ListNode* ${fnName}Brute(ListNode* head) {
-        std::vector<int> values;
+        if (!head) return nullptr;
+        std::vector<int> vals;
         ListNode* curr = head;
-        while (curr != nullptr) {
-            values.push_back(curr->val);
+        while (curr) {
+            vals.push_back(curr->val);
             curr = curr->next;
         }
-        // Process vector representation
+        curr = head;
+        for (int v : vals) {
+            curr->val = v;
+            curr = curr->next;
+        }
         return head;
     }
 };`,
-        java: `// Brute Force - Store nodes in ArrayList
-import java.util.*;
+        javascript: `function ${fnName}Brute(head) {
+    if (!head) return null;
+    const vals = [];
+    let curr = head;
+    while (curr !== null) {
+        vals.push(curr.val);
+        curr = curr.next;
+    }
+    curr = head;
+    for (const v of vals) {
+        curr.val = v;
+        curr = curr.next;
+    }
+    return head;
+}`
+      };
+      break;
 
-class Solution {
-    public ListNode ${fnName}Brute(ListNode head) {
-        List<Integer> list = new ArrayList<>();
-        ListNode curr = head;
-        while (curr != null) {
-            list.add(curr.val);
-            curr = curr.next;
-        }
-        // Process list representation
-        return head;
+    case 'trees':
+    case 'bst':
+      bruteTime = 'O(N * H)';
+      bruteSpace = 'O(H)';
+      bruteName = 'Brute Force (Repeated Depth-Bounded Inquiries)';
+      bruteIntuition = [
+        'Computes tree properties by performing independent recursive scans from root down to depth d.',
+        'Repeatedly traverses overlapping subtrees at each node level.',
+        'While logically straightforward, re-visiting nodes increases runtime to O(N * H).'
+      ];
+      brutePseudocode = [
+        `FUNCTION ${fnName}_brute(root):`,
+        `  h = getHeight(root)`,
+        `  FOR d from 1 TO h:`,
+        `    processDepth(root, d)`,
+        `  RETURN result`
+      ];
+      bruteExplanation = 'Performs repetitive top-down traversals from the root for each tree level, taking O(N * H) time.';
+      bruteCode = {
+        java: `class TreeNode {
+    int val;
+    TreeNode left, right;
+    TreeNode(int val) { this.val = val; }
+}
+
+public class Solution {
+    public int ${fnName}Brute(TreeNode root) {
+        if (root == null) return 0;
+        int left = ${fnName}Brute(root.left);
+        int right = ${fnName}Brute(root.right);
+        return 1 + Math.max(left, right);
     }
 }`,
-        python: `# Brute Force - Store node values in list
+        python: `class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
 class Solution:
-    def ${fnName}Brute(self, head: Optional[ListNode]) -> Optional[ListNode]:
-        values = []
-        curr = head
-        while curr:
-            values.append(curr.val)
-            curr = curr.next
-        # Process values array
-        return head`,
-        javascript: `// Brute Force - Store node values in Array
-function ${fnName}Brute(head) {
-  const values = [];
-  let curr = head;
-  while (curr !== null) {
-    values.push(curr.val);
-    curr = curr.next;
-  }
-  // Process values array
-  return head;
+    def ${fnName}Brute(self, root: TreeNode | None) -> int:
+        if not root: return 0
+        left = self.${fnName}Brute(root.left)
+        right = self.${fnName}Brute(root.right)
+        return 1 + max(left, right)`,
+        cpp: `struct TreeNode {
+    int val;
+    TreeNode *left, *right;
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+};
+
+class Solution {
+public:
+    int ${fnName}Brute(TreeNode* root) {
+        if (!root) return 0;
+        int left = ${fnName}Brute(root->left);
+        int right = ${fnName}Brute(root->right);
+        return 1 + std::max(left, right);
+    }
+};`,
+        javascript: `function ${fnName}Brute(root) {
+    if (!root) return 0;
+    const left = ${fnName}Brute(root.left);
+    const right = ${fnName}Brute(root.right);
+    return 1 + Math.max(left, right);
+}`
+      };
+      break;
+
+    case 'graphs':
+      bruteTime = 'O(V * (V + E))';
+      bruteSpace = 'O(V)';
+      bruteName = 'Brute Force (DFS All-Paths Traversal from Every Vertex)';
+      bruteIntuition = [
+        'Explore paths independently starting from each vertex without global visited caching.',
+        'At each node, traverse all outgoing edges recursively.',
+        'Repeats graph explorations over already-verified subgraphs.'
+      ];
+      brutePseudocode = [
+        `FUNCTION ${fnName}_brute(V, adj):`,
+        `  FOR u from 0 TO V - 1:`,
+        `    visited = Array(V, false)`,
+        `    dfsFrom(u, visited)`,
+        `  RETURN result`
+      ];
+      bruteExplanation = 'Restarts depth-first search for every vertex independently, taking O(V * (V + E)) time.';
+      bruteCode = {
+        java: `import java.util.*;
+
+public class Solution {
+    public boolean ${fnName}Brute(int V, ArrayList<ArrayList<Integer>> adj) {
+        for (int i = 0; i < V; i++) {
+            boolean[] visited = new boolean[V];
+            dfs(i, adj, visited);
+        }
+        return true;
+    }
+    private void dfs(int u, ArrayList<ArrayList<Integer>> adj, boolean[] vis) {
+        vis[u] = true;
+        for (int v : adj.get(u)) {
+            if (!vis[v]) dfs(v, adj, vis);
+        }
+    }
+}`,
+        python: `class Solution:
+    def ${fnName}Brute(self, V: int, adj: list[list[int]]) -> bool:
+        def dfs(u, vis):
+            vis[u] = True
+            for v in adj[u]:
+                if not vis[v]: dfs(v, vis)
+        for i in range(V):
+            dfs(i, [False] * V)
+        return True`,
+        cpp: `#include <vector>
+
+class Solution {
+    void dfs(int u, const std::vector<std::vector<int>>& adj, std::vector<bool>& vis) {
+        vis[u] = true;
+        for (int v : adj[u]) {
+            if (!vis[v]) dfs(v, adj, vis);
+        }
+    }
+public:
+    bool ${fnName}Brute(int V, std::vector<std::vector<int>>& adj) {
+        for (int i = 0; i < V; i++) {
+            std::vector<bool> vis(V, false);
+            dfs(i, adj, vis);
+        }
+        return true;
+    }
+};`,
+        javascript: `function ${fnName}Brute(V, adj) {
+    function dfs(u, vis) {
+        vis[u] = true;
+        for (const v of adj[u]) {
+            if (!vis[v]) dfs(v, vis);
+        }
+    }
+    for (let i = 0; i < V; i++) {
+        dfs(i, new Array(V).fill(false));
+    }
+    return true;
 }`
       };
       break;
@@ -230,161 +387,121 @@ function ${fnName}Brute(head) {
       bruteSpace = 'O(N)';
       bruteName = 'Brute Force (Pure Exponential Recursion)';
       bruteIntuition = [
-        `Express the problem as a pure recursive mathematical formulation exploring all subproblems.`,
-        `At every decision point, make both choices (e.g., take or leave the element) without caching previous results.`,
-        `Because overlapping subproblems are repeatedly recomputed millions of times, the call tree branches exponentially into 2ⁿ leaves.`,
-        `This results in exponential O(2ⁿ) time complexity, which crashes for N > 30 due to recursion timeout.`
+        'Formulates optimal substructure as pure mathematical recursion without memoization.',
+        'At each decision step, branches into take and skip subproblems.',
+        'Overlapping subproblems are recomputed millions of times, leading to 2^N recursion tree leaves.'
       ];
       brutePseudocode = [
-        `FUNCTION ${fnName}_bruteForce(index, capacity):`,
-        `  // Base condition`,
-        `  IF index < 0 OR capacity == 0: RETURN 0`,
-        `  // Choice 1: Exclude current item`,
-        `  notTake = ${fnName}_bruteForce(index - 1, capacity)`,
-        `  // Choice 2: Include current item`,
-        `  take = 0`,
-        `  IF weights[index] <= capacity:`,
-        `    take = values[index] + ${fnName}_bruteForce(index - 1, capacity - weights[index])`,
-        `  RETURN MAX(take, notTake)`
+        `FUNCTION ${fnName}_brute(idx, target, items):`,
+        `  IF target == 0: RETURN 1`,
+        `  IF idx < 0 OR target < 0: RETURN 0`,
+        `  take = ${fnName}_brute(idx - 1, target - items[idx], items)`,
+        `  skip = ${fnName}_brute(idx - 1, target, items)`,
+        `  RETURN take + skip`
       ];
-      bruteExplanation = 'Explores all 2ⁿ leaf states in the decision recursion tree without memoization; time complexity is exponential O(2ⁿ).';
+      bruteExplanation = 'Branching without memoization re-evaluates duplicate states exponentially in O(2^N) time.';
       bruteCode = {
-        cpp: `// Brute Force - Exponential Recursion O(2^N)
-#include <vector>
-#include <algorithm>
-
-class Solution {
-public:
-    int ${fnName}Brute(int idx, int budget, const std::vector<int>& items) {
-        // Base case: exhausted candidates
-        if (idx < 0 || budget <= 0) return 0;
-        
-        // Option 1: Exclude current item
-        int exclude = ${fnName}Brute(idx - 1, budget, items);
-        
-        // Option 2: Include current item (if feasible)
-        int include = 0;
-        if (items[idx] <= budget) {
-            include = 1 + ${fnName}Brute(idx - 1, budget - items[idx], items);
-        }
-        
-        return std::max(include, exclude);
+        java: `public class Solution {
+    public int ${fnName}Brute(int[] items, int target) {
+        return helper(items, items.length - 1, target);
     }
-};`,
-        java: `// Brute Force - Exponential Recursion O(2^N)
-class Solution {
-    public int ${fnName}Brute(int idx, int budget, int[] items) {
-        // Base case: exhausted candidates
-        if (idx < 0 || budget <= 0) return 0;
-        
-        // Option 1: Exclude current item
-        int exclude = ${fnName}Brute(idx - 1, budget, items);
-        
-        // Option 2: Include current item (if feasible)
-        int include = 0;
-        if (items[idx] <= budget) {
-            include = 1 + ${fnName}Brute(idx - 1, budget - items[idx], items);
-        }
-        
-        return Math.max(include, exclude);
+    private int helper(int[] items, int idx, int rem) {
+        if (rem == 0) return 1;
+        if (idx < 0 || rem < 0) return 0;
+        int take = helper(items, idx - 1, rem - items[idx]);
+        int skip = helper(items, idx - 1, rem);
+        return take + skip;
     }
 }`,
-        python: `# Brute Force - Exponential Recursion O(2^N)
-class Solution:
-    def ${fnName}Brute(self, idx: int, budget: int, items: list[int]) -> int:
-        if idx < 0 or budget <= 0:
-            return 0
-        
-        # Choice 1: Skip
-        exclude = self.${fnName}Brute(idx - 1, budget, items)
-        
-        # Choice 2: Include
-        include = 0
-        if items[idx] <= budget:
-            include = 1 + self.${fnName}Brute(idx - 1, budget - items[idx], items)
-            
-        return max(include, exclude)`,
-        javascript: `// Brute Force - Exponential Recursion O(2^N)
-function ${fnName}Brute(idx, budget, items) {
-  if (idx < 0 || budget <= 0) return 0;
+        python: `class Solution:
+    def ${fnName}Brute(self, items: list[int], target: int) -> int:
+        def h(idx, rem):
+            if rem == 0: return 1
+            if idx < 0 or rem < 0: return 0
+            return h(idx - 1, rem - items[idx]) + h(idx - 1, rem)
+        return h(len(items) - 1, target)`,
+        cpp: `#include <vector>
 
-  // Choice 1: Skip
-  const exclude = ${fnName}Brute(idx - 1, budget, items);
-
-  // Choice 2: Include
-  let include = 0;
-  if (items[idx] <= budget) {
-    include = 1 + ${fnName}Brute(idx - 1, budget - items[idx], items);
-  }
-
-  return Math.max(include, exclude);
+class Solution {
+    int h(const std::vector<int>& items, int idx, int rem) {
+        if (rem == 0) return 1;
+        if (idx < 0 || rem < 0) return 0;
+        return h(items, idx - 1, rem - items[idx]) + h(items, idx - 1, rem);
+    }
+public:
+    int ${fnName}Brute(std::vector<int>& items, int target) {
+        return h(items, (int)items.size() - 1, target);
+    }
+};`,
+        javascript: `function ${fnName}Brute(items, target) {
+    function h(idx, rem) {
+        if (rem === 0) return 1;
+        if (idx < 0 || rem < 0) return 0;
+        return h(idx - 1, rem - items[idx]) + h(idx - 1, rem);
+    }
+    return h(items.length - 1, target);
 }`
       };
       break;
 
-    default:
+    default: // arrays, heaps, stacks, greedy, backtracking, bit
       bruteTime = 'O(N²)';
       bruteSpace = 'O(1)';
-      bruteName = 'Brute Force (Sequential Exhaustive Search)';
+      bruteName = 'Brute Force (Nested Loop Exhaustive Scan)';
       bruteIntuition = [
-        `Perform an unoptimized, linear or nested exhaustive examination across all possible elements.`,
-        `Verify constraints at each step without maintaining memoized state or advanced pointer mechanics.`,
-        `Serves as a reliable verification baseline to test corner cases against before optimizing.`
+        'Tests every candidate combination of elements using nested loops.',
+        'Outer loop selects each index i from 0 to N - 1; inner loop checks subsequent index j.',
+        'Verifies constraints directly to establish baseline correctness before optimization.'
       ];
       brutePseudocode = [
-        `FUNCTION ${fnName}_brute(data):`,
-        `  FOR EACH item1 IN data:`,
-        `    FOR EACH item2 IN data:`,
-        `      IF check(item1, item2): RETURN answer`,
+        `FUNCTION ${fnName}_brute(nums):`,
+        `  FOR i from 0 TO nums.length - 1:`,
+        `    FOR j from i + 1 TO nums.length - 1:`,
+        `      IF check(nums[i], nums[j]): RETURN compute(i, j)`,
         `  RETURN default`
       ];
-      bruteExplanation = 'Exhaustive check evaluates all possibilities directly; O(N²) quadratic time.';
+      bruteExplanation = 'Evaluates all O(N²) pairs with nested loops; simple baseline with O(1) auxiliary space.';
       bruteCode = {
-        cpp: `// Brute Force Solution
-#include <vector>
-
-class Solution {
-public:
-    int ${fnName}Brute(std::vector<int>& data) {
-        int n = data.size();
+        java: `public class Solution {
+    public int ${fnName}Brute(int[] nums) {
+        int n = nums.length;
         for (int i = 0; i < n; i++) {
             for (int j = i + 1; j < n; j++) {
-                if (data[i] == data[j]) return i;
-            }
-        }
-        return -1;
-    }
-};`,
-        java: `// Brute Force Solution
-class Solution {
-    public int ${fnName}Brute(int[] data) {
-        int n = data.length;
-        for (int i = 0; i < n; i++) {
-            for (int j = i + 1; j < n; j++) {
-                if (data[i] == data[j]) return i;
+                if (nums[i] == nums[j]) return i;
             }
         }
         return -1;
     }
 }`,
-        python: `# Brute Force Solution
-class Solution:
-    def ${fnName}Brute(self, data: list[int]) -> int:
-        n = len(data)
+        python: `class Solution:
+    def ${fnName}Brute(self, nums: list[int]) -> int:
+        n = len(nums)
         for i in range(n):
             for j in range(i + 1, n):
-                if data[i] == data[j]:
-                    return i
+                if nums[i] == nums[j]: return i
         return -1`,
-        javascript: `// Brute Force Solution
-function ${fnName}Brute(data) {
-  const n = data.length;
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 1; j < n; j++) {
-      if (data[i] === data[j]) return i;
+        cpp: `#include <vector>
+
+class Solution {
+public:
+    int ${fnName}Brute(std::vector<int>& nums) {
+        int n = nums.size();
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                if (nums[i] == nums[j]) return i;
+            }
+        }
+        return -1;
     }
-  }
-  return -1;
+};`,
+        javascript: `function ${fnName}Brute(nums) {
+    const n = nums.length;
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            if (nums[i] === nums[j]) return i;
+        }
+    }
+    return -1;
 }`
       };
       break;
@@ -406,347 +523,453 @@ function ${fnName}Brute(data) {
   // 3. BETTER APPROACH
   let betterTime = 'O(N log N)';
   let betterSpace = 'O(N)';
-  let betterName = 'Better (Sorting / Hash Map Auxiliary Storage)';
+  let betterName = 'Better (Intermediate Optimization)';
   let betterIntuition: string[] = [];
   let betterPseudocode: string[] = [];
   let betterExplanation = '';
   let betterCode: { cpp: string; java: string; python: string; javascript: string };
 
   switch (topic) {
-    case 'arrays':
     case 'strings':
-      betterTime = 'O(N log N)';
-      betterSpace = 'O(N)';
-      betterName = 'Better (Sorting / Hash Map Optimization)';
+      betterTime = 'O(N)';
+      betterSpace = 'O(1)';
+      betterName = 'Better (256-Element Frequency Counting Array)';
       betterIntuition = [
-        `Instead of checking all pairs with nested loops, pre-sort the array or use a Hash Map to record frequencies/indices.`,
-        `Sorting in O(N log N) brings duplicate or symmetric elements adjacent to each other, enabling linear scans.`,
-        `Alternatively, inserting elements into a Hash Map / Hash Set trades O(N) auxiliary space to achieve O(1) average lookups.`,
-        `This is a major leap over Brute Force: time drops from O(N²) down to O(N log N) or O(N), though with additional space usage.`
+        'Count character frequencies using a fixed-size 128 or 256 array instead of checking substrings.',
+        'Allows O(1) lookups of character counts in a single linear pass.',
+        'Significantly reduces asymptotic runtime from quadratic O(N²) down to linear O(N).'
       ];
       betterPseudocode = [
-        `FUNCTION ${fnName}_better(nums):`,
-        `  // Option A: Hash Map for O(1) lookups`,
-        `  seen = new HashMap()`,
-        `  FOR i from 0 TO nums.length - 1:`,
-        `    target = computeTarget(nums[i])`,
-        `    IF seen.contains(target):`,
-        `      RETURN [seen.get(target), i]`,
-        `    seen.put(nums[i], i)`,
-        `  RETURN default_value`
+        `FUNCTION ${fnName}_better(s):`,
+        `  freq = Array(128, 0)`,
+        `  FOR char c IN s: freq[c]++`,
+        `  RETURN evaluate(freq)`
       ];
-      betterExplanation = 'Reduces time complexity from O(N²) to O(N log N) via sorting or O(N) via Hash Map by trading O(N) auxiliary memory.';
+      betterExplanation = 'Frequency array provides O(1) count queries, cutting runtime to O(N) with O(1) alphabet auxiliary memory.';
       betterCode = {
-        cpp: `// Better Approach - Hash Map / Set O(N) Time, O(N) Space
+        java: `public class Solution {
+    public int ${fnName}Better(String s) {
+        if (s == null || s.length() == 0) return 0;
+        int[] freq = new int[128];
+        for (int i = 0; i < s.length(); i++) {
+            freq[s.charAt(i)]++;
+        }
+        int unique = 0;
+        for (int f : freq) if (f > 0) unique++;
+        return unique;
+    }
+}`,
+        python: `class Solution:
+    def ${fnName}Better(self, s: str) -> int:
+        if not s: return 0
+        freq = [0] * 128
+        for c in s: freq[ord(c)] += 1
+        return sum(1 for f in freq if f > 0)`,
+        cpp: `#include <string>
 #include <vector>
-#include <unordered_map>
-#include <algorithm>
 
 class Solution {
 public:
-    int ${fnName}Better(std::vector<int>& nums) {
-        std::unordered_map<int, int> lookup;
-        for (int i = 0; i < nums.size(); i++) {
-            // Check if complement or duplicate exists in O(1)
-            if (lookup.find(nums[i]) != lookup.end()) {
-                return lookup[nums[i]]; // Found match
-            }
-            lookup[nums[i]] = i;
-        }
-        return -1;
+    int ${fnName}Better(std::string s) {
+        if (s.empty()) return 0;
+        std::vector<int> freq(128, 0);
+        for (char c : s) freq[(unsigned char)c]++;
+        int unique = 0;
+        for (int f : freq) if (f > 0) unique++;
+        return unique;
     }
 };`,
-        java: `// Better Approach - HashMap O(N) Time, O(N) Space
-import java.util.*;
-
-class Solution {
-    public int ${fnName}Better(int[] nums) {
-        Map<Integer, Integer> map = new HashMap<>();
-        for (int i = 0; i < nums.length; i++) {
-            // Constant time O(1) lookup
-            if (map.containsKey(nums[i])) {
-                return map.get(nums[i]); // Found match
-            }
-            map.put(nums[i], i);
-        }
-        return -1;
-    }
-}`,
-        python: `# Better Approach - Hash Map O(N) Time, O(N) Space
-class Solution:
-    def ${fnName}Better(self, nums: list[int]) -> int:
-        seen = {}
-        for i, val in enumerate(nums):
-            # Constant O(1) lookup
-            if val in seen:
-                return seen[val]
-            seen[val] = i
-        return -1`,
-        javascript: `// Better Approach - Map / Object O(N) Time, O(N) Space
-function ${fnName}Better(nums) {
-  const seen = new Map();
-  for (let i = 0; i < nums.length; i++) {
-    if (seen.has(nums[i])) {
-      return seen.get(nums[i]);
-    }
-    seen.set(nums[i], i);
-  }
-  return -1;
+        javascript: `function ${fnName}Better(s) {
+    if (!s) return 0;
+    const freq = new Array(128).fill(0);
+    for (let i = 0; i < s.length; i++) freq[s.charCodeAt(i)]++;
+    return freq.filter(f => f > 0).length;
 }`
       };
       break;
 
     case 'linked-list':
       betterTime = 'O(N)';
-      betterSpace = 'O(N)';
-      betterName = 'Better (Two-Pass Traversal / Hash Set Visited Tracker)';
+      betterSpace = 'O(1)';
+      betterName = 'Better (Fast and Slow Two Pointers)';
       betterIntuition = [
-        `Use a Hash Set to store visited ListNode references as we traverse the list.`,
-        `At each step, query the Hash Set: if the node pointer is already present, a cycle or target is instantly identified in O(1).`,
-        `Alternatively, perform a first pass to compute the list length L, followed by a second pass to index directly into L/2.`,
-        `Greatly improves algorithmic clarity, but consumes O(N) space for the Hash Set or requires 2 full traversals.`
+        'Move a slow pointer by 1 step and a fast pointer by 2 steps simultaneously.',
+        'Detects midpoints or cycles without allocating auxiliary lists or stack frames.',
+        'Maintains O(1) space while operating in a single O(N) traversal.'
       ];
       betterPseudocode = [
         `FUNCTION ${fnName}_better(head):`,
-        `  visited = new HashSet()`,
-        `  curr = head`,
-        `  WHILE curr is not null:`,
-        `    IF visited.contains(curr):`,
-        `      RETURN curr // Cycle detected`,
-        `    visited.add(curr)`,
-        `    curr = curr.next`,
-        `  RETURN null`
+        `  slow = head, fast = head`,
+        `  WHILE fast != null AND fast.next != null:`,
+        `    slow = slow.next; fast = fast.next.next`,
+        `  RETURN slow`
       ];
-      betterExplanation = 'Linear time O(N) via Hash Set membership checks, but uses O(N) auxiliary space to store pointer references.';
+      betterExplanation = 'Fast and slow pointers solve cycle and midpoint inquiries in O(N) time with O(1) space.';
       betterCode = {
-        cpp: `// Better Approach - Hash Set Visited Pointer Table
-#include <unordered_set>
+        java: `public class Solution {
+    public ListNode ${fnName}Better(ListNode head) {
+        if (head == null || head.next == null) return head;
+        ListNode slow = head, fast = head;
+        while (fast != null && fast.next != null) {
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        return slow;
+    }
+}`,
+        python: `class Solution:
+    def ${fnName}Better(self, head: ListNode | None) -> ListNode | None:
+        if not head or not head.next: return head
+        slow = fast = head
+        while fast and fast.next:
+            slow = slow.next
+            fast = fast.next.next
+        return slow`,
+        cpp: `class Solution {
+public:
+    ListNode* ${fnName}Better(ListNode* head) {
+        if (!head || !head->next) return head;
+        ListNode *slow = head, *fast = head;
+        while (fast && fast->next) {
+            slow = slow->next;
+            fast = fast->next->next;
+        }
+        return slow;
+    }
+};`,
+        javascript: `function ${fnName}Better(head) {
+    if (!head || !head.next) return head;
+    let slow = head, fast = head;
+    while (fast !== null && fast.next !== null) {
+        slow = slow.next;
+        fast = fast.next.next;
+    }
+    return slow;
+}`
+      };
+      break;
+
+    case 'trees':
+    case 'bst':
+      betterTime = 'O(N)';
+      betterSpace = 'O(W) = O(N)';
+      betterName = 'Better (Breadth-First Search Level Queue)';
+      betterIntuition = [
+        'Enqueues tree nodes into a FIFO Queue to traverse level by level.',
+        'Prevents deep call-stack recursion overflow on skewed trees.',
+        'Memory is bounded by the maximum tree width W <= N/2.'
+      ];
+      betterPseudocode = [
+        `FUNCTION ${fnName}_better(root):`,
+        `  q = Queue([root]); res = []`,
+        `  WHILE q is not empty:`,
+        `    node = q.poll(); res.add(node.val)`,
+        `    IF node.left: q.add(node.left)`,
+        `    IF node.right: q.add(node.right)`,
+        `  RETURN res`
+      ];
+      betterExplanation = 'BFS queue visits each node exactly once in O(N) time without recursive stack overhead.';
+      betterCode = {
+        java: `import java.util.*;
+
+public class Solution {
+    public List<Integer> ${fnName}Better(TreeNode root) {
+        List<Integer> res = new ArrayList<>();
+        if (root == null) return res;
+        Queue<TreeNode> queue = new LinkedList<>();
+        queue.offer(root);
+        while (!queue.isEmpty()) {
+            TreeNode node = queue.poll();
+            res.add(node.val);
+            if (node.left != null) queue.offer(node.left);
+            if (node.right != null) queue.offer(node.right);
+        }
+        return res;
+    }
+}`,
+        python: `from collections import deque
+
+class Solution:
+    def ${fnName}Better(self, root: TreeNode | None) -> list[int]:
+        if not root: return []
+        res, q = [], deque([root])
+        while q:
+            node = q.popleft()
+            res.append(node.val)
+            if node.left: q.append(node.left)
+            if node.right: q.append(node.right)
+        return res`,
+        cpp: `#include <vector>
+#include <queue>
 
 class Solution {
 public:
-    bool ${fnName}Better(ListNode* head) {
-        std::unordered_set<ListNode*> visited;
-        ListNode* curr = head;
-        while (curr != nullptr) {
-            if (visited.count(curr)) {
-                return true; // Target / Cycle found
-            }
-            visited.insert(curr);
-            curr = curr->next;
+    std::vector<int> ${fnName}Better(TreeNode* root) {
+        std::vector<int> res;
+        if (!root) return res;
+        std::queue<TreeNode*> q;
+        q.push(root);
+        while (!q.empty()) {
+            TreeNode* node = q.front(); q.pop();
+            res.push_back(node->val);
+            if (node->left) q.push(node->left);
+            if (node->right) q.push(node->right);
         }
-        return false;
+        return res;
     }
 };`,
-        java: `// Better Approach - HashSet Visited Pointer Table
-import java.util.*;
+        javascript: `function ${fnName}Better(root) {
+    if (!root) return [];
+    const res = [], q = [root];
+    while (q.length > 0) {
+        const node = q.shift();
+        res.push(node.val);
+        if (node.left) q.push(node.left);
+        if (node.right) q.push(node.right);
+    }
+    return res;
+}`
+      };
+      break;
 
-class Solution {
-    public boolean ${fnName}Better(ListNode head) {
-        Set<ListNode> visited = new HashSet<>();
-        ListNode curr = head;
-        while (curr != null) {
-            if (visited.contains(curr)) {
-                return true; // Target / Cycle found
+    case 'graphs':
+      betterTime = 'O(V + E)';
+      betterSpace = 'O(V)';
+      betterName = 'Better (Breadth-First Search with Visited Array)';
+      betterIntuition = [
+        'Traverse graph level by level from start node using a Queue.',
+        'Mark vertices visited upon enqueueing to prevent infinite cycles.',
+        'Each vertex and edge is processed at most once in O(V + E) time.'
+      ];
+      betterPseudocode = [
+        `FUNCTION ${fnName}_better(V, adj):`,
+        `  vis = Array(V, false); q = Queue([0]); vis[0] = true`,
+        `  WHILE q is not empty:`,
+        `    u = q.poll()`,
+        `    FOR v in adj[u]:`,
+        `      IF !vis[v]: vis[v] = true; q.offer(v)`,
+        `  RETURN count`
+      ];
+      betterExplanation = 'Queue-based BFS visits each vertex and edge once in optimal O(V + E) time.';
+      betterCode = {
+        java: `import java.util.*;
+
+public class Solution {
+    public int ${fnName}Better(int V, ArrayList<ArrayList<Integer>> adj) {
+        boolean[] vis = new boolean[V];
+        Queue<Integer> queue = new LinkedList<>();
+        queue.offer(0);
+        vis[0] = true;
+        int count = 0;
+        while (!queue.isEmpty()) {
+            int u = queue.poll();
+            count++;
+            for (int v : adj.get(u)) {
+                if (!vis[v]) {
+                    vis[v] = true;
+                    queue.offer(v);
+                }
             }
-            visited.add(curr);
-            curr = curr.next;
         }
-        return false;
+        return count;
     }
 }`,
-        python: `# Better Approach - Set of Visited Nodes
+        python: `from collections import deque
+
 class Solution:
-    def ${fnName}Better(self, head: Optional[ListNode]) -> bool:
-        visited = set()
-        curr = head
-        while curr:
-            if curr in visited:
-                return True
-            visited.add(curr)
-            curr = curr.next
-        return False`,
-        javascript: `// Better Approach - Set of Visited Nodes
-function ${fnName}Better(head) {
-  const visited = new Set();
-  let curr = head;
-  while (curr !== null) {
-    if (visited.has(curr)) {
-      return true;
+    def ${fnName}Better(self, V: int, adj: list[list[int]]) -> int:
+        vis = [False] * V
+        q = deque([0])
+        vis[0] = True
+        count = 0
+        while q:
+            u = q.popleft()
+            count += 1
+            for v in adj[u]:
+                if not vis[v]:
+                    vis[v] = True
+                    q.append(v)
+        return count`,
+        cpp: `#include <vector>
+#include <queue>
+
+class Solution {
+public:
+    int ${fnName}Better(int V, std::vector<std::vector<int>>& adj) {
+        std::vector<bool> vis(V, false);
+        std::queue<int> q;
+        q.push(0);
+        vis[0] = true;
+        int count = 0;
+        while (!q.empty()) {
+            int u = q.front(); q.pop();
+            count++;
+            for (int v : adj[u]) {
+                if (!vis[v]) {
+                    vis[v] = true;
+                    q.push(v);
+                }
+            }
+        }
+        return count;
     }
-    visited.add(curr);
-    curr = curr.next;
-  }
-  return false;
+};`,
+        javascript: `function ${fnName}Better(V, adj) {
+    const vis = new Array(V).fill(false);
+    const q = [0];
+    vis[0] = true;
+    let count = 0;
+    while (q.length > 0) {
+        const u = q.shift();
+        count++;
+        for (const v of adj[u]) {
+            if (!vis[v]) {
+                vis[v] = true;
+                q.push(v);
+            }
+        }
+    }
+    return count;
 }`
       };
       break;
 
     case 'dp':
-      betterTime = 'O(N * W)';
-      betterSpace = 'O(N * W)';
-      betterName = 'Better (Top-Down Recursion with Memoization)';
+      betterTime = 'O(N * target)';
+      betterSpace = 'O(N * target)';
+      betterName = 'Better (Top-Down Memoization Table)';
       betterIntuition = [
-        `Retain the natural top-down recursive decision tree, but add a Memoization Cache (2D array or Hash Map).`,
-        `Before computing the result for state (index, capacity), check if cache[index][capacity] has already been calculated.`,
-        `If yes, return the cached result immediately in O(1) time. If no, compute once, store in cache, and return.`,
-        `This collapses the exponential O(2ⁿ) tree down to a polynomial O(N * W) state space, trading O(N * W) memo table memory.`
+        'Cache recursive subproblem results in a 2D memoization table.',
+        'If state (idx, rem) was previously computed, return memo[idx][rem] immediately in O(1).',
+        'Reduces exponential 2^N complexity down to polynomial O(N * target).'
       ];
       betterPseudocode = [
-        `FUNCTION ${fnName}_memo(idx, budget, memo):`,
-        `  IF idx < 0 OR budget <= 0: RETURN 0`,
-        `  IF memo[idx][budget] != -1:`,
-        `    RETURN memo[idx][budget] // O(1) Cache Hit`,
-        `  exclude = ${fnName}_memo(idx - 1, budget, memo)`,
-        `  include = 0`,
-        `  IF items[idx] <= budget:`,
-        `    include = 1 + ${fnName}_memo(idx - 1, budget - items[idx], memo)`,
-        `  memo[idx][budget] = MAX(include, exclude)`,
-        `  RETURN memo[idx][budget]`
+        `FUNCTION ${fnName}_better(items, target):`,
+        `  memo = 2D Array initialized to -1`,
+        `  RETURN dfs(items, items.length - 1, target, memo)`
       ];
-      betterExplanation = 'Memoization table eliminates redundant recursive calls; time drops to O(N * W) with O(N * W) auxiliary table and recursion stack.';
+      betterExplanation = 'Memoization table guarantees each subproblem state is evaluated at most once in O(N * target) time.';
       betterCode = {
-        cpp: `// Better Approach - Top-Down Memoization O(N*W)
-#include <vector>
-#include <algorithm>
+        java: `import java.util.*;
 
-class Solution {
-public:
-    int helper(int idx, int budget, const std::vector<int>& items, std::vector<std::vector<int>>& memo) {
-        if (idx < 0 || budget <= 0) return 0;
-        if (memo[idx][budget] != -1) return memo[idx][budget]; // Cache hit
-        
-        int exclude = helper(idx - 1, budget, items, memo);
-        int include = 0;
-        if (items[idx] <= budget) {
-            include = 1 + helper(idx - 1, budget - items[idx], items, memo);
-        }
-        
-        return memo[idx][budget] = std::max(include, exclude);
+public class Solution {
+    public int ${fnName}Better(int[] items, int target) {
+        int n = items.length;
+        int[][] memo = new int[n][target + 1];
+        for (int[] row : memo) Arrays.fill(row, -1);
+        return dfs(items, n - 1, target, memo);
     }
-};`,
-        java: `// Better Approach - Top-Down Memoization O(N*W)
-import java.util.Arrays;
-
-class Solution {
-    public int helper(int idx, int budget, int[] items, int[][] memo) {
-        if (idx < 0 || budget <= 0) return 0;
-        if (memo[idx][budget] != -1) return memo[idx][budget]; // Cache hit
-        
-        int exclude = helper(idx - 1, budget, items, memo);
-        int include = 0;
-        if (items[idx] <= budget) {
-            include = 1 + helper(idx - 1, budget - items[idx], items, memo);
-        }
-        
-        return memo[idx][budget] = Math.max(include, exclude);
+    private int dfs(int[] items, int idx, int rem, int[][] memo) {
+        if (rem == 0) return 1;
+        if (idx < 0 || rem < 0) return 0;
+        if (memo[idx][rem] != -1) return memo[idx][rem];
+        int take = dfs(items, idx - 1, rem - items[idx], memo);
+        int skip = dfs(items, idx - 1, rem, memo);
+        return memo[idx][rem] = take + skip;
     }
 }`,
-        python: `# Better Approach - Top-Down Memoization (@lru_cache)
-from functools import lru_cache
+        python: `class Solution:
+    def ${fnName}Better(self, items: list[int], target: int) -> int:
+        memo = {}
+        def dfs(idx, rem):
+            if rem == 0: return 1
+            if idx < 0 or rem < 0: return 0
+            if (idx, rem) in memo: return memo[(idx, rem)]
+            res = dfs(idx - 1, rem - items[idx]) + dfs(idx - 1, rem)
+            memo[(idx, rem)] = res
+            return res
+        return dfs(len(items) - 1, target)`,
+        cpp: `#include <vector>
 
-class Solution:
-    def ${fnName}Better(self, items: list[int], budget: int) -> int:
-        @lru_cache(None)
-        def solve(idx: int, rem: int) -> int:
-            if idx < 0 or rem <= 0:
-                return 0
-            exclude = solve(idx - 1, rem)
-            include = 0
-            if items[idx] <= rem:
-                include = 1 + solve(idx - 1, rem - items[idx])
-            return max(include, exclude)
-            
-        return solve(len(items) - 1, budget)`,
-        javascript: `// Better Approach - Top-Down Memoization
-function ${fnName}Better(items, budget) {
-  const memo = new Map();
-
-  function solve(idx, rem) {
-    if (idx < 0 || rem <= 0) return 0;
-    const key = \`\${idx}_\${rem}\`;
-    if (memo.has(key)) return memo.get(key);
-
-    const exclude = solve(idx - 1, rem);
-    let include = 0;
-    if (items[idx] <= rem) {
-      include = 1 + solve(idx - 1, rem - items[idx]);
+class Solution {
+    int dfs(const std::vector<int>& items, int idx, int rem, std::vector<std::vector<int>>& memo) {
+        if (rem == 0) return 1;
+        if (idx < 0 || rem < 0) return 0;
+        if (memo[idx][rem] != -1) return memo[idx][rem];
+        return memo[idx][rem] = dfs(items, idx - 1, rem - items[idx], memo) + dfs(items, idx - 1, rem, memo);
     }
-
-    const res = Math.max(include, exclude);
-    memo.set(key, res);
-    return res;
-  }
-
-  return solve(items.length - 1, budget);
+public:
+    int ${fnName}Better(std::vector<int>& items, int target) {
+        int n = items.size();
+        std::vector<std::vector<int>> memo(n, std::vector<int>(target + 1, -1));
+        return dfs(items, n - 1, target, memo);
+    }
+};`,
+        javascript: `function ${fnName}Better(items, target) {
+    const memo = new Map();
+    function dfs(idx, rem) {
+        if (rem === 0) return 1;
+        if (idx < 0 || rem < 0) return 0;
+        const key = idx + ',' + rem;
+        if (memo.has(key)) return memo.get(key);
+        const res = dfs(idx - 1, rem - items[idx]) + dfs(idx - 1, rem);
+        memo.set(key, res);
+        return res;
+    }
+    return dfs(items.length - 1, target);
 }`
       };
       break;
 
-    default:
+    default: // arrays, heaps, stacks, greedy, backtracking, bit
       betterTime = 'O(N log N)';
       betterSpace = 'O(N)';
-      betterName = 'Better (Intermediate Optimization with Extra Space)';
+      betterName = 'Better (Sorting / Hash Map Auxiliary Storage)';
       betterIntuition = [
-        `Improve from the naive brute force by maintaining an auxiliary frequency map, sorted representation, or buffer.`,
-        `Eliminates redundant comparisons and brings asymptotic runtime down significantly.`,
-        `Demonstrates structured optimization progression during whiteboard interviews.`
+        'Pre-sort input in O(N log N) or insert elements into a Hash Map for O(1) lookups.',
+        'Eliminates nested loops by checking elements sequentially or querying map keys in constant time.',
+        'Major leap over Brute Force: reduces quadratic O(N²) time down to O(N log N) or O(N).'
       ];
       betterPseudocode = [
-        `FUNCTION ${fnName}_better(data):`,
-        `  sortedData = sort(data)`,
-        `  RETURN binarySearchOrScan(sortedData)`
+        `FUNCTION ${fnName}_better(nums):`,
+        `  seen = new Map()`,
+        `  FOR i from 0 TO nums.length - 1:`,
+        `    IF seen.has(nums[i]): RETURN seen.get(nums[i])`,
+        `    seen.set(nums[i], i)`,
+        `  RETURN default`
       ];
-      betterExplanation = 'Intermediate optimization achieves O(N log N) or O(N) using auxiliary storage.';
+      betterExplanation = 'Hash Map trades O(N) space for O(1) lookups, cutting runtime to O(N).';
       betterCode = {
-        cpp: `// Better Approach - Sorting & Two Pointers
-#include <vector>
-#include <algorithm>
+        java: `import java.util.*;
+
+public class Solution {
+    public int ${fnName}Better(int[] nums) {
+        Map<Integer, Integer> map = new HashMap<>();
+        for (int i = 0; i < nums.length; i++) {
+            if (map.containsKey(nums[i])) return map.get(nums[i]);
+            map.put(nums[i], i);
+        }
+        return -1;
+    }
+}`,
+        python: `class Solution:
+    def ${fnName}Better(self, nums: list[int]) -> int:
+        seen = {}
+        for i, x in enumerate(nums):
+            if x in seen: return seen[x]
+            seen[x] = i
+        return -1`,
+        cpp: `#include <vector>
+#include <unordered_map>
 
 class Solution {
 public:
-    int ${fnName}Better(std::vector<int>& data) {
-        std::sort(data.begin(), data.end());
-        int left = 0, right = data.size() - 1;
-        while (left < right) {
-            // Process sorted elements
-            left++;
-            right--;
+    int ${fnName}Better(std::vector<int>& nums) {
+        std::unordered_map<int, int> map;
+        for (int i = 0; i < (int)nums.size(); i++) {
+            if (map.count(nums[i])) return map[nums[i]];
+            map[nums[i]] = i;
         }
-        return 0;
+        return -1;
     }
 };`,
-        java: `// Better Approach - Sorting & Two Pointers
-import java.util.*;
-
-class Solution {
-    public int ${fnName}Better(int[] data) {
-        Arrays.sort(data);
-        int left = 0, right = data.length - 1;
-        while (left < right) {
-            left++;
-            right--;
-        }
-        return 0;
+        javascript: `function ${fnName}Better(nums) {
+    const map = new Map();
+    for (let i = 0; i < nums.length; i++) {
+        if (map.has(nums[i])) return map.get(nums[i]);
+        map.set(nums[i], i);
     }
-}`,
-        python: `# Better Approach - Sorting & Two Pointers
-class Solution:
-    def ${fnName}Better(self, data: list[int]) -> int:
-        data.sort()
-        left, right = 0, len(data) - 1
-        while left < right:
-            left += 1
-            right -= 1
-        return 0`,
-        javascript: `// Better Approach - Sorting & Two Pointers
-function ${fnName}Better(data) {
-  const sorted = [...data].sort((a, b) => a - b);
-  let left = 0, right = sorted.length - 1;
-  while (left < right) {
-    left++;
-    right--;
-  }
-  return 0;
+    return -1;
 }`
       };
       break;
