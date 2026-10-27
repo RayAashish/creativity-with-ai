@@ -66,12 +66,95 @@ const ID_MAP: Record<string, string> = {
   'vault-course-schedule': 'course_schedule',
   'vault-course-schedule-ii': 'course_schedule',
 
-  // DP
+  // DP (All 60 450-Sheet Questions Mapped to Exact Archetypes)
   'dp-1': 'knapsack_01',
   'dp-2': 'coin_change',
+  'dp-3': 'longest_common_subsequence',
+  'dp-4': 'longest_increasing_subsequence',
   'dp-5': 'house_robber',
-  'vault-coin-change': 'coin_change',
+  'dp-6': 'matrix_chain_multiplication',
+  'dp-7': 'edit_distance',
+  'dp-8': 'partition_equal_subset_sum',
+  'dp-9': 'friends_pairing',
+  'dp-10': 'gold_mine',
+  'dp-11': 'assembly_line_scheduling',
+  'dp-12': 'painting_fence',
+  'dp-13': 'maximize_cut_segments',
+  'dp-14': 'longest_common_subsequence',
+  'dp-15': 'longest_repeated_subsequence',
+  'dp-16': 'longest_increasing_subsequence',
+  'dp-17': 'longest_common_subsequence',
+  'dp-19': 'maximum_sum_increasing_subsequence',
+  'dp-20': 'count_subsequences_product_less_k',
+  'dp-21': 'longest_increasing_subsequence',
+  'dp-22': 'house_robber',
+  'dp-23': 'egg_dropping',
+  'dp-24': 'longest_increasing_subsequence',
+  'dp-25': 'maximal_square',
+  'dp-26': 'maximum_sum_increasing_subsequence',
+  'dp-27': 'minimum_path_sum',
+  'dp-29': 'jump_game_ii',
+  'dp-30': 'unbounded_knapsack',
+  'dp-31': 'longest_increasing_subsequence',
+  'dp-32': 'longest_common_substring',
+  'dp-33': 'coin_change_ii',
+  'dp-34': 'count_balanced_binary_trees_height_h',
+  'dp-35': 'maximum_subarray',
+  'dp-36': 'maximum_subarray',
+  'dp-37': 'unbounded_knapsack',
+  'dp-38': 'word_break',
+  'dp-39': 'house_robber',
+  'dp-40': 'partition_equal_subset_sum',
+  'dp-41': 'longest_palindromic_subsequence',
+  'dp-42': 'count_palindromic_subsequences',
+  'dp-43': 'longest_palindromic_substring',
+  'dp-44': 'wiggle_subsequence',
+  'dp-45': 'longest_increasing_subsequence',
+  'dp-46': 'optimal_game_strategy',
+  'dp-47': 'count_derangements',
+  'dp-48': 'buy_sell_stock_iv',
+  'dp-49': 'coin_change',
+  'dp-50': 'optimal_game_strategy',
+  'dp-51': 'optimal_bst',
+  'dp-52': 'palindrome_partitioning_ii',
+  'dp-53': 'word_wrap',
+  'dp-54': 'mobile_numeric_keypad',
+  'dp-55': 'boolean_parenthesization',
+  'dp-56': 'minimum_path_sum',
+  'dp-57': 'maximal_square',
+  'dp-58': 'minimum_path_sum',
+  'dp-59': 'buy_sell_stock_iii',
+  'dp-60': 'interleaving_string',
+
+  // Curated Vault DP (All 28 Questions Mapped to Exact Archetypes)
+  'vault-climbing-stairs': 'climbing_stairs',
+  'vault-min-cost-climbing-stairs': 'min_cost_climbing_stairs',
   'vault-house-robber': 'house_robber',
+  'vault-house-robber-ii': 'house_robber_ii',
+  'vault-decode-ways': 'decode_ways',
+  'vault-coin-change': 'coin_change',
+  'vault-word-break': 'word_break',
+  'vault-longest-increasing-subsequence': 'longest_increasing_subsequence',
+  'vault-partition-equal-subset-sum': 'partition_equal_subset_sum',
+  'vault-unique-paths': 'unique_paths',
+  'vault-longest-common-subsequence': 'longest_common_subsequence',
+  'vault-edit-distance': 'edit_distance',
+  'vault-stock-cooldown': 'buy_sell_stock_cooldown',
+  'vault-coin-change-ii': 'coin_change_ii',
+  'vault-target-sum': 'target_sum',
+  'vault-interleaving-string': 'interleaving_string',
+  'vault-longest-increasing-path': 'longest_increasing_path_matrix',
+  'vault-distinct-subsequences': 'distinct_subsequences',
+  'vault-burst-balloons': 'burst_balloons',
+  'vault-regular-expression-matching': 'regular_expression_matching',
+  'vault-minimum-path-sum': 'minimum_path_sum',
+  'vault-grid-unique-paths': 'unique_paths',
+  'vault-01-knapsack-problem': 'knapsack_01',
+  'vault-maximum-sum-increasing-subsequence': 'maximum_sum_increasing_subsequence',
+  'vault-matrix-chain-multiplication': 'matrix_chain_multiplication',
+  'vault-subset-sum-problem': 'subset_sum',
+  'vault-rod-cutting-problem': 'rod_cutting',
+  'vault-egg-dropping-problem': 'egg_dropping',
 
   // Heaps & Greedy
   'heap-1': 'top_k_frequent',
@@ -110,16 +193,99 @@ export function findArchetypeSolution(q: Question): ProblemSolution | null {
   // 2. Exact Semantic Keyword Matches
   let matchedKey: string | null = null;
 
-  if (text.includes('word break') && !text.includes('ii') && !text.includes('sentences')) {
-    matchedKey = 'word_break';
-  } else if (text.includes('2d character array') || text.includes('occurrences of a given string in a 2d')) {
-    matchedKey = 'count_occurrences_2d';
+  // DP Semantic Keywords
+  if (text.includes('longest common subsequence') || (text.includes('common subsequence') && !text.includes('three'))) {
+    matchedKey = 'longest_common_subsequence';
+  } else if (text.includes('longest common substring')) {
+    matchedKey = 'longest_common_substring';
+  } else if (text.includes('longest increasing subsequence') || text.includes('length of lis')) {
+    matchedKey = 'longest_increasing_subsequence';
   } else if (text.includes('edit distance')) {
     matchedKey = 'edit_distance';
-  } else if (text.includes('longest substring without repeating')) {
-    matchedKey = 'longest_substring_without_repeating';
+  } else if (text.includes('matrix chain multiplication') || text.includes('mcm')) {
+    matchedKey = 'matrix_chain_multiplication';
+  } else if (text.includes('climbing stairs') || text.includes('climb stairs')) {
+    matchedKey = text.includes('min cost') ? 'min_cost_climbing_stairs' : 'climbing_stairs';
+  } else if (text.includes('unique paths')) {
+    matchedKey = 'unique_paths';
+  } else if (text.includes('minimum path sum') || text.includes('min cost path')) {
+    matchedKey = 'minimum_path_sum';
+  } else if (text.includes('maximal square') || text.includes('maximum size square')) {
+    matchedKey = 'maximal_square';
+  } else if (text.includes('decode ways')) {
+    matchedKey = 'decode_ways';
+  } else if (text.includes('word break') && !text.includes('ii') && !text.includes('sentences')) {
+    matchedKey = 'word_break';
+  } else if (text.includes('interleaving string')) {
+    matchedKey = 'interleaving_string';
+  } else if (text.includes('distinct subsequences')) {
+    matchedKey = 'distinct_subsequences';
+  } else if (text.includes('regular expression matching') || text.includes('regex matching')) {
+    matchedKey = 'regular_expression_matching';
+  } else if (text.includes('burst balloons')) {
+    matchedKey = 'burst_balloons';
+  } else if (text.includes('egg drop') || text.includes('egg dropping')) {
+    matchedKey = 'egg_dropping';
+  } else if (text.includes('house robber')) {
+    matchedKey = (text.includes('ii') || text.includes('circular')) ? 'house_robber_ii' : 'house_robber';
+  } else if (text.includes('coin change')) {
+    matchedKey = (text.includes('ii') || text.includes('total ways') || text.includes('number of ways')) ? 'coin_change_ii' : 'coin_change';
+  } else if (text.includes('target sum')) {
+    matchedKey = 'target_sum';
+  } else if (text.includes('rod cutting')) {
+    matchedKey = 'rod_cutting';
+  } else if (text.includes('unbounded knapsack')) {
+    matchedKey = 'unbounded_knapsack';
+  } else if (text.includes('0/1 knapsack') || text.includes('knapsack problem')) {
+    matchedKey = 'knapsack_01';
+  } else if (text.includes('partition equal subset sum') || text.includes('subset sum')) {
+    matchedKey = text.includes('partition') ? 'partition_equal_subset_sum' : 'subset_sum';
+  } else if (text.includes('stock')) {
+    if (text.includes('cooldown')) matchedKey = 'buy_sell_stock_cooldown';
+    else if (text.includes('iv') || text.includes('at most k')) matchedKey = 'buy_sell_stock_iv';
+    else if (text.includes('iii') || text.includes('at most two')) matchedKey = 'buy_sell_stock_iii';
+  } else if (text.includes('gold mine')) {
+    matchedKey = 'gold_mine';
+  } else if (text.includes('friends pairing')) {
+    matchedKey = 'friends_pairing';
+  } else if (text.includes('painting the fence') || text.includes('fence')) {
+    matchedKey = 'painting_fence';
+  } else if (text.includes('maximize the cut segments') || text.includes('cut segments')) {
+    matchedKey = 'maximize_cut_segments';
+  } else if (text.includes('longest repeated subsequence')) {
+    matchedKey = 'longest_repeated_subsequence';
+  } else if (text.includes('longest palindromic subsequence')) {
+    matchedKey = 'longest_palindromic_subsequence';
+  } else if (text.includes('count palindromic subsequences')) {
+    matchedKey = 'count_palindromic_subsequences';
   } else if (text.includes('longest palindromic substring') || text.includes('longest palindrome in a string')) {
     matchedKey = 'longest_palindromic_substring';
+  } else if (text.includes('palindrome partitioning ii') || (text.includes('palindrome partitioning') && text.includes('cut'))) {
+    matchedKey = 'palindrome_partitioning_ii';
+  } else if (text.includes('word wrap')) {
+    matchedKey = 'word_wrap';
+  } else if (text.includes('boolean parenthesization')) {
+    matchedKey = 'boolean_parenthesization';
+  } else if (text.includes('optimal binary search tree') || text.includes('optimal bst')) {
+    matchedKey = 'optimal_bst';
+  } else if (text.includes('optimal strategy for a game') || text.includes('predict the winner')) {
+    matchedKey = 'optimal_game_strategy';
+  } else if (text.includes('jump game ii') || text.includes('minimum number of jumps')) {
+    matchedKey = 'jump_game_ii';
+  } else if (text.includes('derangements')) {
+    matchedKey = 'count_derangements';
+  } else if (text.includes('wiggle') || text.includes('alternating subsequence')) {
+    matchedKey = 'wiggle_subsequence';
+  } else if (text.includes('longest increasing path in a matrix') || text.includes('longest increasing path')) {
+    matchedKey = 'longest_increasing_path_matrix';
+  } else if (text.includes('maximum sum increasing subsequence')) {
+    matchedKey = 'maximum_sum_increasing_subsequence';
+  }
+  // Other Topics
+  else if (text.includes('2d character array') || text.includes('occurrences of a given string in a 2d')) {
+    matchedKey = 'count_occurrences_2d';
+  } else if (text.includes('longest substring without repeating')) {
+    matchedKey = 'longest_substring_without_repeating';
   } else if (text.includes('group anagrams') || text.includes('anagrams together')) {
     matchedKey = 'group_anagrams';
   } else if (text.includes('palindrome') && (text.includes('check') || text.includes('valid') || text.includes('is palindrome'))) {
@@ -158,12 +324,6 @@ export function findArchetypeSolution(q: Question): ProblemSolution | null {
     matchedKey = 'course_schedule';
   } else if (text.includes('dijkstra')) {
     matchedKey = 'dijkstra';
-  } else if (text.includes('0/1 knapsack') || text.includes('knapsack problem')) {
-    matchedKey = 'knapsack_01';
-  } else if (text.includes('coin change')) {
-    matchedKey = 'coin_change';
-  } else if (text.includes('house robber')) {
-    matchedKey = 'house_robber';
   } else if (text.includes('top k frequent')) {
     matchedKey = 'top_k_frequent';
   } else if (text.includes('activity selection') || text.includes('non-overlapping intervals')) {

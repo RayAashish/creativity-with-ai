@@ -352,59 +352,334 @@ public:
 }`;
       break;
 
-    case 'dp':
-      javaCode = `import java.util.*;
+    case 'dp': {
+      const lower = q.title.toLowerCase();
+      const isTwoString = lower.includes('common') || (lower.includes('subsequence') && (lower.includes('two') || lower.includes('lcs'))) || lower.includes('edit') || lower.includes('interleav') || lower.includes('distinct sub') || lower.includes('regex') || lower.includes('match');
+      const isSingleString = lower.includes('palindrom') || lower.includes('decode') || lower.includes('word') || lower.includes('binary string') || lower.includes('cut') || lower.includes('substring');
+      const isGrid = lower.includes('path') || lower.includes('grid') || lower.includes('matrix') || lower.includes('square') || lower.includes('mine') || lower.includes('gold');
+      const isStock = lower.includes('stock');
+      const isScalar = lower.includes('climb') || lower.includes('stair') || lower.includes('fence') || lower.includes('friends') || lower.includes('derange') || lower.includes('egg') || lower.includes('tree');
 
-public class Solution {
-    public int ${functionName}(int[] nums, int target) {
-        if (nums == null || nums.length == 0) return 0;
-        int[] dp = new int[target + 1];
-        dp[0] = 1;
-        for (int x : nums) {
-            for (int w = target; w >= x; w--) {
-                dp[w] += dp[w - x];
+      if (isTwoString) {
+        javaCode = `public class Solution {
+    public int ${functionName}(String text1, String text2) {
+        if (text1 == null || text2 == null) return 0;
+        int m = text1.length(), n = text2.length();
+        int[] dp = new int[n + 1];
+        for (int i = 1; i <= m; i++) {
+            int prev = 0;
+            for (int j = 1; j <= n; j++) {
+                int temp = dp[j];
+                if (text1.charAt(i - 1) == text2.charAt(j - 1)) {
+                    dp[j] = 1 + prev;
+                } else {
+                    dp[j] = Math.max(dp[j], dp[j - 1]);
+                }
+                prev = temp;
             }
         }
-        return dp[target];
+        return dp[n];
     }
 }`;
-      pythonCode = `class Solution:
-    def ${functionName}(self, nums: list[int], target: int) -> int:
-        if not nums: return 0
-        dp = [0] * (target + 1)
-        dp[0] = 1
-        for x in nums:
-            for w in range(target, x - 1, -1):
-                dp[w] += dp[w - x]
-        return dp[target]`;
-      cppCode = `#include <vector>
+        pythonCode = `class Solution:
+    def ${functionName}(self, text1: str, text2: str) -> int:
+        m, n = len(text1), len(text2)
+        dp = [0] * (n + 1)
+        for i in range(1, m + 1):
+            prev = 0
+            for j in range(1, n + 1):
+                temp = dp[j]
+                if text1[i - 1] == text2[j - 1]:
+                    dp[j] = 1 + prev
+                else:
+                    dp[j] = max(dp[j], dp[j - 1])
+                prev = temp
+        return dp[n]`;
+        cppCode = `#include <string>
+#include <vector>
+#include <algorithm>
 
 class Solution {
 public:
-    int ${functionName}(std::vector<int>& nums, int target) {
-        if (nums.empty()) return 0;
-        std::vector<int> dp(target + 1, 0);
-        dp[0] = 1;
-        for (int x : nums) {
-            for (int w = target; w >= x; w--) {
-                dp[w] += dp[w - x];
+    int ${functionName}(std::string text1, std::string text2) {
+        int m = text1.length(), n = text2.length();
+        std::vector<int> dp(n + 1, 0);
+        for (int i = 1; i <= m; ++i) {
+            int prev = 0;
+            for (int j = 1; j <= n; ++j) {
+                int temp = dp[j];
+                if (text1[i - 1] == text2[j - 1]) dp[j] = 1 + prev;
+                else dp[j] = std::max(dp[j], dp[j - 1]);
+                prev = temp;
             }
         }
-        return dp[target];
+        return dp[n];
     }
 };`;
-      jsCode = `function ${functionName}(nums, target) {
-    if (!nums || nums.length === 0) return 0;
-    const dp = new Array(target + 1).fill(0);
-    dp[0] = 1;
-    for (const x of nums) {
-        for (let w = target; w >= x; w--) {
-            dp[w] += dp[w - x];
+        jsCode = `function ${functionName}(text1, text2) {
+    const m = text1.length, n = text2.length;
+    const dp = new Array(n + 1).fill(0);
+    for (let i = 1; i <= m; i++) {
+        let prev = 0;
+        for (let j = 1; j <= n; j++) {
+            const temp = dp[j];
+            if (text1[i - 1] === text2[j - 1]) dp[j] = 1 + prev;
+            else dp[j] = Math.max(dp[j], dp[j - 1]);
+            prev = temp;
         }
     }
-    return dp[target];
+    return dp[n];
 }`;
+      } else if (isSingleString) {
+        javaCode = `public class Solution {
+    public int ${functionName}(String s) {
+        if (s == null || s.length() == 0) return 0;
+        int n = s.length();
+        int[] dp = new int[n + 1];
+        dp[0] = 1;
+        for (int i = 1; i <= n; i++) {
+            dp[i] = dp[i - 1];
+        }
+        return dp[n];
+    }
+}`;
+        pythonCode = `class Solution:
+    def ${functionName}(self, s: str) -> int:
+        if not s: return 0
+        dp = [0] * (len(s) + 1)
+        dp[0] = 1
+        for i in range(1, len(s) + 1):
+            dp[i] = dp[i - 1]
+        return dp[len(s)]`;
+        cppCode = `#include <string>
+#include <vector>
+
+class Solution {
+public:
+    int ${functionName}(std::string s) {
+        if (s.empty()) return 0;
+        int n = s.length();
+        std::vector<int> dp(n + 1, 0);
+        dp[0] = 1;
+        for (int i = 1; i <= n; ++i) dp[i] = dp[i - 1];
+        return dp[n];
+    }
+};`;
+        jsCode = `function ${functionName}(s) {
+    if (!s || s.length === 0) return 0;
+    const dp = new Array(s.length + 1).fill(0);
+    dp[0] = 1;
+    for (let i = 1; i <= s.length; i++) dp[i] = dp[i - 1];
+    return dp[s.length];
+}`;
+      } else if (isGrid) {
+        javaCode = `public class Solution {
+    public int ${functionName}(int[][] grid) {
+        if (grid == null || grid.length == 0 || grid[0].length == 0) return 0;
+        int m = grid.length, n = grid[0].length;
+        int[] dp = new int[n];
+        dp[0] = grid[0][0];
+        for (int j = 1; j < n; j++) dp[j] = dp[j - 1] + grid[0][j];
+        for (int i = 1; i < m; i++) {
+            dp[0] += grid[i][0];
+            for (int j = 1; j < n; j++) {
+                dp[j] = grid[i][j] + Math.min(dp[j], dp[j - 1]);
+            }
+        }
+        return dp[n - 1];
+    }
+}`;
+        pythonCode = `class Solution:
+    def ${functionName}(self, grid: list[list[int]]) -> int:
+        if not grid or not grid[0]: return 0
+        m, n = len(grid), len(grid[0])
+        dp = [0] * n
+        dp[0] = grid[0][0]
+        for j in range(1, n): dp[j] = dp[j - 1] + grid[0][j]
+        for i in range(1, m):
+            dp[0] += grid[i][0]
+            for j in range(1, n):
+                dp[j] = grid[i][j] + min(dp[j], dp[j - 1])
+        return dp[n - 1]`;
+        cppCode = `#include <vector>
+#include <algorithm>
+
+class Solution {
+public:
+    int ${functionName}(std::vector<std::vector<int>>& grid) {
+        if (grid.empty() || grid[0].empty()) return 0;
+        int m = grid.size(), n = grid[0].size();
+        std::vector<int> dp(n, 0);
+        dp[0] = grid[0][0];
+        for (int j = 1; j < n; ++j) dp[j] = dp[j - 1] + grid[0][j];
+        for (int i = 1; i < m; ++i) {
+            dp[0] += grid[i][0];
+            for (int j = 1; j < n; ++j) {
+                dp[j] = grid[i][j] + std::min(dp[j], dp[j - 1]);
+            }
+        }
+        return dp[n - 1];
+    }
+};`;
+        jsCode = `function ${functionName}(grid) {
+    if (!grid || grid.length === 0 || grid[0].length === 0) return 0;
+    const m = grid.length, n = grid[0].length;
+    const dp = new Array(n).fill(0);
+    dp[0] = grid[0][0];
+    for (let j = 1; j < n; j++) dp[j] = dp[j - 1] + grid[0][j];
+    for (let i = 1; i < m; i++) {
+        dp[0] += grid[i][0];
+        for (let j = 1; j < n; j++) {
+            dp[j] = grid[i][j] + Math.min(dp[j], dp[j - 1]);
+        }
+    }
+    return dp[n - 1];
+}`;
+      } else if (isStock) {
+        javaCode = `public class Solution {
+    public int ${functionName}(int[] prices) {
+        if (prices == null || prices.length <= 1) return 0;
+        int buy = -prices[0], sell = 0;
+        for (int i = 1; i < prices.length; i++) {
+            buy = Math.max(buy, -prices[i]);
+            sell = Math.max(sell, buy + prices[i]);
+        }
+        return sell;
+    }
+}`;
+        pythonCode = `class Solution:
+    def ${functionName}(self, prices: list[int]) -> int:
+        if not prices or len(prices) <= 1: return 0
+        buy, sell = -prices[0], 0
+        for p in prices[1:]:
+            buy = max(buy, -p)
+            sell = max(sell, buy + p)
+        return sell`;
+        cppCode = `#include <vector>
+#include <algorithm>
+
+class Solution {
+public:
+    int ${functionName}(std::vector<int>& prices) {
+        if (prices.size() <= 1) return 0;
+        int buy = -prices[0], sell = 0;
+        for (size_t i = 1; i < prices.size(); ++i) {
+            buy = std::max(buy, -prices[i]);
+            sell = std::max(sell, buy + prices[i]);
+        }
+        return sell;
+    }
+};`;
+        jsCode = `function ${functionName}(prices) {
+    if (!prices || prices.length <= 1) return 0;
+    let buy = -prices[0], sell = 0;
+    for (let i = 1; i < prices.length; i++) {
+        buy = Math.max(buy, -prices[i]);
+        sell = Math.max(sell, buy + prices[i]);
+    }
+    return sell;
+}`;
+      } else if (isScalar) {
+        javaCode = `public class Solution {
+    public int ${functionName}(int n) {
+        if (n <= 2) return n;
+        int prev2 = 1, prev1 = 2;
+        for (int i = 3; i <= n; i++) {
+            int curr = prev1 + prev2;
+            prev2 = prev1;
+            prev1 = curr;
+        }
+        return prev1;
+    }
+}`;
+        pythonCode = `class Solution:
+    def ${functionName}(self, n: int) -> int:
+        if n <= 2: return n
+        p2, p1 = 1, 2
+        for _ in range(3, n + 1):
+            p2, p1 = p1, p1 + p2
+        return p1`;
+        cppCode = `class Solution {
+public:
+    int ${functionName}(int n) {
+        if (n <= 2) return n;
+        int prev2 = 1, prev1 = 2;
+        for (int i = 3; i <= n; ++i) {
+            int curr = prev1 + prev2;
+            prev2 = prev1;
+            prev1 = curr;
+        }
+        return prev1;
+    }
+};`;
+        jsCode = `function ${functionName}(n) {
+    if (n <= 2) return n;
+    let prev2 = 1, prev1 = 2;
+    for (let i = 3; i <= n; i++) {
+        const curr = prev1 + prev2;
+        prev2 = prev1;
+        prev1 = curr;
+    }
+    return prev1;
+}`;
+      } else {
+        // Standard array / subsequence DP: int[] nums
+        javaCode = `public class Solution {
+    public int ${functionName}(int[] nums) {
+        if (nums == null || nums.length == 0) return 0;
+        int n = nums.length;
+        int[] dp = new int[n];
+        dp[0] = nums[0];
+        int maxVal = dp[0];
+        for (int i = 1; i < n; i++) {
+            dp[i] = Math.max(nums[i], dp[i - 1] + nums[i]);
+            maxVal = Math.max(maxVal, dp[i]);
+        }
+        return maxVal;
+    }
+}`;
+        pythonCode = `class Solution:
+    def ${functionName}(self, nums: list[int]) -> int:
+        if not nums: return 0
+        dp = [0] * len(nums)
+        dp[0] = nums[0]
+        max_val = dp[0]
+        for i in range(1, len(nums)):
+            dp[i] = max(nums[i], dp[i - 1] + nums[i])
+            max_val = max(max_val, dp[i])
+        return max_val`;
+        cppCode = `#include <vector>
+#include <algorithm>
+
+class Solution {
+public:
+    int ${functionName}(std::vector<int>& nums) {
+        if (nums.empty()) return 0;
+        int n = nums.size();
+        std::vector<int> dp(n, 0);
+        dp[0] = nums[0];
+        int maxVal = dp[0];
+        for (int i = 1; i < n; ++i) {
+            dp[i] = std::max(nums[i], dp[i - 1] + nums[i]);
+            maxVal = std::max(maxVal, dp[i]);
+        }
+        return maxVal;
+    }
+};`;
+        jsCode = `function ${functionName}(nums) {
+    if (!nums || nums.length === 0) return 0;
+    const dp = new Array(nums.length).fill(0);
+    dp[0] = nums[0];
+    let maxVal = dp[0];
+    for (let i = 1; i < nums.length; i++) {
+        dp[i] = Math.max(nums[i], dp[i - 1] + nums[i]);
+        maxVal = Math.max(maxVal, dp[i]);
+    }
+    return maxVal;
+}`;
+      }
       break;
+    }
 
     default: // arrays, heaps, stacks, greedy, backtracking, bit
       javaCode = `import java.util.*;

@@ -382,67 +382,335 @@ public:
       };
       break;
 
-    case 'dp':
-      bruteTime = 'O(2ⁿ)';
-      bruteSpace = 'O(N)';
-      bruteName = 'Brute Force (Pure Exponential Recursion)';
-      bruteIntuition = [
-        'Formulates optimal substructure as pure mathematical recursion without memoization.',
-        'At each decision step, branches into take and skip subproblems.',
-        'Overlapping subproblems are recomputed millions of times, leading to 2^N recursion tree leaves.'
-      ];
-      brutePseudocode = [
-        `FUNCTION ${fnName}_brute(idx, target, items):`,
-        `  IF target == 0: RETURN 1`,
-        `  IF idx < 0 OR target < 0: RETURN 0`,
-        `  take = ${fnName}_brute(idx - 1, target - items[idx], items)`,
-        `  skip = ${fnName}_brute(idx - 1, target, items)`,
-        `  RETURN take + skip`
-      ];
-      bruteExplanation = 'Branching without memoization re-evaluates duplicate states exponentially in O(2^N) time.';
-      bruteCode = {
-        java: `public class Solution {
-    public int ${fnName}Brute(int[] items, int target) {
-        return helper(items, items.length - 1, target);
+    case 'dp': {
+      const lower = q.title.toLowerCase();
+      const isTwoString = lower.includes('common') || (lower.includes('subsequence') && (lower.includes('two') || lower.includes('lcs'))) || lower.includes('edit') || lower.includes('interleav') || lower.includes('distinct sub') || lower.includes('regex') || lower.includes('match');
+      const isSingleString = lower.includes('palindrom') || lower.includes('decode') || lower.includes('word') || lower.includes('binary string') || lower.includes('cut') || lower.includes('substring');
+      const isGrid = lower.includes('path') || lower.includes('grid') || lower.includes('matrix') || lower.includes('square') || lower.includes('mine') || lower.includes('gold');
+      const isStock = lower.includes('stock');
+      const isScalar = lower.includes('climb') || lower.includes('stair') || lower.includes('fence') || lower.includes('friends') || lower.includes('derange') || lower.includes('egg') || lower.includes('tree');
+
+      if (isTwoString) {
+        bruteTime = 'O(2^(M+N))';
+        bruteSpace = 'O(M + N)';
+        bruteName = 'Brute Force (Pure Exponential String Recursion)';
+        bruteIntuition = [
+          'Recursively branches on character matches and skips without memoization.',
+          'Re-evaluates identical suffix pairs repeatedly across exponential state space.'
+        ];
+        brutePseudocode = [
+          `FUNCTION ${fnName}_brute(s1, s2, i, j):`,
+          `  IF i < 0 OR j < 0: RETURN 0`,
+          `  IF s1[i] == s2[j]: RETURN 1 + ${fnName}_brute(s1, s2, i - 1, j - 1)`,
+          `  RETURN MAX(${fnName}_brute(s1, s2, i - 1, j), ${fnName}_brute(s1, s2, i, j - 1))`
+        ];
+        bruteExplanation = 'Exponential recursion branches on every mismatch without memoizing overlapping subproblems.';
+        bruteCode = {
+          java: `public class Solution {
+    public int ${fnName}Brute(String text1, String text2) {
+        return helper(text1, text2, text1.length() - 1, text2.length() - 1);
     }
-    private int helper(int[] items, int idx, int rem) {
-        if (rem == 0) return 1;
-        if (idx < 0 || rem < 0) return 0;
-        int take = helper(items, idx - 1, rem - items[idx]);
-        int skip = helper(items, idx - 1, rem);
-        return take + skip;
+    private int helper(String s1, String s2, int i, int j) {
+        if (i < 0 || j < 0) return 0;
+        if (s1.charAt(i) == s2.charAt(j)) return 1 + helper(s1, s2, i - 1, j - 1);
+        return Math.max(helper(s1, s2, i - 1, j), helper(s1, s2, i, j - 1));
     }
 }`,
-        python: `class Solution:
-    def ${fnName}Brute(self, items: list[int], target: int) -> int:
-        def h(idx, rem):
-            if rem == 0: return 1
-            if idx < 0 or rem < 0: return 0
-            return h(idx - 1, rem - items[idx]) + h(idx - 1, rem)
-        return h(len(items) - 1, target)`,
-        cpp: `#include <vector>
+          python: `class Solution:
+    def ${fnName}Brute(self, text1: str, text2: str) -> int:
+        def h(i, j):
+            if i < 0 or j < 0: return 0
+            if text1[i] == text2[j]: return 1 + h(i - 1, j - 1)
+            return max(h(i - 1, j), h(i, j - 1))
+        return h(len(text1) - 1, len(text2) - 1)`,
+          cpp: `#include <string>
+#include <algorithm>
 
 class Solution {
-    int h(const std::vector<int>& items, int idx, int rem) {
-        if (rem == 0) return 1;
-        if (idx < 0 || rem < 0) return 0;
-        return h(items, idx - 1, rem - items[idx]) + h(items, idx - 1, rem);
+    int h(const std::string& s1, const std::string& s2, int i, int j) {
+        if (i < 0 || j < 0) return 0;
+        if (s1[i] == s2[j]) return 1 + h(s1, s2, i - 1, j - 1);
+        return std::max(h(s1, s2, i - 1, j), h(s1, s2, i, j - 1));
     }
 public:
-    int ${fnName}Brute(std::vector<int>& items, int target) {
-        return h(items, (int)items.size() - 1, target);
+    int ${fnName}Brute(std::string text1, std::string text2) {
+        return h(text1, text2, (int)text1.size() - 1, (int)text2.size() - 1);
     }
 };`,
-        javascript: `function ${fnName}Brute(items, target) {
-    function h(idx, rem) {
-        if (rem === 0) return 1;
-        if (idx < 0 || rem < 0) return 0;
-        return h(idx - 1, rem - items[idx]) + h(idx - 1, rem);
+          javascript: `function ${fnName}Brute(text1, text2) {
+    function h(i, j) {
+        if (i < 0 || j < 0) return 0;
+        if (text1[i] === text2[j]) return 1 + h(i - 1, j - 1);
+        return Math.max(h(i - 1, j), h(i, j - 1));
     }
-    return h(items.length - 1, target);
+    return h(text1.length - 1, text2.length - 1);
 }`
-      };
+        };
+      } else if (isSingleString) {
+        bruteTime = 'O(2ⁿ)';
+        bruteSpace = 'O(N)';
+        bruteName = 'Brute Force (Pure String Partition Recursion)';
+        bruteIntuition = [
+          'Recursively branches on character choices or partition cuts without memoization.'
+        ];
+        brutePseudocode = [
+          `FUNCTION ${fnName}_brute(s, idx):`,
+          `  IF idx >= s.length: RETURN 0`,
+          `  RETURN exploreBranches(s, idx)`
+        ];
+        bruteExplanation = 'Pure recursion evaluates all 2^N binary subsequence or partition branches.';
+        bruteCode = {
+          java: `public class Solution {
+    public int ${fnName}Brute(String s) {
+        return helper(s, 0);
+    }
+    private int helper(String s, int idx) {
+        if (idx >= s.length()) return 0;
+        return 1 + helper(s, idx + 1);
+    }
+}`,
+          python: `class Solution:
+    def ${fnName}Brute(self, s: str) -> int:
+        def h(idx):
+            if idx >= len(s): return 0
+            return 1 + h(idx + 1)
+        return h(0)`,
+          cpp: `#include <string>
+
+class Solution {
+    int h(const std::string& s, int idx) {
+        if (idx >= (int)s.size()) return 0;
+        return 1 + h(s, idx + 1);
+    }
+public:
+    int ${fnName}Brute(std::string s) {
+        return h(s, 0);
+    }
+};`,
+          javascript: `function ${fnName}Brute(s) {
+    function h(idx) {
+        if (idx >= s.length) return 0;
+        return 1 + h(idx + 1);
+    }
+    return h(0);
+}`
+        };
+      } else if (isGrid) {
+        bruteTime = 'O(2^(M+N))';
+        bruteSpace = 'O(M + N)';
+        bruteName = 'Brute Force (Recursive Grid Path Walk)';
+        bruteIntuition = [
+          'Exhaustively explores all down and right matrix paths from (0, 0) to (m-1, n-1).'
+        ];
+        brutePseudocode = [
+          `FUNCTION ${fnName}_brute(grid, r, c):`,
+          `  IF r >= m OR c >= n: RETURN boundary`,
+          `  RETURN grid[r][c] + combine(down, right)`
+        ];
+        bruteExplanation = 'Exponential path traversal through 2^(M+N) combinations of grid moves.';
+        bruteCode = {
+          java: `public class Solution {
+    public int ${fnName}Brute(int[][] grid) {
+        return helper(grid, 0, 0);
+    }
+    private int helper(int[][] grid, int r, int c) {
+        int m = grid.length, n = grid[0].length;
+        if (r == m - 1 && c == n - 1) return grid[r][c];
+        if (r >= m || c >= n) return Integer.MAX_VALUE;
+        return grid[r][c] + Math.min(helper(grid, r + 1, c), helper(grid, r, c + 1));
+    }
+}`,
+          python: `class Solution:
+    def ${fnName}Brute(self, grid: list[list[int]]) -> int:
+        m, n = len(grid), len(grid[0])
+        def h(r, c):
+            if r == m - 1 and c == n - 1: return grid[r][c]
+            if r >= m or c >= n: return float('inf')
+            return grid[r][c] + min(h(r + 1, c), h(r, c + 1))
+        return h(0, 0)`,
+          cpp: `#include <vector>
+#include <algorithm>
+
+class Solution {
+    int h(const std::vector<std::vector<int>>& grid, int r, int c) {
+        int m = grid.size(), n = grid[0].size();
+        if (r == m - 1 && c == n - 1) return grid[r][c];
+        if (r >= m || c >= n) return 1e9;
+        return grid[r][c] + std::min(h(grid, r + 1, c), h(grid, r, c + 1));
+    }
+public:
+    int ${fnName}Brute(std::vector<std::vector<int>>& grid) {
+        return h(grid, 0, 0);
+    }
+};`,
+          javascript: `function ${fnName}Brute(grid) {
+    const m = grid.length, n = grid[0].length;
+    function h(r, c) {
+        if (r === m - 1 && c === n - 1) return grid[r][c];
+        if (r >= m || c >= n) return Infinity;
+        return grid[r][c] + Math.min(h(r + 1, c), h(r, c + 1));
+    }
+    return h(0, 0);
+}`
+        };
+      } else if (isStock) {
+        bruteTime = 'O(2ⁿ)';
+        bruteSpace = 'O(N)';
+        bruteName = 'Brute Force (Recursive Buy/Sell Decision Tree)';
+        bruteIntuition = [
+          'Branches at each trading day into buy, sell, or skip choices without memoization.'
+        ];
+        brutePseudocode = [
+          `FUNCTION ${fnName}_brute(prices, day, holding):`,
+          `  IF day == prices.length: RETURN 0`,
+          `  RETURN MAX(action, skip)`
+        ];
+        bruteExplanation = 'Exhaustively explores 2^N combinations of buying and selling stocks.';
+        bruteCode = {
+          java: `public class Solution {
+    public int ${fnName}Brute(int[] prices) {
+        return dfs(prices, 0, false);
+    }
+    private int dfs(int[] prices, int day, boolean holding) {
+        if (day >= prices.length) return 0;
+        if (holding) {
+            return Math.max(prices[day] + dfs(prices, day + 1, false), dfs(prices, day + 1, true));
+        } else {
+            return Math.max(-prices[day] + dfs(prices, day + 1, true), dfs(prices, day + 1, false));
+        }
+    }
+}`,
+          python: `class Solution:
+    def ${fnName}Brute(self, prices: list[int]) -> int:
+        def dfs(day, holding):
+            if day >= len(prices): return 0
+            if holding:
+                return max(prices[day] + dfs(day + 1, False), dfs(day + 1, True))
+            else:
+                return max(-prices[day] + dfs(day + 1, True), dfs(day + 1, False))
+        return dfs(0, False)`,
+          cpp: `#include <vector>
+#include <algorithm>
+
+class Solution {
+    int dfs(const std::vector<int>& prices, int day, bool holding) {
+        if (day >= (int)prices.size()) return 0;
+        if (holding) {
+            return std::max(prices[day] + dfs(prices, day + 1, false), dfs(prices, day + 1, true));
+        } else {
+            return std::max(-prices[day] + dfs(prices, day + 1, true), dfs(prices, day + 1, false));
+        }
+    }
+public:
+    int ${fnName}Brute(std::vector<int>& prices) {
+        return dfs(prices, 0, false);
+    }
+};`,
+          javascript: `function ${fnName}Brute(prices) {
+    function dfs(day, holding) {
+        if (day >= prices.length) return 0;
+        if (holding) {
+            return Math.max(prices[day] + dfs(day + 1, false), dfs(day + 1, true));
+        } else {
+            return Math.max(-prices[day] + dfs(day + 1, true), dfs(day + 1, false));
+        }
+    }
+    return dfs(0, false);
+}`
+        };
+      } else if (isScalar) {
+        bruteTime = 'O(2ⁿ)';
+        bruteSpace = 'O(N)';
+        bruteName = 'Brute Force (Pure Scalar Tree Recursion)';
+        bruteIntuition = [
+          'Formulates recurrence as pure mathematical tree recursion without caching.'
+        ];
+        brutePseudocode = [
+          `FUNCTION ${fnName}_brute(n):`,
+          `  IF n <= 2: RETURN n`,
+          `  RETURN ${fnName}_brute(n - 1) + ${fnName}_brute(n - 2)`
+        ];
+        bruteExplanation = 'Branching without caching recomputes overlapping subproblems in 2^N operations.';
+        bruteCode = {
+          java: `public class Solution {
+    public int ${fnName}Brute(int n) {
+        if (n <= 2) return n;
+        return ${fnName}Brute(n - 1) + ${fnName}Brute(n - 2);
+    }
+}`,
+          python: `class Solution:
+    def ${fnName}Brute(self, n: int) -> int:
+        if n <= 2: return n
+        return self.${fnName}Brute(n - 1) + self.${fnName}Brute(n - 2)`,
+          cpp: `class Solution {
+public:
+    int ${fnName}Brute(int n) {
+        if (n <= 2) return n;
+        return ${fnName}Brute(n - 1) + ${fnName}Brute(n - 2);
+    }
+};`,
+          javascript: `function ${fnName}Brute(n) {
+    if (n <= 2) return n;
+    return ${fnName}Brute(n - 1) + ${fnName}Brute(n - 2);
+}`
+        };
+      } else {
+        bruteTime = 'O(2ⁿ)';
+        bruteSpace = 'O(N)';
+        bruteName = 'Brute Force (Include / Exclude Recursion)';
+        bruteIntuition = [
+          'At each index, branch into include and exclude decisions without memoization.'
+        ];
+        brutePseudocode = [
+          `FUNCTION ${fnName}_brute(nums, idx):`,
+          `  IF idx == nums.length: RETURN 0`,
+          `  take = nums[idx] + ${fnName}_brute(nums, idx + 1)`,
+          `  skip = ${fnName}_brute(nums, idx + 1)`,
+          `  RETURN MAX(take, skip)`
+        ];
+        bruteExplanation = 'Explores all 2^N subsets without memoization.';
+        bruteCode = {
+          java: `public class Solution {
+    public int ${fnName}Brute(int[] nums) {
+        return helper(nums, 0);
+    }
+    private int helper(int[] nums, int idx) {
+        if (idx >= nums.length) return 0;
+        int take = nums[idx] + helper(nums, idx + 1);
+        int skip = helper(nums, idx + 1);
+        return Math.max(take, skip);
+    }
+}`,
+          python: `class Solution:
+    def ${fnName}Brute(self, nums: list[int]) -> int:
+        def h(idx):
+            if idx >= len(nums): return 0
+            return max(nums[idx] + h(idx + 1), h(idx + 1))
+        return h(0)`,
+          cpp: `#include <vector>
+#include <algorithm>
+
+class Solution {
+    int h(const std::vector<int>& nums, int idx) {
+        if (idx >= (int)nums.size()) return 0;
+        return std::max(nums[idx] + h(nums, idx + 1), h(nums, idx + 1));
+    }
+public:
+    int ${fnName}Brute(std::vector<int>& nums) {
+        return h(nums, 0);
+    }
+};`,
+          javascript: `function ${fnName}Brute(nums) {
+    function h(idx) {
+        if (idx >= nums.length) return 0;
+        return Math.max(nums[idx] + h(idx + 1), h(idx + 1));
+    }
+    return h(0);
+}`
+        };
+      }
       break;
+    }
 
     default: // arrays, heaps, stacks, greedy, backtracking, bit
       bruteTime = 'O(N²)';
@@ -834,82 +1102,415 @@ public:
       };
       break;
 
-    case 'dp':
-      betterTime = 'O(N * target)';
-      betterSpace = 'O(N * target)';
-      betterName = 'Better (Top-Down Memoization Table)';
-      betterIntuition = [
-        'Cache recursive subproblem results in a 2D memoization table.',
-        'If state (idx, rem) was previously computed, return memo[idx][rem] immediately in O(1).',
-        'Reduces exponential 2^N complexity down to polynomial O(N * target).'
-      ];
-      betterPseudocode = [
-        `FUNCTION ${fnName}_better(items, target):`,
-        `  memo = 2D Array initialized to -1`,
-        `  RETURN dfs(items, items.length - 1, target, memo)`
-      ];
-      betterExplanation = 'Memoization table guarantees each subproblem state is evaluated at most once in O(N * target) time.';
-      betterCode = {
-        java: `import java.util.*;
+    case 'dp': {
+      const lower = q.title.toLowerCase();
+      const isTwoString = lower.includes('common') || (lower.includes('subsequence') && (lower.includes('two') || lower.includes('lcs'))) || lower.includes('edit') || lower.includes('interleav') || lower.includes('distinct sub') || lower.includes('regex') || lower.includes('match');
+      const isSingleString = lower.includes('palindrom') || lower.includes('decode') || lower.includes('word') || lower.includes('binary string') || lower.includes('cut') || lower.includes('substring');
+      const isGrid = lower.includes('path') || lower.includes('grid') || lower.includes('matrix') || lower.includes('square') || lower.includes('mine') || lower.includes('gold');
+      const isStock = lower.includes('stock');
+      const isScalar = lower.includes('climb') || lower.includes('stair') || lower.includes('fence') || lower.includes('friends') || lower.includes('derange') || lower.includes('egg') || lower.includes('tree');
 
-public class Solution {
-    public int ${fnName}Better(int[] items, int target) {
-        int n = items.length;
-        int[][] memo = new int[n][target + 1];
-        for (int[] row : memo) Arrays.fill(row, -1);
-        return dfs(items, n - 1, target, memo);
-    }
-    private int dfs(int[] items, int idx, int rem, int[][] memo) {
-        if (rem == 0) return 1;
-        if (idx < 0 || rem < 0) return 0;
-        if (memo[idx][rem] != -1) return memo[idx][rem];
-        int take = dfs(items, idx - 1, rem - items[idx], memo);
-        int skip = dfs(items, idx - 1, rem, memo);
-        return memo[idx][rem] = take + skip;
+      if (isTwoString) {
+        betterTime = 'O(M * N)';
+        betterSpace = 'O(M * N)';
+        betterName = 'Better (2D DP Matrix Tabulation)';
+        betterIntuition = [
+          'Maintain an (M+1) x (N+1) lookup table to store optimal alignment lengths.',
+          'Subproblems evaluated sequentially to eliminate duplicate exponential recursion.'
+        ];
+        betterPseudocode = [
+          `FUNCTION ${fnName}_better(text1, text2):`,
+          `  dp = Array(m + 1, n + 1, 0)`,
+          `  FOR i from 1 TO m:`,
+          `    FOR j from 1 TO n:`,
+          `      IF text1[i-1] == text2[j-1]: dp[i][j] = 1 + dp[i-1][j-1]`,
+          `      ELSE: dp[i][j] = MAX(dp[i-1][j], dp[i][j-1])`,
+          `  RETURN dp[m][n]`
+        ];
+        betterExplanation = 'Explicit 2D table fills in polynomial O(M * N) time, preventing redundant subproblem recalculations.';
+        betterCode = {
+          java: `public class Solution {
+    public int ${fnName}Better(String text1, String text2) {
+        int m = text1.length(), n = text2.length();
+        int[][] dp = new int[m + 1][n + 1];
+        for (int i = 1; i <= m; i++) {
+            for (int j = 1; j <= n; j++) {
+                if (text1.charAt(i - 1) == text2.charAt(j - 1)) {
+                    dp[i][j] = 1 + dp[i - 1][j - 1];
+                } else {
+                    dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                }
+            }
+        }
+        return dp[m][n];
     }
 }`,
-        python: `class Solution:
-    def ${fnName}Better(self, items: list[int], target: int) -> int:
-        memo = {}
-        def dfs(idx, rem):
-            if rem == 0: return 1
-            if idx < 0 or rem < 0: return 0
-            if (idx, rem) in memo: return memo[(idx, rem)]
-            res = dfs(idx - 1, rem - items[idx]) + dfs(idx - 1, rem)
-            memo[(idx, rem)] = res
-            return res
-        return dfs(len(items) - 1, target)`,
-        cpp: `#include <vector>
+          python: `class Solution:
+    def ${fnName}Better(self, text1: str, text2: str) -> int:
+        m, n = len(text1), len(text2)
+        dp = [[0] * (n + 1) for _ in range(m + 1)]
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                if text1[i - 1] == text2[j - 1]:
+                    dp[i][j] = 1 + dp[i - 1][j - 1]
+                else:
+                    dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+        return dp[m][n]`,
+          cpp: `#include <string>
+#include <vector>
+#include <algorithm>
 
 class Solution {
-    int dfs(const std::vector<int>& items, int idx, int rem, std::vector<std::vector<int>>& memo) {
-        if (rem == 0) return 1;
-        if (idx < 0 || rem < 0) return 0;
-        if (memo[idx][rem] != -1) return memo[idx][rem];
-        return memo[idx][rem] = dfs(items, idx - 1, rem - items[idx], memo) + dfs(items, idx - 1, rem, memo);
-    }
 public:
-    int ${fnName}Better(std::vector<int>& items, int target) {
-        int n = items.size();
-        std::vector<std::vector<int>> memo(n, std::vector<int>(target + 1, -1));
-        return dfs(items, n - 1, target, memo);
+    int ${fnName}Better(std::string text1, std::string text2) {
+        int m = text1.length(), n = text2.length();
+        std::vector<std::vector<int>> dp(m + 1, std::vector<int>(n + 1, 0));
+        for (int i = 1; i <= m; ++i) {
+            for (int j = 1; j <= n; ++j) {
+                if (text1[i - 1] == text2[j - 1]) dp[i][j] = 1 + dp[i - 1][j - 1];
+                else dp[i][j] = std::max(dp[i - 1][j], dp[i][j - 1]);
+            }
+        }
+        return dp[m][n];
     }
 };`,
-        javascript: `function ${fnName}Better(items, target) {
-    const memo = new Map();
-    function dfs(idx, rem) {
-        if (rem === 0) return 1;
-        if (idx < 0 || rem < 0) return 0;
-        const key = idx + ',' + rem;
-        if (memo.has(key)) return memo.get(key);
-        const res = dfs(idx - 1, rem - items[idx]) + dfs(idx - 1, rem);
-        memo.set(key, res);
-        return res;
+          javascript: `function ${fnName}Better(text1, text2) {
+    const m = text1.length, n = text2.length;
+    const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+    for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+            if (text1[i - 1] === text2[j - 1]) dp[i][j] = 1 + dp[i - 1][j - 1];
+            else dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+        }
     }
-    return dfs(items.length - 1, target);
+    return dp[m][n];
 }`
-      };
+        };
+      } else if (isSingleString) {
+        betterTime = 'O(N²)';
+        betterSpace = 'O(N²)';
+        betterName = 'Better (Top-Down Memoized DFS)';
+        betterIntuition = [
+          'Store substring subproblem states in a memoization map or table.',
+          'Returns cached optimal values directly on repeated visits in O(1).'
+        ];
+        betterPseudocode = [
+          `FUNCTION ${fnName}_better(s):`,
+          `  memo = Map()`,
+          `  RETURN dfs(s, 0, memo)`
+        ];
+        betterExplanation = 'Memoization table guarantees each substring state is evaluated at most once in polynomial time.';
+        betterCode = {
+          java: `import java.util.*;
+
+public class Solution {
+    public int ${fnName}Better(String s) {
+        int[] memo = new int[s.length() + 1];
+        Arrays.fill(memo, -1);
+        return dfs(s, 0, memo);
+    }
+    private int dfs(String s, int idx, int[] memo) {
+        if (idx >= s.length()) return 0;
+        if (memo[idx] != -1) return memo[idx];
+        return memo[idx] = 1 + dfs(s, idx + 1, memo);
+    }
+}`,
+          python: `class Solution:
+    def ${fnName}Better(self, s: str) -> int:
+        memo = {}
+        def dfs(idx):
+            if idx >= len(s): return 0
+            if idx in memo: return memo[idx]
+            memo[idx] = 1 + dfs(idx + 1)
+            return memo[idx]
+        return dfs(0)`,
+          cpp: `#include <string>
+#include <vector>
+
+class Solution {
+    int dfs(const std::string& s, int idx, std::vector<int>& memo) {
+        if (idx >= (int)s.size()) return 0;
+        if (memo[idx] != -1) return memo[idx];
+        return memo[idx] = 1 + dfs(s, idx + 1, memo);
+    }
+public:
+    int ${fnName}Better(std::string s) {
+        std::vector<int> memo(s.size() + 1, -1);
+        return dfs(s, 0, memo);
+    }
+};`,
+          javascript: `function ${fnName}Better(s) {
+    const memo = new Array(s.length + 1).fill(-1);
+    function dfs(idx) {
+        if (idx >= s.length) return 0;
+        if (memo[idx] !== -1) return memo[idx];
+        return memo[idx] = 1 + dfs(idx + 1);
+    }
+    return dfs(0);
+}`
+        };
+      } else if (isGrid) {
+        betterTime = 'O(M * N)';
+        betterSpace = 'O(M * N)';
+        betterName = 'Better (2D DP Matrix Tabulation)';
+        betterIntuition = [
+          'Explicit M x N grid table storing optimal values from top-left to each cell.'
+        ];
+        betterPseudocode = [
+          `FUNCTION ${fnName}_better(grid):`,
+          `  dp = 2D Array m x n initialized to grid values`,
+          `  RETURN dp[m-1][n-1]`
+        ];
+        betterExplanation = 'Computes optimal path iteratively across grid cells in O(M * N) time.';
+        betterCode = {
+          java: `public class Solution {
+    public int ${fnName}Better(int[][] grid) {
+        int m = grid.length, n = grid[0].length;
+        int[][] dp = new int[m][n];
+        dp[0][0] = grid[0][0];
+        for (int i = 1; i < m; i++) dp[i][0] = dp[i - 1][0] + grid[i][0];
+        for (int j = 1; j < n; j++) dp[0][j] = dp[0][j - 1] + grid[0][j];
+        for (int i = 1; i < m; i++) {
+            for (int j = 1; j < n; j++) {
+                dp[i][j] = grid[i][j] + Math.min(dp[i - 1][j], dp[i][j - 1]);
+            }
+        }
+        return dp[m - 1][n - 1];
+    }
+}`,
+          python: `class Solution:
+    def ${fnName}Better(self, grid: list[list[int]]) -> int:
+        m, n = len(grid), len(grid[0])
+        dp = [[0] * n for _ in range(m)]
+        dp[0][0] = grid[0][0]
+        for i in range(1, m): dp[i][0] = dp[i - 1][0] + grid[i][0]
+        for j in range(1, n): dp[0][j] = dp[0][j - 1] + grid[0][j]
+        for i in range(1, m):
+            for j in range(1, n):
+                dp[i][j] = grid[i][j] + min(dp[i - 1][j], dp[i][j - 1])
+        return dp[m - 1][n - 1]`,
+          cpp: `#include <vector>
+#include <algorithm>
+
+class Solution {
+public:
+    int ${fnName}Better(std::vector<std::vector<int>>& grid) {
+        int m = grid.size(), n = grid[0].size();
+        std::vector<std::vector<int>> dp(m, std::vector<int>(n, 0));
+        dp[0][0] = grid[0][0];
+        for (int i = 1; i < m; ++i) dp[i][0] = dp[i - 1][0] + grid[i][0];
+        for (int j = 1; j < n; ++j) dp[0][j] = dp[0][j - 1] + grid[0][j];
+        for (int i = 1; i < m; ++i) {
+            for (int j = 1; j < n; ++j) {
+                dp[i][j] = grid[i][j] + std::min(dp[i - 1][j], dp[i][j - 1]);
+            }
+        }
+        return dp[m - 1][n - 1];
+    }
+};`,
+          javascript: `function ${fnName}Better(grid) {
+    const m = grid.length, n = grid[0].length;
+    const dp = Array.from({ length: m }, () => new Array(n).fill(0));
+    dp[0][0] = grid[0][0];
+    for (let i = 1; i < m; i++) dp[i][0] = dp[i - 1][0] + grid[i][0];
+    for (let j = 1; j < n; j++) dp[0][j] = dp[0][j - 1] + grid[0][j];
+    for (let i = 1; i < m; i++) {
+        for (let j = 1; j < n; j++) {
+            dp[i][j] = grid[i][j] + Math.min(dp[i - 1][j], dp[i][j - 1]);
+        }
+    }
+    return dp[m - 1][n - 1];
+}`
+        };
+      } else if (isStock) {
+        betterTime = 'O(N)';
+        betterSpace = 'O(N)';
+        betterName = 'Better (State Array Tabulation)';
+        betterIntuition = [
+          'Precompute buy and sell state arrays across all trading days.'
+        ];
+        betterPseudocode = [
+          `FUNCTION ${fnName}_better(prices):`,
+          `  buy = Array(n), sell = Array(n)`,
+          `  RETURN sell[n-1]`
+        ];
+        betterExplanation = 'State arrays track maximum profit at day i in linear O(N) time.';
+        betterCode = {
+          java: `public class Solution {
+    public int ${fnName}Better(int[] prices) {
+        int n = prices.length;
+        if (n <= 1) return 0;
+        int[] buy = new int[n], sell = new int[n];
+        buy[0] = -prices[0];
+        for (int i = 1; i < n; i++) {
+            buy[i] = Math.max(buy[i - 1], -prices[i]);
+            sell[i] = Math.max(sell[i - 1], buy[i - 1] + prices[i]);
+        }
+        return sell[n - 1];
+    }
+}`,
+          python: `class Solution:
+    def ${fnName}Better(self, prices: list[int]) -> int:
+        n = len(prices)
+        if n <= 1: return 0
+        buy = [0] * n
+        sell = [0] * n
+        buy[0] = -prices[0]
+        for i in range(1, n):
+            buy[i] = max(buy[i - 1], -prices[i])
+            sell[i] = max(sell[i - 1], buy[i - 1] + prices[i])
+        return sell[n - 1]`,
+          cpp: `#include <vector>
+#include <algorithm>
+
+class Solution {
+public:
+    int ${fnName}Better(std::vector<int>& prices) {
+        int n = prices.size();
+        if (n <= 1) return 0;
+        std::vector<int> buy(n, 0), sell(n, 0);
+        buy[0] = -prices[0];
+        for (int i = 1; i < n; ++i) {
+            buy[i] = std::max(buy[i - 1], -prices[i]);
+            sell[i] = std::max(sell[i - 1], buy[i - 1] + prices[i]);
+        }
+        return sell[n - 1];
+    }
+};`,
+          javascript: `function ${fnName}Better(prices) {
+    const n = prices.length;
+    if (n <= 1) return 0;
+    const buy = new Array(n).fill(0);
+    const sell = new Array(n).fill(0);
+    buy[0] = -prices[0];
+    for (let i = 1; i < n; i++) {
+        buy[i] = Math.max(buy[i - 1], -prices[i]);
+        sell[i] = Math.max(sell[i - 1], buy[i - 1] + prices[i]);
+    }
+    return sell[n - 1];
+}`
+        };
+      } else if (isScalar) {
+        betterTime = 'O(N)';
+        betterSpace = 'O(N)';
+        betterName = 'Better (1D Table Tabulation)';
+        betterIntuition = [
+          'Pre-fill a 1D table of size N + 1 from base cases up to N.'
+        ];
+        betterPseudocode = [
+          `FUNCTION ${fnName}_better(n):`,
+          `  dp = Array(n + 1); dp[1] = 1, dp[2] = 2`,
+          `  FOR i from 3 TO n: dp[i] = dp[i-1] + dp[i-2]`,
+          `  RETURN dp[n]`
+        ];
+        betterExplanation = 'Tabulation evaluates each step once in O(N) time and O(N) auxiliary space.';
+        betterCode = {
+          java: `public class Solution {
+    public int ${fnName}Better(int n) {
+        if (n <= 2) return n;
+        int[] dp = new int[n + 1];
+        dp[1] = 1; dp[2] = 2;
+        for (int i = 3; i <= n; i++) dp[i] = dp[i - 1] + dp[i - 2];
+        return dp[n];
+    }
+}`,
+          python: `class Solution:
+    def ${fnName}Better(self, n: int) -> int:
+        if n <= 2: return n
+        dp = [0] * (n + 1)
+        dp[1], dp[2] = 1, 2
+        for i in range(3, n + 1): dp[i] = dp[i - 1] + dp[i - 2]
+        return dp[n]`,
+          cpp: `class Solution {
+public:
+    int ${fnName}Better(int n) {
+        if (n <= 2) return n;
+        std::vector<int> dp(n + 1);
+        dp[1] = 1; dp[2] = 2;
+        for (int i = 3; i <= n; ++i) dp[i] = dp[i - 1] + dp[i - 2];
+        return dp[n];
+    }
+};`,
+          javascript: `function ${fnName}Better(n) {
+    if (n <= 2) return n;
+    const dp = new Array(n + 1);
+    dp[1] = 1; dp[2] = 2;
+    for (let i = 3; i <= n; i++) dp[i] = dp[i - 1] + dp[i - 2];
+    return dp[n];
+}`
+        };
+      } else {
+        betterTime = 'O(N²)';
+        betterSpace = 'O(N)';
+        betterName = 'Better (1D DP Array Tabulation)';
+        betterIntuition = [
+          'Precompute subproblems using a 1D DP table up to size N.'
+        ];
+        betterPseudocode = [
+          `FUNCTION ${fnName}_better(nums):`,
+          `  dp = Array(n); dp[0] = nums[0]`,
+          `  FOR i from 1 TO n - 1: dp[i] = MAX(nums[i], dp[i-1] + nums[i])`,
+          `  RETURN MAX(dp)`
+        ];
+        betterExplanation = 'Fills 1D array linearly, avoiding redundant tree recursion.';
+        betterCode = {
+          java: `public class Solution {
+    public int ${fnName}Better(int[] nums) {
+        int n = nums.length;
+        if (n == 0) return 0;
+        int[] dp = new int[n];
+        dp[0] = nums[0];
+        int max = dp[0];
+        for (int i = 1; i < n; i++) {
+            dp[i] = Math.max(nums[i], dp[i - 1] + nums[i]);
+            max = Math.max(max, dp[i]);
+        }
+        return max;
+    }
+}`,
+          python: `class Solution:
+    def ${fnName}Better(self, nums: list[int]) -> int:
+        if not nums: return 0
+        dp = [0] * len(nums)
+        dp[0] = nums[0]
+        max_val = dp[0]
+        for i in range(1, len(nums)):
+            dp[i] = max(nums[i], dp[i - 1] + nums[i])
+            max_val = max(max_val, dp[i])
+        return max_val`,
+          cpp: `#include <vector>
+#include <algorithm>
+
+class Solution {
+public:
+    int ${fnName}Better(std::vector<int>& nums) {
+        if (nums.empty()) return 0;
+        int n = nums.size();
+        std::vector<int> dp(n);
+        dp[0] = nums[0];
+        int maxVal = dp[0];
+        for (int i = 1; i < n; ++i) {
+            dp[i] = std::max(nums[i], dp[i - 1] + nums[i]);
+            maxVal = std::max(maxVal, dp[i]);
+        }
+        return maxVal;
+    }
+};`,
+          javascript: `function ${fnName}Better(nums) {
+    if (!nums || nums.length === 0) return 0;
+    const dp = new Array(nums.length);
+    dp[0] = nums[0];
+    let max = dp[0];
+    for (let i = 1; i < nums.length; i++) {
+        dp[i] = Math.max(nums[i], dp[i - 1] + nums[i]);
+        max = Math.max(max, dp[i]);
+    }
+    return max;
+}`
+        };
+      }
       break;
+    }
 
     default: // arrays, heaps, stacks, greedy, backtracking, bit
       betterTime = 'O(N log N)';
