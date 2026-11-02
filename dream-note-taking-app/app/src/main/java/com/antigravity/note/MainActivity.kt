@@ -1,6 +1,7 @@
 package com.antigravity.note
 
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import com.antigravity.note.designsystem.theme.DreamNoteTheme
 import com.antigravity.note.inkengine.probe.DeviceProbeController
 import com.antigravity.note.ui.canvas.InkCanvasScreen
+import com.antigravity.note.ui.keyboard.KeyboardShortcutManager
 import com.antigravity.note.ui.probe.DeviceProbeScreen
 
 class MainActivity : ComponentActivity() {
@@ -55,6 +57,13 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (KeyboardShortcutManager.onKeyDown(keyCode, event)) {
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     override fun onResume() {

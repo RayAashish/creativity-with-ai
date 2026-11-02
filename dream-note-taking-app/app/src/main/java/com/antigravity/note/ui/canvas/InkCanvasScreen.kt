@@ -22,6 +22,25 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.Slider
+import androidx.compose.runtime.DisposableEffect
+import com.antigravity.note.inkengine.audio.AudioStrokeRecorder
+import com.antigravity.note.inkengine.export.InkflowManifest
+import com.antigravity.note.inkengine.export.InkflowPageEntry
+import com.antigravity.note.inkengine.export.PageExporter
+import com.antigravity.note.ui.export.ExportDialog
+import com.antigravity.note.ui.keyboard.KeyboardShortcutManager
+import com.antigravity.note.ui.keyboard.NoteAppShortcut
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.NavigateBefore
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
@@ -148,10 +167,41 @@ fun InkCanvasScreen(
     var isReviewTodayOpen by remember { mutableStateOf(false) }
     var recognizedTextResult by remember { mutableStateOf<String?>(null) }
 
+    // Phase 6 State: Export & Synced Audio
+    var isExportDialogOpen by remember { mutableStateOf(false) }
+    var isExporting by remember { mutableStateOf(false) }
+    var exportSuccessMessage by remember { mutableStateOf<String?>(null) }
+
+    val audioRecorder = remember { AudioStrokeRecorder(context, scope) }
+    var isRecordingAudio by remember { mutableStateOf(false) }
+    var isPlayingAudio by remember { mutableStateOf(false) }
+    var audioCurrentMs by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var audioTotalMs by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var hasRecordedAudio by remember { mutableStateOf(false) }
+    var audioDurationSec by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+
     // Match current page with Library DB for DSA metadata
     val currentProblemPage = remember(currentPage, allPages) {
         val pId = currentPage?.metadata?.pageId
         allPages.firstOrNull { it.pageId == pId }
+    }
+
+    LaunchedEffect(isRecordingAudio) {
+        if (isRecordingAudio) {
+            audioDurationSec = 0
+            while (isRecordingAudio) {
+                kotlinx.coroutines.delay(1000)
+                audioDurationSec++
+            }
+        }
+    }
+
+    LaunchedEffect(currentPage?.metadata?.pageId) {
+        val pageId = currentPage?.metadata?.pageId
+        if (pageId != null) {
+            val audioFile = File(context.filesDir, "audio/$pageId.m4a")
+            hasRecordedAudio = audioFile.exists() && audioFile.length() > 0
+        }
     }
 
     // Seed DSA structure on launch if empty and load first problem
@@ -176,6 +226,9 @@ fun InkCanvasScreen(
         }
         canvasView.onStrokeCommitted = { stroke ->
             docManager.onStrokeCommitted(stroke)
+            if (isRecordingAudio) {
+                audioRecorder.recordStrokeTiming(docManager.currentPage.value?.strokes?.size ?: 0)
+            }
         }
         canvasView.onUndoCommitted = { stroke ->
             docManager.onUndoCommitted(stroke)
@@ -185,6 +238,96 @@ fun InkCanvasScreen(
         }
         canvasView.onLassoSelectionChanged = { selected ->
             hasLassoSelection = selected
+        }
+    }
+
+    DisposableEffect(canvasView) {
+        KeyboardShortcutManager.activeListener = { shortcut ->
+            when (shortcut) {
+                NoteAppShortcut.UNDO -> { canvasView.undo(); true }
+                NoteAppShortcut.REDO -> { canvasView.redo(); true }
+                NoteAppShortcut.QUICK_SWITCHER -> { isQuickSwitcherOpen = true; true }
+                NoteAppShortcut.EXPORT -> {
+                    exportSuccessMessage = null
+                    isExportDialogOpen = true
+                    true
+                }
+                NoteAppShortcut.NEW_PAGE -> {
+                    docManager.addNewPage { p -> canvasView.loadPage(p) }
+                    true
+                }
+                NoteAppShortcut.PREV_PAGE -> {
+                    docManager.previousPage { p -> canvasView.loadPage(p) }
+                    true
+                }
+                NoteAppShortcut.NEXT_PAGE -> {
+                    docManager.nextPage { p -> canvasView.loadPage(p) }
+                    true
+                }
+                NoteAppShortcut.TOOL_PEN -> {
+                    selectedTool = CanvasTool.PRESSURE_PEN
+                    canvasView.setTool(CanvasTool.PRESSURE_PEN)
+                    true
+                }
+                NoteAppShortcut.TOOL_ERASER -> {
+                    selectedTool = CanvasTool.STROKE_ERASER
+                    canvasView.setTool(CanvasTool.STROKE_ERASER)
+                    true
+                }
+                NoteAppShortcut.TOOL_HIGHLIGHTER -> {
+                    selectedTool = CanvasTool.HIGHLIGHTER
+                    canvasView.setTool(CanvasTool.HIGHLIGHTER)
+                    true
+                }
+                NoteAppShortcut.TOOL_LASSO -> {
+                    selectedTool = CanvasTool.LASSO
+                    canvasView.setTool(CanvasTool.LASSO)
+                    true
+                }
+                NoteAppShortcut.TOOL_SHAPES -> {
+                    isShapeSnapOn = !isShapeSnapOn
+                    canvasView.holdToSnapEnabled = isShapeSnapOn
+                    true
+                }
+                NoteAppShortcut.TOGGLE_AUDIO -> {
+                    if (isRecordingAudio) {
+                        audioRecorder.stopRecording()
+                        isRecordingAudio = false
+                        hasRecordedAudio = true
+                    } else {
+                        val pId = currentPage?.metadata?.pageId ?: "page_default"
+                        val audioFile = File(context.filesDir, "audio/$pId.m4a")
+                        val ok = audioRecorder.startRecording(audioFile)
+                        if (ok) isRecordingAudio = true
+                    }
+                    true
+                }
+            }
+        }
+        onDispose {
+            KeyboardShortcutManager.activeListener = null
+            audioRecorder.release()
+        }
+    }
+
+    fun shareExportFile(file: File, mimeType: String, title: String) {
+        try {
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+            val sendIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = mimeType
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            val chooser = android.content.Intent.createChooser(sendIntent, title).apply {
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(chooser)
+        } catch (e: Exception) {
+            android.util.Log.e("InkCanvasScreen", "Failed to share export file", e)
         }
     }
 
@@ -473,9 +616,163 @@ fun InkCanvasScreen(
                             Icon(Icons.Default.Delete, contentDescription = "Clear Canvas", tint = Color(0xFFBA1A1A))
                         }
 
+                        // Audio Sync Record/Stop Button
+                        IconButton(
+                            onClick = {
+                                if (isRecordingAudio) {
+                                    audioRecorder.stopRecording()
+                                    isRecordingAudio = false
+                                    hasRecordedAudio = true
+                                    Toast.makeText(context, "Audio recording saved", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    val pId = currentPage?.metadata?.pageId ?: "page_default"
+                                    val audioDir = File(context.filesDir, "audio").apply { mkdirs() }
+                                    val audioFile = File(audioDir, "$pId.m4a")
+                                    val ok = audioRecorder.startRecording(audioFile)
+                                    if (ok) {
+                                        isRecordingAudio = true
+                                        Toast.makeText(context, "Recording audio synced to strokes...", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Could not start audio recorder", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = if (isRecordingAudio) Icons.Default.Stop else Icons.Default.Mic,
+                                contentDescription = "Audio Sync",
+                                tint = if (isRecordingAudio) Color(0xFFD32F2F) else if (hasRecordedAudio) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        // Export & Share Button
+                        IconButton(
+                            onClick = {
+                                exportSuccessMessage = null
+                                isExportDialogOpen = true
+                            }
+                        ) {
+                            Icon(Icons.Default.Share, contentDescription = "Export & Share", tint = MaterialTheme.colorScheme.primary)
+                        }
+
                         // Probe mode button
                         IconButton(onClick = onNavigateToProbe) {
                             Icon(Icons.Default.Speed, contentDescription = "Hardware Probe", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            }
+
+            // Audio Active Recording Pill / Playback Bar
+            if (isRecordingAudio) {
+                Card(
+                    modifier = Modifier.padding(top = 8.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFB71C1C)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                        )
+                        Text(
+                            text = "REC ${String.format("%02d:%02d", audioDurationSec / 60, audioDurationSec % 60)}",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontSize = 12.sp
+                        )
+                        IconButton(
+                            onClick = {
+                                audioRecorder.stopRecording()
+                                isRecordingAudio = false
+                                hasRecordedAudio = true
+                                Toast.makeText(context, "Audio saved to page", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(Icons.Default.Stop, contentDescription = "Stop Recording", tint = Color.White, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                }
+            } else if (hasRecordedAudio) {
+                Card(
+                    modifier = Modifier.padding(top = 8.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        IconButton(
+                            onClick = {
+                                if (isPlayingAudio) {
+                                    audioRecorder.pausePlayback()
+                                    isPlayingAudio = false
+                                } else if (audioRecorder.state == AudioStrokeRecorder.State.PAUSED) {
+                                    audioRecorder.resumePlayback()
+                                    isPlayingAudio = true
+                                } else {
+                                    val pId = currentPage?.metadata?.pageId ?: "page_default"
+                                    val audioFile = File(context.filesDir, "audio/$pId.m4a")
+                                    val started = audioRecorder.startPlayback(
+                                        audioFile = audioFile,
+                                        onProgress = { cur, total ->
+                                            audioCurrentMs = cur
+                                            audioTotalMs = total
+                                        },
+                                        onComplete = {
+                                            isPlayingAudio = false
+                                            audioCurrentMs = 0
+                                        }
+                                    )
+                                    isPlayingAudio = started
+                                }
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isPlayingAudio) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = if (isPlayingAudio) "Pause" else "Play",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        Text(
+                            text = "${String.format("%02d:%02d", audioCurrentMs / 60000, (audioCurrentMs / 1000) % 60)} / ${String.format("%02d:%02d", audioTotalMs / 60000, (audioTotalMs / 1000) % 60)}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = FontFamily.Monospace
+                        )
+
+                        Slider(
+                            value = if (audioTotalMs > 0) audioCurrentMs.toFloat() / audioTotalMs else 0f,
+                            onValueChange = { frac ->
+                                val seek = (frac * audioTotalMs).toInt()
+                                audioCurrentMs = seek
+                                audioRecorder.seekTo(seek)
+                            },
+                            modifier = Modifier.width(140.dp)
+                        )
+
+                        IconButton(
+                            onClick = {
+                                audioRecorder.stopPlayback()
+                                isPlayingAudio = false
+                                audioCurrentMs = 0
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Close Audio", modifier = Modifier.size(16.dp))
                         }
                     }
                 }
@@ -864,6 +1161,98 @@ fun InkCanvasScreen(
                     }
                 },
                 onDismissRequest = { isQuickSwitcherOpen = false }
+            )
+        }
+
+        // Export & Share Dialog (Phase 6 Milestone)
+        if (isExportDialogOpen) {
+            val page = currentPage ?: docManager.currentPage.value
+            val nBook = notebooks.firstOrNull { it.notebookId == page?.metadata?.notebookId }
+            ExportDialog(
+                notebookTitle = nBook?.title ?: "DSA Notebook",
+                pageTitle = page?.metadata?.title ?: "Problem Page",
+                strokeCount = page?.strokes?.size ?: canvasView.dryInkView.strokes.size,
+                isExporting = isExporting,
+                exportSuccessMessage = exportSuccessMessage,
+                onDismiss = { isExportDialogOpen = false },
+                onExportPdf = {
+                    scope.launch(Dispatchers.IO) {
+                        isExporting = true
+                        val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
+                        val safeTitle = (page?.metadata?.title ?: "Note").replace(Regex("[^a-zA-Z0-9_-]"), "_")
+                        val pdfFile = File(exportDir, "${safeTitle}_${System.currentTimeMillis()}.pdf")
+                        pdfFile.outputStream().use { out ->
+                            if (page != null) {
+                                PageExporter.exportToPdf(page, out)
+                            }
+                        }
+                        withContext(Dispatchers.Main) {
+                            isExporting = false
+                            exportSuccessMessage = "Vector PDF Exported (${pdfFile.length() / 1024} KB)"
+                            shareExportFile(pdfFile, "application/pdf", "Share PDF Document")
+                        }
+                    }
+                },
+                onExportPng = {
+                    scope.launch(Dispatchers.IO) {
+                        isExporting = true
+                        val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
+                        val safeTitle = (page?.metadata?.title ?: "Note").replace(Regex("[^a-zA-Z0-9_-]"), "_")
+                        val pngFile = File(exportDir, "${safeTitle}_${System.currentTimeMillis()}.png")
+                        pngFile.outputStream().use { out ->
+                            if (page != null) {
+                                PageExporter.exportToPng(page, out)
+                            }
+                        }
+                        withContext(Dispatchers.Main) {
+                            isExporting = false
+                            exportSuccessMessage = "High-Res PNG Exported (${pngFile.length() / 1024} KB)"
+                            shareExportFile(pngFile, "image/png", "Share Canvas Image")
+                        }
+                    }
+                },
+                onExportInkflow = {
+                    scope.launch(Dispatchers.IO) {
+                        isExporting = true
+                        val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
+                        val safeTitle = (nBook?.title ?: "Notebook").replace(Regex("[^a-zA-Z0-9_-]"), "_")
+                        val inkflowFile = File(exportDir, "${safeTitle}_${System.currentTimeMillis()}.inkflow")
+                        val pageList = if (page != null) listOf(page) else emptyList()
+                        val mediaMap = mutableMapOf<String, File>()
+                        val pId = page?.metadata?.pageId
+                        if (pId != null) {
+                            val audio = File(context.filesDir, "audio/$pId.m4a")
+                            if (audio.exists()) {
+                                mediaMap["$pId.m4a"] = audio
+                            }
+                        }
+                        val manifest = InkflowManifest(
+                            notebookId = nBook?.notebookId ?: "nb_default",
+                            notebookTitle = nBook?.title ?: "DSA Notebook",
+                            createdAt = nBook?.createdAt ?: System.currentTimeMillis(),
+                            exportedAt = System.currentTimeMillis(),
+                            pageCount = pageList.size,
+                            pages = pageList.map {
+                                InkflowPageEntry(
+                                    pageId = it.metadata.pageId,
+                                    title = it.metadata.title,
+                                    pageIndex = it.metadata.pageIndex,
+                                    template = it.metadata.template.name,
+                                    strokeCount = it.strokes.size,
+                                    audioFile = if (mediaMap.containsKey("${it.metadata.pageId}.m4a")) "${it.metadata.pageId}.m4a" else null
+                                )
+                            }
+                        )
+                        inkflowFile.outputStream().use { out ->
+                            PageExporter.exportToInkflow(manifest, pageList, mediaMap, out)
+                        }
+                        withContext(Dispatchers.Main) {
+                            isExporting = false
+                            exportSuccessMessage = "Lossless .inkflow Exported (${inkflowFile.length() / 1024} KB)"
+                            shareExportFile(inkflowFile, "application/zip", "Share Lossless .inkflow Bundle")
+                        }
+                    }
+                }
             )
         }
     }

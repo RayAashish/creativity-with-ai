@@ -152,66 +152,7 @@ class DryInkCanvasView @JvmOverloads constructor(
     private fun drawPaperGrid(canvas: Canvas) {
         val virtualWidth = 4000f
         val virtualHeight = 6000f
-
-        when (currentTemplate) {
-            PaperTemplate.BLANK -> {
-                // Pure clean paper
-            }
-            PaperTemplate.RULED -> {
-                val lineSpacing = 44f
-                var y = 140f
-                while (y < virtualHeight) {
-                    canvas.drawLine(0f, y, virtualWidth, y, gridLinePaint)
-                    y += lineSpacing
-                }
-                // Vertical margin line
-                canvas.drawLine(180f, 0f, 180f, virtualHeight, marginLinePaint)
-            }
-            PaperTemplate.GRID -> {
-                val gridSize = 36f
-                var y = gridSize
-                while (y < virtualHeight) {
-                    canvas.drawLine(0f, y, virtualWidth, y, gridLinePaint)
-                    y += gridSize
-                }
-                var x = gridSize
-                while (x < virtualWidth) {
-                    canvas.drawLine(x, 0f, x, virtualHeight, gridLinePaint)
-                    x += gridSize
-                }
-            }
-            PaperTemplate.DOT -> {
-                val dotSpacing = 36f
-                var y = dotSpacing
-                while (y < virtualHeight) {
-                    var x = dotSpacing
-                    while (x < virtualWidth) {
-                        canvas.drawCircle(x, y, 1.5f, dotPaint)
-                        x += dotSpacing
-                    }
-                    y += dotSpacing
-                }
-            }
-            PaperTemplate.CORNELL -> {
-                val cueColumnX = 320f
-                val summaryY = 5200f
-                val lineSpacing = 44f
-
-                // Cue column line
-                canvas.drawLine(cueColumnX, 140f, cueColumnX, summaryY, marginLinePaint)
-                // Top header line
-                canvas.drawLine(0f, 140f, virtualWidth, 140f, marginLinePaint)
-                // Bottom summary separator
-                canvas.drawLine(0f, summaryY, virtualWidth, summaryY, marginLinePaint)
-
-                // Ruled lines inside note area
-                var y = 140f + lineSpacing
-                while (y < summaryY) {
-                    canvas.drawLine(cueColumnX, y, virtualWidth, y, gridLinePaint)
-                    y += lineSpacing
-                }
-            }
-        }
+        PaperBackgroundRenderer.drawPaper(canvas, currentTemplate, virtualWidth, virtualHeight)
     }
 
     /**

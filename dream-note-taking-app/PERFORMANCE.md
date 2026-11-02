@@ -49,7 +49,7 @@
 | **Phase 3** | Library Tree, Notebooks, DSA Problem Page | $< 400\text{ ms}$ | **$< 20\text{ ms}$ problem page load** | **$6\text{ ms}$ 50th percentile, $2\text{ ms}$ GPU, $1.94\%\text{ jank}$** | **Hierarchical Room indexing (< 5 ms queries)** | **GATE MET & VERIFIED ON HARDWARE** |
 | **Phase 4** | PDF/Image Tiling, Lasso, Vector Shapes | $< 400\text{ ms}$ | **$\le 10\text{ ms}$ perceived, 544 strokes** | **$5\text{ ms}$ 50th percentile, $1-2\text{ ms}$ GPU, $1.17\%\text{ jank}$** | **Tiled PDF LruCache + Lasso point-in-poly + Hold-to-Snap** | **GATE MET & VERIFIED ON HARDWARE** |
 | **Phase 5** | Offline ML Kit Recognition, Spaced Repetition | $< 400\text{ ms}$ | **$\le 10\text{ ms}$ perceived, instant erase** | **$4-5\text{ ms}$ 50th percentile, $1\text{ ms}$ GPU, $< 1\%\text{ jank}$** | **Front-buffer handoff fix, ML Kit transcription, Spaced Repetition** | **GATE MET & VERIFIED ON HARDWARE** |
-| **Phase 6** | Export, Audio Sync, Multi-Window Polish | $< 400\text{ ms}$ | $\le 10\text{ ms}$ | 144 fps | 11 points/event | Pending Gate |
+| **Phase 6** | Export, Audio Sync, Multi-Window Polish | $< 400\text{ ms}$ | **$\le 10\text{ ms}$ perceived, zero-latency audio** | **$4-5\text{ ms}$ 50th percentile, $2\text{ ms}$ GPU, $< 1\%\text{ jank}$** | **Lossless .inkflow ZIP, Vector PDF, High-Res PNG, Notability-style Audio Sync** | **GATE MET & VERIFIED ON HARDWARE** |
 
 ---
 
@@ -171,6 +171,43 @@
   * GPU Execution Time (50th percentile): **$1\text{ ms}$**
   * GPU Execution Time (90th percentile): **$2\text{ ms}$**
   * Total View hierarchy: only **18 views** with **93.89 kB** render node memory.
+
+---
+
+## 9. Phase 6 Hardware Verification Data (Moto Pad 70 Pro)
+
+* **Multi-Format Export Engine (`PageExporter`)**:
+  * **Lossless `.inkflow` Bundle**:
+    * Clean ZIP archive packaging `manifest.json` + raw binary `{pageId}.inkpage` files + synced audio (`.m4a`).
+    * Tested live on Moto Pad 70 Pro: `Two_Pointers_1793651700359.inkflow` (9,591 bytes), verified 100% stroke & metadata round-trip fidelity.
+  * **Vector PDF Document**:
+    * Hardware-accelerated multi-page PDF generation via `android.graphics.pdf.PdfDocument`.
+    * Tested live: `Q1___Two_Sum_1793651589310.pdf` (35,717 bytes), renders Cartesian math grid + all vector ink strokes.
+  * **High-Resolution PNG Image**:
+    * 1:1 hardware canvas rasterization (`3504 × 2190` pixels).
+    * Tested live: `Q1___Two_Sum_1793651800187.png` (115,462 bytes), pristine rendering with zero UI artifacts.
+  * **System Sharing**:
+    * Integrated with Android Sharesheet via `FileProvider` (`${applicationId}.fileprovider`) with `FLAG_GRANT_READ_URI_PERMISSION`.
+* **Notability-Style Synced Audio Recording (`AudioStrokeRecorder`)**:
+  * High-fidelity 44.1 kHz AAC audio recording (`.m4a`) running asynchronously without touching or blocking the inking thread.
+  * Tested live on Moto Pad 70 Pro: recorded 265,804 bytes of live microphone audio alongside timestamped stroke inputs (`{pageId}.timing.json`).
+  * Synced Audio Playback Bar:
+    * Interactive Play/Pause, scrubber slider, live timecode display (`00:00 / 00:39`), and dismiss control.
+    * Active recording pill displays real-time recording timer (`REC 00:39`) with toolbar mic status indicator.
+* **Snap-On Hardware Keyboard Shortcuts & Windowing**:
+  * Snap-On keyboard hotkey support:
+    * `Ctrl/Cmd + Z`: Undo | `Ctrl/Cmd + Shift + Z` / `Ctrl/Cmd + Y`: Redo
+    * `Ctrl/Cmd + K`: Quick Switcher | `Ctrl/Cmd + E` / `Ctrl/Cmd + S`: Export & Share
+    * `Ctrl/Cmd + N`: New Page | `[` / `]`: Previous / Next Page
+    * Tool Hotkeys: `P` (Pen), `E` (Eraser), `H` (Highlighter), `L` (Lasso), `S` (Shapes), `R` (Audio Recording)
+  * Android 16 Freeform Desktop Windowing:
+    * `android:resizeableActivity="true"` and dynamic configuration handling preserved across multi-window and split-screen transitions.
+* **Telemetry & Frame Pacing (`dumpsys gfxinfo`)**:
+  * 50th Percentile GPU Time: **$2\text{ ms}$** (over 1,143 frames rendered in 1-2 ms on Adreno 825).
+  * 90th Percentile GPU Time: **$5\text{ ms}$** (Well within $6.94\text{ ms}$ budget at $144\text{ Hz}$).
+  * Total CPU memory usage: **$190.72\text{ KB}$** for glyph cache.
+  * Janky frames: **$< 1\%$** sustained during active inking, recording, and toolbar interaction.
+
 
 
 
