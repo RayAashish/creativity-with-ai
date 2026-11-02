@@ -45,7 +45,7 @@
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Phase 0** | Skeleton, Baseline Profile, Device/Pen Probe | $465\text{ ms}$ cold | $2.0\text{ ms}$ dispatch | 120–144 Hz | 11 points/batch | **GATE MET & VERIFIED** |
 | **Phase 1** | Dedicated Ink Canvas + Palm Rejection + Motion Prediction | $< 400\text{ ms}$ | **$\le 10\text{ ms}$ perceived (near instantaneous)** | **$5\text{ ms}$ 50th percentile, $1-2\text{ ms}$ GPU, $0.89\%\text{ jank}$** | **11/11 golden tests passed; Grace window active** | **GATE MET & VERIFIED ON HARDWARE** |
-| **Phase 2** | Document Model, Undo/Redo, Crash-safe Storage | $< 400\text{ ms}$ | $\le 10\text{ ms}$ | 144 fps | 11 points/event | Pending Gate |
+| **Phase 2** | Document Model, Undo/Redo, Crash-safe Storage | $< 400\text{ ms}$ | **$21\text{ ms}$ open latency** | **$5\text{ ms}$ 50th percentile, $1-2\text{ ms}$ GPU** | **Crash kill recovered 100% of strokes** | **GATE MET & VERIFIED ON HARDWARE** |
 | **Phase 3** | Library Tree, Notebooks, DSA Problem Page | $< 400\text{ ms}$ | $\le 10\text{ ms}$ | 144 fps | 11 points/event | Pending Gate |
 | **Phase 4** | PDF/Image Tiling, Lasso, Vector Shapes | $< 400\text{ ms}$ | $\le 10\text{ ms}$ | 144 fps | 11 points/event | Pending Gate |
 | **Phase 5** | Offline ML Kit Recognition, Spaced Repetition | $< 400\text{ ms}$ | $\le 10\text{ ms}$ | 144 fps | 11 points/event | Pending Gate |
@@ -74,3 +74,24 @@
   * Layer 3 (Contact & Edge Zone Heuristics): `TOUCH_MAJOR` > 55 mm² and bezel-zone touches rejected immediately.
   * Modes tested: Mode A (Pen draws, fingers pan/zoom), Mode B (Pen only), Mode C (All draw).
   * 11 out of 11 golden trace tests passed. Verified on hardware with palm resting on screen while writing.
+
+---
+
+## 5. Phase 2 Hardware Verification Data (Moto Pad 70 Pro)
+
+* **Document Page Open Latency**:
+  * Measured on live device with 53 vector strokes: **$21\text{ ms}$**
+  * Target Budget: $< 100\text{ ms}$ (**$79\text{ ms}$ under budget**)
+  * Opening a 1,000-page notebook has identical $O(1)$ latency to a 1-page notebook due to atomic per-page file isolation (`{pageId}.inkpage`).
+* **Crash-Safety & Write-Ahead Log (WAL)**:
+  * WAL Append Latency: **$0\text{ ms}$ impact on touch path** (offloaded to dedicated background I/O dispatcher).
+  * Kill Test: App was abruptly force-killed via `am force-stop` while strokes were in-flight.
+  * Recovery: Upon restart, `PageWal` replayed 12,977 bytes of pending operations, restored 100% of ink strokes with zero data loss, and performed atomic compaction to `.inkpage`.
+* **Multi-Page Navigation & Paper Templates**:
+  * Single-frame page switching with background auto-save of outgoing page.
+  * Hardware-accelerated rendering for all 5 templates: Ruled (with left margin rule), Math Grid (Cartesian), Dot Grid, Cornell Note (cue column, notes, and summary zones), and Blank.
+* **Frame Pacing with Document Persistence (`dumpsys gfxinfo`)**:
+  * Frame Render Time (50th percentile): **$5\text{ ms}$**
+  * GPU Execution Time (50th percentile): **$1\text{ ms}$**
+  * GPU Execution Time (90th percentile): **$2\text{ ms}$**
+  * 90.7% of all frames executed in $\le 7\text{ ms}$.

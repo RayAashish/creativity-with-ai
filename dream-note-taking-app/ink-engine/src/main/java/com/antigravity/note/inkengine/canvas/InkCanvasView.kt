@@ -21,6 +21,8 @@ import androidx.ink.brush.BrushFamily
 import androidx.ink.brush.StockBrushes
 import androidx.ink.strokes.Stroke
 import androidx.input.motionprediction.MotionEventPredictor
+import com.antigravity.note.document.model.DocumentPage
+import com.antigravity.note.document.model.PaperTemplate
 import com.antigravity.note.inkengine.palm.PalmRejectionConfig
 import com.antigravity.note.inkengine.palm.PalmRejectionFilter
 import com.antigravity.note.inkengine.palm.PointerStatus
@@ -98,6 +100,13 @@ class InkCanvasView @JvmOverloads constructor(
     // Callbacks
     var onUndoRedoStateChanged: ((canUndo: Boolean, canRedo: Boolean) -> Unit)? = null
     var onFpsMeasured: ((fps: Float) -> Unit)? = null
+    var onStrokeCommitted: ((Stroke) -> Unit)? = null
+    var onUndoCommitted: ((Stroke?) -> Unit)? = null
+    var onClearCommitted: (() -> Unit)? = null
+
+    // Document state
+    var pageOpenLatencyMs: Long = 0L
+    var pageTitle: String = "Page 1"
 
     // Frame timing tracking
     private var lastFrameTimeNanos = 0L
@@ -128,12 +137,31 @@ class InkCanvasView @JvmOverloads constructor(
                     undoStack.add(action)
                     redoStack.clear()
                     notifyUndoRedoState()
+                    for (stroke in finishedList) {
+                        onStrokeCommitted?.invoke(stroke)
+                    }
                 }
             }
         })
 
         // Enable custom drawing for debug HUD
         setWillNotDraw(false)
+    }
+
+    fun loadPage(page: DocumentPage, openLatencyMs: Long = 0L) {
+        pageOpenLatencyMs = openLatencyMs
+        pageTitle = page.metadata.title
+        dryInkView.loadStrokes(page.strokes)
+        dryInkView.setPaperTemplate(page.metadata.template)
+        undoStack.clear()
+        redoStack.clear()
+        notifyUndoRedoState()
+        invalidate()
+    }
+
+    fun setPaperTemplate(template: PaperTemplate) {
+        dryInkView.setPaperTemplate(template)
+        invalidate()
     }
 
     fun setTool(tool: CanvasTool) {
@@ -328,6 +356,7 @@ class InkCanvasView @JvmOverloads constructor(
         // Revert added strokes
         if (action.addedStrokes.isNotEmpty()) {
             dryInkView.removeStrokes(action.addedStrokes)
+            onUndoCommitted?.invoke(action.addedStrokes.firstOrNull())
         }
         // Restore removed strokes
         if (action.removedStrokes.isNotEmpty()) {
@@ -359,6 +388,7 @@ class InkCanvasView @JvmOverloads constructor(
             undoStack.add(action)
             redoStack.clear()
             notifyUndoRedoState()
+            onClearCommitted?.invoke()
         }
     }
 
@@ -398,21 +428,23 @@ class InkCanvasView @JvmOverloads constructor(
     private fun drawDebugOverlay(canvas: Canvas) {
         val leftPad = 32f
         val topPad = 180f
-        val boxWidth = 640f
-        val boxHeight = 180f
+        val boxWidth = 660f
+        val boxHeight = 216f
         val cornerRadius = 16f
         canvas.drawRoundRect(leftPad, topPad, leftPad + boxWidth, topPad + boxHeight, cornerRadius, cornerRadius, debugBgPaint)
         canvas.drawRoundRect(leftPad, topPad, leftPad + boxWidth, topPad + boxHeight, cornerRadius, cornerRadius, debugBorderPaint)
 
         val fpsText = "Sustained FPS: %.1f fps (Budget: 6.94 ms)".format(measuredFps)
+        val docText = "Doc: $pageTitle | ${dryInkView.currentTemplate.displayName} | Open: ${pageOpenLatencyMs}ms"
         val toolText = "Tool: $currentTool | Mode: ${palmFilter.config.inputMode}"
         val strokesText = "Strokes: ${dryInkView.strokes.size} | Zoom: %.2fx".format(dryInkView.transform.scale)
         val palmsText = "Palms Rejected: ${palmFilter.palmsRejectedCount} | Grace: ${palmFilter.config.graceWindowMs}ms"
 
-        canvas.drawText(fpsText, leftPad + 20f, topPad + 42f, debugPaint)
-        canvas.drawText(toolText, leftPad + 20f, topPad + 80f, debugPaint)
-        canvas.drawText(strokesText, leftPad + 20f, topPad + 118f, debugPaint)
-        canvas.drawText(palmsText, leftPad + 20f, topPad + 156f, debugPaint)
+        canvas.drawText(fpsText, leftPad + 20f, topPad + 38f, debugPaint)
+        canvas.drawText(docText, leftPad + 20f, topPad + 74f, debugPaint)
+        canvas.drawText(toolText, leftPad + 20f, topPad + 110f, debugPaint)
+        canvas.drawText(strokesText, leftPad + 20f, topPad + 146f, debugPaint)
+        canvas.drawText(palmsText, leftPad + 20f, topPad + 182f, debugPaint)
 
         // Draw pointer tracking circles & status
         for (info in palmFilter.activePointersDebug) {

@@ -56,6 +56,7 @@ dependencies {
     implementation(project(":document"))
     implementation(project(":library"))
 
+    implementation(libs.androidx.ink.strokes)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.runtime.ktx)

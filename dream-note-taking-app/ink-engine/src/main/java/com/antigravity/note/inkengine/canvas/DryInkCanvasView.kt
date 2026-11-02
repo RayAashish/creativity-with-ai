@@ -11,6 +11,7 @@ import android.view.View
 import androidx.ink.brush.StockBrushes
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.Stroke
+import com.antigravity.note.document.model.PaperTemplate
 
 /**
  * Underlying view responsible for rendering finalized "dry" ink strokes.
@@ -25,6 +26,8 @@ class DryInkCanvasView @JvmOverloads constructor(
     val strokes = mutableListOf<Stroke>()
     private val strokeRenderer: CanvasStrokeRenderer = CanvasStrokeRenderer.create()
     val transform = CanvasTransform()
+    var currentTemplate: PaperTemplate = PaperTemplate.RULED
+        private set
 
     // Pre-allocated objects for zero allocations in onDraw
     private val identityMatrix = Matrix()
@@ -35,6 +38,14 @@ class DryInkCanvasView @JvmOverloads constructor(
     private val gridLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#15000000")
         strokeWidth = 1.5f
+    }
+    private val marginLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#25D32F2F")
+        strokeWidth = 2.0f
+    }
+    private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#35000000")
+        style = Paint.Style.FILL
     }
     private val eraseQueryRect = RectF()
 
@@ -64,15 +75,81 @@ class DryInkCanvasView @JvmOverloads constructor(
         canvas.restore()
     }
 
+    fun setPaperTemplate(template: PaperTemplate) {
+        if (currentTemplate != template) {
+            currentTemplate = template
+            invalidate()
+        }
+    }
+
+    fun loadStrokes(newStrokes: List<Stroke>) {
+        strokes.clear()
+        strokes.addAll(newStrokes)
+        invalidate()
+    }
+
     private fun drawPaperGrid(canvas: Canvas) {
-        val gridSize = 40f
         val virtualWidth = 4000f
         val virtualHeight = 6000f
 
-        var y = gridSize
-        while (y < virtualHeight) {
-            canvas.drawLine(0f, y, virtualWidth, y, gridLinePaint)
-            y += gridSize
+        when (currentTemplate) {
+            PaperTemplate.BLANK -> {
+                // Pure clean paper
+            }
+            PaperTemplate.RULED -> {
+                val lineSpacing = 44f
+                var y = 140f
+                while (y < virtualHeight) {
+                    canvas.drawLine(0f, y, virtualWidth, y, gridLinePaint)
+                    y += lineSpacing
+                }
+                // Vertical margin line
+                canvas.drawLine(180f, 0f, 180f, virtualHeight, marginLinePaint)
+            }
+            PaperTemplate.GRID -> {
+                val gridSize = 36f
+                var y = gridSize
+                while (y < virtualHeight) {
+                    canvas.drawLine(0f, y, virtualWidth, y, gridLinePaint)
+                    y += gridSize
+                }
+                var x = gridSize
+                while (x < virtualWidth) {
+                    canvas.drawLine(x, 0f, x, virtualHeight, gridLinePaint)
+                    x += gridSize
+                }
+            }
+            PaperTemplate.DOT -> {
+                val dotSpacing = 36f
+                var y = dotSpacing
+                while (y < virtualHeight) {
+                    var x = dotSpacing
+                    while (x < virtualWidth) {
+                        canvas.drawCircle(x, y, 1.5f, dotPaint)
+                        x += dotSpacing
+                    }
+                    y += dotSpacing
+                }
+            }
+            PaperTemplate.CORNELL -> {
+                val cueColumnX = 320f
+                val summaryY = 5200f
+                val lineSpacing = 44f
+
+                // Cue column line
+                canvas.drawLine(cueColumnX, 140f, cueColumnX, summaryY, marginLinePaint)
+                // Top header line
+                canvas.drawLine(0f, 140f, virtualWidth, 140f, marginLinePaint)
+                // Bottom summary separator
+                canvas.drawLine(0f, summaryY, virtualWidth, summaryY, marginLinePaint)
+
+                // Ruled lines inside note area
+                var y = 140f + lineSpacing
+                while (y < summaryY) {
+                    canvas.drawLine(cueColumnX, y, virtualWidth, y, gridLinePaint)
+                    y += lineSpacing
+                }
+            }
         }
     }
 

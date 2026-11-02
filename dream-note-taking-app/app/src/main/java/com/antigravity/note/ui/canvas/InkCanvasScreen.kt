@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -19,8 +17,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.NavigateBefore
+import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.BugReport
@@ -28,10 +29,13 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FitScreen
 import androidx.compose.material.icons.filled.FormatPaint
+import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -40,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -49,14 +54,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.antigravity.note.document.manager.DocumentManager
+import com.antigravity.note.document.model.PaperTemplate
+import com.antigravity.note.document.storage.PageRepository
 import com.antigravity.note.inkengine.canvas.CanvasTool
 import com.antigravity.note.inkengine.canvas.InkCanvasView
 import com.antigravity.note.inkengine.palm.InputMode
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +77,15 @@ fun InkCanvasScreen(
     val context = LocalContext.current
     val canvasView = remember { InkCanvasView(context) }
 
+    val docManager = remember {
+        val repo = PageRepository(File(context.filesDir, "notebooks"))
+        DocumentManager(repo, "dsa_notebook")
+    }
+
+    val currentPage by docManager.currentPage.collectAsStateWithLifecycle()
+    val pagesList by docManager.pagesList.collectAsStateWithLifecycle()
+    val openLatency by docManager.lastOpenLatencyMs.collectAsStateWithLifecycle()
+
     var selectedTool by remember { mutableStateOf(CanvasTool.PRESSURE_PEN) }
     var selectedColor by remember { mutableStateOf(Color(0xFF111318)) }
     var selectedWidth by remember { mutableFloatStateOf(6f) }
@@ -73,12 +93,32 @@ fun InkCanvasScreen(
     var canRedo by remember { mutableStateOf(false) }
     var inputMode by remember { mutableStateOf(InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM) }
     var isDebugOverlayOn by remember { mutableStateOf(true) }
+    var showTemplateMenu by remember { mutableStateOf(false) }
 
-    // Register undo/redo state callback
-    remember(canvasView) {
+    // Initialize document manager on launch
+    LaunchedEffect(Unit) {
+        docManager.initialize("dsa_notebook") {
+            val page = docManager.currentPage.value
+            if (page != null) {
+                canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+            }
+        }
+    }
+
+    // Register undo/redo state callback & stroke persistence callbacks
+    remember(canvasView, docManager) {
         canvasView.onUndoRedoStateChanged = { u, r ->
             canUndo = u
             canRedo = r
+        }
+        canvasView.onStrokeCommitted = { stroke ->
+            docManager.onStrokeCommitted(stroke)
+        }
+        canvasView.onUndoCommitted = { stroke ->
+            docManager.onUndoCommitted(stroke)
+        }
+        canvasView.onClearCommitted = {
+            docManager.onClearCommitted()
         }
     }
 
@@ -246,6 +286,28 @@ fun InkCanvasScreen(
                     )
                 }
 
+                // Paper Template Picker Button
+                Box {
+                    IconButton(onClick = { showTemplateMenu = true }) {
+                        Icon(Icons.Default.GridOn, contentDescription = "Paper Template")
+                    }
+                    DropdownMenu(
+                        expanded = showTemplateMenu,
+                        onDismissRequest = { showTemplateMenu = false }
+                    ) {
+                        PaperTemplate.entries.forEach { template ->
+                            DropdownMenuItem(
+                                text = { Text(template.displayName) },
+                                onClick = {
+                                    showTemplateMenu = false
+                                    docManager.setPaperTemplate(template)
+                                    canvasView.setPaperTemplate(template)
+                                }
+                            )
+                        }
+                    }
+                }
+
                 // Reset Zoom
                 IconButton(onClick = { canvasView.resetZoom() }) {
                     Icon(Icons.Default.FitScreen, contentDescription = "Reset Zoom")
@@ -259,6 +321,74 @@ fun InkCanvasScreen(
                 // Probe mode button
                 IconButton(onClick = onNavigateToProbe) {
                     Icon(Icons.Default.Speed, contentDescription = "Hardware Probe", tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+
+        // Bottom Center: Page Navigation Bar
+        Card(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)),
+            shape = RoundedCornerShape(14.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                val currentIndex = pagesList.indexOfFirst { it.pageId == currentPage?.metadata?.pageId }.coerceAtLeast(0)
+                val totalPages = pagesList.size.coerceAtLeast(1)
+
+                IconButton(
+                    onClick = {
+                        docManager.previousPage { page ->
+                            canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                        }
+                    },
+                    enabled = currentIndex > 0
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
+                        contentDescription = "Previous Page",
+                        tint = if (currentIndex > 0) MaterialTheme.colorScheme.onSurface else Color.LightGray
+                    )
+                }
+
+                Text(
+                    text = "Page ${currentIndex + 1} / $totalPages",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(horizontal = 6.dp)
+                )
+
+                IconButton(
+                    onClick = {
+                        docManager.nextPage { page ->
+                            canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                        contentDescription = "Next Page"
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        docManager.addNewPage(currentPage?.metadata?.template ?: PaperTemplate.RULED) { page ->
+                            canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add Page",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
@@ -333,7 +463,7 @@ fun InkCanvasScreen(
 
 @Composable
 private fun ToolIconButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     label: String,
     isSelected: Boolean,
     onClick: () -> Unit
@@ -342,16 +472,25 @@ private fun ToolIconButton(
         modifier = Modifier
             .clip(RoundedCornerShape(10.dp))
             .clickable(onClick = onClick),
-        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Icon(imageVector = icon, contentDescription = label, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(text = label, fontSize = 13.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium)
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(18.dp)
+            )
+            Text(
+                text = label,
+                fontSize = 12.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
