@@ -37,6 +37,22 @@ class DryInkCanvasView @JvmOverloads constructor(
     var currentPdfPageIndex: Int = 0
     private val viewportRect = RectF()
 
+    // Phase 5 Search Match Highlights
+    val searchHighlights = mutableListOf<RectF>()
+    private val searchHighlightFillPaint by lazy {
+        Paint().apply {
+            color = Color.parseColor("#40FFEB3B")
+            style = Paint.Style.FILL
+        }
+    }
+    private val searchHighlightStrokePaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#FBC02D")
+            style = Paint.Style.STROKE
+            strokeWidth = 3f
+        }
+    }
+
     // Pre-allocated objects for zero allocations in onDraw
     private val identityMatrix = Matrix()
     private val paperPaint = Paint().apply {
@@ -94,10 +110,30 @@ class DryInkCanvasView @JvmOverloads constructor(
             strokeRenderer.draw(canvas, stroke, identityMatrix)
         }
 
+        // Draw search match highlights
+        if (searchHighlights.isNotEmpty()) {
+            for (i in 0 until searchHighlights.size) {
+                val rect = searchHighlights[i]
+                canvas.drawRoundRect(rect, 8f, 8f, searchHighlightFillPaint)
+                canvas.drawRoundRect(rect, 8f, 8f, searchHighlightStrokePaint)
+            }
+        }
+
         // Draw lasso selection overlay if active
         lassoTool?.draw(canvas)
 
         canvas.restore()
+    }
+
+    fun setSearchHighlights(highlights: List<RectF>) {
+        searchHighlights.clear()
+        searchHighlights.addAll(highlights)
+        invalidate()
+    }
+
+    fun clearSearchHighlights() {
+        searchHighlights.clear()
+        invalidate()
     }
 
     fun setPaperTemplate(template: PaperTemplate) {
@@ -197,9 +233,29 @@ class DryInkCanvasView @JvmOverloads constructor(
                     worldY >= bounds.yMin - eraseRadius &&
                     worldY <= bounds.yMax + eraseRadius
                 ) {
-                    // Stroke hit
-                    removed.add(stroke)
-                    iterator.remove()
+                    // Check if stroke is small or if eraser is near any sampled point
+                    val boxW = bounds.xMax - bounds.xMin
+                    val boxH = bounds.yMax - bounds.yMin
+                    var hit = (boxW <= eraseRadius * 2.5f && boxH <= eraseRadius * 2.5f)
+
+                    if (!hit) {
+                        val inputs = stroke.inputs
+                        val step = (inputs.size / 40).coerceAtLeast(1)
+                        for (i in 0 until inputs.size step step) {
+                            val pt = inputs.get(i)
+                            val dx = pt.x - worldX
+                            val dy = pt.y - worldY
+                            if (dx * dx + dy * dy <= eraseRadiusSq) {
+                                hit = true
+                                break
+                            }
+                        }
+                    }
+
+                    if (hit) {
+                        removed.add(stroke)
+                        iterator.remove()
+                    }
                 }
             }
         }

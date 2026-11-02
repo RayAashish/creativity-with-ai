@@ -66,6 +66,7 @@ fun LibrarySidebarDrawer(
     onPageSelected: (notebookId: String, pageId: String) -> Unit,
     onOpenQuickSwitcher: () -> Unit,
     onCloseSidebar: () -> Unit,
+    onOpenReviewToday: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Track expanded folders & notebooks
@@ -148,7 +149,7 @@ fun LibrarySidebarDrawer(
                 FilterChip(
                     selected = activeFilter == "review",
                     onClick = {
-                        activeFilter = if (activeFilter == "review") null else "review"
+                        onOpenReviewToday()
                     },
                     label = {
                         Row(

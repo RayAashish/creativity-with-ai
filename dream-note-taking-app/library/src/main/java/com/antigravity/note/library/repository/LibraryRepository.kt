@@ -119,6 +119,20 @@ class LibraryRepository(
         // Check if already seeded
         val existingNotebooks = notebookDao.getAllNotebooks().first()
         if (existingNotebooks.isNotEmpty()) {
+            // Ensure at least one problem is scheduled for review today so Spaced Repetition can be experienced
+            val due = pageDao.getDueReviewPages(System.currentTimeMillis()).first()
+            if (due.isEmpty()) {
+                val allPages = pageDao.getPagesForNotebook(existingNotebooks.first().notebookId).first()
+                val targetPage = allPages.firstOrNull { it.isProblemPage }
+                if (targetPage != null) {
+                    val updated = targetPage.copy(
+                        problemStatus = "Revisit",
+                        revisitIntervalDays = 1,
+                        nextReviewTimestamp = System.currentTimeMillis() - 1000L
+                    )
+                    pageDao.updatePage(updated)
+                }
+            }
             return@withContext existingNotebooks.first().notebookId
         }
 
@@ -232,5 +246,23 @@ fun threeSum(nums: IntArray): List<List<Int>> {
         pageDao.updatePage(q2.copy(problemStatus = "Revisit"))
 
         twoPointersNotebook.notebookId
+    }
+
+    suspend fun schedulePageReview(pageId: String, intervalDays: Int) = withContext(ioDispatcher) {
+        val page = pageDao.getPageById(pageId) ?: return@withContext
+        val newStatus = when {
+            intervalDays >= 21 -> "Mastered"
+            intervalDays >= 7 -> "Solved"
+            intervalDays >= 3 -> "Revisit"
+            else -> "Revisit"
+        }
+        val nextReview = System.currentTimeMillis() + (intervalDays * 86400000L)
+        val updated = page.copy(
+            revisitIntervalDays = intervalDays,
+            nextReviewTimestamp = nextReview,
+            problemStatus = newStatus,
+            modifiedAt = System.currentTimeMillis()
+        )
+        pageDao.updatePage(updated)
     }
 }

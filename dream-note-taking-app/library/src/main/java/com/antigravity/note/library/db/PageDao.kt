@@ -22,7 +22,7 @@ interface PageDao {
     @Query("SELECT * FROM pages WHERE isProblemPage = 1 AND difficulty = :difficulty ORDER BY modifiedAt DESC")
     fun getProblemPagesByDifficulty(difficulty: String): Flow<List<PageEntity>>
 
-    @Query("SELECT * FROM pages WHERE isProblemPage = 1 AND nextReviewTimestamp > 0 AND nextReviewTimestamp <= :currentTimestamp ORDER BY nextReviewTimestamp ASC")
+    @Query("SELECT * FROM pages WHERE isProblemPage = 1 AND (problemStatus = 'Revisit' OR (nextReviewTimestamp > 0 AND nextReviewTimestamp <= :currentTimestamp)) ORDER BY nextReviewTimestamp ASC")
     fun getDueReviewPages(currentTimestamp: Long): Flow<List<PageEntity>>
 
     @Query("SELECT * FROM pages WHERE title LIKE '%' || :query || '%' OR tags LIKE '%' || :query || '%' OR approachSummary LIKE '%' || :query || '%' ORDER BY modifiedAt DESC")

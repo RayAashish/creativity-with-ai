@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.PointF
 import android.graphics.RectF
@@ -29,6 +30,7 @@ import com.antigravity.note.inkengine.lasso.LassoTool
 import com.antigravity.note.inkengine.palm.PalmRejectionConfig
 import com.antigravity.note.inkengine.palm.PalmRejectionFilter
 import com.antigravity.note.inkengine.palm.PointerStatus
+import com.antigravity.note.inkengine.ml.DigitalInkManager
 import com.antigravity.note.inkengine.pdf.PdfTiler
 import com.antigravity.note.inkengine.shape.RecognizedShape
 import com.antigravity.note.inkengine.shape.ShapeRecognizer
@@ -59,6 +61,7 @@ class InkCanvasView @JvmOverloads constructor(
     val palmFilter = PalmRejectionFilter()
 
     private val predictor = MotionEventPredictor.newInstance(this)
+    private val identityMatrix = Matrix()
 
     // Active tool & brush properties
     var currentTool: CanvasTool = CanvasTool.PRESSURE_PEN
@@ -77,6 +80,9 @@ class InkCanvasView @JvmOverloads constructor(
     val shapeRecognizer = ShapeRecognizer()
     var holdToSnapEnabled = true
     val pdfTiler = PdfTiler()
+
+    // Phase 5: On-Device ML Kit Digital Ink Recognition
+    val digitalInkManager = DigitalInkManager()
 
     private val strokePoints = mutableListOf<ShapeRecognizer.Point>()
     private var lastMoveTime = 0L
@@ -165,6 +171,9 @@ class InkCanvasView @JvmOverloads constructor(
                     for (stroke in finishedList) {
                         onStrokeCommitted?.invoke(stroke)
                     }
+                    post {
+                        inProgressStrokesView.removeFinishedStrokes(strokes.keys)
+                    }
                 }
             }
         })
@@ -176,6 +185,9 @@ class InkCanvasView @JvmOverloads constructor(
     fun loadPage(page: DocumentPage, openLatencyMs: Long = 0L) {
         pageOpenLatencyMs = openLatencyMs
         pageTitle = page.metadata.title
+        activeStrokeIds.clear()
+        inProgressStrokesView.cancelUnfinishedStrokes()
+        inProgressStrokesView.removeFinishedStrokes(inProgressStrokesView.getFinishedStrokes().keys)
         dryInkView.loadStrokes(page.strokes)
         dryInkView.setPaperTemplate(page.metadata.template)
         undoStack.clear()
@@ -274,6 +286,8 @@ class InkCanvasView @JvmOverloads constructor(
         val action = event.actionMasked
         val isEraser = isHardwareEraser || currentTool == CanvasTool.STROKE_ERASER ||
                 (event.buttonState and MotionEvent.BUTTON_STYLUS_PRIMARY) != 0 ||
+                (event.buttonState and MotionEvent.BUTTON_STYLUS_SECONDARY) != 0 ||
+                (event.buttonState and MotionEvent.BUTTON_SECONDARY) != 0 ||
                 (event.buttonState and MotionEvent.BUTTON_TERTIARY) != 0
 
         val screenX = event.getX(pointerIndex)
@@ -282,13 +296,17 @@ class InkCanvasView @JvmOverloads constructor(
         if (isEraser) {
             // Eraser mode: Erase dry strokes intersecting current world point
             dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
-            val eraseRadius = (strokeWidth * 4f).coerceAtLeast(24f)
+            val currentScale = dryInkView.transform.scale.coerceAtLeast(0.1f)
+            val eraseRadius = (strokeWidth * 4f / currentScale).coerceAtLeast(36f / currentScale)
             val removed = dryInkView.eraseStrokesAt(tempPoint.x, tempPoint.y, eraseRadius)
             if (removed.isNotEmpty()) {
                 val actionRecord = StrokeAction(removedStrokes = removed)
                 undoStack.add(actionRecord)
                 redoStack.clear()
                 notifyUndoRedoState()
+                for (r in removed) {
+                    onUndoCommitted?.invoke(r)
+                }
             }
             return
         }
@@ -329,8 +347,8 @@ class InkCanvasView @JvmOverloads constructor(
                     event,
                     pointerId,
                     activeBrush,
-                    dryInkView.transform.worldToScreenMatrix,
-                    dryInkView.transform.screenToWorldMatrix
+                    dryInkView.transform.screenToWorldMatrix,
+                    identityMatrix
                 )
                 activeStrokeIds[pointerId] = strokeId
             }
@@ -469,6 +487,8 @@ class InkCanvasView @JvmOverloads constructor(
     }
 
     fun clearCanvas() {
+        inProgressStrokesView.cancelUnfinishedStrokes()
+        inProgressStrokesView.removeFinishedStrokes(inProgressStrokesView.getFinishedStrokes().keys)
         if (dryInkView.strokes.isNotEmpty()) {
             val action = StrokeAction(removedStrokes = dryInkView.strokes.toList())
             dryInkView.clearAllStrokes()
@@ -477,6 +497,7 @@ class InkCanvasView @JvmOverloads constructor(
             notifyUndoRedoState()
             onClearCommitted?.invoke()
         }
+        dryInkView.invalidate()
     }
 
     fun resetZoom() {
@@ -543,6 +564,61 @@ class InkCanvasView @JvmOverloads constructor(
     fun closePdf() {
         pdfTiler.close()
         dryInkView.invalidate()
+    }
+
+    // Phase 5 ML Kit Handwriting Recognition & Search
+    suspend fun convertLassoSelectionToText(): String? {
+        val selected = lassoTool.selectedStrokes.toList()
+        if (selected.isEmpty()) return null
+        if (!digitalInkManager.isModelDownloaded()) {
+            val ok = digitalInkManager.downloadModelIfNeeded()
+            if (!ok) return null
+        }
+        val candidates = digitalInkManager.recognizeStrokes(selected)
+        return candidates.firstOrNull()
+    }
+
+    suspend fun searchHandwriting(query: String): List<RectF> {
+        if (query.isBlank() || dryInkView.strokes.isEmpty()) {
+            dryInkView.clearSearchHighlights()
+            return emptyList()
+        }
+        if (!digitalInkManager.isModelDownloaded()) {
+            val ok = digitalInkManager.downloadModelIfNeeded()
+            if (!ok) return emptyList()
+        }
+
+        val matchedBounds = mutableListOf<RectF>()
+        val blockSize = 15
+        val strokeChunks = dryInkView.strokes.chunked(blockSize)
+
+        for (chunk in strokeChunks) {
+            val candidates = digitalInkManager.recognizeStrokes(chunk)
+            val matched = candidates.any { it.contains(query, ignoreCase = true) }
+            if (matched) {
+                var minX = Float.MAX_VALUE
+                var maxX = -Float.MAX_VALUE
+                var minY = Float.MAX_VALUE
+                var maxY = -Float.MAX_VALUE
+                for (s in chunk) {
+                    val box = s.shape.computeBoundingBox() ?: continue
+                    if (box.xMin < minX) minX = box.xMin
+                    if (box.xMax > maxX) maxX = box.xMax
+                    if (box.yMin < minY) minY = box.yMin
+                    if (box.yMax > maxY) maxY = box.yMax
+                }
+                if (minX < maxX && minY < maxY) {
+                    matchedBounds.add(RectF(minX - 8f, minY - 8f, maxX + 8f, maxY + 8f))
+                }
+            }
+        }
+
+        dryInkView.setSearchHighlights(matchedBounds)
+        return matchedBounds
+    }
+
+    fun clearSearchHighlights() {
+        dryInkView.clearSearchHighlights()
     }
 
     private fun notifyUndoRedoState() {

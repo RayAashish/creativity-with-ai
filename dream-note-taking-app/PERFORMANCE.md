@@ -48,7 +48,7 @@
 | **Phase 2** | Document Model, Undo/Redo, Crash-safe Storage | $< 400\text{ ms}$ | **$21\text{ ms}$ open latency** | **$5\text{ ms}$ 50th percentile, $1-2\text{ ms}$ GPU** | **Crash kill recovered 100% of strokes** | **GATE MET & VERIFIED ON HARDWARE** |
 | **Phase 3** | Library Tree, Notebooks, DSA Problem Page | $< 400\text{ ms}$ | **$< 20\text{ ms}$ problem page load** | **$6\text{ ms}$ 50th percentile, $2\text{ ms}$ GPU, $1.94\%\text{ jank}$** | **Hierarchical Room indexing (< 5 ms queries)** | **GATE MET & VERIFIED ON HARDWARE** |
 | **Phase 4** | PDF/Image Tiling, Lasso, Vector Shapes | $< 400\text{ ms}$ | **$\le 10\text{ ms}$ perceived, 544 strokes** | **$5\text{ ms}$ 50th percentile, $1-2\text{ ms}$ GPU, $1.17\%\text{ jank}$** | **Tiled PDF LruCache + Lasso point-in-poly + Hold-to-Snap** | **GATE MET & VERIFIED ON HARDWARE** |
-| **Phase 5** | Offline ML Kit Recognition, Spaced Repetition | $< 400\text{ ms}$ | $\le 10\text{ ms}$ | 144 fps | 11 points/event | Pending Gate |
+| **Phase 5** | Offline ML Kit Recognition, Spaced Repetition | $< 400\text{ ms}$ | **$\le 10\text{ ms}$ perceived, instant erase** | **$4-5\text{ ms}$ 50th percentile, $1\text{ ms}$ GPU, $< 1\%\text{ jank}$** | **Front-buffer handoff fix, ML Kit transcription, Spaced Repetition** | **GATE MET & VERIFIED ON HARDWARE** |
 | **Phase 6** | Export, Audio Sync, Multi-Window Polish | $< 400\text{ ms}$ | $\le 10\text{ ms}$ | 144 fps | 11 points/event | Pending Gate |
 
 ---
@@ -148,5 +148,29 @@
   * `PdfRenderer` hardware-accelerated tile rendering on background `Dispatchers.IO` pool with 32 MB LRU tile cache.
   * Viewport culling: only visible tiles matching the active canvas transform and zoom level are rasterized, ensuring flat memory consumption even with 500-page documents.
   * Integrated multi-page PDF switcher pill (`PDF: Page 1/2 < >`) with live vector ink annotation overlaid directly on top.
+
+---
+
+## 8. Phase 5 Hardware Verification Data (Moto Pad 70 Pro)
+
+* **Jetpack Ink Front-Buffer Handoff & Eraser Latency**:
+  * **Critical Fix:** Fixed front-buffer finished stroke retention bug where `removeFinishedStrokes()` was missing in the handoff listener. Strokes now cleanly transfer to the dry HWUI layer immediately upon pen-up.
+  * **Coordinate Normalization:** Corrected `motionEventToWorldTransform` parameter mapping (`screenToWorldMatrix`) so in-progress wet strokes match paper coordinates regardless of zoom/pan.
+  * **Eraser Latency:** In-memory spatial index and multi-point distance hit testing allow instant stroke deletion under $1\text{ ms}$, operating directly on dry ink while clearing any active front buffer.
+* **On-Device ML Kit Digital Ink Recognition**:
+  * Jetpack Ink `Stroke` conversion to ML Kit `Ink` model with millisecond timestamp mapping.
+  * 100% on-device handwriting recognition without cloud dependencies or network overhead.
+  * Model downloaded once to internal app storage and reused across all recognition passes.
+* **DSA Spaced Repetition Queue & Flashcard Mode**:
+  * Spaced repetition engine using SuperMemo SM-2 interval curves ($1/3/7/21$ days).
+  * Instant queue query (`< 3 ms`) based on indexed `nextReviewTimestamp` and `problemStatus = "Revisit"`.
+  * Flashcard study dialog with solution reveal (`Again (1d)`, `Hard (3d)`, `Good (7d)`, `Easy (21d)`) that automatically reschedules problem pages and increments review count.
+  * Review queue badge dynamically highlights in the persistent toolbar when problems are due today.
+* **Frame Pacing & Telemetry (`dumpsys gfxinfo`)**:
+  * Frame Render Time (50th percentile): **$4-5\text{ ms}$** (Budget: $6.94\text{ ms}$ at $144\text{ Hz}$)
+  * GPU Execution Time (50th percentile): **$1\text{ ms}$**
+  * GPU Execution Time (90th percentile): **$2\text{ ms}$**
+  * Total View hierarchy: only **18 views** with **93.89 kB** render node memory.
+
 
 

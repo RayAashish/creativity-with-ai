@@ -42,10 +42,19 @@ import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.TextFields
+import android.widget.Toast
+import com.antigravity.note.ui.library.ReviewTodayDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Card
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -70,6 +79,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -134,6 +144,10 @@ fun InkCanvasScreen(
     var isPdfLoaded by remember { mutableStateOf(false) }
     var currentPdfPage by remember { androidx.compose.runtime.mutableIntStateOf(0) }
 
+    // Phase 5 State
+    var isReviewTodayOpen by remember { mutableStateOf(false) }
+    var recognizedTextResult by remember { mutableStateOf<String?>(null) }
+
     // Match current page with Library DB for DSA metadata
     val currentProblemPage = remember(currentPage, allPages) {
         val pId = currentPage?.metadata?.pageId
@@ -148,6 +162,9 @@ fun InkCanvasScreen(
             if (page != null) {
                 canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
             }
+        }
+        if (!canvasView.digitalInkManager.isModelDownloaded()) {
+            canvasView.digitalInkManager.downloadModelIfNeeded()
         }
     }
 
@@ -203,237 +220,263 @@ fun InkCanvasScreen(
                 shape = RoundedCornerShape(20.dp)
             ) {
                 Row(
-                    modifier = Modifier
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Sidebar Toggle Button
-                    IconButton(onClick = { isSidebarOpen = !isSidebarOpen }) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "DSA Tree Explorer",
-                            tint = if (isSidebarOpen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    // Quick Switcher Button
-                    IconButton(onClick = { isQuickSwitcherOpen = true }) {
-                        Icon(Icons.Default.Search, contentDescription = "Quick Switcher (Ctrl+K)")
-                    }
-
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Box(
-                        modifier = Modifier
-                            .height(28.dp)
-                            .width(1.dp)
-                            .background(MaterialTheme.colorScheme.outlineVariant)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    // Tool selection: Pen, Marker, Highlighter, Eraser
-                    ToolIconButton(
-                        icon = Icons.Default.Edit,
-                        label = "Pen",
-                        isSelected = selectedTool == CanvasTool.PRESSURE_PEN,
-                        onClick = {
-                            selectedTool = CanvasTool.PRESSURE_PEN
-                            canvasView.setTool(CanvasTool.PRESSURE_PEN)
+                    // Pinned Left: Navigation & DSA Utilities (Always visible!)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        // Sidebar Toggle Button
+                        IconButton(onClick = { isSidebarOpen = !isSidebarOpen }) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "DSA Tree Explorer",
+                                tint = if (isSidebarOpen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            )
                         }
-                    )
-                    ToolIconButton(
-                        icon = Icons.Default.Brush,
-                        label = "Marker",
-                        isSelected = selectedTool == CanvasTool.MARKER,
-                        onClick = {
-                            selectedTool = CanvasTool.MARKER
-                            canvasView.setTool(CanvasTool.MARKER)
-                        }
-                    )
-                    ToolIconButton(
-                        icon = Icons.Default.FormatPaint,
-                        label = "Highlighter",
-                        isSelected = selectedTool == CanvasTool.HIGHLIGHTER,
-                        onClick = {
-                            selectedTool = CanvasTool.HIGHLIGHTER
-                            canvasView.setTool(CanvasTool.HIGHLIGHTER)
-                        }
-                    )
-                    ToolIconButton(
-                        icon = Icons.Default.AutoFixHigh,
-                        label = "Eraser",
-                        isSelected = selectedTool == CanvasTool.STROKE_ERASER,
-                        onClick = {
-                            selectedTool = CanvasTool.STROKE_ERASER
-                            canvasView.setTool(CanvasTool.STROKE_ERASER)
-                        }
-                    )
-                    ToolIconButton(
-                        icon = Icons.Default.SelectAll,
-                        label = "Lasso",
-                        isSelected = selectedTool == CanvasTool.LASSO,
-                        onClick = {
-                            selectedTool = CanvasTool.LASSO
-                            canvasView.setTool(CanvasTool.LASSO)
-                        }
-                    )
-                    ToolIconButton(
-                        icon = Icons.Default.Category,
-                        label = "Shapes",
-                        isSelected = isShapeSnapOn,
-                        onClick = {
-                            isShapeSnapOn = !isShapeSnapOn
-                            canvasView.holdToSnapEnabled = isShapeSnapOn
-                        }
-                    )
-                    ToolIconButton(
-                        icon = Icons.Default.PictureAsPdf,
-                        label = if (isPdfLoaded) "PDF On" else "PDF",
-                        isSelected = isPdfLoaded,
-                        onClick = {
-                            if (isPdfLoaded) {
-                                canvasView.closePdf()
-                                isPdfLoaded = false
-                            } else {
-                                val pdfFile = getOrCreateSamplePdf(context)
-                                canvasView.loadPdf(pdfFile)
-                                isPdfLoaded = true
-                            }
-                        }
-                    )
 
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .height(28.dp)
-                            .width(1.dp)
-                            .background(MaterialTheme.colorScheme.outlineVariant)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
+                        // Quick Switcher Button
+                        IconButton(onClick = { isQuickSwitcherOpen = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Quick Switcher (Ctrl+K)")
+                        }
 
-                    // Color Palette
-                    palette.forEach { color ->
-                        val isSelected = selectedColor == color
-                        Box(
-                            modifier = Modifier
-                                .size(26.dp)
-                                .clip(CircleShape)
-                                .background(color)
-                                .border(
-                                    width = if (isSelected) 3.dp else 1.dp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray,
-                                    shape = CircleShape
-                                )
-                                .clickable {
-                                    selectedColor = color
-                                    val intColor = AndroidColor.argb(
-                                        (color.alpha * 255).toInt(),
-                                        (color.red * 255).toInt(),
-                                        (color.green * 255).toInt(),
-                                        (color.blue * 255).toInt()
-                                    )
-                                    canvasView.setInkColor(intColor)
-                                }
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .height(28.dp)
-                            .width(1.dp)
-                            .background(MaterialTheme.colorScheme.outlineVariant)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Stroke Widths
-                    listOf(3f to "Fine", 6f to "Med", 14f to "Bold").forEach { (width, label) ->
-                        val isSelected = selectedWidth == width
-                        Surface(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable {
-                                    selectedWidth = width
-                                    canvasView.setInkWidth(width)
-                                },
-                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-                        ) {
-                            Text(
-                                text = label,
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                        // Spaced Repetition Review Queue Button
+                        IconButton(onClick = { isReviewTodayOpen = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = "Review Today",
+                                tint = if (duePages.isNotEmpty()) Color(0xFFE65100) else MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Box(
                         modifier = Modifier
                             .height(28.dp)
                             .width(1.dp)
                             .background(MaterialTheme.colorScheme.outlineVariant)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
 
-                    // Undo / Redo
-                    IconButton(
-                        onClick = { canvasView.undo() },
-                        enabled = canUndo
+                    // Scrollable Center: Tools, Palette, Widths
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .horizontalScroll(rememberScrollState()),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Undo,
-                            contentDescription = "Undo",
-                            tint = if (canUndo) MaterialTheme.colorScheme.onSurface else Color.LightGray
+                        // Tool selection: Pen, Marker, Highlighter, Eraser, Lasso, Shapes, PDF
+                        ToolIconButton(
+                            icon = Icons.Default.Edit,
+                            label = "Pen",
+                            isSelected = selectedTool == CanvasTool.PRESSURE_PEN,
+                            onClick = {
+                                selectedTool = CanvasTool.PRESSURE_PEN
+                                canvasView.setTool(CanvasTool.PRESSURE_PEN)
+                            }
                         )
-                    }
-                    IconButton(
-                        onClick = { canvasView.redo() },
-                        enabled = canRedo
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Redo,
-                            contentDescription = "Redo",
-                            tint = if (canRedo) MaterialTheme.colorScheme.onSurface else Color.LightGray
+                        ToolIconButton(
+                            icon = Icons.Default.Brush,
+                            label = "Marker",
+                            isSelected = selectedTool == CanvasTool.MARKER,
+                            onClick = {
+                                selectedTool = CanvasTool.MARKER
+                                canvasView.setTool(CanvasTool.MARKER)
+                            }
                         )
-                    }
+                        ToolIconButton(
+                            icon = Icons.Default.FormatPaint,
+                            label = "Highlighter",
+                            isSelected = selectedTool == CanvasTool.HIGHLIGHTER,
+                            onClick = {
+                                selectedTool = CanvasTool.HIGHLIGHTER
+                                canvasView.setTool(CanvasTool.HIGHLIGHTER)
+                            }
+                        )
+                        ToolIconButton(
+                            icon = Icons.Default.AutoFixHigh,
+                            label = "Eraser",
+                            isSelected = selectedTool == CanvasTool.STROKE_ERASER,
+                            onClick = {
+                                selectedTool = CanvasTool.STROKE_ERASER
+                                canvasView.setTool(CanvasTool.STROKE_ERASER)
+                            }
+                        )
+                        ToolIconButton(
+                            icon = Icons.Default.SelectAll,
+                            label = "Lasso",
+                            isSelected = selectedTool == CanvasTool.LASSO,
+                            onClick = {
+                                selectedTool = CanvasTool.LASSO
+                                canvasView.setTool(CanvasTool.LASSO)
+                            }
+                        )
+                        ToolIconButton(
+                            icon = Icons.Default.Category,
+                            label = "Shapes",
+                            isSelected = isShapeSnapOn,
+                            onClick = {
+                                isShapeSnapOn = !isShapeSnapOn
+                                canvasView.holdToSnapEnabled = isShapeSnapOn
+                            }
+                        )
+                        ToolIconButton(
+                            icon = Icons.Default.PictureAsPdf,
+                            label = if (isPdfLoaded) "PDF On" else "PDF",
+                            isSelected = isPdfLoaded,
+                            onClick = {
+                                if (isPdfLoaded) {
+                                    canvasView.closePdf()
+                                    isPdfLoaded = false
+                                } else {
+                                    val pdfFile = getOrCreateSamplePdf(context)
+                                    canvasView.loadPdf(pdfFile)
+                                    isPdfLoaded = true
+                                }
+                            }
+                        )
 
-                    // Paper Template Picker Button
-                    Box {
-                        IconButton(onClick = { showTemplateMenu = true }) {
-                            Icon(Icons.Default.GridOn, contentDescription = "Paper Template")
-                        }
-                        DropdownMenu(
-                            expanded = showTemplateMenu,
-                            onDismissRequest = { showTemplateMenu = false }
-                        ) {
-                            PaperTemplate.entries.forEach { template ->
-                                DropdownMenuItem(
-                                    text = { Text(template.displayName) },
-                                    onClick = {
-                                        showTemplateMenu = false
-                                        docManager.setPaperTemplate(template)
-                                        canvasView.setPaperTemplate(template)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .height(28.dp)
+                                .width(1.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+
+                        // Color Palette
+                        palette.forEach { color ->
+                            val isSelected = selectedColor == color
+                            Box(
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .clip(CircleShape)
+                                    .background(color)
+                                    .border(
+                                        width = if (isSelected) 3.dp else 1.dp,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray,
+                                        shape = CircleShape
+                                    )
+                                    .clickable {
+                                        selectedColor = color
+                                        val intColor = AndroidColor.argb(
+                                            (color.alpha * 255).toInt(),
+                                            (color.red * 255).toInt(),
+                                            (color.green * 255).toInt(),
+                                            (color.blue * 255).toInt()
+                                        )
+                                        canvasView.setInkColor(intColor)
                                     }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .height(28.dp)
+                                .width(1.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+
+                        // Stroke Widths
+                        listOf(3f to "Fine", 6f to "Med", 14f to "Bold").forEach { (width, label) ->
+                            val isSelected = selectedWidth == width
+                            Surface(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        selectedWidth = width
+                                        canvasView.setInkWidth(width)
+                                    },
+                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
                                 )
                             }
                         }
                     }
 
-                    // Reset Zoom
-                    IconButton(onClick = { canvasView.resetZoom() }) {
-                        Icon(Icons.Default.FitScreen, contentDescription = "Reset Zoom")
-                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .height(28.dp)
+                            .width(1.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
 
-                    // Clear
-                    IconButton(onClick = { canvasView.clearCanvas() }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Clear Canvas", tint = Color(0xFFBA1A1A))
-                    }
+                    // Pinned Right: Undo, Redo, Templates, Fullscreen, Clear, Probe (Always visible!)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        IconButton(
+                            onClick = { canvasView.undo() },
+                            enabled = canUndo
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Undo,
+                                contentDescription = "Undo",
+                                tint = if (canUndo) MaterialTheme.colorScheme.onSurface else Color.LightGray
+                            )
+                        }
+                        IconButton(
+                            onClick = { canvasView.redo() },
+                            enabled = canRedo
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Redo,
+                                contentDescription = "Redo",
+                                tint = if (canRedo) MaterialTheme.colorScheme.onSurface else Color.LightGray
+                            )
+                        }
 
-                    // Probe mode button
-                    IconButton(onClick = onNavigateToProbe) {
-                        Icon(Icons.Default.Speed, contentDescription = "Hardware Probe", tint = MaterialTheme.colorScheme.primary)
+                        // Paper Template Picker Button
+                        Box {
+                            IconButton(onClick = { showTemplateMenu = true }) {
+                                Icon(Icons.Default.GridOn, contentDescription = "Paper Template")
+                            }
+                            DropdownMenu(
+                                expanded = showTemplateMenu,
+                                onDismissRequest = { showTemplateMenu = false }
+                            ) {
+                                PaperTemplate.entries.forEach { template ->
+                                    DropdownMenuItem(
+                                        text = { Text(template.displayName) },
+                                        onClick = {
+                                            showTemplateMenu = false
+                                            docManager.setPaperTemplate(template)
+                                            canvasView.setPaperTemplate(template)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        // Reset Zoom
+                        IconButton(onClick = { canvasView.resetZoom() }) {
+                            Icon(Icons.Default.FitScreen, contentDescription = "Reset Zoom")
+                        }
+
+                        // Clear Canvas
+                        IconButton(onClick = { canvasView.clearCanvas() }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Clear Canvas", tint = Color(0xFFBA1A1A))
+                        }
+
+                        // Probe mode button
+                        IconButton(onClick = onNavigateToProbe) {
+                            Icon(Icons.Default.Speed, contentDescription = "Hardware Probe", tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 }
             }
@@ -444,7 +487,13 @@ fun InkCanvasScreen(
                     problemPage = currentProblemPage,
                     onStatusChanged = { newStatus ->
                         scope.launch {
-                            libraryRepo.updatePage(currentProblemPage.copy(problemStatus = newStatus))
+                            val nextReview = when (newStatus) {
+                                "Revisit" -> System.currentTimeMillis() - 1000L
+                                "Solved" -> System.currentTimeMillis() + (7L * 86400000L)
+                                "Mastered" -> System.currentTimeMillis() + (21L * 86400000L)
+                                else -> 0L
+                            }
+                            libraryRepo.updatePage(currentProblemPage.copy(problemStatus = newStatus, nextReviewTimestamp = nextReview))
                         }
                     }
                 )
@@ -607,6 +656,10 @@ fun InkCanvasScreen(
                 onOpenQuickSwitcher = {
                     isQuickSwitcherOpen = true
                 },
+                onOpenReviewToday = {
+                    isReviewTodayOpen = true
+                    isSidebarOpen = false
+                },
                 onCloseSidebar = {
                     isSidebarOpen = false
                 }
@@ -638,6 +691,23 @@ fun InkCanvasScreen(
                     // Duplicate
                     IconButton(onClick = { canvasView.duplicateLassoSelection() }) {
                         Icon(Icons.Default.ContentCopy, contentDescription = "Duplicate", modifier = Modifier.size(20.dp))
+                    }
+
+                    // Convert to Typed Text via On-Device ML Kit
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                val text = canvasView.convertLassoSelectionToText()
+                                if (!text.isNullOrBlank()) {
+                                    recognizedTextResult = text
+                                    Toast.makeText(context, "Transcribed: \"$text\"", Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, "No text recognized in selection", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Default.TextFields, contentDescription = "Convert to Text", modifier = Modifier.size(20.dp))
                     }
 
                     // Recolor quick dots
@@ -724,6 +794,64 @@ fun InkCanvasScreen(
                     }
                 }
             }
+        }
+
+        // Spaced Repetition Review Queue Dialog (DSA Dream Core)
+        if (isReviewTodayOpen) {
+            ReviewTodayDialog(
+                duePages = duePages,
+                onOpenPage = { nbId, pId ->
+                    docManager.switchToPage(pId) { page ->
+                        canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                    }
+                },
+                onScheduleReview = { pageId, days ->
+                    scope.launch {
+                        libraryRepo.schedulePageReview(pageId, days)
+                    }
+                },
+                onDismissRequest = { isReviewTodayOpen = false }
+            )
+        }
+
+        // Recognized Handwriting Transcription Dialog (On-Device ML Kit)
+        recognizedTextResult?.let { text ->
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { recognizedTextResult = null },
+                title = { Text("Transcribed Text (ML Kit)") },
+                text = {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = text,
+                            fontSize = 16.sp,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.padding(14.dp)
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            val clip = android.content.ClipData.newPlainText("Handwriting", text)
+                            clipboard.setPrimaryClip(clip)
+                            Toast.makeText(context, "Copied to clipboard!", Toast.LENGTH_SHORT).show()
+                            recognizedTextResult = null
+                        }
+                    ) {
+                        Text("Copy to Clipboard")
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = { recognizedTextResult = null }) {
+                        Text("Dismiss")
+                    }
+                }
+            )
         }
 
         // Quick Switcher Dialog (Ctrl+K Command Palette)
@@ -817,14 +945,14 @@ private fun ToolIconButton(
 ) {
     Surface(
         modifier = Modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick),
         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(3.dp)
         ) {
             Icon(
                 imageVector = icon,

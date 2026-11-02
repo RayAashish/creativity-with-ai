@@ -45,6 +45,7 @@ dependencies {
     implementation(libs.androidx.graphics.core)
     implementation(libs.androidx.input.motionprediction)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.mlkit.digital.ink)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockito.core)
