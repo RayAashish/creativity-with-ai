@@ -9,6 +9,7 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.os.SystemClock
 import android.util.AttributeSet
+import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -23,16 +24,23 @@ import androidx.ink.strokes.Stroke
 import androidx.input.motionprediction.MotionEventPredictor
 import com.antigravity.note.document.model.DocumentPage
 import com.antigravity.note.document.model.PaperTemplate
+import com.antigravity.note.inkengine.lasso.LassoMode
+import com.antigravity.note.inkengine.lasso.LassoTool
 import com.antigravity.note.inkengine.palm.PalmRejectionConfig
 import com.antigravity.note.inkengine.palm.PalmRejectionFilter
 import com.antigravity.note.inkengine.palm.PointerStatus
+import com.antigravity.note.inkengine.pdf.PdfTiler
+import com.antigravity.note.inkengine.shape.RecognizedShape
+import com.antigravity.note.inkengine.shape.ShapeRecognizer
+import java.io.File
 import kotlin.math.hypot
 
 enum class CanvasTool {
     PRESSURE_PEN,
     MARKER,
     HIGHLIGHTER,
-    STROKE_ERASER
+    STROKE_ERASER,
+    LASSO
 }
 
 data class StrokeAction(
@@ -63,6 +71,19 @@ class InkCanvasView @JvmOverloads constructor(
     // Undo / Redo Command Stack
     private val undoStack = mutableListOf<StrokeAction>()
     private val redoStack = mutableListOf<StrokeAction>()
+
+    // Phase 4: Lasso Tool & Shape Recognition
+    val lassoTool = LassoTool()
+    val shapeRecognizer = ShapeRecognizer()
+    var holdToSnapEnabled = true
+    val pdfTiler = PdfTiler()
+
+    private val strokePoints = mutableListOf<ShapeRecognizer.Point>()
+    private var lastMoveTime = 0L
+    private var lastMoveX = 0f
+    private var lastMoveY = 0f
+
+    var onLassoSelectionChanged: ((hasSelection: Boolean) -> Unit)? = null
 
     // Gesture tracking for 2-finger pan & pinch-zoom
     private var isGestureActive = false
@@ -127,6 +148,10 @@ class InkCanvasView @JvmOverloads constructor(
         // Low-latency front-buffered initialization
         inProgressStrokesView.eagerInit()
 
+        // Wire Phase 4 Lasso & PDF background
+        dryInkView.lassoTool = lassoTool
+        dryInkView.pdfTiler = pdfTiler
+
         // Commit finished wet ink into dry ink view
         inProgressStrokesView.addFinishedStrokesListener(object : InProgressStrokesFinishedListener {
             override fun onStrokesFinished(strokes: Map<InProgressStrokeId, Stroke>) {
@@ -165,6 +190,11 @@ class InkCanvasView @JvmOverloads constructor(
     }
 
     fun setTool(tool: CanvasTool) {
+        if (currentTool == CanvasTool.LASSO && tool != CanvasTool.LASSO) {
+            lassoTool.clearSelection()
+            dryInkView.invalidate()
+            onLassoSelectionChanged?.invoke(false)
+        }
         currentTool = tool
         activeBrush = createBrushForTool(tool, strokeColor, strokeWidth)
     }
@@ -184,7 +214,7 @@ class InkCanvasView @JvmOverloads constructor(
             CanvasTool.PRESSURE_PEN -> StockBrushes.pressurePen()
             CanvasTool.MARKER -> StockBrushes.marker()
             CanvasTool.HIGHLIGHTER -> StockBrushes.highlighter()
-            CanvasTool.STROKE_ERASER -> StockBrushes.marker()
+            CanvasTool.STROKE_ERASER, CanvasTool.LASSO -> StockBrushes.marker()
         }
         return Brush.createWithColorIntArgb(family, color, size, 0.01f)
     }
@@ -246,25 +276,54 @@ class InkCanvasView @JvmOverloads constructor(
                 (event.buttonState and MotionEvent.BUTTON_STYLUS_PRIMARY) != 0 ||
                 (event.buttonState and MotionEvent.BUTTON_TERTIARY) != 0
 
+        val screenX = event.getX(pointerIndex)
+        val screenY = event.getY(pointerIndex)
+
         if (isEraser) {
             // Eraser mode: Erase dry strokes intersecting current world point
-            val screenX = event.getX(pointerIndex)
-            val screenY = event.getY(pointerIndex)
             dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
             val eraseRadius = (strokeWidth * 4f).coerceAtLeast(24f)
             val removed = dryInkView.eraseStrokesAt(tempPoint.x, tempPoint.y, eraseRadius)
             if (removed.isNotEmpty()) {
-                val action = StrokeAction(removedStrokes = removed)
-                undoStack.add(action)
+                val actionRecord = StrokeAction(removedStrokes = removed)
+                undoStack.add(actionRecord)
                 redoStack.clear()
                 notifyUndoRedoState()
             }
             return
         }
 
-        // Pen Drawing Mode
+        // Lasso Tool Mode
+        if (currentTool == CanvasTool.LASSO) {
+            dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
+            when (action) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                    lassoTool.startLasso(tempPoint.x, tempPoint.y)
+                    dryInkView.invalidate()
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val changed = lassoTool.continueLasso(tempPoint.x, tempPoint.y)
+                    if (changed) dryInkView.invalidate()
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
+                    val hasSelection = lassoTool.finishLasso(dryInkView.strokes)
+                    dryInkView.invalidate()
+                    onLassoSelectionChanged?.invoke(hasSelection)
+                }
+            }
+            return
+        }
+
+        // Pen Drawing Mode with Hold-to-Snap Shape Recognition
         when (action) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                strokePoints.clear()
+                dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
+                strokePoints.add(ShapeRecognizer.Point(tempPoint.x, tempPoint.y, event.eventTime))
+                lastMoveTime = SystemClock.uptimeMillis()
+                lastMoveX = screenX
+                lastMoveY = screenY
+
                 predictor.record(event)
                 val strokeId = inProgressStrokesView.startStroke(
                     event,
@@ -276,6 +335,15 @@ class InkCanvasView @JvmOverloads constructor(
                 activeStrokeIds[pointerId] = strokeId
             }
             MotionEvent.ACTION_MOVE -> {
+                dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
+                strokePoints.add(ShapeRecognizer.Point(tempPoint.x, tempPoint.y, event.eventTime))
+                val moveDist = hypot(screenX - lastMoveX, screenY - lastMoveY)
+                if (moveDist > 8f) {
+                    lastMoveTime = SystemClock.uptimeMillis()
+                    lastMoveX = screenX
+                    lastMoveY = screenY
+                }
+
                 predictor.record(event)
                 val strokeId = activeStrokeIds[pointerId] ?: return
                 val predictedEvent = predictor.predict()
@@ -283,8 +351,27 @@ class InkCanvasView @JvmOverloads constructor(
                 predictedEvent?.recycle()
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
-                predictor.record(event)
                 val strokeId = activeStrokeIds.remove(pointerId) ?: return
+                val holdDuration = SystemClock.uptimeMillis() - lastMoveTime
+
+                // Hold-to-Snap: Check if stylus paused at the end of the stroke
+                if (holdToSnapEnabled && holdDuration >= 280L && strokePoints.size >= 8) {
+                    val shape = shapeRecognizer.recognize(strokePoints)
+                    if (shape != null) {
+                        inProgressStrokesView.cancelStroke(strokeId, event)
+                        val snappedStroke = shapeRecognizer.createStrokeForShape(shape, activeBrush)
+                        dryInkView.addStroke(snappedStroke)
+                        val actionRecord = StrokeAction(addedStrokes = listOf(snappedStroke))
+                        undoStack.add(actionRecord)
+                        redoStack.clear()
+                        notifyUndoRedoState()
+                        onStrokeCommitted?.invoke(snappedStroke)
+                        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        return
+                    }
+                }
+
+                predictor.record(event)
                 inProgressStrokesView.finishStroke(event, pointerId, strokeId)
             }
         }
@@ -394,6 +481,67 @@ class InkCanvasView @JvmOverloads constructor(
 
     fun resetZoom() {
         dryInkView.transform.reset()
+        dryInkView.invalidate()
+    }
+
+    // Phase 4 Lasso Operations
+    fun duplicateLassoSelection() {
+        val duplicated = lassoTool.duplicateSelected()
+        if (duplicated.isNotEmpty()) {
+            dryInkView.addStrokes(duplicated)
+            undoStack.add(StrokeAction(addedStrokes = duplicated))
+            redoStack.clear()
+            notifyUndoRedoState()
+            dryInkView.invalidate()
+        }
+    }
+
+    fun changeLassoSelectionColor(color: Int) {
+        val result = lassoTool.changeColorSelected(color)
+        if (result.newStrokes.isNotEmpty()) {
+            dryInkView.removeStrokes(result.oldStrokes)
+            dryInkView.addStrokes(result.newStrokes)
+            undoStack.add(StrokeAction(addedStrokes = result.newStrokes, removedStrokes = result.oldStrokes))
+            redoStack.clear()
+            notifyUndoRedoState()
+            dryInkView.invalidate()
+        }
+    }
+
+    fun deleteLassoSelection() {
+        val toDelete = lassoTool.selectedStrokes.toList()
+        if (toDelete.isNotEmpty()) {
+            dryInkView.removeStrokes(toDelete)
+            undoStack.add(StrokeAction(removedStrokes = toDelete))
+            redoStack.clear()
+            notifyUndoRedoState()
+            lassoTool.clearSelection()
+            dryInkView.invalidate()
+            onLassoSelectionChanged?.invoke(false)
+        }
+    }
+
+    fun clearLassoSelection() {
+        lassoTool.clearSelection()
+        dryInkView.invalidate()
+        onLassoSelectionChanged?.invoke(false)
+    }
+
+    // Phase 4 Background PDF Tiling Operations
+    fun loadPdf(file: File) {
+        pdfTiler.openPdf(file)
+        dryInkView.pdfTiler = pdfTiler
+        dryInkView.currentPdfPageIndex = 0
+        dryInkView.invalidate()
+    }
+
+    fun setPdfPage(index: Int) {
+        dryInkView.currentPdfPageIndex = index.coerceIn(0, (pdfTiler.pageCount - 1).coerceAtLeast(0))
+        dryInkView.invalidate()
+    }
+
+    fun closePdf() {
+        pdfTiler.close()
         dryInkView.invalidate()
     }
 

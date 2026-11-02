@@ -12,6 +12,8 @@ import androidx.ink.brush.StockBrushes
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.Stroke
 import com.antigravity.note.document.model.PaperTemplate
+import com.antigravity.note.inkengine.lasso.LassoTool
+import com.antigravity.note.inkengine.pdf.PdfTiler
 
 /**
  * Underlying view responsible for rendering finalized "dry" ink strokes.
@@ -28,6 +30,12 @@ class DryInkCanvasView @JvmOverloads constructor(
     val transform = CanvasTransform()
     var currentTemplate: PaperTemplate = PaperTemplate.RULED
         private set
+
+    // Phase 4 Tools & Background Tiling
+    var lassoTool: LassoTool? = null
+    var pdfTiler: PdfTiler? = null
+    var currentPdfPageIndex: Int = 0
+    private val viewportRect = RectF()
 
     // Pre-allocated objects for zero allocations in onDraw
     private val identityMatrix = Matrix()
@@ -63,14 +71,31 @@ class DryInkCanvasView @JvmOverloads constructor(
         canvas.save()
         canvas.concat(transform.worldToScreenMatrix)
 
-        // Draw subtle ruled lines / grid
-        drawPaperGrid(canvas)
+        // Draw background PDF tiles if loaded
+        val tiler = pdfTiler
+        if (tiler != null && tiler.pageCount > 0) {
+            viewportRect.set(0f, 0f, width.toFloat(), height.toFloat())
+            transform.screenToWorld(viewportRect)
+            tiler.drawVisibleTiles(
+                canvas = canvas,
+                pageIndex = currentPdfPageIndex,
+                viewportRect = viewportRect,
+                zoomScale = transform.scale,
+                onTileLoaded = { postInvalidateOnAnimation() }
+            )
+        } else {
+            // Draw subtle ruled lines / grid
+            drawPaperGrid(canvas)
+        }
 
         // Draw dry vector strokes
         for (i in 0 until strokes.size) {
             val stroke = strokes[i]
             strokeRenderer.draw(canvas, stroke, identityMatrix)
         }
+
+        // Draw lasso selection overlay if active
+        lassoTool?.draw(canvas)
 
         canvas.restore()
     }

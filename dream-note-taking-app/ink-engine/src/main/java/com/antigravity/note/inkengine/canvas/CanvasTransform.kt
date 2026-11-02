@@ -88,4 +88,11 @@ class CanvasTransform {
         outPoint.x = tempPoints[0]
         outPoint.y = tempPoints[1]
     }
+
+    /**
+     * Map screen rect to world rect.
+     */
+    fun screenToWorld(rect: android.graphics.RectF) {
+        screenToWorldMatrix.mapRect(rect)
+    }
 }

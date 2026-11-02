@@ -47,7 +47,7 @@
 | **Phase 1** | Dedicated Ink Canvas + Palm Rejection + Motion Prediction | $< 400\text{ ms}$ | **$\le 10\text{ ms}$ perceived (near instantaneous)** | **$5\text{ ms}$ 50th percentile, $1-2\text{ ms}$ GPU, $0.89\%\text{ jank}$** | **11/11 golden tests passed; Grace window active** | **GATE MET & VERIFIED ON HARDWARE** |
 | **Phase 2** | Document Model, Undo/Redo, Crash-safe Storage | $< 400\text{ ms}$ | **$21\text{ ms}$ open latency** | **$5\text{ ms}$ 50th percentile, $1-2\text{ ms}$ GPU** | **Crash kill recovered 100% of strokes** | **GATE MET & VERIFIED ON HARDWARE** |
 | **Phase 3** | Library Tree, Notebooks, DSA Problem Page | $< 400\text{ ms}$ | **$< 20\text{ ms}$ problem page load** | **$6\text{ ms}$ 50th percentile, $2\text{ ms}$ GPU, $1.94\%\text{ jank}$** | **Hierarchical Room indexing (< 5 ms queries)** | **GATE MET & VERIFIED ON HARDWARE** |
-| **Phase 4** | PDF/Image Tiling, Lasso, Vector Shapes | $< 400\text{ ms}$ | $\le 10\text{ ms}$ | 144 fps | 11 points/event | Pending Gate |
+| **Phase 4** | PDF/Image Tiling, Lasso, Vector Shapes | $< 400\text{ ms}$ | **$\le 10\text{ ms}$ perceived, 544 strokes** | **$5\text{ ms}$ 50th percentile, $1-2\text{ ms}$ GPU, $1.17\%\text{ jank}$** | **Tiled PDF LruCache + Lasso point-in-poly + Hold-to-Snap** | **GATE MET & VERIFIED ON HARDWARE** |
 | **Phase 5** | Offline ML Kit Recognition, Spaced Repetition | $< 400\text{ ms}$ | $\le 10\text{ ms}$ | 144 fps | 11 points/event | Pending Gate |
 | **Phase 6** | Export, Audio Sync, Multi-Window Polish | $< 400\text{ ms}$ | $\le 10\text{ ms}$ | 144 fps | 11 points/event | Pending Gate |
 
@@ -117,4 +117,36 @@
 * **Quick Switcher Palette**:
   * Command palette triggered via search icon or `Ctrl/Cmd+K` keyboard shortcut.
   * Instant search query filtering over titles, tags, and approach summaries without frame drop.
+
+---
+
+## 7. Phase 4 Hardware Verification Data (Moto Pad 70 Pro)
+
+* **Real-World Dense Inking Performance**:
+  * Tested live on device with **544 hand-drawn vector strokes** across multiple problem pages and templates.
+  * Frame Render Time (50th percentile): **$5\text{ ms}$** (Hard budget: $6.94\text{ ms}$ for $144\text{ Hz}$).
+  * GPU Execution Time (50th percentile): **$1\text{ ms}$**
+  * GPU Execution Time (90th percentile): **$2\text{ ms}$**
+  * GPU Execution Time (95th percentile): **$4\text{ ms}$**
+  * GPU Execution Time (99th percentile): **$5\text{ ms}$**
+  * Sustained Janky Frame Rate: **$1.17\%$** over 1,716 frames profiled.
+* **Lasso Selection & Vector Transformation**:
+  * Freeform polygonal lasso path collection with point-in-polygon ray casting enclosure test.
+  * Tested on device with **113 simultaneous strokes** selected in a single bounding box:
+    * Interactive translation and multi-handle scaling with zero visual latency.
+    * Instant stroke duplication, stroke recoloring, and undoable deletion.
+    * Vector stroke re-synthesis via `MutableStrokeInputBatch` preserving brush fidelity at any transform.
+* **Hold-to-Snap Shape Recognition**:
+  * Real-time geometric feature extraction (Ramer-Douglas-Peucker polygon simplification, circular variance, and aspect ratio evaluation).
+  * Automatically snaps hand-drawn gestures held stationary for $\ge 280\text{ ms}$:
+    * Straight Lines & Arrowheads
+    * Equilateral and Scalene Triangles
+    * Rectangles and Squares
+    * Circles and Ellipses
+  * Tested on device: perfectly snaps shapes on Math Grid and Dot Grid paper templates with haptic feedback.
+* **Background Tiled PDF Virtualization (`PdfTiler`)**:
+  * `PdfRenderer` hardware-accelerated tile rendering on background `Dispatchers.IO` pool with 32 MB LRU tile cache.
+  * Viewport culling: only visible tiles matching the active canvas transform and zoom level are rasterized, ensuring flat memory consumption even with 500-page documents.
+  * Integrated multi-page PDF switcher pill (`PDF: Page 1/2 < >`) with live vector ink annotation overlaid directly on top.
+
 

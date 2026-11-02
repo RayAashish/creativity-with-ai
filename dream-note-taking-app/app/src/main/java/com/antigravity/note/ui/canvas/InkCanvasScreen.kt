@@ -7,6 +7,8 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +31,9 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FitScreen
@@ -36,7 +41,9 @@ import androidx.compose.material.icons.filled.FormatPaint
 import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PanTool
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -80,6 +87,7 @@ import com.antigravity.note.ui.library.DsaProblemHeader
 import com.antigravity.note.ui.library.LibrarySidebarDrawer
 import com.antigravity.note.ui.library.QuickSwitcherDialog
 import kotlinx.coroutines.launch
+import android.content.Context
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -120,6 +128,12 @@ fun InkCanvasScreen(
     var isDebugOverlayOn by remember { mutableStateOf(true) }
     var showTemplateMenu by remember { mutableStateOf(false) }
 
+    // Phase 4 State
+    var hasLassoSelection by remember { mutableStateOf(false) }
+    var isShapeSnapOn by remember { mutableStateOf(true) }
+    var isPdfLoaded by remember { mutableStateOf(false) }
+    var currentPdfPage by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+
     // Match current page with Library DB for DSA metadata
     val currentProblemPage = remember(currentPage, allPages) {
         val pId = currentPage?.metadata?.pageId
@@ -152,6 +166,9 @@ fun InkCanvasScreen(
         canvasView.onClearCommitted = {
             docManager.onClearCommitted()
         }
+        canvasView.onLassoSelectionChanged = { selected ->
+            hasLassoSelection = selected
+        }
     }
 
     val palette = listOf(
@@ -178,13 +195,17 @@ fun InkCanvasScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Card(
-                modifier = Modifier.padding(top = 16.dp),
+                modifier = Modifier
+                    .padding(top = 16.dp, start = 20.dp, end = 20.dp)
+                    .fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                 shape = RoundedCornerShape(20.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    modifier = Modifier
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -246,6 +267,39 @@ fun InkCanvasScreen(
                         onClick = {
                             selectedTool = CanvasTool.STROKE_ERASER
                             canvasView.setTool(CanvasTool.STROKE_ERASER)
+                        }
+                    )
+                    ToolIconButton(
+                        icon = Icons.Default.SelectAll,
+                        label = "Lasso",
+                        isSelected = selectedTool == CanvasTool.LASSO,
+                        onClick = {
+                            selectedTool = CanvasTool.LASSO
+                            canvasView.setTool(CanvasTool.LASSO)
+                        }
+                    )
+                    ToolIconButton(
+                        icon = Icons.Default.Category,
+                        label = "Shapes",
+                        isSelected = isShapeSnapOn,
+                        onClick = {
+                            isShapeSnapOn = !isShapeSnapOn
+                            canvasView.holdToSnapEnabled = isShapeSnapOn
+                        }
+                    )
+                    ToolIconButton(
+                        icon = Icons.Default.PictureAsPdf,
+                        label = if (isPdfLoaded) "PDF On" else "PDF",
+                        isSelected = isPdfLoaded,
+                        onClick = {
+                            if (isPdfLoaded) {
+                                canvasView.closePdf()
+                                isPdfLoaded = false
+                            } else {
+                                val pdfFile = getOrCreateSamplePdf(context)
+                                canvasView.loadPdf(pdfFile)
+                                isPdfLoaded = true
+                            }
                         }
                     )
 
@@ -559,6 +613,119 @@ fun InkCanvasScreen(
             )
         }
 
+        // Floating Lasso Action Bar (When strokes are selected)
+        if (hasLassoSelection) {
+            Card(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 80.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                shape = RoundedCornerShape(18.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Lasso (${canvasView.lassoTool.selectedStrokes.size})",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // Duplicate
+                    IconButton(onClick = { canvasView.duplicateLassoSelection() }) {
+                        Icon(Icons.Default.ContentCopy, contentDescription = "Duplicate", modifier = Modifier.size(20.dp))
+                    }
+
+                    // Recolor quick dots
+                    listOf(
+                        Color(0xFF111318),
+                        Color(0xFF005AC1),
+                        Color(0xFFBA1A1A),
+                        Color(0xFF146C2E)
+                    ).forEach { color ->
+                        Box(
+                            modifier = Modifier
+                                .size(22.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                                .border(1.dp, Color.White, CircleShape)
+                                .clickable {
+                                    val intColor = AndroidColor.argb(
+                                        (color.alpha * 255).toInt(),
+                                        (color.red * 255).toInt(),
+                                        (color.green * 255).toInt(),
+                                        (color.blue * 255).toInt()
+                                    )
+                                    canvasView.changeLassoSelectionColor(intColor)
+                                }
+                        )
+                    }
+
+                    // Delete selection
+                    IconButton(onClick = { canvasView.deleteLassoSelection() }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                    }
+
+                    // Done / Clear selection
+                    IconButton(onClick = { canvasView.clearLassoSelection() }) {
+                        Icon(Icons.Default.Check, contentDescription = "Done", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+        }
+
+        // PDF Page Selector Pill (When PDF background is active)
+        if (isPdfLoaded && canvasView.pdfTiler.pageCount > 1) {
+            Card(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = if (hasLassoSelection) 140.dp else 80.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "PDF: Page ${currentPdfPage + 1}/${canvasView.pdfTiler.pageCount}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    IconButton(
+                        onClick = {
+                            if (currentPdfPage > 0) {
+                                currentPdfPage--
+                                canvasView.setPdfPage(currentPdfPage)
+                            }
+                        },
+                        enabled = currentPdfPage > 0,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = "Prev PDF Page")
+                    }
+                    IconButton(
+                        onClick = {
+                            if (currentPdfPage < canvasView.pdfTiler.pageCount - 1) {
+                                currentPdfPage++
+                                canvasView.setPdfPage(currentPdfPage)
+                            }
+                        },
+                        enabled = currentPdfPage < canvasView.pdfTiler.pageCount - 1,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = "Next PDF Page")
+                    }
+                }
+            }
+        }
+
         // Quick Switcher Dialog (Ctrl+K Command Palette)
         if (isQuickSwitcherOpen) {
             QuickSwitcherDialog(
@@ -572,6 +739,73 @@ fun InkCanvasScreen(
             )
         }
     }
+}
+
+private fun getOrCreateSamplePdf(context: Context): File {
+    val file = File(context.filesDir, "sample_dsa_cheatsheet.pdf")
+    if (file.exists() && file.length() > 0) return file
+
+    val pdfDoc = android.graphics.pdf.PdfDocument()
+    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+
+    // Page 1: DSA Overview
+    val pageInfo1 = android.graphics.pdf.PdfDocument.PageInfo.Builder(1000, 1400, 1).create()
+    val page1 = pdfDoc.startPage(pageInfo1)
+    val canvas1 = page1.canvas
+    canvas1.drawColor(android.graphics.Color.WHITE)
+
+    paint.color = android.graphics.Color.parseColor("#1565C0")
+    paint.textSize = 42f
+    paint.isFakeBoldText = true
+    canvas1.drawText("DSA Reference & Complexity Sheet", 80f, 100f, paint)
+
+    paint.color = android.graphics.Color.parseColor("#424242")
+    paint.textSize = 24f
+    paint.isFakeBoldText = false
+    canvas1.drawText("Target: Two Pointers, Sliding Window, DP & Graphs", 80f, 150f, paint)
+
+    // Draw some sample diagrams
+    paint.color = android.graphics.Color.parseColor("#E0E0E0")
+    paint.style = android.graphics.Paint.Style.STROKE
+    paint.strokeWidth = 3f
+    canvas1.drawRect(80f, 200f, 920f, 600f, paint)
+
+    paint.style = android.graphics.Paint.Style.FILL
+    paint.color = android.graphics.Color.parseColor("#2E7D32")
+    paint.textSize = 28f
+    canvas1.drawText("1. Two Pointers Technique (O(N) Time, O(1) Space)", 110f, 260f, paint)
+
+    paint.color = android.graphics.Color.DKGRAY
+    paint.textSize = 22f
+    canvas1.drawText("• Left index starts at 0, Right index starts at N-1", 120f, 320f, paint)
+    canvas1.drawText("• Increment left if sum < target; Decrement right if sum > target", 120f, 370f, paint)
+    canvas1.drawText("• Applicable to: Two Sum II, 3Sum, Container With Most Water", 120f, 420f, paint)
+
+    pdfDoc.finishPage(page1)
+
+    // Page 2: Binary Search & Trees
+    val pageInfo2 = android.graphics.pdf.PdfDocument.PageInfo.Builder(1000, 1400, 2).create()
+    val page2 = pdfDoc.startPage(pageInfo2)
+    val canvas2 = page2.canvas
+    canvas2.drawColor(android.graphics.Color.WHITE)
+
+    paint.color = android.graphics.Color.parseColor("#6A1B9A")
+    paint.textSize = 42f
+    paint.isFakeBoldText = true
+    canvas2.drawText("Binary Search & Divide and Conquer", 80f, 100f, paint)
+
+    paint.color = android.graphics.Color.DKGRAY
+    paint.textSize = 24f
+    paint.isFakeBoldText = false
+    canvas2.drawText("Recurrence: T(N) = T(N/2) + O(1) -> O(log N) Time", 80f, 160f, paint)
+
+    pdfDoc.finishPage(page2)
+
+    val fos = java.io.FileOutputStream(file)
+    pdfDoc.writeTo(fos)
+    fos.close()
+    pdfDoc.close()
+    return file
 }
 
 @Composable
