@@ -1,6 +1,6 @@
 {
-  "name": "dream-wallpaper",
-  "version": "0.1.0",
+  "name": "streakpaper",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -16,6 +16,9 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zod": "^4.6.7"
+  },
+  "optionalDependencies": {
+    "@napi-rs/canvas-linux-x64-gnu": "^1.1.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
