@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.antigravity.note.designsystem.theme.DreamNoteTheme
 import com.antigravity.note.inkengine.probe.DeviceProbeController
+import com.antigravity.note.ui.canvas.InkCanvasScreen
 import com.antigravity.note.ui.probe.DeviceProbeScreen
 
 class MainActivity : ComponentActivity() {
@@ -24,7 +25,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Keep screen on during diagnostic & inking sessions
+        // Keep screen on during inking sessions
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         probeController = DeviceProbeController(applicationContext)
@@ -32,23 +33,21 @@ class MainActivity : ComponentActivity() {
         setContent {
             DreamNoteTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    var currentScreen by remember { mutableStateOf("probe") }
+                    var currentScreen by remember { mutableStateOf("canvas") }
 
                     when (currentScreen) {
+                        "canvas" -> {
+                            InkCanvasScreen(
+                                onNavigateToProbe = {
+                                    currentScreen = "probe"
+                                }
+                            )
+                        }
                         "probe" -> {
                             DeviceProbeScreen(
                                 probeController = probeController,
                                 onNavigateToCanvas = {
                                     currentScreen = "canvas"
-                                }
-                            )
-                        }
-                        "canvas" -> {
-                            // Phase 1 Canvas View
-                            DeviceProbeScreen(
-                                probeController = probeController,
-                                onNavigateToCanvas = {
-                                    currentScreen = "probe"
                                 }
                             )
                         }

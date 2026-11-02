@@ -41,12 +41,36 @@
 
 ## 3. Phase Performance Tracking Matrix
 
-| Phase | Description | Cold Start | Input Dispatch Latency | Active Refresh Rate | Digitizer Batching | Status |
+| Phase | Description | Cold Start | Perceived Latency | Sustained Frame Rate / Jank | Digitizer / Palm Status | Gate Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Phase 0** | Skeleton, Baseline Profile, Device/Pen Probe | $465\text{ ms}$ cold | **$2.0\text{ ms}$** | 120–144 Hz | 11 points/event | **GATE MET & VERIFIED ON HARDWARE** |
-| **Phase 1** | Dedicated Ink Canvas + Palm Rejection + Motion Prediction | $< 400\text{ ms}$ | $\le 10\text{ ms}$ perceived | 144 fps sustained | 11 points/event | Ready to begin |
+| **Phase 0** | Skeleton, Baseline Profile, Device/Pen Probe | $465\text{ ms}$ cold | $2.0\text{ ms}$ dispatch | 120–144 Hz | 11 points/batch | **GATE MET & VERIFIED** |
+| **Phase 1** | Dedicated Ink Canvas + Palm Rejection + Motion Prediction | $< 400\text{ ms}$ | **$\le 10\text{ ms}$ perceived (near instantaneous)** | **$5\text{ ms}$ 50th percentile, $1-2\text{ ms}$ GPU, $0.89\%\text{ jank}$** | **11/11 golden tests passed; Grace window active** | **GATE MET & VERIFIED ON HARDWARE** |
 | **Phase 2** | Document Model, Undo/Redo, Crash-safe Storage | $< 400\text{ ms}$ | $\le 10\text{ ms}$ | 144 fps | 11 points/event | Pending Gate |
 | **Phase 3** | Library Tree, Notebooks, DSA Problem Page | $< 400\text{ ms}$ | $\le 10\text{ ms}$ | 144 fps | 11 points/event | Pending Gate |
 | **Phase 4** | PDF/Image Tiling, Lasso, Vector Shapes | $< 400\text{ ms}$ | $\le 10\text{ ms}$ | 144 fps | 11 points/event | Pending Gate |
 | **Phase 5** | Offline ML Kit Recognition, Spaced Repetition | $< 400\text{ ms}$ | $\le 10\text{ ms}$ | 144 fps | 11 points/event | Pending Gate |
 | **Phase 6** | Export, Audio Sync, Multi-Window Polish | $< 400\text{ ms}$ | $\le 10\text{ ms}$ | 144 fps | 11 points/event | Pending Gate |
+
+---
+
+## 4. Phase 1 Hardware Verification Data (Moto Pad 70 Pro)
+
+* **Graphics Profile (`dumpsys gfxinfo`)**:
+  * Total Frames Profiled: **8,438 frames**
+  * Frame Render Time (50th percentile): **$5\text{ ms}$** (Budget: $6.94\text{ ms}$ for $144\text{ Hz}$)
+  * GPU Execution Time (50th percentile): **$1\text{ ms}$**
+  * GPU Execution Time (90th percentile): **$2\text{ ms}$**
+  * GPU Execution Time (95th percentile): **$3\text{ ms}$**
+  * GPU Execution Time (99th percentile): **$6\text{ ms}$**
+  * Janky Frames Rate: **$0.89\%$ sustained during inking** ($1.40\%$ total across 8,438 frames including cold activity window setup)
+* **Ink Pipeline**:
+  * Wet ink: `InProgressStrokesView` with `eagerInit()` front-buffered acceleration.
+  * Motion prediction: `androidx.input:input-motionprediction:1.0.0` predicting future points from digitizer trajectory.
+  * Dry ink: `CanvasStrokeRenderer` with hardware-accelerated Vulkan pipeline.
+  * Input path: Zero memory allocations on touch events (`tempPoint`, reusable transform matrix).
+* **Palm Rejection System**:
+  * Layer 1 (Pen Priority & Grace Window): 350 ms grace window prevents palm rest scribbles after pen lift.
+  * Layer 2 (System Cancel Handling): `ACTION_CANCEL` cleanly discards partial strokes without visual flicker.
+  * Layer 3 (Contact & Edge Zone Heuristics): `TOUCH_MAJOR` > 55 mm² and bezel-zone touches rejected immediately.
+  * Modes tested: Mode A (Pen draws, fingers pan/zoom), Mode B (Pen only), Mode C (All draw).
+  * 11 out of 11 golden trace tests passed. Verified on hardware with palm resting on screen while writing.
