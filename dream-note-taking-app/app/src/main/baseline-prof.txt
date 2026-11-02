@@ -1,0 +1,16 @@
+# Baseline Profile for Dream Note App
+Lcom/antigravity/note/DreamNoteApplication;
+Lcom/antigravity/note/MainActivity;
+Lcom/antigravity/note/ui/probe/DeviceProbeScreenKt;
+Lcom/antigravity/note/inkengine/probe/DeviceProbeController;
+Lcom/antigravity/note/inkengine/probe/DeviceProbeModelsKt;
+Lcom/antigravity/note/inkengine/probe/ProbeInteractiveView;
+Lcom/antigravity/note/inkengine/canvas/InkCanvasView;
+Lcom/antigravity/note/inkengine/palm/PalmRejectionFilter;
+Landroidx/ink/authoring/InProgressStrokesView;
+Landroidx/ink/rendering/android/canvas/CanvasStrokeRenderer;
+Landroidx/ink/strokes/Stroke;
+Landroidx/ink/brush/StockBrushes;
+Landroidx/ink/nativeloader/Nativeloader;
+Landroidx/graphics/lowlatency/GLFrontBufferedRenderer;
+Landroidx/input/motionprediction/MotionEventPredictor;

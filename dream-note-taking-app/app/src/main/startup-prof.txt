@@ -1,0 +1,8 @@
+# Startup Profile for Dream Note App
+Lcom/antigravity/note/DreamNoteApplication;-><init>()V
+Lcom/antigravity/note/MainActivity;-><init>()V
+Lcom/antigravity/note/MainActivity;->onCreate(Landroid/os/Bundle;)V
+Lcom/antigravity/note/inkengine/probe/DeviceProbeController;-><init>(Landroid/content/Context;)V
+Lcom/antigravity/note/inkengine/probe/DeviceProbeController;->probeDisplayModes(Landroid/view/Display;)V
+Lcom/antigravity/note/inkengine/probe/DeviceProbeController;->probeStylusHardware()V
+Lcom/antigravity/note/inkengine/probe/DeviceProbeController;->request144Hz(Landroid/view/Window;)V
