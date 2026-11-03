@@ -14,7 +14,7 @@ import com.antigravity.note.library.backup.manifest.BackupManifestEntity
         PageEntity::class,
         BackupManifestEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class NoteDatabase : RoomDatabase() {

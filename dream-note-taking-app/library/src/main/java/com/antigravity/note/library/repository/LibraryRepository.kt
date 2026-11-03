@@ -104,7 +104,9 @@ class LibraryRepository(
         timeComplexity: String = "O(N)",
         spaceComplexity: String = "O(1)",
         codeSnippet: String = "",
-        codeLanguage: String = "Kotlin"
+        codeLanguage: String = "Kotlin",
+        problemDescriptionHtml: String? = null,
+        testCasesJson: String? = null
     ): PageEntity = withContext(ioDispatcher) {
         val pageCount = pageDao.getPageCount(notebookId)
         val docPage = pageRepository.createPage(notebookId, pageCount, PaperTemplate.RULED, title)
@@ -126,7 +128,13 @@ class LibraryRepository(
             codeSnippet = codeSnippet,
             codeLanguage = codeLanguage,
             revisitIntervalDays = 1,
-            nextReviewTimestamp = System.currentTimeMillis() + (24L * 60L * 60L * 1000L) // 1 day later
+            nextReviewTimestamp = System.currentTimeMillis() + (24L * 60L * 60L * 1000L), // 1 day later
+            problemDescriptionHtml = problemDescriptionHtml,
+            testCasesJson = testCasesJson,
+            isDescriptionMinimized = false,
+            isDescriptionWindowVisible = true,
+            descriptionWindowX = 60f,
+            descriptionWindowY = 140f
         )
         pageDao.insertPage(pageEntity)
         pageEntity
@@ -285,6 +293,35 @@ class LibraryRepository(
         notebookDao.insertNotebook(twoPointersNotebook)
 
         // 6. Problem Page: Q1 – Two Sum
+        val twoSumHtml = """
+            <p>Given an array of integers <code>nums</code> and an integer <code>target</code>, return <em>indices of the two numbers such that they add up to <code>target</code></em>.</p>
+            <p>You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the same element twice.</p>
+            <p>You can return the answer in any order.</p>
+            <p>&nbsp;</p>
+            <p><strong>Example 1:</strong></p>
+            <pre><strong>Input:</strong> nums = [2,7,11,15], target = 9
+<strong>Output:</strong> [0,1]
+<strong>Explanation:</strong> Because nums[0] + nums[1] == 9, we return [0, 1].</pre>
+            <p><strong>Example 2:</strong></p>
+            <pre><strong>Input:</strong> nums = [3,2,4], target = 6
+<strong>Output:</strong> [1,2]</pre>
+            <p><strong>Example 3:</strong></p>
+            <pre><strong>Input:</strong> nums = [3,3], target = 6
+<strong>Output:</strong> [0,1]</pre>
+            <p>&nbsp;</p>
+            <p><strong>Constraints:</strong></p>
+            <ul>
+              <li><code>2 &lt;= nums.length &lt;= 10<sup>4</sup></code></li>
+              <li><code>-10<sup>9</sup> &lt;= nums[i] &lt;= 10<sup>9</sup></code></li>
+              <li><code>-10<sup>9</sup> &lt;= target &lt;= 10<sup>9</sup></code></li>
+              <li><strong>Only one valid answer exists.</strong></li>
+            </ul>
+        """.trimIndent()
+
+        val twoSumCases = """
+            [{"id":1,"title":"Testcase 1","input":"nums = [2,7,11,15], target = 9","output":"[0,1]","isChecked":false},{"id":2,"title":"Testcase 2","input":"nums = [3,2,4], target = 6","output":"[1,2]","isChecked":false},{"id":3,"title":"Testcase 3","input":"nums = [3,3], target = 6","output":"[0,1]","isChecked":false}]
+        """.trimIndent()
+
         createProblemPage(
             notebookId = twoPointersNotebook.notebookId,
             title = "Q1 – Two Sum",
@@ -305,7 +342,9 @@ fun twoSum(nums: IntArray, target: Int): IntArray {
     }
     return intArrayOf()
 }
-            """.trimIndent()
+            """.trimIndent(),
+            problemDescriptionHtml = twoSumHtml,
+            testCasesJson = twoSumCases
         )
 
         // 7. Problem Page: Q2 – 3Sum

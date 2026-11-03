@@ -22,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -59,6 +60,8 @@ fun DsaProblemHeader(
     problemPage: PageEntity,
     onStatusChanged: (String) -> Unit = {},
     onEditClicked: () -> Unit = {},
+    isFloatingWindowVisible: Boolean = true,
+    onToggleFloatingWindow: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -298,6 +301,32 @@ fun DsaProblemHeader(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    // Description Window Toggle Button
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (isFloatingWindowVisible) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.clickable(onClick = onToggleFloatingWindow)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Description,
+                                contentDescription = "Toggle Description Window",
+                                modifier = Modifier.size(14.dp),
+                                tint = if (isFloatingWindowVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = if (isFloatingWindowVisible) "Floating 📑" else "Description",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isFloatingWindowVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }

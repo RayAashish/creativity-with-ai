@@ -51,5 +51,13 @@ data class PageEntity(
 
     // Trash & Recycle Bin (30-day retention)
     val isDeleted: Boolean = false,
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
+
+    // DSA Problem Description & Floating Window
+    val problemDescriptionHtml: String? = null,
+    val testCasesJson: String? = null,
+    val isDescriptionMinimized: Boolean = false,
+    val isDescriptionWindowVisible: Boolean = true,
+    val descriptionWindowX: Float = 60f,
+    val descriptionWindowY: Float = 140f
 )

@@ -95,9 +95,13 @@ class InkCanvasView @JvmOverloads constructor(
     private val snappedStrokesForCurrentTouch = mutableListOf<Stroke>()
     private var activePointerIdForSnap = -1
 
+    private val HOLD_TO_SNAP_DELAY_MS = 620L
+
     private val holdToSnapRunnable = Runnable {
         android.util.Log.d("ANTIGRAVITY_INK", "holdToSnapRunnable triggered! enabled=$holdToSnapEnabled, isSnapped=$isStrokeSnapped, ptCount=${strokePoints.size}")
-        if (!holdToSnapEnabled || isStrokeSnapped || strokePoints.size < 5) return@Runnable
+        if (!holdToSnapEnabled || isStrokeSnapped || strokePoints.size < 6) return@Runnable
+        val now = SystemClock.uptimeMillis()
+        if (now - lastMoveTime < (HOLD_TO_SNAP_DELAY_MS - 50L)) return@Runnable
         val strokeId = activeStrokeIds[activePointerIdForSnap] ?: return@Runnable
         val shape = shapeRecognizer.recognize(strokePoints)
         android.util.Log.d("ANTIGRAVITY_INK", "holdToSnapRunnable recognize result: $shape")
@@ -447,8 +451,8 @@ class InkCanvasView @JvmOverloads constructor(
                 lastMoveY = screenY
 
                 removeCallbacks(holdToSnapRunnable)
-                if (holdToSnapEnabled) {
-                    postDelayed(holdToSnapRunnable, 350L)
+                if (holdToSnapEnabled && currentTool != CanvasTool.STROKE_ERASER && currentTool != CanvasTool.LASSO) {
+                    postDelayed(holdToSnapRunnable, HOLD_TO_SNAP_DELAY_MS)
                 }
 
                 predictor.record(event)
@@ -466,13 +470,13 @@ class InkCanvasView @JvmOverloads constructor(
                     dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
                     strokePoints.add(ShapeRecognizer.Point(tempPoint.x, tempPoint.y, event.eventTime))
                     val moveDist = hypot(screenX - lastMoveX, screenY - lastMoveY)
-                    if (moveDist > 28f) {
+                    if (moveDist > 14f) {
                         lastMoveTime = SystemClock.uptimeMillis()
                         lastMoveX = screenX
                         lastMoveY = screenY
                         removeCallbacks(holdToSnapRunnable)
-                        if (holdToSnapEnabled) {
-                            postDelayed(holdToSnapRunnable, 350L)
+                        if (holdToSnapEnabled && currentTool != CanvasTool.STROKE_ERASER && currentTool != CanvasTool.LASSO) {
+                            postDelayed(holdToSnapRunnable, HOLD_TO_SNAP_DELAY_MS)
                         }
                     }
 
@@ -503,10 +507,10 @@ class InkCanvasView @JvmOverloads constructor(
 
                 if (strokeId == null) return
 
-                val holdDuration = SystemClock.uptimeMillis() - lastMoveTime
-                val isShapeTool = currentTool == CanvasTool.SHAPE
-                // Fallback on release: either hold was >= 250ms OR we are in SHAPE tool mode!
-                if ((holdToSnapEnabled && holdDuration >= 250L && strokePoints.size >= 5) || (isShapeTool && strokePoints.size >= 5)) {
+                // Crucial: In normal Pen/Marker mode, NEVER retroactively snap on release!
+                // Only explicit SHAPE tool mode converts strokes on release without holding.
+                val isExplicitShapeTool = currentTool == CanvasTool.SHAPE
+                if (isExplicitShapeTool && strokePoints.size >= 5) {
                     val shape = shapeRecognizer.recognize(strokePoints)
                     if (shape != null) {
                         try {

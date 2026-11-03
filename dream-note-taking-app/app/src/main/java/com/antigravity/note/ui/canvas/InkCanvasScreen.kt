@@ -133,6 +133,7 @@ import okhttp3.OkHttpClient
 import com.antigravity.note.library.db.NoteDatabase
 import com.antigravity.note.library.repository.LibraryRepository
 import com.antigravity.note.ui.library.DsaProblemHeader
+import com.antigravity.note.ui.dsa.FloatingDsaProblemWindow
 import com.antigravity.note.ui.library.LibrarySidebarDrawer
 import com.antigravity.note.ui.library.QuickSwitcherDialog
 import kotlinx.coroutines.launch
@@ -967,6 +968,13 @@ fun InkCanvasScreen(
             if (currentProblemPage != null && currentProblemPage.isProblemPage) {
                 DsaProblemHeader(
                     problemPage = currentProblemPage,
+                    isFloatingWindowVisible = currentProblemPage.isDescriptionWindowVisible,
+                    onToggleFloatingWindow = {
+                        scope.launch {
+                            val nextState = !currentProblemPage.isDescriptionWindowVisible
+                            libraryRepo.updatePage(currentProblemPage.copy(isDescriptionWindowVisible = nextState))
+                        }
+                    },
                     onStatusChanged = { newStatus ->
                         scope.launch {
                             val nextReview = when (newStatus) {
@@ -983,6 +991,23 @@ fun InkCanvasScreen(
                     }
                 )
             }
+        }
+
+        // Floating Draggable Problem Description Window (DSA Problems)
+        if (currentProblemPage != null && currentProblemPage.isProblemPage && currentProblemPage.isDescriptionWindowVisible) {
+            FloatingDsaProblemWindow(
+                page = currentProblemPage,
+                onUpdatePage = { updated ->
+                    scope.launch {
+                        libraryRepo.updatePage(updated)
+                    }
+                },
+                onCloseWindow = {
+                    scope.launch {
+                        libraryRepo.updatePage(currentProblemPage.copy(isDescriptionWindowVisible = false))
+                    }
+                }
+            )
         }
 
         // Bottom Bar: Unified, Non-Overlapping Controls (Centered & Scrollable)

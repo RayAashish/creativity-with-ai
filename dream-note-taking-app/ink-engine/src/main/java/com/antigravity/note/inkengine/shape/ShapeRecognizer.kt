@@ -38,17 +38,17 @@ class ShapeRecognizer {
 
     /**
      * Attempts to recognize a geometric shape from a collection of points.
-     * Returns the recognized shape or null if points resemble freehand ink.
+     * Returns the recognized shape or null if points resemble freehand handwriting ink.
      */
     fun recognize(points: List<Point>): RecognizedShape? {
-        if (points.size < 5) return null
+        if (points.size < 6) return null
 
         // Strip trailing cluster points where user paused pen
         val cleanPoints = points.toMutableList()
         if (cleanPoints.size > 10) {
             val last = cleanPoints.last()
             var trimIdx = cleanPoints.size - 1
-            while (trimIdx > 5 && hypot(cleanPoints[trimIdx].x - last.x, cleanPoints[trimIdx].y - last.y) < 22f) {
+            while (trimIdx > 5 && hypot(cleanPoints[trimIdx].x - last.x, cleanPoints[trimIdx].y - last.y) < 20f) {
                 trimIdx--
             }
             if (trimIdx < cleanPoints.size - 2) {
@@ -58,7 +58,7 @@ class ShapeRecognizer {
         }
 
         val pathLength = computePathLength(cleanPoints)
-        if (pathLength < 30f) return null
+        if (pathLength < 50f) return null
 
         val start = cleanPoints.first()
         val end = cleanPoints.last()
@@ -78,16 +78,17 @@ class ShapeRecognizer {
 
         val boxWidth = maxX - minX
         val boxHeight = maxY - minY
-        if (boxWidth < 15f && boxHeight < 15f) return null
-
         val centerX = (minX + maxX) / 2f
         val centerY = (minY + maxY) / 2f
 
         // 1. Check for Line or Arrow (Open path)
-        val isClosed = (directDistance / pathLength) < 0.38f || directDistance < max(50f, (boxWidth + boxHeight) * 0.20f)
+        val closureRatio = directDistance / pathLength
+        val isClosed = closureRatio < 0.25f || (directDistance < 40f && directDistance < (boxWidth + boxHeight) * 0.16f)
+
         if (!isClosed) {
+            if (pathLength < 70f || directDistance < 55f) return null
             val straightness = directDistance / pathLength
-            if (straightness >= 0.78f) {
+            if (straightness >= 0.82f) {
                 if (hasArrowTip(cleanPoints)) {
                     val tip = findTip(cleanPoints)
                     return RecognizedShape.Arrow(start.x, start.y, tip.x, tip.y)
@@ -97,19 +98,23 @@ class ShapeRecognizer {
             return null
         }
 
+        // Geometric shapes MUST have sufficient diagram size so normal handwriting words & letters are never converted!
+        if (boxWidth < 55f || boxHeight < 55f || pathLength < 110f) {
+            return null
+        }
+
         // 2. Closed path: Evaluate Circle using Circularity (Isoperimetric Quotient: 4*pi*Area / Perimeter^2)
+        // Mathematically, a square maxes out at pi/4 ~ 0.785. A circle is 1.0. Therefore >= 0.82 strictly separates circles from rectangles.
         val avgRadius = (boxWidth + boxHeight) / 4f
         val aspectRatio = boxWidth / max(1f, boxHeight)
         val area = computeShoelaceArea(cleanPoints)
         val circularity = if (pathLength > 0f) (4.0 * PI * area / (pathLength.toDouble() * pathLength.toDouble())).toFloat() else 0f
 
-        // A circle has circularity ~ 1.0. A square maxes out at pi/4 ~ 0.785. A rectangle/triangle is even lower.
-        if (circularity >= 0.80f && aspectRatio in 0.70f..1.42f) {
+        if (circularity >= 0.82f && aspectRatio in 0.75f..1.33f) {
             return RecognizedShape.Circle(centerX, centerY, avgRadius)
         }
 
         // 3. Evaluate Triangle vs 4-sided polygons
-        // Find 3 dominant vertices for Triangle detection
         val pFar = cleanPoints.maxByOrNull { hypot(it.x - start.x, it.y - start.y) } ?: end
         val leftPoints = mutableListOf<Point>()
         val rightPoints = mutableListOf<Point>()
@@ -125,17 +130,15 @@ class ShapeRecognizer {
         val d1 = if (pSide1 != null) perpendicularDistance(pSide1, start, pFar) else 0f
         val d2 = if (pSide2 != null) perpendicularDistance(pSide2, start, pFar) else 0f
 
-        // If one side has significant peak and the other is mostly flat, or vertices form a distinct triangle
-        val isTriangleCandidate = (d1 > 25f && d2 < d1 * 0.35f) || (d2 > 25f && d1 < d2 * 0.35f)
+        val isTriangleCandidate = (d1 > 28f && d2 < d1 * 0.35f) || (d2 > 28f && d1 < d2 * 0.35f)
         if (isTriangleCandidate) {
             val apex = if (d1 > d2) pSide1!! else pSide2!!
-            // Vertices are start/end base midpoint, pFar, and apex
             val baseMidX = (start.x + end.x) / 2f
             val baseMidY = (start.y + end.y) / 2f
             return RecognizedShape.Triangle(baseMidX, baseMidY, pFar.x, pFar.y, apex.x, apex.y)
         }
 
-        // 4. Evaluate Diamond vs Square vs Rectangle
+        // 4. Evaluate Diamond
         val topPt = cleanPoints.minByOrNull { it.y }
         val bottomPt = cleanPoints.maxByOrNull { it.y }
         val leftPt = cleanPoints.minByOrNull { it.x }
@@ -152,13 +155,23 @@ class ShapeRecognizer {
             return RecognizedShape.Diamond(centerX, centerY, boxWidth, boxHeight)
         }
 
-        // 5. Square vs Rectangle
-        if (aspectRatio in 0.78f..1.28f) {
-            val size = (boxWidth + boxHeight) / 2f
-            return RecognizedShape.Square(centerX, centerY, size)
+        // 5. Strict Square vs Rectangle Validation
+        // A true rectangle must fill the bounding box and match the perimeter of 2*(w+h)
+        val fillRatio = area / max(1f, boxWidth * boxHeight)
+        val expectedPerimeter = 2f * (boxWidth + boxHeight)
+        val perimRatio = pathLength / max(1f, expectedPerimeter)
+
+        if (fillRatio >= 0.65f && perimRatio in 0.72f..1.38f) {
+            if (aspectRatio in 0.80f..1.25f) {
+                val size = (boxWidth + boxHeight) / 2f
+                return RecognizedShape.Square(centerX, centerY, size)
+            } else if (aspectRatio in 0.20f..5.0f) {
+                return RecognizedShape.Rectangle(minX, minY, maxX, maxY)
+            }
         }
 
-        return RecognizedShape.Rectangle(minX, minY, maxX, maxY)
+        // Not a verified geometric shape — leave as pure freehand ink!
+        return null
     }
 
     fun createStrokeForShape(shape: RecognizedShape, brush: Brush, toolType: InputToolType = InputToolType.STYLUS): Stroke {

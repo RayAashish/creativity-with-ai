@@ -303,9 +303,11 @@ fun EditProblemDialog(
                                 "Mastered" -> System.currentTimeMillis() + (21L * 86400000L)
                                 else -> 0L
                             }
+                            val newUrl = sourceUrl.trim().ifEmpty { null }
+                            val urlChanged = newUrl != page.sourceUrl
                             val updated = page.copy(
                                 title = title.trim().ifEmpty { page.title },
-                                sourceUrl = sourceUrl.trim().ifEmpty { null },
+                                sourceUrl = newUrl,
                                 difficulty = difficulty,
                                 problemStatus = status,
                                 isProblemPage = isProblemPage,
@@ -315,6 +317,9 @@ fun EditProblemDialog(
                                 codeSnippet = codeSnippet,
                                 codeLanguage = codeLanguage,
                                 nextReviewTimestamp = if (nextReview > 0L) nextReview else page.nextReviewTimestamp,
+                                problemDescriptionHtml = if (urlChanged) null else page.problemDescriptionHtml,
+                                testCasesJson = if (urlChanged) null else page.testCasesJson,
+                                isDescriptionWindowVisible = if (urlChanged) true else page.isDescriptionWindowVisible,
                                 modifiedAt = System.currentTimeMillis()
                             )
                             onSave(updated)
