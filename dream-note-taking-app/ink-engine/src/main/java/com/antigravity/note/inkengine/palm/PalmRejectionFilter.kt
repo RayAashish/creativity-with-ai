@@ -62,6 +62,7 @@ class PalmRejectionFilter(
 
     sealed class FilteredResult {
         data class StylusAction(val pointerIndex: Int, val isEraser: Boolean) : FilteredResult()
+        data class FingerEraser(val pointerIndex: Int) : FilteredResult()
         data class MultiFingerGesture(val pointerCount: Int) : FilteredResult()
         data class CancelStroke(val pointerIndex: Int) : FilteredResult()
         object RejectedPalm : FilteredResult()
@@ -178,7 +179,23 @@ class PalmRejectionFilter(
             pointerOriginY.remove(pointerId)
         }
 
-        // Gesture vs Drawing Mode
+        // Gesture vs Drawing vs Finger Eraser Mode
+        val isFingerEraserActive = config.isFingerEraserEnabled || config.inputMode == InputMode.PEN_DRAWS_FINGER_ERASES
+
+        if (event.pointerCount >= 2) {
+            // Multi-touch is always reserved for navigation gestures (pan, pinch-zoom, 2-finger tap undo)
+            pointerClassifications.put(pointerId, PointerStatus.ACCEPTED_GESTURE)
+            updateDebugInfo(pointerId, toolType, x, y, touchMajor, touchMinor, PointerStatus.ACCEPTED_GESTURE, now)
+            return FilteredResult.MultiFingerGesture(event.pointerCount)
+        }
+
+        if (isFingerEraserActive) {
+            // Authentic single fingertip contact for eraser (palm already rejected by size, edge, pen priority, & grace window)
+            pointerClassifications.put(pointerId, PointerStatus.ACCEPTED_FINGER_ERASER)
+            updateDebugInfo(pointerId, toolType, x, y, touchMajor, touchMinor, PointerStatus.ACCEPTED_FINGER_ERASER, now)
+            return FilteredResult.FingerEraser(pointerIndex)
+        }
+
         if (config.inputMode == InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM) {
             // In Mode A, fingers are reserved for multi-touch gestures (pan, pinch-zoom, 2-finger tap undo)
             pointerClassifications.put(pointerId, PointerStatus.ACCEPTED_GESTURE)

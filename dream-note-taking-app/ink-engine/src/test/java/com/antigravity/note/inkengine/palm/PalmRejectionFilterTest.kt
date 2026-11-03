@@ -159,4 +159,98 @@ class PalmRejectionFilterTest {
         val result = filter.evaluatePointer(finger, 0, 2190f, 3504f)
         assertEquals(PalmRejectionFilter.FilteredResult.RejectedPalm, result)
     }
+
+    @Test
+    fun testFingerEraserAcceptedWhenSingleFingerTip() {
+        filter.config = filter.config.copy(inputMode = InputMode.PEN_DRAWS_FINGER_ERASES)
+        val finger = createMockEvent(
+            action = MotionEvent.ACTION_DOWN,
+            toolType = MotionEvent.TOOL_TYPE_FINGER,
+            x = 500f,
+            y = 500f,
+            touchMajor = 16f,
+            eventTime = 30000L,
+            pointerCount = 1
+        )
+        val result = filter.evaluatePointer(finger, 0, 2190f, 3504f)
+        assertTrue(result is PalmRejectionFilter.FilteredResult.FingerEraser)
+    }
+
+    @Test
+    fun testPalmRejectedInFingerEraserModeDueToSize() {
+        filter.config = filter.config.copy(inputMode = InputMode.PEN_DRAWS_FINGER_ERASES)
+        // Large resting palm (touchMajor = 58px > 40px threshold)
+        val palm = createMockEvent(
+            action = MotionEvent.ACTION_DOWN,
+            toolType = MotionEvent.TOOL_TYPE_FINGER,
+            x = 500f,
+            y = 500f,
+            touchMajor = 58f,
+            eventTime = 30000L,
+            pointerCount = 1
+        )
+        val result = filter.evaluatePointer(palm, 0, 2190f, 3504f)
+        assertEquals(PalmRejectionFilter.FilteredResult.RejectedPalm, result)
+        assertEquals(1L, filter.palmsRejectedCount)
+    }
+
+    @Test
+    fun testPalmRejectedInFingerEraserModeWhileStylusDown() {
+        filter.config = filter.config.copy(inputMode = InputMode.PEN_DRAWS_FINGER_ERASES)
+        // Pen is writing on screen
+        val penDown = createMockEvent(MotionEvent.ACTION_DOWN, MotionEvent.TOOL_TYPE_STYLUS, 200f, 300f, eventTime = 1000L)
+        filter.evaluatePointer(penDown, 0, 2190f, 3504f)
+
+        // Palm rests on screen while pen is down
+        val palm = createMockEvent(MotionEvent.ACTION_DOWN, MotionEvent.TOOL_TYPE_FINGER, 600f, 700f, touchMajor = 18f, eventTime = 1050L)
+        val result = filter.evaluatePointer(palm, 0, 2190f, 3504f)
+        assertEquals(PalmRejectionFilter.FilteredResult.RejectedPalm, result)
+        assertEquals(1L, filter.palmsRejectedCount)
+    }
+
+    @Test
+    fun testPalmRejectedInFingerEraserModeWithinGraceWindow() {
+        filter.config = filter.config.copy(inputMode = InputMode.PEN_DRAWS_FINGER_ERASES)
+        // Pen lifts
+        val penUp = createMockEvent(MotionEvent.ACTION_UP, MotionEvent.TOOL_TYPE_STYLUS, 200f, 300f, eventTime = 1000L)
+        filter.evaluatePointer(penUp, 0, 2190f, 3504f)
+
+        // Palm contact 150ms after lift (< 350ms grace window)
+        val palm = createMockEvent(MotionEvent.ACTION_MOVE, MotionEvent.TOOL_TYPE_FINGER, 600f, 700f, touchMajor = 18f, eventTime = 1150L)
+        val result = filter.evaluatePointer(palm, 0, 2190f, 3504f)
+        assertEquals(PalmRejectionFilter.FilteredResult.RejectedPalm, result)
+    }
+
+    @Test
+    fun testMultiFingerInFingerEraserModePansAndZooms() {
+        filter.config = filter.config.copy(inputMode = InputMode.PEN_DRAWS_FINGER_ERASES)
+        // 2 fingers on screen
+        val twoFingers = createMockEvent(
+            action = MotionEvent.ACTION_POINTER_DOWN,
+            toolType = MotionEvent.TOOL_TYPE_FINGER,
+            x = 400f,
+            y = 500f,
+            touchMajor = 15f,
+            eventTime = 40000L,
+            pointerCount = 2
+        )
+        val result = filter.evaluatePointer(twoFingers, 0, 2190f, 3504f)
+        assertTrue(result is PalmRejectionFilter.FilteredResult.MultiFingerGesture)
+    }
+
+    @Test
+    fun testFingerEraserDisabledByDefaultOrModeA() {
+        filter.config = filter.config.copy(inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM, isFingerEraserEnabled = false)
+        val finger = createMockEvent(
+            action = MotionEvent.ACTION_DOWN,
+            toolType = MotionEvent.TOOL_TYPE_FINGER,
+            x = 500f,
+            y = 500f,
+            touchMajor = 15f,
+            eventTime = 50000L,
+            pointerCount = 1
+        )
+        val result = filter.evaluatePointer(finger, 0, 2190f, 3504f)
+        assertTrue(result is PalmRejectionFilter.FilteredResult.MultiFingerGesture)
+    }
 }

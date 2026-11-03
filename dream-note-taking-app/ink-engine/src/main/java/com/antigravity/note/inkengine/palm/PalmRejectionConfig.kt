@@ -3,11 +3,13 @@ package com.antigravity.note.inkengine.palm
 enum class InputMode {
     PEN_DRAWS_FINGERS_PAN_ZOOM, // Default Mode A: Pen draws, fingers pan/zoom
     PEN_ONLY,                   // Mode B: Pen only, finger input completely disabled
-    PEN_AND_FINGER_DRAW         // Mode C: Both pen and finger can draw
+    PEN_AND_FINGER_DRAW,        // Mode C: Both pen and finger can draw
+    PEN_DRAWS_FINGER_ERASES     // Mode D: Pen draws, single finger erases, 2 fingers pan/zoom
 }
 
 data class PalmRejectionConfig(
     val inputMode: InputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM,
+    val isFingerEraserEnabled: Boolean = false,
     val graceWindowMs: Long = 350L,
     val palmTouchMajorThresholdPx: Float = 42f, // Contacts larger than this are classified as palm
     val edgeZoneMarginPx: Float = 36f,          // Touches originating near screen bezel
@@ -19,6 +21,7 @@ enum class PointerStatus {
     ACCEPTED_STYLUS,
     ACCEPTED_GESTURE,
     ACCEPTED_FINGER_DRAW,
+    ACCEPTED_FINGER_ERASER,
     REJECTED_PALM_SIZE,
     REJECTED_PALM_PEN_PRIORITY,
     REJECTED_PALM_GRACE_WINDOW,

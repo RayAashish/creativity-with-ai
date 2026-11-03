@@ -1275,7 +1275,7 @@ fun InkCanvasScreen(
                             selected = inputMode == InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM,
                             onClick = {
                                 inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM
-                                canvasView.palmFilter.config = canvasView.palmFilter.config.copy(inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM)
+                                canvasView.palmFilter.config = canvasView.palmFilter.config.copy(inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM, isFingerEraserEnabled = false)
                             },
                             label = { Text("A: Pen + Gestures", fontSize = 11.sp) }
                         )
@@ -1283,7 +1283,7 @@ fun InkCanvasScreen(
                             selected = inputMode == InputMode.PEN_ONLY,
                             onClick = {
                                 inputMode = InputMode.PEN_ONLY
-                                canvasView.palmFilter.config = canvasView.palmFilter.config.copy(inputMode = InputMode.PEN_ONLY)
+                                canvasView.palmFilter.config = canvasView.palmFilter.config.copy(inputMode = InputMode.PEN_ONLY, isFingerEraserEnabled = false)
                             },
                             label = { Text("B: Pen Only", fontSize = 11.sp) }
                         )
@@ -1291,9 +1291,35 @@ fun InkCanvasScreen(
                             selected = inputMode == InputMode.PEN_AND_FINGER_DRAW,
                             onClick = {
                                 inputMode = InputMode.PEN_AND_FINGER_DRAW
-                                canvasView.palmFilter.config = canvasView.palmFilter.config.copy(inputMode = InputMode.PEN_AND_FINGER_DRAW)
+                                canvasView.palmFilter.config = canvasView.palmFilter.config.copy(inputMode = InputMode.PEN_AND_FINGER_DRAW, isFingerEraserEnabled = false)
                             },
                             label = { Text("C: All Draw", fontSize = 11.sp) }
+                        )
+                        FilterChip(
+                            selected = inputMode == InputMode.PEN_DRAWS_FINGER_ERASES,
+                            onClick = {
+                                inputMode = InputMode.PEN_DRAWS_FINGER_ERASES
+                                canvasView.palmFilter.config = canvasView.palmFilter.config.copy(inputMode = InputMode.PEN_DRAWS_FINGER_ERASES, isFingerEraserEnabled = true)
+                            },
+                            label = { Text("D: Finger Erase", fontSize = 11.sp) }
+                        )
+
+                        // NoteWise Hold Pen to Erase Toggle
+                        var isHoldToEraseOn by remember { mutableStateOf(canvasView.holdToEraseEnabled) }
+                        FilterChip(
+                            selected = isHoldToEraseOn,
+                            onClick = {
+                                isHoldToEraseOn = !isHoldToEraseOn
+                                canvasView.holdToEraseEnabled = isHoldToEraseOn
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Schedule,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                            },
+                            label = { Text(if (isHoldToEraseOn) "Hold Pen to Erase: ON" else "Hold to Erase: OFF", fontSize = 11.sp) }
                         )
 
                         // Debug HUD Toggle

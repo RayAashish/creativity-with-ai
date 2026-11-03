@@ -27,6 +27,7 @@ import com.antigravity.note.document.model.DocumentPage
 import com.antigravity.note.document.model.PaperTemplate
 import com.antigravity.note.inkengine.lasso.LassoMode
 import com.antigravity.note.inkengine.lasso.LassoTool
+import com.antigravity.note.inkengine.palm.InputMode
 import com.antigravity.note.inkengine.palm.PalmRejectionConfig
 import com.antigravity.note.inkengine.palm.PalmRejectionFilter
 import com.antigravity.note.inkengine.palm.PointerStatus
@@ -129,6 +130,76 @@ class InkCanvasView @JvmOverloads constructor(
         isStrokeSnapped = true
         dryInkView.invalidate()
         performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+    }
+
+    // NoteWise-Style Hold-Pen-to-Erase Feature
+    var holdToEraseEnabled: Boolean = true
+    var holdToEraseDelayMs: Long = 1200L // 1.2s stationary hold activates eraser
+    var isHoldErasing: Boolean = false
+        private set
+
+    private val holdToEraseRunnable = Runnable {
+        if (!holdToEraseEnabled || isStrokeSnapped || isHoldErasing) return@Runnable
+        val now = SystemClock.uptimeMillis()
+        if (now - lastMoveTime < (holdToEraseDelayMs - 80L)) return@Runnable
+        val strokeId = activeStrokeIds[activePointerIdForSnap] ?: return@Runnable
+        if (isStrokeSnapped) return@Runnable
+
+        // Discard wet stroke created during the pause
+        val dummyEvent = MotionEvent.obtain(
+            now, now, MotionEvent.ACTION_CANCEL, lastMoveX, lastMoveY, 0
+        )
+        try {
+            inProgressStrokesView.cancelStroke(strokeId, dummyEvent)
+        } catch (_: Exception) {}
+        dummyEvent.recycle()
+        activeStrokeIds.remove(activePointerIdForSnap)
+
+        isHoldErasing = true
+        performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+
+        // Erase strokes intersecting current stylus tip point
+        dryInkView.transform.screenToWorld(lastMoveX, lastMoveY, tempPoint)
+        val currentScale = dryInkView.transform.scale.coerceAtLeast(0.1f)
+        val eraseRadius = (strokeWidth * 4.5f / currentScale).coerceAtLeast(36f / currentScale)
+        val removed = dryInkView.eraseStrokesAt(tempPoint.x, tempPoint.y, eraseRadius)
+        if (removed.isNotEmpty()) {
+            val actionRecord = StrokeAction(removedStrokes = removed)
+            undoStack.add(actionRecord)
+            redoStack.clear()
+            notifyUndoRedoState()
+            for (r in removed) {
+                onUndoCommitted?.invoke(r)
+            }
+        }
+        dryInkView.invalidate()
+        invalidate()
+    }
+
+    // Finger as Eraser Feature (Stylus writes, single finger erases, palm rejected)
+    var isFingerEraserEnabled: Boolean
+        get() = palmFilter.config.isFingerEraserEnabled || palmFilter.config.inputMode == InputMode.PEN_DRAWS_FINGER_ERASES
+        set(value) {
+            palmFilter.config = palmFilter.config.copy(isFingerEraserEnabled = value)
+            if (value && palmFilter.config.inputMode != InputMode.PEN_DRAWS_FINGER_ERASES) {
+                palmFilter.config = palmFilter.config.copy(inputMode = InputMode.PEN_DRAWS_FINGER_ERASES)
+            } else if (!value && palmFilter.config.inputMode == InputMode.PEN_DRAWS_FINGER_ERASES) {
+                palmFilter.config = palmFilter.config.copy(inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM)
+            }
+        }
+
+    private var isFingerErasing = false
+    private var fingerEraseScreenX = 0f
+    private var fingerEraseScreenY = 0f
+
+    private val fingerEraserFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = 0x261976D2.toInt() // Soft translucent primary blue
+    }
+    private val fingerEraserOutlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 3f
+        color = 0xCC1976D2.toInt()
     }
 
     var onLassoSelectionChanged: ((hasSelection: Boolean) -> Unit)? = null
@@ -323,6 +394,9 @@ class InkCanvasView @JvmOverloads constructor(
             is PalmRejectionFilter.FilteredResult.StylusAction -> {
                 handleStylusAction(event, pointerIndex, pointerId, filterResult.isEraser)
             }
+            is PalmRejectionFilter.FilteredResult.FingerEraser -> {
+                handleFingerEraser(event, pointerIndex, pointerId)
+            }
             is PalmRejectionFilter.FilteredResult.CancelStroke -> {
                 handleCancelStroke(event, pointerId)
             }
@@ -454,6 +528,11 @@ class InkCanvasView @JvmOverloads constructor(
                 if (holdToSnapEnabled && currentTool != CanvasTool.STROKE_ERASER && currentTool != CanvasTool.LASSO) {
                     postDelayed(holdToSnapRunnable, HOLD_TO_SNAP_DELAY_MS)
                 }
+                isHoldErasing = false
+                removeCallbacks(holdToEraseRunnable)
+                if (holdToEraseEnabled && currentTool != CanvasTool.STROKE_ERASER && currentTool != CanvasTool.LASSO) {
+                    postDelayed(holdToEraseRunnable, holdToEraseDelayMs)
+                }
 
                 predictor.record(event)
                 val strokeId = inProgressStrokesView.startStroke(
@@ -466,6 +545,27 @@ class InkCanvasView @JvmOverloads constructor(
                 activeStrokeIds[pointerId] = strokeId
             }
             MotionEvent.ACTION_MOVE -> {
+                if (isHoldErasing) {
+                    lastMoveX = screenX
+                    lastMoveY = screenY
+                    dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
+                    val currentScale = dryInkView.transform.scale.coerceAtLeast(0.1f)
+                    val eraseRadius = (strokeWidth * 4.5f / currentScale).coerceAtLeast(36f / currentScale)
+                    val removed = dryInkView.eraseStrokesAt(tempPoint.x, tempPoint.y, eraseRadius)
+                    if (removed.isNotEmpty()) {
+                        val actionRecord = StrokeAction(removedStrokes = removed)
+                        undoStack.add(actionRecord)
+                        redoStack.clear()
+                        notifyUndoRedoState()
+                        for (r in removed) {
+                            onUndoCommitted?.invoke(r)
+                        }
+                    }
+                    dryInkView.invalidate()
+                    invalidate()
+                    return
+                }
+
                 if (!isStrokeSnapped) {
                     dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
                     strokePoints.add(ShapeRecognizer.Point(tempPoint.x, tempPoint.y, event.eventTime))
@@ -478,6 +578,10 @@ class InkCanvasView @JvmOverloads constructor(
                         if (holdToSnapEnabled && currentTool != CanvasTool.STROKE_ERASER && currentTool != CanvasTool.LASSO) {
                             postDelayed(holdToSnapRunnable, HOLD_TO_SNAP_DELAY_MS)
                         }
+                        removeCallbacks(holdToEraseRunnable)
+                        if (holdToEraseEnabled && currentTool != CanvasTool.STROKE_ERASER && currentTool != CanvasTool.LASSO) {
+                            postDelayed(holdToEraseRunnable, holdToEraseDelayMs)
+                        }
                     }
 
                     predictor.record(event)
@@ -489,6 +593,13 @@ class InkCanvasView @JvmOverloads constructor(
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                 removeCallbacks(holdToSnapRunnable)
+                removeCallbacks(holdToEraseRunnable)
+                if (isHoldErasing) {
+                    isHoldErasing = false
+                    dryInkView.invalidate()
+                    invalidate()
+                    return
+                }
                 val strokeId = activeStrokeIds.remove(pointerId)
 
                 if (isStrokeSnapped && snappedStrokesForCurrentTouch.isNotEmpty()) {
@@ -539,6 +650,8 @@ class InkCanvasView @JvmOverloads constructor(
 
     private fun handleCancelStroke(event: MotionEvent, pointerId: Int) {
         removeCallbacks(holdToSnapRunnable)
+        removeCallbacks(holdToEraseRunnable)
+        isHoldErasing = false
         if (pointerId == activePointerIdForSnap) {
             if (isStrokeSnapped && snappedStrokesForCurrentTouch.isNotEmpty()) {
                 // If it was already snapped while holding, treat cancel as release/commit! Ink is never lost!
@@ -558,6 +671,52 @@ class InkCanvasView @JvmOverloads constructor(
                 try {
                     inProgressStrokesView.cancelStroke(strokeId, event)
                 } catch (_: Exception) {}
+            }
+        }
+    }
+
+    private fun handleFingerEraser(event: MotionEvent, pointerIndex: Int, pointerId: Int) {
+        val action = event.actionMasked
+        val screenX = event.getX(pointerIndex)
+        val screenY = event.getY(pointerIndex)
+
+        when (action) {
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                isFingerErasing = true
+                fingerEraseScreenX = screenX
+                fingerEraseScreenY = screenY
+                performFingerEraseAt(screenX, screenY)
+                invalidate()
+            }
+            MotionEvent.ACTION_MOVE -> {
+                if (isFingerErasing) {
+                    fingerEraseScreenX = screenX
+                    fingerEraseScreenY = screenY
+                    performFingerEraseAt(screenX, screenY)
+                    invalidate()
+                }
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
+                isFingerErasing = false
+                fingerEraseScreenX = 0f
+                fingerEraseScreenY = 0f
+                invalidate()
+            }
+        }
+    }
+
+    private fun performFingerEraseAt(screenX: Float, screenY: Float) {
+        dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
+        val currentScale = dryInkView.transform.scale.coerceAtLeast(0.1f)
+        val eraseRadius = (44f / currentScale).coerceAtLeast(24f / currentScale)
+        val removed = dryInkView.eraseStrokesAt(tempPoint.x, tempPoint.y, eraseRadius)
+        if (removed.isNotEmpty()) {
+            val actionRecord = StrokeAction(removedStrokes = removed)
+            undoStack.add(actionRecord)
+            redoStack.clear()
+            notifyUndoRedoState()
+            for (r in removed) {
+                onUndoCommitted?.invoke(r)
             }
         }
     }
@@ -855,6 +1014,16 @@ class InkCanvasView @JvmOverloads constructor(
             }
         }
         lastFrameTimeNanos = nowNanos
+
+        // Draw visual cursor indicator for active finger eraser or hold-to-erase
+        if (isHoldErasing && lastMoveX > 0f) {
+            canvas.drawCircle(lastMoveX, lastMoveY, 36f, fingerEraserFillPaint)
+            canvas.drawCircle(lastMoveX, lastMoveY, 36f, fingerEraserOutlinePaint)
+        }
+        if (isFingerErasing && fingerEraseScreenX > 0f) {
+            canvas.drawCircle(fingerEraseScreenX, fingerEraseScreenY, 44f, fingerEraserFillPaint)
+            canvas.drawCircle(fingerEraseScreenX, fingerEraseScreenY, 44f, fingerEraserOutlinePaint)
+        }
 
         // Draw HUD / Palm Rejection overlay if enabled
         if (palmFilter.config.debugOverlayEnabled) {
