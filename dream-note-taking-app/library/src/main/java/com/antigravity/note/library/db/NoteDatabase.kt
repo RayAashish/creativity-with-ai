@@ -4,14 +4,17 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.antigravity.note.library.backup.manifest.BackupManifestDao
+import com.antigravity.note.library.backup.manifest.BackupManifestEntity
 
 @Database(
     entities = [
         FolderEntity::class,
         NotebookEntity::class,
-        PageEntity::class
+        PageEntity::class,
+        BackupManifestEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class NoteDatabase : RoomDatabase() {
@@ -19,6 +22,7 @@ abstract class NoteDatabase : RoomDatabase() {
     abstract fun folderDao(): FolderDao
     abstract fun notebookDao(): NotebookDao
     abstract fun pageDao(): PageDao
+    abstract fun backupManifestDao(): BackupManifestDao
 
     companion object {
         @Volatile

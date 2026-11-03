@@ -12,17 +12,34 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import com.antigravity.note.library.backup.manifest.BackupChangeTracker
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
 class LibraryRepository(
     private val database: NoteDatabase,
     private val pageRepository: PageRepository,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    val backupChangeTracker: BackupChangeTracker = BackupChangeTracker(database.backupManifestDao(), ioDispatcher)
 ) {
+    private val repoScope = CoroutineScope(SupervisorJob() + ioDispatcher)
     private val folderDao = database.folderDao()
     private val notebookDao = database.notebookDao()
     private val pageDao = database.pageDao()
+
+    init {
+        pageRepository.onPageSavedListener = { notebookId, pageId, file ->
+            backupChangeTracker.schedulePageSave(notebookId, pageId, file)
+        }
+        pageRepository.onPageDeletedListener = { notebookId, pageId ->
+            repoScope.launch {
+                backupChangeTracker.onPageDeleted(notebookId, pageId)
+            }
+        }
+    }
 
     fun getAllFolders(): Flow<List<FolderEntity>> = folderDao.getAllFolders()
 

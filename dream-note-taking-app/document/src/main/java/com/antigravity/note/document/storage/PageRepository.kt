@@ -26,6 +26,9 @@ class PageRepository(
     private val repositoryScope = CoroutineScope(SupervisorJob() + ioDispatcher)
     private val fileMutex = Mutex()
 
+    var onPageSavedListener: ((notebookId: String, pageId: String, file: File) -> Unit)? = null
+    var onPageDeletedListener: ((notebookId: String, pageId: String) -> Unit)? = null
+
     init {
         if (!rootDir.exists()) {
             rootDir.mkdirs()
@@ -122,6 +125,7 @@ class PageRepository(
             val renamed = tmpFile.renameTo(pageFile)
             if (renamed) {
                 wal.deleteWal()
+                onPageSavedListener?.invoke(meta.notebookId, meta.pageId, pageFile)
             }
             renamed
         } catch (e: Exception) {
@@ -204,6 +208,9 @@ class PageRepository(
         var deleted = true
         if (pageFile.exists()) deleted = deleted && pageFile.delete()
         if (walFile.exists()) walFile.delete()
+        if (deleted) {
+            onPageDeletedListener?.invoke(notebookId, pageId)
+        }
         deleted
     }
 }

@@ -118,6 +118,16 @@ import com.antigravity.note.document.storage.PageRepository
 import com.antigravity.note.inkengine.canvas.CanvasTool
 import com.antigravity.note.inkengine.canvas.InkCanvasView
 import com.antigravity.note.inkengine.palm.InputMode
+import com.antigravity.note.library.backup.api.SafeLoggingInterceptor
+import com.antigravity.note.library.backup.auth.AuthState
+import com.antigravity.note.library.backup.auth.EncryptedTokenStorage
+import com.antigravity.note.library.backup.auth.GitHubDeviceFlowClient
+import com.antigravity.note.library.backup.repo.GitHubRepoManager
+import com.antigravity.note.library.backup.worker.BackupWorker
+import com.antigravity.note.ui.backup.BackupStatusChip
+import com.antigravity.note.ui.backup.BackupSyncStatus
+import com.antigravity.note.ui.backup.GitHubBackupDialog
+import okhttp3.OkHttpClient
 import com.antigravity.note.library.db.NoteDatabase
 import com.antigravity.note.library.repository.LibraryRepository
 import com.antigravity.note.ui.library.DsaProblemHeader
@@ -263,6 +273,38 @@ fun InkCanvasScreen(
     var isExportDialogOpen by remember { mutableStateOf(false) }
     var isExporting by remember { mutableStateOf(false) }
     var exportSuccessMessage by remember { mutableStateOf<String?>(null) }
+
+    // GitHub Backup State
+    var isBackupDialogOpen by remember { mutableStateOf(false) }
+    var backupSyncStatus by remember { mutableStateOf(BackupSyncStatus.OFFLINE) }
+
+    val tokenStorage = remember { EncryptedTokenStorage(context) }
+    val backupOkHttpClient = remember {
+        OkHttpClient.Builder()
+            .addInterceptor(SafeLoggingInterceptor())
+            .build()
+    }
+    val deviceFlowClient = remember {
+        GitHubDeviceFlowClient(tokenStorage, backupOkHttpClient)
+    }
+    val repoManager = remember {
+        GitHubRepoManager(tokenStorage, backupOkHttpClient)
+    }
+
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val auth = deviceFlowClient.getCurrentAuthState()
+            val repo = tokenStorage.getSelectedRepo()
+            backupSyncStatus = when {
+                auth is AuthState.Authenticated && repo != null -> BackupSyncStatus.SYNCED
+                auth is AuthState.ReconnectionRequired -> BackupSyncStatus.NEEDS_ATTENTION
+                else -> BackupSyncStatus.OFFLINE
+            }
+            try {
+                BackupWorker.schedulePeriodic(context)
+            } catch (_: Exception) {}
+        }
+    }
 
     val audioRecorder = remember { AudioStrokeRecorder(context, scope) }
     var isRecordingAudio by remember { mutableStateOf(false) }
@@ -502,6 +544,12 @@ fun InkCanvasScreen(
                                 tint = if (duePages.isNotEmpty()) Color(0xFFE65100) else MaterialTheme.colorScheme.onSurface
                             )
                         }
+
+                        // GitHub Backup Status Chip
+                        BackupStatusChip(
+                            status = backupSyncStatus,
+                            onClick = { isBackupDialogOpen = true }
+                        )
                     }
 
                     Spacer(modifier = Modifier.width(6.dp))
@@ -1256,6 +1304,9 @@ fun InkCanvasScreen(
                 onCloseSidebar = {
                     isSidebarOpen = false
                 },
+                onOpenBackupSettings = {
+                    isBackupDialogOpen = true
+                },
                 onCreateFolder = { name, parentId ->
                     scope.launch {
                         libraryRepo.createFolder(name, parentId)
@@ -1732,6 +1783,31 @@ fun InkCanvasScreen(
                     OutlinedButton(onClick = { showDeletePageDialog = false }) {
                         Text("Cancel")
                     }
+                }
+            )
+        }
+
+        // GitHub Backup & Restore Dialog
+        if (isBackupDialogOpen) {
+            GitHubBackupDialog(
+                tokenStorage = tokenStorage,
+                deviceFlowClient = deviceFlowClient,
+                repoManager = repoManager,
+                onDismiss = {
+                    isBackupDialogOpen = false
+                    scope.launch {
+                        val auth = deviceFlowClient.getCurrentAuthState()
+                        val repo = tokenStorage.getSelectedRepo()
+                        backupSyncStatus = when {
+                            auth is AuthState.Authenticated && repo != null -> BackupSyncStatus.SYNCED
+                            auth is AuthState.ReconnectionRequired -> BackupSyncStatus.NEEDS_ATTENTION
+                            else -> BackupSyncStatus.OFFLINE
+                        }
+                    }
+                },
+                onTriggerBackupNow = {
+                    BackupWorker.enqueueImmediate(context)
+                    backupSyncStatus = BackupSyncStatus.BACKING_UP
                 }
             )
         }

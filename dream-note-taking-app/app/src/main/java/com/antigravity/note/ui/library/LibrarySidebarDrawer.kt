@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ExpandMore
@@ -81,6 +82,7 @@ fun LibrarySidebarDrawer(
     onCreateNotebook: (title: String, folderId: String?) -> Unit = { _, _ -> },
     onCreateGeneralPage: (notebookId: String, title: String, template: PaperTemplate) -> Unit = { _, _, _ -> },
     onCreateProblemPage: (notebookId: String, title: String, url: String, diff: String, tags: String) -> Unit = { _, _, _, _, _ -> },
+    onOpenBackupSettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Track expanded folders & notebooks
@@ -178,6 +180,9 @@ fun LibrarySidebarDrawer(
 
                     IconButton(onClick = onOpenQuickSwitcher) {
                         Icon(Icons.Default.Search, contentDescription = "Quick Switcher (Ctrl+K)")
+                    }
+                    IconButton(onClick = onOpenBackupSettings) {
+                        Icon(Icons.Default.CloudSync, contentDescription = "GitHub Backup & Sync")
                     }
                     IconButton(onClick = onCloseSidebar) {
                         Icon(Icons.Default.Close, contentDescription = "Close Sidebar")

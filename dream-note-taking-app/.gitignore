@@ -1,6 +1,13 @@
 *.iml
 .gradle
+local.properties
 /local.properties
+*.jks
+*.keystore
+.env*
+secrets/
+*.pem
+*.token
 /.idea
 .DS_Store
 /build
