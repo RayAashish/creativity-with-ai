@@ -1033,8 +1033,8 @@ class InkCanvasView @JvmOverloads constructor(
 
     private fun drawDebugOverlay(canvas: Canvas) {
         val leftPad = 32f
-        val topPad = 180f
-        val boxWidth = 660f
+        val topPad = 340f
+        val boxWidth = 680f
         val boxHeight = 216f
         val cornerRadius = 16f
         canvas.drawRoundRect(leftPad, topPad, leftPad + boxWidth, topPad + boxHeight, cornerRadius, cornerRadius, debugBgPaint)
@@ -1042,7 +1042,7 @@ class InkCanvasView @JvmOverloads constructor(
 
         val fpsText = "Sustained FPS: %.1f fps (Budget: 6.94 ms)".format(measuredFps)
         val docText = "Doc: $pageTitle | ${dryInkView.currentTemplate.displayName} | Open: ${pageOpenLatencyMs}ms"
-        val toolText = "Tool: $currentTool | Mode: ${palmFilter.config.inputMode}"
+        val toolText = "Tool: $currentTool | Mode: ${palmFilter.config.inputMode} | FingerErase: ${palmFilter.config.isFingerEraserEnabled}"
         val strokesText = "Strokes: ${dryInkView.strokes.size} | Zoom: %.2fx".format(dryInkView.transform.scale)
         val palmsText = "Palms Rejected: ${palmFilter.palmsRejectedCount} | Grace: ${palmFilter.config.graceWindowMs}ms"
 
