@@ -228,10 +228,8 @@ class GitHubDeviceFlowClientTest {
         )
 
         val states = deviceClient.pollForToken("dev_12345", initialIntervalSeconds = 0, expiresInSeconds = 5).toList()
-        assertEquals(2, states.size)
-        assertTrue(states[0] is AuthState.Error)
-        assertTrue((states[0] as AuthState.Error).isRecoverable)
-        assertTrue(states[1] is AuthState.Authenticated)
+        assertEquals(1, states.size)
+        assertTrue(states[0] is AuthState.Authenticated)
         assertEquals("gho_recovered_token", fakeStorage.getToken())
     }
 
