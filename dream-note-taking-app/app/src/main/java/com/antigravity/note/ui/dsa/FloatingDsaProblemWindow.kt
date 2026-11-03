@@ -1,41 +1,48 @@
 package com.antigravity.note.ui.dsa
 
+import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AspectRatio
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.OpenInBrowser
-import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -47,6 +54,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,7 +65,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -76,24 +85,58 @@ fun FloatingDsaProblemWindow(
     page: PageEntity,
     onUpdatePage: (PageEntity) -> Unit,
     onCloseWindow: () -> Unit,
+    onInsertTraceTable: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
 
-    // Drag position
-    var offsetX by remember(page.pageId) { mutableFloatStateOf(page.descriptionWindowX) }
-    var offsetY by remember(page.pageId) { mutableFloatStateOf(page.descriptionWindowY) }
+    val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
+    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
 
-    // Minimized / Expanded state
+    // Position State (Initialized from DB, clamped safely to screen)
+    var offsetX by remember(page.pageId) {
+        mutableFloatStateOf(page.descriptionWindowX.coerceIn(0f, maxOf(100f, screenWidthPx - 300f)))
+    }
+    var offsetY by remember(page.pageId) {
+        mutableFloatStateOf(page.descriptionWindowY.coerceIn(0f, maxOf(100f, screenHeightPx - 200f)))
+    }
+
+    // Dynamic Resizable Dimensions (Width: 320..950 dp, Height: 260..1000 dp)
+    var windowWidthDp by remember(page.pageId) {
+        mutableFloatStateOf(page.descriptionWindowWidth.coerceIn(320f, 950f))
+    }
+    var windowHeightDp by remember(page.pageId) {
+        mutableFloatStateOf(page.descriptionWindowHeight.coerceIn(260f, 1000f))
+    }
+
+    // Minimized / Expanded State
     var isMinimized by remember(page.pageId) { mutableStateOf(page.isDescriptionMinimized) }
 
-    // Content state
+    // Opacity / Ghost Mode (Game Changer for stylus note-taking over problem description)
+    var windowAlpha by remember { mutableFloatStateOf(0.98f) }
+
+    // Hints Accordion State
+    var showHints by remember { mutableStateOf(false) }
+    var activeHintIndex by remember { mutableIntStateOf(0) }
+    val hintsList = remember(page.pageId, page.hintsJson) {
+        mutableStateListOf<String>().apply {
+            val jsonStr = page.hintsJson
+            if (!jsonStr.isNullOrBlank()) {
+                try {
+                    addAll(Json.decodeFromString<List<String>>(jsonStr))
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
+    // Content State
     var descriptionHtml by remember(page.pageId) { mutableStateOf(page.problemDescriptionHtml.orEmpty()) }
     var isFetching by remember { mutableStateOf(false) }
     var fetchError by remember { mutableStateOf<String?>(null) }
 
-    // Test cases list
+    // Minimal Test Cases (Checklist ribbon only for user reference)
     val testCases = remember(page.pageId) {
         mutableStateListOf<TestCaseItem>().apply {
             val jsonStr = page.testCasesJson
@@ -101,6 +144,12 @@ fun FloatingDsaProblemWindow(
                 try {
                     addAll(Json.decodeFromString<List<TestCaseItem>>(jsonStr))
                 } catch (_: Exception) {}
+            }
+            if (isEmpty()) {
+                // Default 3 standard test checkmarks if none parsed
+                add(TestCaseItem(1, "Case 1", "", "", false))
+                add(TestCaseItem(2, "Case 2", "", "", false))
+                add(TestCaseItem(3, "Case 3", "", "", false))
             }
         }
     }
@@ -116,12 +165,24 @@ fun FloatingDsaProblemWindow(
                 res.onSuccess { details ->
                     descriptionHtml = details.descriptionHtml
                     testCases.clear()
-                    testCases.addAll(details.testCases)
-                    val jsonStr = Json.encodeToString(details.testCases)
+                    if (details.testCases.isNotEmpty()) {
+                        testCases.addAll(details.testCases)
+                    } else {
+                        testCases.add(TestCaseItem(1, "Case 1", "", "", false))
+                        testCases.add(TestCaseItem(2, "Case 2", "", "", false))
+                        testCases.add(TestCaseItem(3, "Case 3", "", "", false))
+                    }
+                    if (details.hints.isNotEmpty()) {
+                        hintsList.clear()
+                        hintsList.addAll(details.hints)
+                    }
+                    val jsonStr = Json.encodeToString(testCases.toList())
+                    val hintsJsonStr = Json.encodeToString(hintsList.toList())
                     onUpdatePage(
                         page.copy(
                             problemDescriptionHtml = details.descriptionHtml,
                             testCasesJson = jsonStr,
+                            hintsJson = hintsJsonStr,
                             difficulty = details.difficulty ?: page.difficulty
                         )
                     )
@@ -133,7 +194,7 @@ fun FloatingDsaProblemWindow(
         }
     }
 
-    // Function to re-fetch live
+    // Manual Re-fetch Live
     fun reloadFromSource() {
         val url = page.sourceUrl ?: return
         isFetching = true
@@ -143,12 +204,24 @@ fun FloatingDsaProblemWindow(
             res.onSuccess { details ->
                 descriptionHtml = details.descriptionHtml
                 testCases.clear()
-                testCases.addAll(details.testCases)
-                val jsonStr = Json.encodeToString(details.testCases)
+                if (details.testCases.isNotEmpty()) {
+                    testCases.addAll(details.testCases)
+                } else {
+                    testCases.add(TestCaseItem(1, "Case 1", "", "", false))
+                    testCases.add(TestCaseItem(2, "Case 2", "", "", false))
+                    testCases.add(TestCaseItem(3, "Case 3", "", "", false))
+                }
+                if (details.hints.isNotEmpty()) {
+                    hintsList.clear()
+                    hintsList.addAll(details.hints)
+                }
+                val jsonStr = Json.encodeToString(testCases.toList())
+                val hintsJsonStr = Json.encodeToString(hintsList.toList())
                 onUpdatePage(
                     page.copy(
                         problemDescriptionHtml = details.descriptionHtml,
                         testCasesJson = jsonStr,
+                        hintsJson = hintsJsonStr,
                         difficulty = details.difficulty ?: page.difficulty
                     )
                 )
@@ -162,11 +235,17 @@ fun FloatingDsaProblemWindow(
     fun toggleTestCaseCheck(index: Int) {
         if (index in testCases.indices) {
             val old = testCases[index]
-            val updated = old.copy(isChecked = !old.isChecked)
-            testCases[index] = updated
+            testCases[index] = old.copy(isChecked = !old.isChecked)
             val jsonStr = Json.encodeToString(testCases.toList())
             onUpdatePage(page.copy(testCasesJson = jsonStr))
         }
+    }
+
+    fun addNewTestCase() {
+        val nextId = (testCases.maxOfOrNull { it.id } ?: 0) + 1
+        testCases.add(TestCaseItem(nextId, "Case $nextId", "", "", false))
+        val jsonStr = Json.encodeToString(testCases.toList())
+        onUpdatePage(page.copy(testCasesJson = jsonStr))
     }
 
     val difficultyColor = when (page.difficulty?.lowercase()) {
@@ -176,24 +255,26 @@ fun FloatingDsaProblemWindow(
         else -> MaterialTheme.colorScheme.primary
     }
 
+    val isDark = isSystemInDarkTheme()
+
     Box(
         modifier = modifier
             .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
     ) {
         if (isMinimized) {
-            // Minimized Floating Pill
+            // ================= MINIMIZED FLOATING PILL =================
             Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
+                shape = RoundedCornerShape(22.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
                 shadowElevation = 8.dp,
                 modifier = Modifier
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
-                    .pointerInput(page.pageId) {
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(22.dp))
+                    .pointerInput(Unit) {
                         detectDragGestures(
                             onDrag = { change, dragAmount ->
                                 change.consume()
-                                offsetX = (offsetX + dragAmount.x).coerceIn(10f, 1600f)
-                                offsetY = (offsetY + dragAmount.y).coerceIn(60f, 3000f)
+                                offsetX = (offsetX + dragAmount.x).coerceIn(0f, maxOf(10f, screenWidthPx - 260f))
+                                offsetY = (offsetY + dragAmount.y).coerceIn(0f, maxOf(10f, screenHeightPx - 80f))
                             },
                             onDragEnd = {
                                 onUpdatePage(page.copy(descriptionWindowX = offsetX, descriptionWindowY = offsetY))
@@ -212,7 +293,7 @@ fun FloatingDsaProblemWindow(
                 ) {
                     Icon(
                         imageVector = Icons.Default.DragHandle,
-                        contentDescription = "Drag Window",
+                        contentDescription = "Drag Pill",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
@@ -237,20 +318,18 @@ fun FloatingDsaProblemWindow(
                         }
                     }
 
-                    if (testCases.isNotEmpty()) {
-                        val checkedCount = testCases.count { it.isChecked }
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = if (checkedCount == testCases.size) Color(0xFF146C2E).copy(alpha = 0.15f) else MaterialTheme.colorScheme.secondaryContainer
-                        ) {
-                            Text(
-                                text = "✓ $checkedCount/${testCases.size}",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (checkedCount == testCases.size) Color(0xFF146C2E) else MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
+                    val checkedCount = testCases.count { it.isChecked }
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (checkedCount == testCases.size && testCases.isNotEmpty()) Color(0xFF146C2E).copy(alpha = 0.15f) else MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Text(
+                            text = "✓ $checkedCount/${testCases.size}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (checkedCount == testCases.size && testCases.isNotEmpty()) Color(0xFF146C2E) else MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
                     }
 
                     IconButton(
@@ -270,89 +349,167 @@ fun FloatingDsaProblemWindow(
                 }
             }
         } else {
-            // Full Floating Window
+            // ================= FULL RESIZABLE FLOATING WINDOW =================
             Card(
                 modifier = Modifier
-                    .widthIn(min = 380.dp, max = 500.dp)
-                    .heightIn(max = 620.dp),
+                    .width(windowWidthDp.dp)
+                    .height(windowHeightDp.dp),
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = windowAlpha)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
-                Column {
-                    // Header Bar (Draggable)
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Top Drag Pill Handle (High Contrast visual drag anchor)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(18.dp)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f))
+                            .pointerInput(Unit) {
+                                detectDragGestures(
+                                    onDrag = { change, dragAmount ->
+                                        change.consume()
+                                        offsetX = (offsetX + dragAmount.x).coerceIn(0f, maxOf(10f, screenWidthPx - 100f))
+                                        offsetY = (offsetY + dragAmount.y).coerceIn(0f, maxOf(10f, screenHeightPx - 80f))
+                                    },
+                                    onDragEnd = {
+                                        onUpdatePage(page.copy(descriptionWindowX = offsetX, descriptionWindowY = offsetY))
+                                    }
+                                )
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(44.dp)
+                                .height(4.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f))
+                        )
+                    }
+
+                    // Window Header Bar (Draggable across entire surface)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                            .pointerInput(page.pageId) {
+                            .pointerInput(Unit) {
                                 detectDragGestures(
                                     onDrag = { change, dragAmount ->
                                         change.consume()
-                                        offsetX = (offsetX + dragAmount.x).coerceIn(10f, 1600f)
-                                        offsetY = (offsetY + dragAmount.y).coerceIn(60f, 3000f)
+                                        offsetX = (offsetX + dragAmount.x).coerceIn(0f, maxOf(10f, screenWidthPx - 100f))
+                                        offsetY = (offsetY + dragAmount.y).coerceIn(0f, maxOf(10f, screenHeightPx - 80f))
                                     },
                                     onDragEnd = {
                                         onUpdatePage(page.copy(descriptionWindowX = offsetX, descriptionWindowY = offsetY))
                                     }
                                 )
                             }
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.DragHandle,
                                 contentDescription = "Drag to Move",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                             Text(
                                 text = page.title,
-                                fontSize = 15.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1
                             )
                             page.difficulty?.let { diff ->
                                 Surface(
-                                    shape = RoundedCornerShape(6.dp),
+                                    shape = RoundedCornerShape(5.dp),
                                     color = difficultyColor.copy(alpha = 0.16f)
                                 ) {
                                     Text(
                                         text = diff,
                                         color = difficultyColor,
-                                        fontSize = 11.sp,
+                                        fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
                                     )
+                                }
+                            }
+
+                            // Hints Button (Game Changer for DSA problem-solving)
+                            if (hintsList.isNotEmpty()) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (showHints) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier.clickable { showHints = !showHints }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Lightbulb,
+                                            contentDescription = "Hints",
+                                            tint = if (showHints) MaterialTheme.colorScheme.primary else Color(0xFFB26A00),
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                        Text(
+                                            text = "Hint (${hintsList.size})",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (showHints) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                         }
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                            horizontalArrangement = Arrangement.spacedBy(1.dp)
                         ) {
+                            // Ghost / Opacity Mode Toggle (Cycles 0.98 -> 0.65 -> 0.35)
+                            IconButton(
+                                onClick = {
+                                    windowAlpha = when {
+                                        windowAlpha > 0.85f -> 0.65f
+                                        windowAlpha > 0.50f -> 0.35f
+                                        else -> 0.98f
+                                    }
+                                },
+                                modifier = Modifier.size(26.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Opacity,
+                                    contentDescription = "Toggle Glassmorphism Opacity",
+                                    tint = if (windowAlpha < 0.9f) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+
                             if (isFetching) {
                                 CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
+                                    modifier = Modifier.size(14.dp),
                                     strokeWidth = 2.dp,
                                     color = MaterialTheme.colorScheme.primary
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
                             } else {
-                                IconButton(onClick = { reloadFromSource() }, modifier = Modifier.size(28.dp)) {
+                                IconButton(onClick = { reloadFromSource() }, modifier = Modifier.size(26.dp)) {
                                     Icon(
                                         imageVector = Icons.Default.Refresh,
                                         contentDescription = "Sync from URL",
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(16.dp)
                                     )
                                 }
                             }
@@ -363,226 +520,411 @@ fun FloatingDsaProblemWindow(
                                     isMinimized = true
                                     onUpdatePage(page.copy(isDescriptionMinimized = true))
                                 },
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(26.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.ExpandLess,
                                     contentDescription = "Minimize Window",
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
 
                             // Close Button
-                            IconButton(onClick = onCloseWindow, modifier = Modifier.size(28.dp)) {
+                            IconButton(onClick = onCloseWindow, modifier = Modifier.size(26.dp)) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Close Window",
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         }
                     }
 
-                    HorizontalDivider(thickness = 0.8.dp, color = MaterialTheme.colorScheme.outlineVariant)
-
-                    // Scrollable Body
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f, fill = false)
-                            .verticalScroll(rememberScrollState())
-                            .padding(14.dp)
+                    // Progressive Hints Drawer
+                    AnimatedVisibility(
+                        visible = showHints && hintsList.isNotEmpty(),
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
                     ) {
-                        // Error banner if any
-                        if (fetchError != null && descriptionHtml.isBlank()) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.errorContainer,
-                                modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)
-                            ) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.85f),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
                                 Row(
-                                    modifier = Modifier.padding(10.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "⚠️ $fetchError",
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                        text = "💡 Hint ${activeHintIndex + 1} of ${hintsList.size}",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
-                                }
-                            }
-                        }
-
-                        // Problem Description Content (HTML + Images via WebView)
-                        if (descriptionHtml.isNotBlank()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 140.dp, max = 280.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
-                                    .padding(4.dp)
-                            ) {
-                                AndroidView(
-                                    factory = { ctx ->
-                                        WebView(ctx).apply {
-                                            settings.apply {
-                                                javaScriptEnabled = false
-                                                loadWithOverviewMode = true
-                                                useWideViewPort = false
-                                                domStorageEnabled = false
-                                            }
-                                            setBackgroundColor(0x00000000)
-                                            webViewClient = WebViewClient()
-                                        }
-                                    },
-                                    update = { webView ->
-                                        val styledHtml = """
-                                            <!DOCTYPE html>
-                                            <html>
-                                            <head>
-                                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                            <style>
-                                                body {
-                                                    font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-                                                    font-size: 13px;
-                                                    line-height: 1.5;
-                                                    color: #212529;
-                                                    margin: 0;
-                                                    padding: 8px;
-                                                    background: transparent;
-                                                }
-                                                img {
-                                                    max-width: 100%;
-                                                    height: auto;
-                                                    border-radius: 8px;
-                                                    display: block;
-                                                    margin: 10px auto;
-                                                    border: 1px solid #dee2e6;
-                                                }
-                                                pre {
-                                                    background-color: #f1f3f5;
-                                                    border-radius: 6px;
-                                                    padding: 8px 10px;
-                                                    font-family: ui-monospace, SFMono-Regular, monospace;
-                                                    font-size: 12px;
-                                                    overflow-x: auto;
-                                                    border: 1px solid #e9ecef;
-                                                    white-space: pre-wrap;
-                                                    word-break: break-word;
-                                                }
-                                                code {
-                                                    background-color: #f1f3f5;
-                                                    padding: 2px 4px;
-                                                    border-radius: 4px;
-                                                    font-family: ui-monospace, SFMono-Regular, monospace;
-                                                    font-size: 12px;
-                                                }
-                                                ul, ol {
-                                                    padding-left: 20px;
-                                                    margin: 6px 0;
-                                                }
-                                                li {
-                                                    margin-bottom: 4px;
-                                                }
-                                                p {
-                                                    margin: 6px 0;
-                                                }
-                                            </style>
-                                            </head>
-                                            <body>
-                                            $descriptionHtml
-                                            </body>
-                                            </html>
-                                        """.trimIndent()
-                                        webView.loadDataWithBaseURL("https://leetcode.com", styledHtml, "text/html", "UTF-8", null)
-                                    },
-                                    modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp, max = 280.dp)
-                                )
-                            }
-                        } else if (!isFetching) {
-                            Text(
-                                text = "No description loaded. Tap 🔄 to fetch from URL or enter one in Problem Details.",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(vertical = 12.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        // Test Cases Section with Interactive Checkboxes (Directly requested by user)
-                        Text(
-                            text = "Test Cases from Problem Description",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        if (testCases.isEmpty()) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    text = "No test cases detected yet. Tap 🔄 to parse examples from the description.",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(10.dp)
-                                )
-                            }
-                        } else {
-                            testCases.forEachIndexed { index, tc ->
-                                Surface(
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = if (tc.isChecked) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surfaceContainerLow,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 3.dp)
-                                        .clickable { toggleTestCaseCheck(index) }
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Checkbox(
-                                            checked = tc.isChecked,
-                                            onCheckedChange = { toggleTestCaseCheck(index) },
-                                            colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary),
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Column(modifier = Modifier.weight(1f)) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        if (activeHintIndex > 0) {
                                             Text(
-                                                text = tc.title,
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (tc.isChecked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                            )
-                                            Text(
-                                                text = tc.input,
+                                                text = "◀ Prev",
                                                 fontSize = 11.sp,
-                                                fontFamily = FontFamily.Monospace,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                maxLines = 2
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.clickable { activeHintIndex-- }
                                             )
-                                            if (tc.output.isNotBlank()) {
-                                                Text(
-                                                    text = "Expected: ${tc.output}",
-                                                    fontSize = 11.sp,
-                                                    fontFamily = FontFamily.Monospace,
-                                                    color = Color(0xFF146C2E),
-                                                    maxLines = 1
-                                                )
-                                            }
+                                        }
+                                        if (activeHintIndex < hintsList.size - 1) {
+                                            Text(
+                                                text = "Next Hint ▶",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.clickable { activeHintIndex++ }
+                                            )
                                         }
                                     }
                                 }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = hintsList.getOrElse(activeHintIndex) { "" },
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(thickness = 0.6.dp, color = MaterialTheme.colorScheme.outlineVariant)
+
+                    // Error Banner if needed
+                    if (fetchError != null && descriptionHtml.isBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            modifier = Modifier.fillMaxWidth().padding(8.dp)
+                        ) {
+                            Text(
+                                text = "⚠️ $fetchError",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+                    }
+
+                    // Problem Statement Body: Direct Native WebView Momentum Scrolling (WEIGHT 1f)
+                    // Zero nested-scroll conflicts! Smooth, continuous flick scrolling through full statement,
+                    // code blocks, examples, and images!
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .background(Color.Transparent)
+                    ) {
+                        if (descriptionHtml.isNotBlank()) {
+                            AndroidView(
+                                factory = { ctx ->
+                                    WebView(ctx).apply {
+                                        setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                                        isVerticalScrollBarEnabled = true
+                                        isHorizontalScrollBarEnabled = false
+                                        overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
+                                        settings.apply {
+                                            javaScriptEnabled = false
+                                            loadWithOverviewMode = true
+                                            useWideViewPort = false
+                                            domStorageEnabled = false
+                                        }
+                                        setBackgroundColor(0x00000000)
+                                        webViewClient = WebViewClient()
+                                    }
+                                },
+                                update = { webView ->
+                                    val textColor = if (isDark) "#E2E2E6" else "#1B1B1F"
+                                    val codeBg = if (isDark) "#2B2B30" else "#F0F0F4"
+                                    val preBorder = if (isDark) "#44444A" else "#E0E0E6"
+
+                                    val styledHtml = """
+                                        <!DOCTYPE html>
+                                        <html>
+                                        <head>
+                                        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+                                        <style>
+                                            body {
+                                                font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+                                                font-size: 13.5px;
+                                                line-height: 1.55;
+                                                color: $textColor;
+                                                margin: 0;
+                                                padding: 12px;
+                                                background: transparent;
+                                                word-break: break-word;
+                                            }
+                                            img {
+                                                max-width: 100%;
+                                                height: auto;
+                                                border-radius: 8px;
+                                                display: block;
+                                                margin: 10px auto;
+                                                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                                            }
+                                            pre {
+                                                background-color: $codeBg;
+                                                border-radius: 6px;
+                                                padding: 8px 10px;
+                                                font-family: ui-monospace, SFMono-Regular, monospace;
+                                                font-size: 12px;
+                                                overflow-x: auto;
+                                                border: 1px solid $preBorder;
+                                                white-space: pre-wrap;
+                                                word-break: break-word;
+                                            }
+                                            code {
+                                                background-color: $codeBg;
+                                                padding: 2px 4px;
+                                                border-radius: 4px;
+                                                font-family: ui-monospace, SFMono-Regular, monospace;
+                                                font-size: 12px;
+                                            }
+                                            ul, ol {
+                                                padding-left: 20px;
+                                                margin: 6px 0;
+                                            }
+                                            li {
+                                                margin-bottom: 4px;
+                                            }
+                                            p {
+                                                margin: 6px 0;
+                                            }
+                                            strong {
+                                                color: ${if (isDark) "#90CAF9" else "#005AC1"};
+                                            }
+                                        </style>
+                                        </head>
+                                        <body>
+                                        $descriptionHtml
+                                        </body>
+                                        </html>
+                                    """.trimIndent()
+                                    webView.loadDataWithBaseURL("https://leetcode.com", styledHtml, "text/html", "UTF-8", null)
+                                },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else if (!isFetching) {
+                            Box(
+                                modifier = Modifier.fillMaxSize().padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No description loaded yet.\nTap 🔄 to fetch from URL or paste problem link in Problem Details.",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(thickness = 0.6.dp, color = MaterialTheme.colorScheme.outlineVariant)
+
+                    // ================= MINIMAL BOTTOM CONTROLS RIBBON =================
+                    // (Takes only ~38 dp height; Minimal testcase checklist, Game-changer trace stamp, Resize thumb)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f))
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // Left: Minimal Test Case Checklist Chips (User reference only; actual details in statement)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .horizontalScroll(rememberScrollState())
+                        ) {
+                            Text(
+                                text = "✓ Tests:",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            testCases.forEachIndexed { index, tc ->
+                                val isChecked = tc.isChecked
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = if (isChecked) Color(0xFF146C2E).copy(alpha = 0.18f) else MaterialTheme.colorScheme.surface,
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        1.dp,
+                                        if (isChecked) Color(0xFF146C2E) else MaterialTheme.colorScheme.outlineVariant
+                                    ),
+                                    modifier = Modifier.clickable { toggleTestCaseCheck(index) }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = "Test passed toggle",
+                                            tint = if (isChecked) Color(0xFF146C2E) else MaterialTheme.colorScheme.outlineVariant,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Text(
+                                            text = tc.title,
+                                            fontSize = 11.sp,
+                                            fontWeight = if (isChecked) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isChecked) Color(0xFF146C2E) else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Add Test Case Chip
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable { addNewTestCase() }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Add Test Case",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(4.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(6.dp))
+
+                        // Middle: Game Changer - Dry-Run Trace Table Stamp Trigger
+                        if (onInsertTraceTable != null) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier
+                                    .clickable { onInsertTraceTable() }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.TableChart,
+                                        contentDescription = "Stamp Trace Grid",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Text(
+                                        text = "Trace ▦",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                        }
+
+                        // Right: Quick Size Presets & Drag Resize Grip Handle
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            // Size Preset Pills (S, M, L)
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = if (windowWidthDp < 400f) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.clickable {
+                                    windowWidthDp = 360f
+                                    windowHeightDp = 440f
+                                    onUpdatePage(page.copy(descriptionWindowWidth = 360f, descriptionWindowHeight = 440f))
+                                }
+                            ) {
+                                Text(
+                                    text = "S",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (windowWidthDp < 400f) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                )
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = if (windowWidthDp in 400f..560f) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.clickable {
+                                    windowWidthDp = 480f
+                                    windowHeightDp = 580f
+                                    onUpdatePage(page.copy(descriptionWindowWidth = 480f, descriptionWindowHeight = 580f))
+                                }
+                            ) {
+                                Text(
+                                    text = "M",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (windowWidthDp in 400f..560f) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                )
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = if (windowWidthDp > 560f) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.clickable {
+                                    windowWidthDp = 720f
+                                    windowHeightDp = 700f
+                                    onUpdatePage(page.copy(descriptionWindowWidth = 720f, descriptionWindowHeight = 700f))
+                                }
+                            ) {
+                                Text(
+                                    text = "L",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (windowWidthDp > 560f) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                )
+                            }
+
+                            // Dynamic Corner Resize Handle (◢)
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .pointerInput(Unit) {
+                                        detectDragGestures(
+                                            onDrag = { change, dragAmount ->
+                                                change.consume()
+                                                val deltaXdp = dragAmount.x / density.density
+                                                val deltaYdp = dragAmount.y / density.density
+                                                windowWidthDp = (windowWidthDp + deltaXdp).coerceIn(320f, 950f)
+                                                windowHeightDp = (windowHeightDp + deltaYdp).coerceIn(260f, 1000f)
+                                            },
+                                            onDragEnd = {
+                                                onUpdatePage(
+                                                    page.copy(
+                                                        descriptionWindowWidth = windowWidthDp,
+                                                        descriptionWindowHeight = windowHeightDp
+                                                    )
+                                                )
+                                            }
+                                        )
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AspectRatio,
+                                    contentDescription = "Drag to Resize Window",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
                             }
                         }
                     }

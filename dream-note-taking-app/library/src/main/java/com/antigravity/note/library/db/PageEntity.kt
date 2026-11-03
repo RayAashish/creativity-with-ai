@@ -59,5 +59,8 @@ data class PageEntity(
     val isDescriptionMinimized: Boolean = false,
     val isDescriptionWindowVisible: Boolean = true,
     val descriptionWindowX: Float = 60f,
-    val descriptionWindowY: Float = 140f
+    val descriptionWindowY: Float = 140f,
+    val descriptionWindowWidth: Float = 460f,
+    val descriptionWindowHeight: Float = 580f,
+    val hintsJson: String? = null
 )

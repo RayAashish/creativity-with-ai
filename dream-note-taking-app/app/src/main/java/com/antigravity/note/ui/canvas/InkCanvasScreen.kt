@@ -133,6 +133,7 @@ import okhttp3.OkHttpClient
 import com.antigravity.note.library.db.NoteDatabase
 import com.antigravity.note.library.repository.LibraryRepository
 import com.antigravity.note.ui.library.DsaProblemHeader
+import com.antigravity.note.inkengine.shape.RecognizedShape
 import com.antigravity.note.ui.dsa.FloatingDsaProblemWindow
 import com.antigravity.note.ui.library.LibrarySidebarDrawer
 import com.antigravity.note.ui.library.QuickSwitcherDialog
@@ -1006,6 +1007,18 @@ fun InkCanvasScreen(
                     scope.launch {
                         libraryRepo.updatePage(currentProblemPage.copy(isDescriptionWindowVisible = false))
                     }
+                },
+                onInsertTraceTable = {
+                    val (cx, cy) = canvasView.getViewportCenter()
+                    canvasView.insertShape(
+                        RecognizedShape.ArrayCellSequence(
+                            centerX = cx,
+                            centerY = cy,
+                            cellWidth = 75f,
+                            cellHeight = 60f,
+                            count = 5
+                        )
+                    )
                 }
             )
         }

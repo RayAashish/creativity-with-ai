@@ -19,7 +19,8 @@ data class DsaProblemDetails(
     val difficulty: String?,
     val platform: String,
     val descriptionHtml: String,
-    val testCases: List<TestCaseItem>
+    val testCases: List<TestCaseItem>,
+    val hints: List<String> = emptyList()
 )
 
 object DsaProblemFetcher {
@@ -64,7 +65,7 @@ object DsaProblemFetcher {
         // 1. Primary: Official LeetCode GraphQL Endpoint
         try {
             val queryBody = """
-                {"query":"query questionData(${'$'}titleSlug: String!) { question(titleSlug: ${'$'}titleSlug) { questionId title difficulty content sampleTestCase exampleTestcaseList } }","variables":{"titleSlug":"$slug"}}
+                {"query":"query questionData(${'$'}titleSlug: String!) { question(titleSlug: ${'$'}titleSlug) { questionId title difficulty content sampleTestCase exampleTestcaseList hints } }","variables":{"titleSlug":"$slug"}}
             """.trimIndent()
 
             val request = Request.Builder()
@@ -86,15 +87,21 @@ object DsaProblemFetcher {
                     val difficulty = question["difficulty"]?.jsonPrimitive?.content ?: "Medium"
                     val content = question["content"]?.jsonPrimitive?.content.orEmpty()
                     val rawTestcases = question["exampleTestcaseList"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
+                    val hintsList = question["hints"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
 
-                    val testCases = parseLeetCodeTestCases(content, rawTestcases)
+                    val numExamples = countExamples(content, rawTestcases.size)
+                    val testCases = (1..maxOf(1, numExamples)).map { idx ->
+                        TestCaseItem(id = idx, title = "Example $idx", input = "", output = "", isChecked = false)
+                    }
+
                     return Result.success(
                         DsaProblemDetails(
                             title = title,
                             difficulty = difficulty,
                             platform = "LeetCode",
                             descriptionHtml = content,
-                            testCases = testCases
+                            testCases = testCases,
+                            hints = hintsList
                         )
                     )
                 }
@@ -159,7 +166,10 @@ object DsaProblemFetcher {
         val title = results["problem_name"]?.jsonPrimitive?.content ?: slug.replace("-", " ").capitalizeWords()
         val difficulty = results["difficulty"]?.jsonPrimitive?.content ?: "Medium"
         val questionHtml = results["problem_question"]?.jsonPrimitive?.content.orEmpty()
-        val testCases = extractTestCasesFromHtml(questionHtml)
+        val numExamples = countExamples(questionHtml)
+        val testCases = (1..maxOf(1, numExamples)).map { idx ->
+            TestCaseItem(id = idx, title = "Example $idx", input = "", output = "", isChecked = false)
+        }
 
         return Result.success(
             DsaProblemDetails(
@@ -305,6 +315,13 @@ object DsaProblemFetcher {
         }
 
         return result
+    }
+
+    fun countExamples(html: String, rawCount: Int = 0): Int {
+        if (rawCount > 0) return rawCount
+        val regex = Regex("Example\\s*\\d+", RegexOption.IGNORE_CASE)
+        val matches = regex.findAll(html).count()
+        return if (matches > 0) matches else 3
     }
 
     private fun String.capitalizeWords(): String =
