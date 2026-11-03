@@ -96,9 +96,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -189,6 +191,32 @@ fun InkCanvasScreen(
         CanvasTool.MARKER -> markerColor
         CanvasTool.HIGHLIGHTER -> highlighterColor
         else -> penColor
+    }
+    var customRed by remember { mutableFloatStateOf(penColor.red * 255f) }
+    var customGreen by remember { mutableFloatStateOf(penColor.green * 255f) }
+    var customBlue by remember { mutableFloatStateOf(penColor.blue * 255f) }
+
+    LaunchedEffect(selectedColor) {
+        customRed = selectedColor.red * 255f
+        customGreen = selectedColor.green * 255f
+        customBlue = selectedColor.blue * 255f
+    }
+
+    val applyColor: (Color) -> Unit = { color ->
+        when (selectedTool) {
+            CanvasTool.PRESSURE_PEN -> penColor = color
+            CanvasTool.MARKER -> markerColor = color
+            CanvasTool.HIGHLIGHTER -> highlighterColor = color
+            else -> penColor = color
+        }
+        val alpha = if (selectedTool == CanvasTool.HIGHLIGHTER) 0x55 else (color.alpha * 255).toInt()
+        val intColor = AndroidColor.argb(
+            alpha,
+            (color.red * 255).toInt(),
+            (color.green * 255).toInt(),
+            (color.blue * 255).toInt()
+        )
+        canvasView.setInkColor(intColor)
     }
     val selectedWidth = when (selectedTool) {
         CanvasTool.PRESSURE_PEN -> penWidth
@@ -520,16 +548,16 @@ fun InkCanvasScreen(
         ) {
             Card(
                 modifier = Modifier
-                    .padding(horizontal = 14.dp)
+                    .padding(horizontal = 12.dp)
                     .fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                shape = RoundedCornerShape(18.dp)
+                shape = RoundedCornerShape(22.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                        .padding(horizontal = 8.dp, vertical = 7.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // --- 1. Left: Navigation & Document Utilities ---
@@ -539,34 +567,34 @@ fun InkCanvasScreen(
                     ) {
                         IconButton(
                             onClick = { isSidebarOpen = !isSidebarOpen },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Menu,
                                 contentDescription = "DSA Tree Explorer",
                                 tint = if (isSidebarOpen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(19.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                         IconButton(
                             onClick = { isQuickSwitcherOpen = true },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = "Quick Switcher (Ctrl+K)",
-                                modifier = Modifier.size(19.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                         IconButton(
                             onClick = { isReviewTodayOpen = true },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Schedule,
                                 contentDescription = "Review Today",
                                 tint = if (duePages.isNotEmpty()) Color(0xFFE65100) else MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(19.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                         BackupStatusChip(
@@ -578,7 +606,7 @@ fun InkCanvasScreen(
                     Spacer(modifier = Modifier.width(4.dp))
                     Box(
                         modifier = Modifier
-                            .height(24.dp)
+                            .height(28.dp)
                             .width(1.dp)
                             .background(MaterialTheme.colorScheme.outlineVariant)
                     )
@@ -644,30 +672,30 @@ fun InkCanvasScreen(
                         Spacer(modifier = Modifier.width(3.dp))
                         Box(
                             modifier = Modifier
-                                .height(24.dp)
+                                .height(28.dp)
                                 .width(1.dp)
                                 .background(MaterialTheme.colorScheme.outlineVariant)
                         )
                         Spacer(modifier = Modifier.width(3.dp))
 
-                        // Compact Color Picker Dropdown (User requested: "color in drop down menu type things")
+                        // Compact Color Picker Dropdown with Preset Swatches & Custom RGB Mixer
                         var showColorPickerMenu by remember { mutableStateOf(false) }
                         Box {
                             Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
+                                    .clip(RoundedCornerShape(10.dp))
                                     .clickable { showColorPickerMenu = true }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(20.dp)
+                                            .size(25.dp)
                                             .clip(CircleShape)
                                             .background(selectedColor)
                                             .border(1.5.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f), CircleShape)
@@ -675,7 +703,7 @@ fun InkCanvasScreen(
                                     Icon(
                                         imageVector = Icons.Default.ArrowDropDown,
                                         contentDescription = "Color Menu",
-                                        modifier = Modifier.size(16.dp),
+                                        modifier = Modifier.size(19.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -685,45 +713,209 @@ fun InkCanvasScreen(
                                 expanded = showColorPickerMenu,
                                 onDismissRequest = { showColorPickerMenu = false }
                             ) {
-                                Text(
-                                    text = "Choose Color",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                Column(
+                                    modifier = Modifier
+                                        .width(290.dp)
+                                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    activePalette.forEach { color ->
-                                        val isSelected = selectedColor == color
+                                    // 1. Preset Colors
+                                    Text(
+                                        text = "PRESET COLORS",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        activePalette.forEach { color ->
+                                            val isSelected = selectedColor == color
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(34.dp)
+                                                    .clip(CircleShape)
+                                                    .background(color)
+                                                    .border(
+                                                        width = if (isSelected) 3.dp else 1.dp,
+                                                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray.copy(alpha = 0.6f),
+                                                        shape = CircleShape
+                                                    )
+                                                    .clickable {
+                                                        applyColor(color)
+                                                        customRed = color.red * 255f
+                                                        customGreen = color.green * 255f
+                                                        customBlue = color.blue * 255f
+                                                    }
+                                            ) {
+                                                if (isSelected) {
+                                                    val lum = 0.299f * color.red + 0.587f * color.green + 0.114f * color.blue
+                                                    Icon(
+                                                        imageVector = Icons.Default.Check,
+                                                        contentDescription = null,
+                                                        tint = if (lum > 0.5f) Color.Black else Color.White,
+                                                        modifier = Modifier
+                                                            .size(16.dp)
+                                                            .align(Alignment.Center)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(vertical = 2.dp),
+                                        thickness = 0.8.dp,
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                                    )
+
+                                    // 2. Custom RGB Mixer
+                                    val rInt = customRed.toInt().coerceIn(0, 255)
+                                    val gInt = customGreen.toInt().coerceIn(0, 255)
+                                    val bInt = customBlue.toInt().coerceIn(0, 255)
+                                    val previewColor = Color(rInt / 255f, gInt / 255f, bInt / 255f)
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column {
+                                            Text(
+                                                text = "CUSTOM RGB MIXER",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = String.format("#%02X%02X%02X  (R:%d G:%d B:%d)", rInt, gInt, bInt, rInt, gInt, bInt),
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
                                         Box(
                                             modifier = Modifier
-                                                .size(28.dp)
-                                                .clip(CircleShape)
-                                                .background(color)
-                                                .border(
-                                                    width = if (isSelected) 3.dp else 1.dp,
-                                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray,
-                                                    shape = CircleShape
-                                                )
-                                                .clickable {
-                                                    when (selectedTool) {
-                                                        CanvasTool.PRESSURE_PEN -> penColor = color
-                                                        CanvasTool.MARKER -> markerColor = color
-                                                        CanvasTool.HIGHLIGHTER -> highlighterColor = color
-                                                        else -> penColor = color
-                                                    }
-                                                    val intColor = AndroidColor.argb(
-                                                        (color.alpha * 255).toInt(),
-                                                        (color.red * 255).toInt(),
-                                                        (color.green * 255).toInt(),
-                                                        (color.blue * 255).toInt()
-                                                    )
-                                                    canvasView.setInkColor(intColor)
-                                                    showColorPickerMenu = false
-                                                }
+                                                .size(36.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(previewColor)
+                                                .border(1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                        )
+                                    }
+
+                                    // Red Slider
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(
+                                            text = "R",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFD32F2F),
+                                            modifier = Modifier.width(16.dp)
+                                        )
+                                        Slider(
+                                            value = customRed,
+                                            onValueChange = {
+                                                customRed = it
+                                                val newColor = Color(customRed.toInt() / 255f, customGreen.toInt() / 255f, customBlue.toInt() / 255f)
+                                                applyColor(newColor)
+                                            },
+                                            valueRange = 0f..255f,
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(28.dp),
+                                            colors = SliderDefaults.colors(
+                                                thumbColor = Color(0xFFD32F2F),
+                                                activeTrackColor = Color(0xFFEF5350),
+                                                inactiveTrackColor = Color(0xFFFFCDD2)
+                                            )
+                                        )
+                                        Text(
+                                            text = rInt.toString(),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            modifier = Modifier.width(28.dp),
+                                            textAlign = TextAlign.End
+                                        )
+                                    }
+
+                                    // Green Slider
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(
+                                            text = "G",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF388E3C),
+                                            modifier = Modifier.width(16.dp)
+                                        )
+                                        Slider(
+                                            value = customGreen,
+                                            onValueChange = {
+                                                customGreen = it
+                                                val newColor = Color(customRed.toInt() / 255f, customGreen.toInt() / 255f, customBlue.toInt() / 255f)
+                                                applyColor(newColor)
+                                            },
+                                            valueRange = 0f..255f,
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(28.dp),
+                                            colors = SliderDefaults.colors(
+                                                thumbColor = Color(0xFF388E3C),
+                                                activeTrackColor = Color(0xFF66BB6A),
+                                                inactiveTrackColor = Color(0xFFC8E6C9)
+                                            )
+                                        )
+                                        Text(
+                                            text = gInt.toString(),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            modifier = Modifier.width(28.dp),
+                                            textAlign = TextAlign.End
+                                        )
+                                    }
+
+                                    // Blue Slider
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(
+                                            text = "B",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF1976D2),
+                                            modifier = Modifier.width(16.dp)
+                                        )
+                                        Slider(
+                                            value = customBlue,
+                                            onValueChange = {
+                                                customBlue = it
+                                                val newColor = Color(customRed.toInt() / 255f, customGreen.toInt() / 255f, customBlue.toInt() / 255f)
+                                                applyColor(newColor)
+                                            },
+                                            valueRange = 0f..255f,
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(28.dp),
+                                            colors = SliderDefaults.colors(
+                                                thumbColor = Color(0xFF1976D2),
+                                                activeTrackColor = Color(0xFF42A5F5),
+                                                inactiveTrackColor = Color(0xFFBBDEFB)
+                                            )
+                                        )
+                                        Text(
+                                            text = bInt.toString(),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            modifier = Modifier.width(28.dp),
+                                            textAlign = TextAlign.End
                                         )
                                     }
                                 }
@@ -735,27 +927,27 @@ fun InkCanvasScreen(
                         val currentWidthLabel = activeWidths.firstOrNull { kotlin.math.abs(selectedWidth - it.first) < 0.5f }?.second ?: "Med"
                         Box {
                             Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
+                                    .clip(RoundedCornerShape(10.dp))
                                     .clickable { showWidthPickerMenu = true }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
                                     Text(
                                         text = currentWidthLabel,
-                                        fontSize = 11.sp,
+                                        fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Icon(
                                         imageVector = Icons.Default.ArrowDropDown,
                                         contentDescription = "Width Menu",
-                                        modifier = Modifier.size(16.dp),
+                                        modifier = Modifier.size(19.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -815,25 +1007,25 @@ fun InkCanvasScreen(
                         IconButton(
                             onClick = { canvasView.undo() },
                             enabled = canUndo,
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Undo,
                                 contentDescription = "Undo",
                                 tint = if (canUndo) MaterialTheme.colorScheme.onSurface else Color.LightGray,
-                                modifier = Modifier.size(19.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                         IconButton(
                             onClick = { canvasView.redo() },
                             enabled = canRedo,
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Redo,
                                 contentDescription = "Redo",
                                 tint = if (canRedo) MaterialTheme.colorScheme.onSurface else Color.LightGray,
-                                modifier = Modifier.size(19.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
 
@@ -841,12 +1033,12 @@ fun InkCanvasScreen(
                         Box {
                             IconButton(
                                 onClick = { showTemplateMenu = true },
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(38.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.GridOn,
                                     contentDescription = "Paper Template",
-                                    modifier = Modifier.size(19.dp)
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
                             DropdownMenu(
@@ -869,12 +1061,12 @@ fun InkCanvasScreen(
                         // Reset Zoom
                         IconButton(
                             onClick = { canvasView.resetZoom() },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.FitScreen,
                                 contentDescription = "Reset Zoom",
-                                modifier = Modifier.size(19.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
 
@@ -900,13 +1092,13 @@ fun InkCanvasScreen(
                                     }
                                 }
                             },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.PushPin,
                                 contentDescription = "Topic & Problem Details",
                                 tint = if (currentProblemPage?.isProblemPage == true) MaterialTheme.colorScheme.primary else Color.Gray,
-                                modifier = Modifier.size(19.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
 
@@ -915,12 +1107,12 @@ fun InkCanvasScreen(
                         Box {
                             IconButton(
                                 onClick = { showMoreActionsMenu = true },
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(38.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.MoreVert,
                                     contentDescription = "More Actions",
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
 
@@ -2338,12 +2530,12 @@ private fun ToolIconButton(
 ) {
     Surface(
         modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(10.dp))
             .clickable(onClick = onClick),
         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = if (isSelected) 8.dp else 6.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = if (isSelected) 9.dp else 7.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -2351,12 +2543,12 @@ private fun ToolIconButton(
                 imageVector = icon,
                 contentDescription = label,
                 tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(22.dp)
             )
             if (isSelected) {
                 Text(
                     text = label,
-                    fontSize = 12.sp,
+                    fontSize = 13.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
