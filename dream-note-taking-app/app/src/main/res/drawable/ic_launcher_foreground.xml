@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Fluid Ink Flow Ribbon (Behind Nib) -->
+    <path
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 32,74 C 22,60 25,42 40,36 C 54,30 68,34 76,46 C 85,58 84,72 72,80 C 60,88 44,84 36,74 C 28,64 32,48 46,42">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:type="linear"
+                android:startX="24"
+                android:startY="36"
+                android:endX="84"
+                android:endY="80">
+                <item android:offset="0.0" android:color="#FF00E5FF" />
+                <item android:offset="0.5" android:color="#FF3B82F6" />
+                <item android:offset="1.0" android:color="#FF8B5CF6" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Glowing Accent Wave (Foreground Stream) -->
+    <path
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M 38,76 C 46,84 62,84 70,76 C 78,68 78,54 70,46 C 62,38 48,40 42,48">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:type="linear"
+                android:startX="38"
+                android:startY="76"
+                android:endX="70"
+                android:endY="46">
+                <item android:offset="0.0" android:color="#80FFFFFF" />
+                <item android:offset="1.0" android:color="#0000E5FF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Fountain Pen Nib Group -->
+    <group
+        android:pivotX="54"
+        android:pivotY="54">
+
+        <!-- Pen Body Collar / Band -->
+        <path
+            android:fillColor="#FFD4AF37"
+            android:pathData="M 46,24 L 62,24 L 61,30 L 47,30 Z" />
+
+        <!-- Nib Left Shoulder & Tine (Bright Facet) -->
+        <path
+            android:fillColor="#FFF8FAFC"
+            android:pathData="M 47,30 L 43,45 C 43,49 46,55 54,72 L 54,53 C 52,53 51,51.5 51,50 C 51,48.5 52,47 54,47 L 54,30 Z" />
+
+        <!-- Nib Right Shoulder & Tine (Shaded Facet) -->
+        <path
+            android:fillColor="#FFE2E8F0"
+            android:pathData="M 61,30 L 65,45 C 65,49 62,55 54,72 L 54,53 C 56,53 57,51.5 57,50 C 57,48.5 56,47 54,47 L 54,30 Z" />
+
+        <!-- Gold Filigree / Inlay on Nib -->
+        <path
+            android:fillColor="#FFD4AF37"
+            android:pathData="M 49,38 C 51,43 53,45 54,45 C 55,45 57,43 59,38 L 57.5,38 C 56,41.5 55,43 54,43 C 53,43 52,41.5 50.5,38 Z" />
+
+        <!-- Nib Breather Hole & Center Slit -->
+        <path
+            android:fillColor="#FF0D1B2A"
+            android:pathData="M 54,50m-2,0a2,2 0 1,1 4,0a2,2 0 1,1 -4,0" />
+        <path
+            android:strokeColor="#FF0D1B2A"
+            android:strokeWidth="1.2"
+            android:strokeLineCap="round"
+            android:pathData="M 54,52 L 54,72" />
+
+        <!-- Precision Jewel / Ink Drop at Nib Tip -->
+        <path
+            android:fillColor="#FF00E5FF"
+            android:pathData="M 54,72m-2,0a2,2 0 1,1 4,0a2,2 0 1,1 -4,0" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M 53.5,71.5m-0.8,0a0.8,0.8 0 1,1 1.6,0a0.8,0.8 0 1,1 -1.6,0" />
+    </group>
+</vector>

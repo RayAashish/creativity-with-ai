@@ -1,4 +1,4 @@
-# Proguard rules for Dream Note App
+# Proguard rules for InkFlow Note App
 -keepattributes *Annotation*
 -keepattributes SourceFile,LineNumberTable
 
@@ -7,3 +7,25 @@
 
 # ProfileInstaller
 -dontwarn androidx.profileinstaller.**
+
+# Kotlinx Serialization
+-keepattributes *Annotation*,InnerClasses
+-dontnote kotlinx.serialization.SerializationKt
+-keepclassmembers class * {
+    *** Companion;
+}
+-keepclasseswithmembers class * {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# Room
+-keep class * extends androidx.room.RoomDatabase { *; }
+-dontwarn androidx.room.paging.**
+
+# WorkManager
+-keep class * extends androidx.work.Worker { *; }
+-keep class * extends androidx.work.ListenableWorker { *; }
+
+# Security Crypto
+-keep class androidx.security.crypto.** { *; }
+
