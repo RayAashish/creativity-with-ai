@@ -222,13 +222,24 @@ class InkCanvasView @JvmOverloads constructor(
     }
 
     private fun createBrushForTool(tool: CanvasTool, color: Int, size: Float): Brush {
-        val family: BrushFamily = when (tool) {
-            CanvasTool.PRESSURE_PEN -> StockBrushes.pressurePen()
-            CanvasTool.MARKER -> StockBrushes.marker()
-            CanvasTool.HIGHLIGHTER -> StockBrushes.highlighter()
-            CanvasTool.STROKE_ERASER, CanvasTool.LASSO -> StockBrushes.marker()
+        return when (tool) {
+            CanvasTool.PRESSURE_PEN -> {
+                Brush.createWithColorIntArgb(StockBrushes.pressurePen(), color, size, 0.01f)
+            }
+            CanvasTool.MARKER -> {
+                val markerSize = size.coerceAtLeast(12f)
+                Brush.createWithColorIntArgb(StockBrushes.marker(), color, markerSize, 0.01f)
+            }
+            CanvasTool.HIGHLIGHTER -> {
+                val highlighterSize = if (size < 20f) 30f else size
+                // Enforce 40% translucent alpha (0x55) so underlying handwriting stays sharp
+                val translucentColor = (color and 0x00FFFFFF) or (0x55 shl 24)
+                Brush.createWithColorIntArgb(StockBrushes.highlighter(), translucentColor, highlighterSize, 0.01f)
+            }
+            CanvasTool.STROKE_ERASER, CanvasTool.LASSO -> {
+                Brush.createWithColorIntArgb(StockBrushes.marker(), color, size, 0.01f)
+            }
         }
-        return Brush.createWithColorIntArgb(family, color, size, 0.01f)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -377,13 +388,15 @@ class InkCanvasView @JvmOverloads constructor(
                     val shape = shapeRecognizer.recognize(strokePoints)
                     if (shape != null) {
                         inProgressStrokesView.cancelStroke(strokeId, event)
-                        val snappedStroke = shapeRecognizer.createStrokeForShape(shape, activeBrush)
-                        dryInkView.addStroke(snappedStroke)
-                        val actionRecord = StrokeAction(addedStrokes = listOf(snappedStroke))
+                        val snappedStrokes = shapeRecognizer.createStrokesForShape(shape, activeBrush)
+                        dryInkView.addStrokes(snappedStrokes)
+                        val actionRecord = StrokeAction(addedStrokes = snappedStrokes)
                         undoStack.add(actionRecord)
                         redoStack.clear()
                         notifyUndoRedoState()
-                        onStrokeCommitted?.invoke(snappedStroke)
+                        for (s in snappedStrokes) {
+                            onStrokeCommitted?.invoke(s)
+                        }
                         performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                         return
                     }
@@ -506,15 +519,51 @@ class InkCanvasView @JvmOverloads constructor(
     }
 
     // Phase 4 Lasso Operations
-    fun duplicateLassoSelection() {
+    fun duplicateLassoSelection(): List<Stroke> {
         val duplicated = lassoTool.duplicateSelected()
         if (duplicated.isNotEmpty()) {
             dryInkView.addStrokes(duplicated)
             undoStack.add(StrokeAction(addedStrokes = duplicated))
             redoStack.clear()
             notifyUndoRedoState()
+            for (s in duplicated) {
+                onStrokeCommitted?.invoke(s)
+            }
             dryInkView.invalidate()
         }
+        return duplicated
+    }
+
+    fun copyLassoSelection(): Int = lassoTool.copySelected()
+
+    fun pasteLassoClipboard(): List<Stroke> {
+        val pasted = lassoTool.pasteClipboard()
+        if (pasted.isNotEmpty()) {
+            dryInkView.addStrokes(pasted)
+            undoStack.add(StrokeAction(addedStrokes = pasted))
+            redoStack.clear()
+            notifyUndoRedoState()
+            for (s in pasted) {
+                onStrokeCommitted?.invoke(s)
+            }
+            dryInkView.invalidate()
+            onLassoSelectionChanged?.invoke(true)
+        }
+        return pasted
+    }
+
+    fun insertShape(shape: RecognizedShape) {
+        val strokes = shapeRecognizer.createStrokesForShape(shape, activeBrush)
+        dryInkView.addStrokes(strokes)
+        undoStack.add(StrokeAction(addedStrokes = strokes))
+        redoStack.clear()
+        notifyUndoRedoState()
+        for (s in strokes) {
+            onStrokeCommitted?.invoke(s)
+        }
+        lassoTool.selectStrokes(strokes)
+        dryInkView.invalidate()
+        onLassoSelectionChanged?.invoke(true)
     }
 
     fun changeLassoSelectionColor(color: Int) {

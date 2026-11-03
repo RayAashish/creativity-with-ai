@@ -195,6 +195,52 @@ class LassoTool {
         return false
     }
 
+    companion object {
+        var clipboardStrokes: List<Stroke> = emptyList()
+    }
+
+    fun selectStrokes(strokes: List<Stroke>) {
+        clearSelection()
+        if (strokes.isEmpty()) return
+        selectedStrokes.addAll(strokes)
+        mode = LassoMode.TRANSFORMING
+        recomputeSelectionBounds()
+    }
+
+    fun copySelected(): Int {
+        if (selectedStrokes.isEmpty()) return 0
+        clipboardStrokes = selectedStrokes.toList()
+        return clipboardStrokes.size
+    }
+
+    fun pasteClipboard(offsetX: Float = 40f, offsetY: Float = 40f): List<Stroke> {
+        if (clipboardStrokes.isEmpty()) return emptyList()
+        val pasted = mutableListOf<Stroke>()
+        for (stroke in clipboardStrokes) {
+            val newBatch = MutableStrokeInputBatch()
+            val inputs = stroke.inputs
+            for (i in 0 until inputs.size) {
+                val pt = inputs.get(i)
+                newBatch.add(
+                    pt.toolType,
+                    pt.x + offsetX,
+                    pt.y + offsetY,
+                    pt.elapsedTimeMillis,
+                    pt.pressure,
+                    pt.tiltRadians,
+                    pt.orientationRadians,
+                    pt.strokeUnitLengthCm
+                )
+            }
+            pasted.add(Stroke(stroke.brush, newBatch.toImmutable()))
+        }
+        selectedStrokes.clear()
+        selectedStrokes.addAll(pasted)
+        mode = LassoMode.TRANSFORMING
+        recomputeSelectionBounds()
+        return pasted
+    }
+
     fun clearSelection() {
         mode = LassoMode.IDLE
         activeHandle = TransformHandle.NONE

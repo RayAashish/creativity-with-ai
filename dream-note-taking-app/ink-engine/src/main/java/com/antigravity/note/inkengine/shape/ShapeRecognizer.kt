@@ -16,9 +16,15 @@ import kotlin.math.sqrt
 sealed class RecognizedShape {
     data class Line(val startX: Float, val startY: Float, val endX: Float, val endY: Float) : RecognizedShape()
     data class Arrow(val startX: Float, val startY: Float, val endX: Float, val endY: Float) : RecognizedShape()
+    data class BidirectionalArrow(val startX: Float, val startY: Float, val endX: Float, val endY: Float) : RecognizedShape()
     data class Rectangle(val left: Float, val top: Float, val right: Float, val bottom: Float) : RecognizedShape()
     data class Circle(val centerX: Float, val centerY: Float, val radius: Float) : RecognizedShape()
     data class Triangle(val x1: Float, val y1: Float, val x2: Float, val y2: Float, val x3: Float, val y3: Float) : RecognizedShape()
+    data class Diamond(val centerX: Float, val centerY: Float, val width: Float, val height: Float) : RecognizedShape()
+    data class DatabaseCylinder(val centerX: Float, val centerY: Float, val width: Float = 140f, val height: Float = 160f) : RecognizedShape()
+    data class LinkedListNode(val centerX: Float, val centerY: Float, val width: Float = 160f, val height: Float = 80f) : RecognizedShape()
+    data class ArrayCellSequence(val centerX: Float, val centerY: Float, val cellWidth: Float = 60f, val cellHeight: Float = 60f, val count: Int = 4) : RecognizedShape()
+    data class Cloud(val centerX: Float, val centerY: Float, val width: Float = 180f, val height: Float = 110f) : RecognizedShape()
 }
 
 class ShapeRecognizer {
@@ -53,55 +59,46 @@ class ShapeRecognizer {
             return null
         }
 
-        // 2. Closed path: Evaluate Circle, Rectangle, or Triangle
+        // 2. Closed path: Evaluate Circle, Rectangle, Triangle, Diamond, or Cylinder
         var minX = Float.MAX_VALUE
         var maxX = -Float.MAX_VALUE
         var minY = Float.MAX_VALUE
         var maxY = -Float.MAX_VALUE
-        var sumX = 0f
-        var sumY = 0f
-
-        for (p in points) {
-            if (p.x < minX) minX = p.x
-            if (p.x > maxX) maxX = p.x
-            if (p.y < minY) minY = p.y
-            if (p.y > maxY) maxY = p.y
-            sumX += p.x
-            sumY += p.y
+        for (pt in points) {
+            if (pt.x < minX) minX = pt.x
+            if (pt.x > maxX) maxX = pt.x
+            if (pt.y < minY) minY = pt.y
+            if (pt.y > maxY) maxY = pt.y
         }
 
-        val cx = sumX / points.size
-        val cy = sumY / points.size
-        val width = maxX - minX
-        val height = maxY - minY
-        if (width < 20f || height < 20f) return null
+        val boxWidth = maxX - minX
+        val boxHeight = maxY - minY
+        if (boxWidth < 20f || boxHeight < 20f) return null
 
-        // Check for Circle
-        val radii = points.map { hypot(it.x - cx, it.y - cy) }
-        val avgRadius = radii.average().toFloat()
-        val variance = radii.map { (it - avgRadius) * (it - avgRadius) }.average()
-        val stdDev = sqrt(variance).toFloat()
-        val circleRatio = stdDev / avgRadius
+        val centerX = (minX + maxX) / 2f
+        val centerY = (minY + maxY) / 2f
+        val avgRadius = (boxWidth + boxHeight) / 4f
 
-        // Aspect ratio of bounding box
-        val aspect = width / height
-        if (circleRatio < 0.20f && aspect in 0.75f..1.33f) {
-            return RecognizedShape.Circle(cx, cy, avgRadius)
+        // 2a. Check for Circle (variance in distance from center should be low)
+        var radiusVariance = 0f
+        for (pt in points) {
+            val dist = hypot(pt.x - centerX, pt.y - centerY)
+            val diff = abs(dist - avgRadius)
+            radiusVariance += diff * diff
+        }
+        radiusVariance /= points.size
+        val stdDev = sqrt(radiusVariance)
+        val aspectRatio = boxWidth / boxHeight
+
+        if (stdDev < avgRadius * 0.16f && aspectRatio in 0.82f..1.22f) {
+            return RecognizedShape.Circle(centerX, centerY, avgRadius)
         }
 
-        // Check for Polygon (Rectangle or Triangle) via Ramer-Douglas-Peucker simplification
-        val simplified = ramerDouglasPeucker(points, epsilon = (width + height) * 0.05f)
-        val cornerCount = if (simplified.size > 1 && hypot(simplified.first().x - simplified.last().x, simplified.first().y - simplified.last().y) < 25f) {
-            simplified.size - 1
-        } else {
-            simplified.size
-        }
+        // 2b. Simplify polygon using Ramer-Douglas-Peucker algorithm
+        val simplified = ramerDouglasPeucker(points, epsilon = (boxWidth + boxHeight) * 0.055f)
 
-        if (cornerCount == 4) {
-            // Rectangle
-            return RecognizedShape.Rectangle(minX, minY, maxX, maxY)
-        } else if (cornerCount == 3) {
-            // Triangle
+        // Triangle: 3 distinct dominant vertices
+        if (simplified.size == 4) {
             return RecognizedShape.Triangle(
                 simplified[0].x, simplified[0].y,
                 simplified[1].x, simplified[1].y,
@@ -109,36 +106,44 @@ class ShapeRecognizer {
             )
         }
 
-        // Fallback for near-rectangular bounding box
-        if (circleRatio >= 0.20f && aspect in 0.3f..3.0f) {
-            // Check corner turns
-            var rightAngleCount = 0
-            for (i in 1 until points.size - 1 step (points.size / 8).coerceAtLeast(1)) {
-                val pPrev = points[i - 1]
-                val pCurr = points[i]
-                val pNext = points[i + 1]
-                val angle = abs(angleBetween(pPrev, pCurr, pNext))
-                if (angle in 70.0..110.0) {
-                    rightAngleCount++
-                }
+        // 4 vertices: evaluate Rectangle vs Diamond
+        if (simplified.size in 5..6) {
+            val poly = if (simplified.size == 6) simplified.take(5) else simplified
+            // Check if top vertex is near centerX and sides are angled (Diamond)
+            val topPt = poly.minByOrNull { it.y }
+            if (topPt != null && abs(topPt.x - centerX) < boxWidth * 0.2f && aspectRatio in 0.7f..1.4f) {
+                // Diamond
+                return RecognizedShape.Diamond(centerX, centerY, boxWidth, boxHeight)
             }
-            if (rightAngleCount in 3..6) {
-                return RecognizedShape.Rectangle(minX, minY, maxX, maxY)
-            }
+            return RecognizedShape.Rectangle(minX, minY, maxX, maxY)
+        }
+
+        // Default to clean Bounding Rectangle if mostly rectangular
+        if (simplified.size in 7..8 && (pathLength / (2 * (boxWidth + boxHeight))) in 0.85f..1.35f) {
+            return RecognizedShape.Rectangle(minX, minY, maxX, maxY)
         }
 
         return null
     }
 
     /**
-     * Converts a recognized shape into a smoothed, canonical Stroke with the given Brush.
+     * Converts a recognized shape into a canonical Stroke with the given Brush.
      */
     fun createStrokeForShape(shape: RecognizedShape, brush: Brush, toolType: InputToolType = InputToolType.STYLUS): Stroke {
-        val inputBatch = MutableStrokeInputBatch()
+        val strokes = createStrokesForShape(shape, brush, toolType)
+        return strokes.first()
+    }
+
+    /**
+     * Converts a recognized or system design shape into one or more vector Strokes.
+     */
+    fun createStrokesForShape(shape: RecognizedShape, brush: Brush, toolType: InputToolType = InputToolType.STYLUS): List<Stroke> {
         val baseTime = System.currentTimeMillis()
+        val result = mutableListOf<Stroke>()
 
         when (shape) {
             is RecognizedShape.Line -> {
+                val inputBatch = MutableStrokeInputBatch()
                 val steps = 24
                 for (i in 0..steps) {
                     val t = i.toFloat() / steps
@@ -146,8 +151,10 @@ class ShapeRecognizer {
                     val y = shape.startY + (shape.endY - shape.startY) * t
                     inputBatch.add(toolType, x, y, baseTime + i * 5L, 0.5f, 0f, 0f)
                 }
+                result.add(Stroke(brush, inputBatch.toImmutable()))
             }
             is RecognizedShape.Arrow -> {
+                val inputBatch = MutableStrokeInputBatch()
                 val steps = 24
                 for (i in 0..steps) {
                     val t = i.toFloat() / steps
@@ -155,7 +162,6 @@ class ShapeRecognizer {
                     val y = shape.startY + (shape.endY - shape.startY) * t
                     inputBatch.add(toolType, x, y, baseTime + i * 5L, 0.5f, 0f, 0f)
                 }
-                // Arrowhead barb 1
                 val angle = atan2(shape.endY - shape.startY, shape.endX - shape.startX)
                 val barbLength = 32f
                 val barb1X = shape.endX - barbLength * cos(angle - PI.toFloat() / 6f)
@@ -166,8 +172,33 @@ class ShapeRecognizer {
                 inputBatch.add(toolType, barb1X, barb1Y, baseTime + 130L, 0.5f, 0f, 0f)
                 inputBatch.add(toolType, shape.endX, shape.endY, baseTime + 140L, 0.5f, 0f, 0f)
                 inputBatch.add(toolType, barb2X, barb2Y, baseTime + 150L, 0.5f, 0f, 0f)
+                result.add(Stroke(brush, inputBatch.toImmutable()))
+            }
+            is RecognizedShape.BidirectionalArrow -> {
+                val inputBatch = MutableStrokeInputBatch()
+                val steps = 24
+                for (i in 0..steps) {
+                    val t = i.toFloat() / steps
+                    val x = shape.startX + (shape.endX - shape.startX) * t
+                    val y = shape.startY + (shape.endY - shape.startY) * t
+                    inputBatch.add(toolType, x, y, baseTime + i * 5L, 0.5f, 0f, 0f)
+                }
+                val angle = atan2(shape.endY - shape.startY, shape.endX - shape.startX)
+                val barbLength = 28f
+                // End arrowhead
+                inputBatch.add(toolType, shape.endX - barbLength * cos(angle - PI.toFloat() / 6f), shape.endY - barbLength * sin(angle - PI.toFloat() / 6f), baseTime + 130L, 0.5f, 0f, 0f)
+                inputBatch.add(toolType, shape.endX, shape.endY, baseTime + 135L, 0.5f, 0f, 0f)
+                inputBatch.add(toolType, shape.endX - barbLength * cos(angle + PI.toFloat() / 6f), shape.endY - barbLength * sin(angle + PI.toFloat() / 6f), baseTime + 140L, 0.5f, 0f, 0f)
+                // Start arrowhead
+                val revAngle = angle + PI.toFloat()
+                inputBatch.add(toolType, shape.startX, shape.startY, baseTime + 145L, 0.5f, 0f, 0f)
+                inputBatch.add(toolType, shape.startX - barbLength * cos(revAngle - PI.toFloat() / 6f), shape.startY - barbLength * sin(revAngle - PI.toFloat() / 6f), baseTime + 150L, 0.5f, 0f, 0f)
+                inputBatch.add(toolType, shape.startX, shape.startY, baseTime + 155L, 0.5f, 0f, 0f)
+                inputBatch.add(toolType, shape.startX - barbLength * cos(revAngle + PI.toFloat() / 6f), shape.startY - barbLength * sin(revAngle + PI.toFloat() / 6f), baseTime + 160L, 0.5f, 0f, 0f)
+                result.add(Stroke(brush, inputBatch.toImmutable()))
             }
             is RecognizedShape.Rectangle -> {
+                val inputBatch = MutableStrokeInputBatch()
                 val corners = listOf(
                     Point(shape.left, shape.top),
                     Point(shape.right, shape.top),
@@ -176,8 +207,10 @@ class ShapeRecognizer {
                     Point(shape.left, shape.top)
                 )
                 generatePolygonPoints(corners, inputBatch, toolType, baseTime)
+                result.add(Stroke(brush, inputBatch.toImmutable()))
             }
             is RecognizedShape.Circle -> {
+                val inputBatch = MutableStrokeInputBatch()
                 val steps = 64
                 for (i in 0..steps) {
                     val angle = (2.0 * PI * i / steps).toFloat()
@@ -185,8 +218,10 @@ class ShapeRecognizer {
                     val y = shape.centerY + shape.radius * sin(angle)
                     inputBatch.add(toolType, x, y, baseTime + i * 4L, 0.5f, 0f, 0f)
                 }
+                result.add(Stroke(brush, inputBatch.toImmutable()))
             }
             is RecognizedShape.Triangle -> {
+                val inputBatch = MutableStrokeInputBatch()
                 val corners = listOf(
                     Point(shape.x1, shape.y1),
                     Point(shape.x2, shape.y2),
@@ -194,10 +229,142 @@ class ShapeRecognizer {
                     Point(shape.x1, shape.y1)
                 )
                 generatePolygonPoints(corners, inputBatch, toolType, baseTime)
+                result.add(Stroke(brush, inputBatch.toImmutable()))
+            }
+            is RecognizedShape.Diamond -> {
+                val inputBatch = MutableStrokeInputBatch()
+                val halfW = shape.width / 2f
+                val halfH = shape.height / 2f
+                val corners = listOf(
+                    Point(shape.centerX, shape.centerY - halfH),
+                    Point(shape.centerX + halfW, shape.centerY),
+                    Point(shape.centerX, shape.centerY + halfH),
+                    Point(shape.centerX - halfW, shape.centerY),
+                    Point(shape.centerX, shape.centerY - halfH)
+                )
+                generatePolygonPoints(corners, inputBatch, toolType, baseTime)
+                result.add(Stroke(brush, inputBatch.toImmutable()))
+            }
+            is RecognizedShape.DatabaseCylinder -> {
+                // System Design Database Icon: Top ellipse + vertical walls + bottom curved rim
+                val halfW = shape.width / 2f
+                val halfH = shape.height / 2f
+                val rx = halfW
+                val ry = shape.height * 0.16f
+                val topCenterY = shape.centerY - halfH + ry
+                val bottomCenterY = shape.centerY + halfH - ry
+
+                // Stroke 1: Top Ellipse
+                val topBatch = MutableStrokeInputBatch()
+                val steps = 40
+                for (i in 0..steps) {
+                    val a = (2.0 * PI * i / steps).toFloat()
+                    topBatch.add(toolType, shape.centerX + rx * cos(a), topCenterY + ry * sin(a), baseTime + i * 3L, 0.5f, 0f, 0f)
+                }
+                result.add(Stroke(brush, topBatch.toImmutable()))
+
+                // Stroke 2: Left wall down, bottom arc, right wall up
+                val bodyBatch = MutableStrokeInputBatch()
+                // Left line
+                for (i in 0..12) {
+                    val t = i / 12f
+                    val y = topCenterY + (bottomCenterY - topCenterY) * t
+                    bodyBatch.add(toolType, shape.centerX - rx, y, baseTime + 150L + i * 3L, 0.5f, 0f, 0f)
+                }
+                // Bottom arc (0 to PI)
+                for (i in 0..24) {
+                    val a = PI.toFloat() + (PI.toFloat() * i / 24f)
+                    bodyBatch.add(toolType, shape.centerX + rx * cos(a), bottomCenterY + ry * sin(a), baseTime + 200L + i * 3L, 0.5f, 0f, 0f)
+                }
+                // Right line up
+                for (i in 0..12) {
+                    val t = i / 12f
+                    val y = bottomCenterY - (bottomCenterY - topCenterY) * t
+                    bodyBatch.add(toolType, shape.centerX + rx, y, baseTime + 280L + i * 3L, 0.5f, 0f, 0f)
+                }
+                result.add(Stroke(brush, bodyBatch.toImmutable()))
+            }
+            is RecognizedShape.LinkedListNode -> {
+                // Linked List Node: [ value | next ] ->
+                val halfW = shape.width / 2f
+                val halfH = shape.height / 2f
+                val left = shape.centerX - halfW
+                val right = shape.centerX + halfW
+                val top = shape.centerY - halfH
+                val bottom = shape.centerY + halfH
+
+                // 1. Box
+                val boxBatch = MutableStrokeInputBatch()
+                val corners = listOf(Point(left, top), Point(right, top), Point(right, bottom), Point(left, bottom), Point(left, top))
+                generatePolygonPoints(corners, boxBatch, toolType, baseTime)
+                result.add(Stroke(brush, boxBatch.toImmutable()))
+
+                // 2. Divider line between value and next pointer
+                val divX = right - (shape.width * 0.35f)
+                val divBatch = MutableStrokeInputBatch()
+                for (i in 0..10) {
+                    val t = i / 10f
+                    divBatch.add(toolType, divX, top + (bottom - top) * t, baseTime + 100L + i * 3L, 0.5f, 0f, 0f)
+                }
+                result.add(Stroke(brush, divBatch.toImmutable()))
+
+                // 3. Pointer arrow exiting the right side
+                val pointerStartX = divX + (right - divX) / 2f
+                val pointerEndX = right + 45f
+                val arrowBatch = MutableStrokeInputBatch()
+                for (i in 0..12) {
+                    val t = i / 12f
+                    arrowBatch.add(toolType, pointerStartX + (pointerEndX - pointerStartX) * t, shape.centerY, baseTime + 140L + i * 3L, 0.5f, 0f, 0f)
+                }
+                // Arrow tip
+                arrowBatch.add(toolType, pointerEndX - 14f, shape.centerY - 12f, baseTime + 180L, 0.5f, 0f, 0f)
+                arrowBatch.add(toolType, pointerEndX, shape.centerY, baseTime + 185L, 0.5f, 0f, 0f)
+                arrowBatch.add(toolType, pointerEndX - 14f, shape.centerY + 12f, baseTime + 190L, 0.5f, 0f, 0f)
+                result.add(Stroke(brush, arrowBatch.toImmutable()))
+            }
+            is RecognizedShape.ArrayCellSequence -> {
+                // DSA Array / Queue block: [ 0 | 1 | 2 | 3 ]
+                val totalW = shape.cellWidth * shape.count
+                val left = shape.centerX - totalW / 2f
+                val right = shape.centerX + totalW / 2f
+                val top = shape.centerY - shape.cellHeight / 2f
+                val bottom = shape.centerY + shape.cellHeight / 2f
+
+                // Outer box
+                val boxBatch = MutableStrokeInputBatch()
+                val corners = listOf(Point(left, top), Point(right, top), Point(right, bottom), Point(left, bottom), Point(left, top))
+                generatePolygonPoints(corners, boxBatch, toolType, baseTime)
+                result.add(Stroke(brush, boxBatch.toImmutable()))
+
+                // Internal cell dividers
+                for (c in 1 until shape.count) {
+                    val divX = left + c * shape.cellWidth
+                    val divBatch = MutableStrokeInputBatch()
+                    for (i in 0..10) {
+                        val t = i / 10f
+                        divBatch.add(toolType, divX, top + (bottom - top) * t, baseTime + 100L + c * 30L + i * 3L, 0.5f, 0f, 0f)
+                    }
+                    result.add(Stroke(brush, divBatch.toImmutable()))
+                }
+            }
+            is RecognizedShape.Cloud -> {
+                // System Design Cloud (Network / External Service)
+                val cloudBatch = MutableStrokeInputBatch()
+                val rx = shape.width / 2f
+                val ry = shape.height / 2f
+                val steps = 60
+                for (i in 0..steps) {
+                    val angle = (2.0 * PI * i / steps).toFloat()
+                    val bump = 1f + 0.15f * sin(5f * angle)
+                    val x = shape.centerX + rx * bump * cos(angle)
+                    val y = shape.centerY + ry * bump * sin(angle)
+                    cloudBatch.add(toolType, x, y, baseTime + i * 4L, 0.5f, 0f, 0f)
+                }
+                result.add(Stroke(brush, cloudBatch.toImmutable()))
             }
         }
 
-        return Stroke(brush, inputBatch.toImmutable())
+        return result
     }
 
     private fun generatePolygonPoints(
@@ -240,15 +407,6 @@ class ShapeRecognizer {
         val tipAngle = atan2(tail.last().y - tail.first().y, tail.last().x - tail.first().x)
         val diff = abs(mainAngle - tipAngle)
         return diff > 1.2f && diff < 3.0f
-    }
-
-    private fun angleBetween(p1: Point, p2: Point, p3: Point): Double {
-        val a1 = atan2((p1.y - p2.y).toDouble(), (p1.x - p2.x).toDouble())
-        val a2 = atan2((p3.y - p2.y).toDouble(), (p3.x - p2.x).toDouble())
-        var diff = Math.toDegrees(a2 - a1)
-        while (diff <= -180.0) diff += 360.0
-        while (diff > 180.0) diff -= 360.0
-        return diff
     }
 
     private fun ramerDouglasPeucker(points: List<Point>, epsilon: Float): List<Point> {

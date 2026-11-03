@@ -32,6 +32,8 @@ class DocumentManager(
 
     private var activeNotebookId: String = defaultNotebookId
 
+    fun getActiveNotebookId(): String = activeNotebookId
+
     fun initialize(notebookId: String = defaultNotebookId, onReady: (() -> Unit)? = null) {
         activeNotebookId = notebookId
         scope.launch {
@@ -97,7 +99,7 @@ class DocumentManager(
             switchToPage(targetMeta.pageId, onLoaded)
         } else {
             // At last page, auto-create a new page!
-            addNewPage(current.metadata.template, onLoaded)
+            addNewPage(template = current.metadata.template, onLoaded = onLoaded)
         }
     }
 
@@ -126,14 +128,31 @@ class DocumentManager(
         }
     }
 
+    fun switchToNotebookAndPage(notebookId: String, pageId: String, onLoaded: ((DocumentPage) -> Unit)? = null) {
+        val current = _currentPage.value
+        scope.launch {
+            if (current != null) {
+                repository.savePageAtomic(current)
+            }
+            activeNotebookId = notebookId
+            val pages = repository.listPages(activeNotebookId)
+            _pagesList.value = pages
+            val (page, latency) = repository.loadPage(activeNotebookId, pageId)
+            _lastOpenLatencyMs.value = latency
+            _currentPage.value = page
+            onLoaded?.invoke(page)
+        }
+    }
+
     fun addNewPage(
         template: PaperTemplate = PaperTemplate.RULED,
+        title: String? = null,
         onLoaded: ((DocumentPage) -> Unit)? = null
     ) {
         val current = _currentPage.value
         val list = _pagesList.value
         val newIndex = list.size
-        val newPage = repository.createPage(activeNotebookId, newIndex, template)
+        val newPage = repository.createPage(activeNotebookId, newIndex, template, title)
 
         scope.launch {
             if (current != null) {
@@ -144,6 +163,32 @@ class DocumentManager(
             _pagesList.value = updatedList
             _currentPage.value = newPage
             onLoaded?.invoke(newPage)
+        }
+    }
+
+    fun deleteCurrentPage(onLoaded: ((DocumentPage) -> Unit)? = null) {
+        val current = _currentPage.value ?: return
+        val list = _pagesList.value
+        if (list.size <= 1) {
+            current.strokes.clear()
+            autoSaveCurrentPage()
+            onLoaded?.invoke(current)
+            return
+        }
+
+        val currentIndex = list.indexOfFirst { it.pageId == current.metadata.pageId }
+        val remaining = list.filter { it.pageId != current.metadata.pageId }
+        val targetIndex = if (currentIndex > 0) (currentIndex - 1).coerceAtMost(remaining.size - 1) else 0
+        val targetMeta = remaining[targetIndex]
+
+        scope.launch {
+            repository.deletePage(activeNotebookId, current.metadata.pageId)
+            val updatedList = repository.listPages(activeNotebookId)
+            _pagesList.value = updatedList
+            val (page, latency) = repository.loadPage(activeNotebookId, targetMeta.pageId)
+            _lastOpenLatencyMs.value = latency
+            _currentPage.value = page
+            onLoaded?.invoke(page)
         }
     }
 

@@ -104,10 +104,18 @@ class DryInkCanvasView @JvmOverloads constructor(
             drawPaperGrid(canvas)
         }
 
-        // Draw dry vector strokes
+        // Draw dry vector strokes (2-pass: highlighters first so text stays crisp on top)
         for (i in 0 until strokes.size) {
             val stroke = strokes[i]
-            strokeRenderer.draw(canvas, stroke, identityMatrix)
+            if (stroke.brush.family == StockBrushes.highlighter()) {
+                strokeRenderer.draw(canvas, stroke, identityMatrix)
+            }
+        }
+        for (i in 0 until strokes.size) {
+            val stroke = strokes[i]
+            if (stroke.brush.family != StockBrushes.highlighter()) {
+                strokeRenderer.draw(canvas, stroke, identityMatrix)
+            }
         }
 
         // Draw search match highlights
@@ -145,7 +153,22 @@ class DryInkCanvasView @JvmOverloads constructor(
 
     fun loadStrokes(newStrokes: List<Stroke>) {
         strokes.clear()
-        strokes.addAll(newStrokes)
+        val unique = mutableListOf<Stroke>()
+        for (s in newStrokes) {
+            val sBox = s.shape.computeBoundingBox()
+            val isDup = unique.any { u ->
+                val uBox = u.shape.computeBoundingBox()
+                u.inputs.size == s.inputs.size &&
+                u.brush.colorIntArgb == s.brush.colorIntArgb &&
+                sBox != null && uBox != null &&
+                kotlin.math.abs(sBox.xMin - uBox.xMin) < 0.01f &&
+                kotlin.math.abs(sBox.yMin - uBox.yMin) < 0.01f &&
+                kotlin.math.abs(sBox.xMax - uBox.xMax) < 0.01f &&
+                kotlin.math.abs(sBox.yMax - uBox.yMax) < 0.01f
+            }
+            if (!isDup) unique.add(s)
+        }
+        strokes.addAll(unique)
         invalidate()
     }
 

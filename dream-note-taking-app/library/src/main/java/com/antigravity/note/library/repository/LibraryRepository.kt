@@ -115,6 +115,35 @@ class LibraryRepository(
         pageEntity
     }
 
+    suspend fun createGeneralNotePage(
+        notebookId: String,
+        title: String,
+        template: PaperTemplate = PaperTemplate.RULED
+    ): PageEntity = withContext(ioDispatcher) {
+        val pageCount = pageDao.getPageCount(notebookId)
+        val docPage = pageRepository.createPage(notebookId, pageCount, template, title)
+        pageRepository.savePageAtomic(docPage)
+
+        val pageEntity = PageEntity(
+            pageId = docPage.metadata.pageId,
+            notebookId = notebookId,
+            pageIndex = pageCount,
+            title = title,
+            template = template.name,
+            isProblemPage = false
+        )
+        pageDao.insertPage(pageEntity)
+        pageEntity
+    }
+
+    suspend fun deletePage(pageId: String) = withContext(ioDispatcher) {
+        val page = pageDao.getPageById(pageId)
+        if (page != null) {
+            pageRepository.deletePage(page.notebookId, pageId)
+            pageDao.deletePage(pageId)
+        }
+    }
+
     suspend fun seedDsaDreamTemplate(): String = withContext(ioDispatcher) {
         // Check if already seeded
         val existingNotebooks = notebookDao.getAllNotebooks().first()

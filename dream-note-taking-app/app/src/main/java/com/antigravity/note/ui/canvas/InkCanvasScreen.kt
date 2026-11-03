@@ -53,6 +53,8 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.CopyAll
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FitScreen
@@ -68,7 +70,10 @@ import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.TextFields
 import android.widget.Toast
+import com.antigravity.note.ui.library.EditProblemDialog
 import com.antigravity.note.ui.library.ReviewTodayDialog
+import com.antigravity.note.ui.shapes.ShapesDialog
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Card
@@ -159,9 +164,16 @@ fun InkCanvasScreen(
 
     // Phase 4 State
     var hasLassoSelection by remember { mutableStateOf(false) }
+    var lassoHasClipboard by remember { mutableStateOf(false) }
     var isShapeSnapOn by remember { mutableStateOf(true) }
+    var isShapesDialogOpen by remember { mutableStateOf(false) }
     var isPdfLoaded by remember { mutableStateOf(false) }
     var currentPdfPage by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+
+    // Page Management & Edit State
+    var isEditProblemOpen by remember { mutableStateOf(false) }
+    var showDeletePageDialog by remember { mutableStateOf(false) }
+    var showAddPageMenu by remember { mutableStateOf(false) }
 
     // Phase 5 State
     var isReviewTodayOpen by remember { mutableStateOf(false) }
@@ -461,10 +473,9 @@ fun InkCanvasScreen(
                         ToolIconButton(
                             icon = Icons.Default.Category,
                             label = "Shapes",
-                            isSelected = isShapeSnapOn,
+                            isSelected = isShapesDialogOpen || isShapeSnapOn,
                             onClick = {
-                                isShapeSnapOn = !isShapeSnapOn
-                                canvasView.holdToSnapEnabled = isShapeSnapOn
+                                isShapesDialogOpen = true
                             }
                         )
                         ToolIconButton(
@@ -792,24 +803,27 @@ fun InkCanvasScreen(
                             }
                             libraryRepo.updatePage(currentProblemPage.copy(problemStatus = newStatus, nextReviewTimestamp = nextReview))
                         }
+                    },
+                    onEditClicked = {
+                        isEditProblemOpen = true
                     }
                 )
             }
         }
 
-        // Bottom Center: Page Navigation Bar
+        // Bottom Left: Page Navigation Bar
         Card(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp),
+                .align(Alignment.BottomStart)
+                .padding(start = 20.dp, bottom = 16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)),
             shape = RoundedCornerShape(14.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 val currentIndex = pagesList.indexOfFirst { it.pageId == currentPage?.metadata?.pageId }.coerceAtLeast(0)
                 val totalPages = pagesList.size.coerceAtLeast(1)
@@ -820,7 +834,8 @@ fun InkCanvasScreen(
                             canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
                         }
                     },
-                    enabled = currentIndex > 0
+                    enabled = currentIndex > 0,
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
@@ -833,7 +848,7 @@ fun InkCanvasScreen(
                     text = "Page ${currentIndex + 1} / $totalPages",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(horizontal = 6.dp)
+                    modifier = Modifier.padding(horizontal = 4.dp)
                 )
 
                 IconButton(
@@ -841,7 +856,8 @@ fun InkCanvasScreen(
                         docManager.nextPage { page ->
                             canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
                         }
-                    }
+                    },
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.NavigateNext,
@@ -849,18 +865,102 @@ fun InkCanvasScreen(
                     )
                 }
 
-                IconButton(
-                    onClick = {
-                        docManager.addNewPage(currentPage?.metadata?.template ?: PaperTemplate.RULED) { page ->
-                            canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                Spacer(modifier = Modifier.width(4.dp))
+                Box(
+                    modifier = Modifier
+                        .height(20.dp)
+                        .width(1.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+
+                // + Add Page Button with popup
+                Box {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.clickable { showAddPageMenu = true }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add Page",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                text = "Add Page",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
                         }
                     }
+
+                    DropdownMenu(
+                        expanded = showAddPageMenu,
+                        onDismissRequest = { showAddPageMenu = false }
+                    ) {
+                        val currentTpl = currentPage?.metadata?.template ?: PaperTemplate.RULED
+                        DropdownMenuItem(
+                            text = { Text("+ Current Template (${currentTpl.displayName})") },
+                            onClick = {
+                                showAddPageMenu = false
+                                val activeNbId = docManager.getActiveNotebookId()
+                                scope.launch {
+                                    val p = libraryRepo.createGeneralNotePage(activeNbId, "Page ${pagesList.size + 1}", currentTpl)
+                                    docManager.switchToPage(p.pageId) { page ->
+                                        canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                                    }
+                                }
+                            }
+                        )
+                        PaperTemplate.entries.forEach { template ->
+                            DropdownMenuItem(
+                                text = { Text("+ ${template.displayName} Page") },
+                                onClick = {
+                                    showAddPageMenu = false
+                                    val activeNbId = docManager.getActiveNotebookId()
+                                    scope.launch {
+                                        val p = libraryRepo.createGeneralNotePage(activeNbId, "Page ${pagesList.size + 1}", template)
+                                        docManager.switchToPage(p.pageId) { page ->
+                                            canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Delete Page Button
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
+                    modifier = Modifier.clickable { showDeletePageDialog = true }
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add Page",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Page",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Text(
+                            text = "Delete",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
                 }
             }
         }
@@ -945,7 +1045,7 @@ fun InkCanvasScreen(
                 activePageId = currentPage?.metadata?.pageId,
                 dueReviewCount = duePages.size,
                 onPageSelected = { notebookId, pageId ->
-                    docManager.switchToPage(pageId) { page ->
+                    docManager.switchToNotebookAndPage(notebookId, pageId) { page ->
                         canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
                     }
                     isSidebarOpen = false
@@ -959,6 +1059,42 @@ fun InkCanvasScreen(
                 },
                 onCloseSidebar = {
                     isSidebarOpen = false
+                },
+                onCreateFolder = { name, parentId ->
+                    scope.launch {
+                        libraryRepo.createFolder(name, parentId)
+                        Toast.makeText(context, "Created folder: $name", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onCreateNotebook = { title, fId ->
+                    scope.launch {
+                        val nb = libraryRepo.createNotebook(title, fId)
+                        docManager.initialize(nb.notebookId) {
+                            val p = docManager.currentPage.value
+                            if (p != null) canvasView.loadPage(p, docManager.lastOpenLatencyMs.value)
+                        }
+                        Toast.makeText(context, "Created notebook: $title", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onCreateGeneralPage = { nbId, title, template ->
+                    scope.launch {
+                        val page = libraryRepo.createGeneralNotePage(nbId, title, template)
+                        docManager.switchToNotebookAndPage(nbId, page.pageId) { p ->
+                            canvasView.loadPage(p, docManager.lastOpenLatencyMs.value)
+                        }
+                        isSidebarOpen = false
+                        Toast.makeText(context, "Created note: $title", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onCreateProblemPage = { nbId, title, url, diff, tags ->
+                    scope.launch {
+                        val page = libraryRepo.createProblemPage(nbId, title, url.ifEmpty { null }, diff, tags)
+                        docManager.switchToNotebookAndPage(nbId, page.pageId) { p ->
+                            canvasView.loadPage(p, docManager.lastOpenLatencyMs.value)
+                        }
+                        isSidebarOpen = false
+                        Toast.makeText(context, "Created problem: $title", Toast.LENGTH_SHORT).show()
+                    }
                 }
             )
         }
@@ -976,7 +1112,7 @@ fun InkCanvasScreen(
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
                         text = "Lasso (${canvasView.lassoTool.selectedStrokes.size})",
@@ -985,9 +1121,41 @@ fun InkCanvasScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
+                    // Copy
+                    IconButton(
+                        onClick = {
+                            val count = canvasView.copyLassoSelection()
+                            lassoHasClipboard = count > 0
+                            Toast.makeText(context, "Copied $count strokes", Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(20.dp))
+                    }
+
+                    // Paste
+                    IconButton(
+                        onClick = {
+                            val pasted = canvasView.pasteLassoClipboard()
+                            Toast.makeText(context, "Pasted ${pasted.size} strokes", Toast.LENGTH_SHORT).show()
+                        },
+                        enabled = lassoHasClipboard
+                    ) {
+                        Icon(
+                            Icons.Default.ContentPaste,
+                            contentDescription = "Paste",
+                            tint = if (lassoHasClipboard) MaterialTheme.colorScheme.onSurfaceVariant else Color.LightGray,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
                     // Duplicate
-                    IconButton(onClick = { canvasView.duplicateLassoSelection() }) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = "Duplicate", modifier = Modifier.size(20.dp))
+                    IconButton(
+                        onClick = {
+                            canvasView.duplicateLassoSelection()
+                            Toast.makeText(context, "Duplicated selection", Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Icon(Icons.Default.CopyAll, contentDescription = "Duplicate", modifier = Modifier.size(20.dp))
                     }
 
                     // Convert to Typed Text via On-Device ML Kit
@@ -1041,6 +1209,40 @@ fun InkCanvasScreen(
                     IconButton(onClick = { canvasView.clearLassoSelection() }) {
                         Icon(Icons.Default.Check, contentDescription = "Done", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                     }
+                }
+            }
+        } else if (selectedTool == CanvasTool.LASSO && lassoHasClipboard) {
+            // Floating Paste Button when clipboard has strokes
+            Card(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 80.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .clickable {
+                            val pasted = canvasView.pasteLassoClipboard()
+                            Toast.makeText(context, "Pasted ${pasted.size} strokes", Toast.LENGTH_SHORT).show()
+                        }
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ContentPaste,
+                        contentDescription = "Paste",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = "Paste Copied Strokes",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 }
             }
         }
@@ -1255,6 +1457,70 @@ fun InkCanvasScreen(
                 }
             )
         }
+
+        // Shapes & Diagrams Dialog (System Design & DSA shapes + hold-to-snap)
+        if (isShapesDialogOpen) {
+            ShapesDialog(
+                isHoldToSnapEnabled = isShapeSnapOn,
+                onToggleHoldToSnap = { enabled ->
+                    isShapeSnapOn = enabled
+                    canvasView.holdToSnapEnabled = enabled
+                },
+                onInsertShape = { shape ->
+                    canvasView.insertShape(shape)
+                    isShapesDialogOpen = false
+                    Toast.makeText(context, "Inserted ${shape::class.simpleName}", Toast.LENGTH_SHORT).show()
+                },
+                onDismissRequest = { isShapesDialogOpen = false }
+            )
+        }
+
+        // Edit Problem Details Dialog
+        if (isEditProblemOpen && currentProblemPage != null) {
+            EditProblemDialog(
+                page = currentProblemPage,
+                onSave = { updated ->
+                    scope.launch {
+                        libraryRepo.updatePage(updated)
+                        isEditProblemOpen = false
+                        Toast.makeText(context, "Saved changes to ${updated.title}", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onDismissRequest = { isEditProblemOpen = false }
+            )
+        }
+
+        // Delete Page Confirmation Dialog
+        if (showDeletePageDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeletePageDialog = false },
+                title = { Text("Delete This Page?") },
+                text = { Text("Are you sure you want to delete this page? All handwritten ink strokes on this page will be removed permanently.") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val pId = currentPage?.metadata?.pageId
+                            showDeletePageDialog = false
+                            docManager.deleteCurrentPage { p ->
+                                canvasView.loadPage(p, docManager.lastOpenLatencyMs.value)
+                            }
+                            if (pId != null) {
+                                scope.launch { libraryRepo.deletePage(pId) }
+                            }
+                            Toast.makeText(context, "Page deleted", Toast.LENGTH_SHORT).show()
+                        },
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Delete", color = MaterialTheme.colorScheme.onError)
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = { showDeletePageDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -1339,9 +1605,9 @@ private fun ToolIconButton(
         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = if (isSelected) 8.dp else 6.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(3.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Icon(
                 imageVector = icon,
@@ -1349,12 +1615,14 @@ private fun ToolIconButton(
                 tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(18.dp)
             )
-            Text(
-                text = label,
-                fontSize = 12.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-            )
+            if (isSelected) {
+                Text(
+                    text = label,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
         }
     }
 }

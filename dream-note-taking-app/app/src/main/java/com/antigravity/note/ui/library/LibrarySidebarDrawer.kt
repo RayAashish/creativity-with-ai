@@ -19,24 +19,32 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.NotificationImportant
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Badge
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,6 +60,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import com.antigravity.note.document.model.PaperTemplate
 import com.antigravity.note.library.db.FolderEntity
 import com.antigravity.note.library.db.NotebookEntity
 import com.antigravity.note.library.db.PageEntity
@@ -67,6 +77,10 @@ fun LibrarySidebarDrawer(
     onOpenQuickSwitcher: () -> Unit,
     onCloseSidebar: () -> Unit,
     onOpenReviewToday: () -> Unit = {},
+    onCreateFolder: (name: String, parentFolderId: String?) -> Unit = { _, _ -> },
+    onCreateNotebook: (title: String, folderId: String?) -> Unit = { _, _ -> },
+    onCreateGeneralPage: (notebookId: String, title: String, template: PaperTemplate) -> Unit = { _, _, _ -> },
+    onCreateProblemPage: (notebookId: String, title: String, url: String, diff: String, tags: String) -> Unit = { _, _, _, _, _ -> },
     modifier: Modifier = Modifier
 ) {
     // Track expanded folders & notebooks
@@ -74,8 +88,14 @@ fun LibrarySidebarDrawer(
     val expandedNotebooks = remember { mutableStateMapOf<String, Boolean>() }
     var activeFilter by remember { mutableStateOf<String?>(null) } // null = All, "review" = Review Today, "hard" = Hard
 
-    // Default expand root DSA folder
-    remember(folders) {
+    // Dialog state
+    var showCreateSubjectDialog by remember { mutableStateOf(false) }
+    var parentFolderForNewSubtopic by remember { mutableStateOf<String?>(null) }
+    var folderForNewNotebook by remember { mutableStateOf<String?>(null) }
+    var targetNotebookForNewPage by remember { mutableStateOf<NotebookEntity?>(null) }
+
+    // Default expand all
+    remember(folders, notebooks) {
         folders.forEach { f ->
             if (!expandedFolders.containsKey(f.folderId)) {
                 expandedFolders[f.folderId] = true
@@ -90,7 +110,7 @@ fun LibrarySidebarDrawer(
 
     Surface(
         modifier = modifier
-            .width(360.dp)
+            .width(380.dp)
             .fillMaxHeight(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 6.dp
@@ -100,11 +120,11 @@ fun LibrarySidebarDrawer(
                 .fillMaxHeight()
                 .padding(vertical = 12.dp)
         ) {
-            // Header: Library Title + Quick Switcher + Close button
+            // Header: Library Title + "+ Subject" + Quick Switcher + Close button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -119,8 +139,8 @@ fun LibrarySidebarDrawer(
                         modifier = Modifier.size(24.dp)
                     )
                     Text(
-                        text = "DSA Library",
-                        fontSize = 18.sp,
+                        text = "Notes & Library",
+                        fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -130,6 +150,32 @@ fun LibrarySidebarDrawer(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
+                    // + Subject Button
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.clickable { showCreateSubjectDialog = true }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add Subject",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "Subject",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+
                     IconButton(onClick = onOpenQuickSwitcher) {
                         Icon(Icons.Default.Search, contentDescription = "Quick Switcher (Ctrl+K)")
                     }
@@ -236,6 +282,9 @@ fun LibrarySidebarDrawer(
                             expandedFolders = expandedFolders,
                             expandedNotebooks = expandedNotebooks,
                             onPageSelected = onPageSelected,
+                            onAddSubtopic = { parentFolderForNewSubtopic = it },
+                            onAddNotebook = { folderForNewNotebook = it },
+                            onAddPage = { targetNotebookForNewPage = it },
                             indentLevel = 0
                         )
                     }
@@ -249,8 +298,255 @@ fun LibrarySidebarDrawer(
                             activePageId = activePageId,
                             expandedNotebooks = expandedNotebooks,
                             onPageSelected = onPageSelected,
+                            onAddPage = { targetNotebookForNewPage = it },
                             indentLevel = 0
                         )
+                    }
+                }
+            }
+        }
+    }
+
+    // Dialog: Create Root Subject (Folder)
+    if (showCreateSubjectDialog) {
+        var subjectName by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showCreateSubjectDialog = false },
+            title = { Text("New Subject / Root Folder") },
+            text = {
+                OutlinedTextField(
+                    value = subjectName,
+                    onValueChange = { subjectName = it },
+                    label = { Text("Subject Name (e.g. System Design, DSA, OS)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val name = subjectName.trim()
+                        if (name.isNotEmpty()) {
+                            onCreateFolder(name, null)
+                            showCreateSubjectDialog = false
+                        }
+                    }
+                ) {
+                    Text("Create")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showCreateSubjectDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Dialog: Create Subtopic (Folder under Subject)
+    parentFolderForNewSubtopic?.let { parentId ->
+        var subtopicName by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { parentFolderForNewSubtopic = null },
+            title = { Text("New Subtopic / Folder") },
+            text = {
+                OutlinedTextField(
+                    value = subtopicName,
+                    onValueChange = { subtopicName = it },
+                    label = { Text("Subtopic Name (e.g. Load Balancers, Arrays)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val name = subtopicName.trim()
+                        if (name.isNotEmpty()) {
+                            onCreateFolder(name, parentId)
+                            parentFolderForNewSubtopic = null
+                        }
+                    }
+                ) {
+                    Text("Create")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { parentFolderForNewSubtopic = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Dialog: Create Notebook under Folder
+    folderForNewNotebook?.let { fId ->
+        var notebookTitle by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { folderForNewNotebook = null },
+            title = { Text("New Topic Notebook") },
+            text = {
+                OutlinedTextField(
+                    value = notebookTitle,
+                    onValueChange = { notebookTitle = it },
+                    label = { Text("Notebook Title (e.g. Consistent Hashing, Two Pointers)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val title = notebookTitle.trim()
+                        if (title.isNotEmpty()) {
+                            onCreateNotebook(title, fId)
+                            folderForNewNotebook = null
+                        }
+                    }
+                ) {
+                    Text("Create")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { folderForNewNotebook = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Dialog: Create Page under Notebook (General Note vs Problem Page)
+    targetNotebookForNewPage?.let { nb ->
+        var pageTitle by remember { mutableStateOf("") }
+        var isProblemType by remember { mutableStateOf(false) }
+        var selectedTemplate by remember { mutableStateOf(PaperTemplate.RULED) }
+        var difficulty by remember { mutableStateOf("Medium") }
+        var sourceUrl by remember { mutableStateOf("") }
+        var tags by remember { mutableStateOf("") }
+
+        Dialog(onDismissRequest = { targetNotebookForNewPage = null }) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp,
+                modifier = Modifier
+                    .width(480.dp)
+                    .padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(20.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = "Add Note to \"${nb.title}\"",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Type Toggle: General Note vs Problem Page
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = !isProblemType,
+                            onClick = { isProblemType = false },
+                            label = { Text("General Note") }
+                        )
+                        FilterChip(
+                            selected = isProblemType,
+                            onClick = { isProblemType = true },
+                            label = { Text("DSA / Problem Page") }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = pageTitle,
+                        onValueChange = { pageTitle = it },
+                        label = { Text(if (isProblemType) "Problem Title (e.g. Q3 – LRU Cache)" else "Note Title") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (!isProblemType) {
+                        // Paper Template Picker
+                        Text("Paper Template:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            listOf(
+                                PaperTemplate.RULED to "Ruled",
+                                PaperTemplate.GRID to "Grid",
+                                PaperTemplate.BLANK to "Blank",
+                                PaperTemplate.DOT to "Dot",
+                                PaperTemplate.CORNELL to "Cornell"
+                            ).forEach { (tpl, name) ->
+                                FilterChip(
+                                    selected = selectedTemplate == tpl,
+                                    onClick = { selectedTemplate = tpl },
+                                    label = { Text(name, fontSize = 11.sp) }
+                                )
+                            }
+                        }
+                    } else {
+                        // Problem Fields: Difficulty & Link
+                        Text("Difficulty:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("Easy", "Medium", "Hard").forEach { diff ->
+                                FilterChip(
+                                    selected = difficulty == diff,
+                                    onClick = { difficulty = diff },
+                                    label = { Text(diff) }
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = sourceUrl,
+                            onValueChange = { sourceUrl = it },
+                            label = { Text("Problem Link (LeetCode URL)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = tags,
+                            onValueChange = { tags = it },
+                            label = { Text("Tags (e.g. Design, Cache)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        OutlinedButton(onClick = { targetNotebookForNewPage = null }) {
+                            Text("Cancel")
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Button(
+                            onClick = {
+                                val title = pageTitle.trim().ifEmpty { if (isProblemType) "New Problem" else "New Note" }
+                                if (isProblemType) {
+                                    onCreateProblemPage(nb.notebookId, title, sourceUrl.trim(), difficulty, tags.trim())
+                                } else {
+                                    onCreateGeneralPage(nb.notebookId, title, selectedTemplate)
+                                }
+                                targetNotebookForNewPage = null
+                            }
+                        ) {
+                            Text("Create & Open")
+                        }
                     }
                 }
             }
@@ -268,11 +564,15 @@ private fun FolderTreeItem(
     expandedFolders: MutableMap<String, Boolean>,
     expandedNotebooks: MutableMap<String, Boolean>,
     onPageSelected: (notebookId: String, pageId: String) -> Unit,
+    onAddSubtopic: (parentFolderId: String) -> Unit,
+    onAddNotebook: (folderId: String) -> Unit,
+    onAddPage: (NotebookEntity) -> Unit,
     indentLevel: Int
 ) {
     val isExpanded = expandedFolders[folder.folderId] == true
     val subFolders = allFolders.filter { it.parentFolderId == folder.folderId }
     val childNotebooks = allNotebooks.filter { it.folderId == folder.folderId }
+    var isMenuOpen by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -301,8 +601,44 @@ private fun FolderTreeItem(
                 text = folder.name,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
             )
+
+            // Add button for Folder (Subtopic or Notebook)
+            Box {
+                IconButton(
+                    onClick = { isMenuOpen = true },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add inside folder",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = isMenuOpen,
+                    onDismissRequest = { isMenuOpen = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("+ Add Subtopic (Folder)") },
+                        onClick = {
+                            isMenuOpen = false
+                            onAddSubtopic(folder.folderId)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("+ Add Topic Notebook") },
+                        onClick = {
+                            isMenuOpen = false
+                            onAddNotebook(folder.folderId)
+                        }
+                    )
+                }
+            }
         }
 
         AnimatedVisibility(visible = isExpanded) {
@@ -318,6 +654,9 @@ private fun FolderTreeItem(
                         expandedFolders = expandedFolders,
                         expandedNotebooks = expandedNotebooks,
                         onPageSelected = onPageSelected,
+                        onAddSubtopic = onAddSubtopic,
+                        onAddNotebook = onAddNotebook,
+                        onAddPage = onAddPage,
                         indentLevel = indentLevel + 1
                     )
                 }
@@ -329,6 +668,7 @@ private fun FolderTreeItem(
                         activePageId = activePageId,
                         expandedNotebooks = expandedNotebooks,
                         onPageSelected = onPageSelected,
+                        onAddPage = onAddPage,
                         indentLevel = indentLevel + 1
                     )
                 }
@@ -344,6 +684,7 @@ private fun NotebookTreeItem(
     activePageId: String?,
     expandedNotebooks: MutableMap<String, Boolean>,
     onPageSelected: (notebookId: String, pageId: String) -> Unit,
+    onAddPage: (NotebookEntity) -> Unit,
     indentLevel: Int
 ) {
     val isExpanded = expandedNotebooks[notebook.notebookId] == true
@@ -385,6 +726,19 @@ private fun NotebookTreeItem(
                     contentDescription = "Starred",
                     tint = Color(0xFFFFB300),
                     modifier = Modifier.size(14.dp)
+                )
+            }
+
+            // + Add Note to Notebook Button
+            IconButton(
+                onClick = { onAddPage(notebook) },
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add page to notebook",
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }

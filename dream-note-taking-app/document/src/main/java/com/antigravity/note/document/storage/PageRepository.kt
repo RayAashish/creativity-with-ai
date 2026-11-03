@@ -9,6 +9,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -22,6 +24,7 @@ class PageRepository(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
     private val repositoryScope = CoroutineScope(SupervisorJob() + ioDispatcher)
+    private val fileMutex = Mutex()
 
     init {
         if (!rootDir.exists()) {
@@ -50,66 +53,74 @@ class PageRepository(
     }
 
     suspend fun loadPage(notebookId: String, pageId: String): Pair<DocumentPage, Long> = withContext(ioDispatcher) {
-        val startTime = System.currentTimeMillis()
-        val pageFile = getPageFile(notebookId, pageId)
-        val walFile = getWalFile(notebookId, pageId)
-        val wal = PageWal(walFile)
+        fileMutex.withLock {
+            val startTime = System.currentTimeMillis()
+            val pageFile = getPageFile(notebookId, pageId)
+            val walFile = getWalFile(notebookId, pageId)
+            val wal = PageWal(walFile)
 
-        val page: DocumentPage = if (pageFile.exists() && pageFile.length() > 0L) {
-            FileInputStream(pageFile).use { fis ->
-                BufferedInputStream(fis).use { bis ->
-                    PageSerializer.deserialize(bis)
+            val page: DocumentPage = if (pageFile.exists() && pageFile.length() > 0L) {
+                FileInputStream(pageFile).use { fis ->
+                    BufferedInputStream(fis).use { bis ->
+                        PageSerializer.deserialize(bis)
+                    }
+                }
+            } else {
+                // New blank/ruled page
+                DocumentPage(
+                    metadata = PageMetadata(
+                        pageId = pageId,
+                        notebookId = notebookId,
+                        pageIndex = 0,
+                        title = "Page 1",
+                        template = PaperTemplate.RULED
+                    )
+                )
+            }
+
+            // Replay WAL only if it is strictly newer than pageFile (crash recovery)
+            if (wal.exists()) {
+                if (pageFile.exists() && walFile.lastModified() <= pageFile.lastModified()) {
+                    // Stale WAL already compacted; delete to prevent stroke duplication
+                    wal.deleteWal()
+                } else {
+                    val recovered = wal.replayInto(page)
+                    if (recovered) {
+                        savePageAtomicInternal(page)
+                    }
                 }
             }
-        } else {
-            // New blank/ruled page
-            DocumentPage(
-                metadata = PageMetadata(
-                    pageId = pageId,
-                    notebookId = notebookId,
-                    pageIndex = 0,
-                    title = "Page 1",
-                    template = PaperTemplate.RULED
-                )
-            )
-        }
 
-        // Replay WAL if present (crash recovery)
-        if (wal.exists()) {
-            val recovered = wal.replayInto(page)
-            if (recovered) {
-                // Compact asynchronously
-                savePageAtomic(page)
-            }
+            val openLatencyMs = System.currentTimeMillis() - startTime
+            Pair(page, openLatencyMs)
         }
-
-        val openLatencyMs = System.currentTimeMillis() - startTime
-        Pair(page, openLatencyMs)
     }
 
     suspend fun savePageAtomic(page: DocumentPage): Boolean = withContext(ioDispatcher) {
+        fileMutex.withLock {
+            savePageAtomicInternal(page)
+        }
+    }
+
+    private fun savePageAtomicInternal(page: DocumentPage): Boolean {
         val meta = page.metadata
         val pageFile = getPageFile(meta.notebookId, meta.pageId)
         val tmpFile = File(pageFile.parentFile, "${meta.pageId}.tmp")
         val wal = PageWal(getWalFile(meta.notebookId, meta.pageId))
 
-        try {
+        return try {
             FileOutputStream(tmpFile).use { fos ->
                 BufferedOutputStream(fos).use { bos ->
                     PageSerializer.serialize(page, bos)
                     bos.flush()
                 }
                 try {
-                    fos.fd.sync() // Ensure physical flush to storage media
-                } catch (_: Exception) {
-                    // Ignored if host filesystem does not support fsync (e.g. test environment)
-                }
+                    fos.fd.sync()
+                } catch (_: Exception) {}
             }
 
-            // Atomic rename
             val renamed = tmpFile.renameTo(pageFile)
             if (renamed) {
-                // Compaction: clean up replayed WAL
                 wal.deleteWal()
             }
             renamed
@@ -122,22 +133,28 @@ class PageRepository(
 
     fun appendStrokeAsync(notebookId: String, pageId: String, stroke: Stroke) {
         repositoryScope.launch {
-            val wal = PageWal(getWalFile(notebookId, pageId))
-            wal.appendAddStroke(stroke)
+            fileMutex.withLock {
+                val wal = PageWal(getWalFile(notebookId, pageId))
+                wal.appendAddStroke(stroke)
+            }
         }
     }
 
     fun appendUndoAsync(notebookId: String, pageId: String) {
         repositoryScope.launch {
-            val wal = PageWal(getWalFile(notebookId, pageId))
-            wal.appendRemoveLast()
+            fileMutex.withLock {
+                val wal = PageWal(getWalFile(notebookId, pageId))
+                wal.appendRemoveLast()
+            }
         }
     }
 
     fun appendClearAsync(notebookId: String, pageId: String) {
         repositoryScope.launch {
-            val wal = PageWal(getWalFile(notebookId, pageId))
-            wal.appendClear()
+            fileMutex.withLock {
+                val wal = PageWal(getWalFile(notebookId, pageId))
+                wal.appendClear()
+            }
         }
     }
 
