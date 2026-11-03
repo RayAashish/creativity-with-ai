@@ -22,7 +22,11 @@ import java.io.OutputStream
 object PageSerializer {
 
     private const val MAGIC_HEADER = 0x494E4B31 // "INK1"
-    private const val FORMAT_VERSION = 1
+    private const val FORMAT_VERSION = 2
+
+    const val BRUSH_FAMILY_PRESSURE_PEN: Byte = 0
+    const val BRUSH_FAMILY_HIGHLIGHTER: Byte = 1
+    const val BRUSH_FAMILY_MARKER: Byte = 2
 
     private const val ENCODING_NATIVE_INK_PROTO: Byte = 0
     private const val ENCODING_RAW_INPUT_STREAM: Byte = 1
@@ -51,6 +55,12 @@ object PageSerializer {
 
         for (stroke in page.strokes) {
             val brush = stroke.brush
+            val familyId = when (brush.family) {
+                StockBrushes.highlighter() -> BRUSH_FAMILY_HIGHLIGHTER
+                StockBrushes.marker() -> BRUSH_FAMILY_MARKER
+                else -> BRUSH_FAMILY_PRESSURE_PEN
+            }
+            dataOut.writeByte(familyId.toInt())
             dataOut.writeInt(brush.colorIntArgb)
             dataOut.writeFloat(brush.size)
             dataOut.writeFloat(brush.epsilon)
@@ -130,9 +140,29 @@ object PageSerializer {
         val strokes = ArrayList<Stroke>(strokeCount)
 
         for (i in 0 until strokeCount) {
-            val colorArgb = dataIn.readInt()
-            val size = dataIn.readFloat()
-            val epsilon = dataIn.readFloat()
+            val brushFamily: BrushFamily
+            val colorArgb: Int
+            val size: Float
+            val epsilon: Float
+
+            if (version >= 2) {
+                val familyId = dataIn.readByte()
+                brushFamily = when (familyId) {
+                    BRUSH_FAMILY_HIGHLIGHTER -> StockBrushes.highlighter()
+                    BRUSH_FAMILY_MARKER -> StockBrushes.marker()
+                    else -> StockBrushes.pressurePen()
+                }
+                colorArgb = dataIn.readInt()
+                size = dataIn.readFloat()
+                epsilon = dataIn.readFloat()
+            } else {
+                colorArgb = dataIn.readInt()
+                size = dataIn.readFloat()
+                epsilon = dataIn.readFloat()
+                val alpha = (colorArgb ushr 24) and 0xFF
+                // Auto-detect highlighters in v1 by translucent alpha channel
+                brushFamily = if (alpha <= 0x80) StockBrushes.highlighter() else StockBrushes.pressurePen()
+            }
 
             val encodingType = dataIn.readByte()
             val payloadLength = dataIn.readInt()
@@ -166,7 +196,7 @@ object PageSerializer {
                 mutableBatch.toImmutable()
             }
 
-            val brush = Brush.createWithColorIntArgb(defaultBrushFamily, colorArgb, size, epsilon)
+            val brush = Brush.createWithColorIntArgb(brushFamily, colorArgb, size, epsilon)
             val stroke = Stroke(brush, inputs)
             strokes.add(stroke)
         }
@@ -180,6 +210,12 @@ object PageSerializer {
     fun serializeSingleStroke(stroke: Stroke, outputStream: OutputStream) {
         val dataOut = DataOutputStream(outputStream)
         val brush = stroke.brush
+        val familyId = when (brush.family) {
+            StockBrushes.highlighter() -> BRUSH_FAMILY_HIGHLIGHTER
+            StockBrushes.marker() -> BRUSH_FAMILY_MARKER
+            else -> BRUSH_FAMILY_PRESSURE_PEN
+        }
+        dataOut.writeByte(familyId.toInt())
         dataOut.writeInt(brush.colorIntArgb)
         dataOut.writeFloat(brush.size)
         dataOut.writeFloat(brush.epsilon)
@@ -219,11 +255,30 @@ object PageSerializer {
         dataOut.flush()
     }
 
-    fun deserializeSingleStroke(inputStream: InputStream): Stroke {
+    fun deserializeSingleStroke(inputStream: InputStream, isV2: Boolean = true): Stroke {
         val dataIn = DataInputStream(inputStream)
-        val colorArgb = dataIn.readInt()
-        val size = dataIn.readFloat()
-        val epsilon = dataIn.readFloat()
+        val brushFamily: BrushFamily
+        val colorArgb: Int
+        val size: Float
+        val epsilon: Float
+
+        if (isV2) {
+            val familyId = dataIn.readByte()
+            brushFamily = when (familyId) {
+                BRUSH_FAMILY_HIGHLIGHTER -> StockBrushes.highlighter()
+                BRUSH_FAMILY_MARKER -> StockBrushes.marker()
+                else -> StockBrushes.pressurePen()
+            }
+            colorArgb = dataIn.readInt()
+            size = dataIn.readFloat()
+            epsilon = dataIn.readFloat()
+        } else {
+            colorArgb = dataIn.readInt()
+            size = dataIn.readFloat()
+            epsilon = dataIn.readFloat()
+            val alpha = (colorArgb ushr 24) and 0xFF
+            brushFamily = if (alpha <= 0x80) StockBrushes.highlighter() else StockBrushes.pressurePen()
+        }
 
         val encodingType = dataIn.readByte()
         val payloadLength = dataIn.readInt()

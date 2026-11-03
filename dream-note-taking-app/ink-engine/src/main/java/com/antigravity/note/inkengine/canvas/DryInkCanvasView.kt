@@ -104,17 +104,16 @@ class DryInkCanvasView @JvmOverloads constructor(
             drawPaperGrid(canvas)
         }
 
-        // Draw dry vector strokes (2-pass: highlighters first so text stays crisp on top)
-        val highlighterFamily = StockBrushes.highlighter()
+        // Draw dry vector strokes (2-pass: highlighters first underneath, so handwriting text stays crisp on top)
         for (i in 0 until strokes.size) {
             val stroke = strokes[i]
-            if (stroke.brush.family == highlighterFamily) {
+            if (isHighlighterStroke(stroke)) {
                 strokeRenderer.draw(canvas, stroke, identityMatrix)
             }
         }
         for (i in 0 until strokes.size) {
             val stroke = strokes[i]
-            if (stroke.brush.family != highlighterFamily) {
+            if (!isHighlighterStroke(stroke)) {
                 strokeRenderer.draw(canvas, stroke, identityMatrix)
             }
         }
@@ -132,6 +131,15 @@ class DryInkCanvasView @JvmOverloads constructor(
         lassoTool?.draw(canvas)
 
         canvas.restore()
+    }
+
+    private fun isHighlighterStroke(stroke: Stroke): Boolean {
+        if (stroke.brush.family == StockBrushes.highlighter()) return true
+        val familyId = stroke.brush.family.clientBrushFamilyId
+        if (familyId != null && familyId.contains("highlighter", ignoreCase = true)) return true
+        // Translucent alpha check (highlighters use 0x55 alpha <= 0x99, whereas pen/marker use 0xFF)
+        val alpha = (stroke.brush.colorIntArgb ushr 24) and 0xFF
+        return alpha <= 0x99
     }
 
     fun setSearchHighlights(highlights: List<RectF>) {

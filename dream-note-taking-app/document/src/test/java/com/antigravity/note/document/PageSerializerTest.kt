@@ -5,7 +5,6 @@ import com.antigravity.note.document.model.PageMetadata
 import com.antigravity.note.document.model.PaperTemplate
 import com.antigravity.note.document.storage.PageSerializer
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Test
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream

@@ -14,7 +14,8 @@ import java.io.FileOutputStream
 class PageWal(private val walFile: File) {
 
     companion object {
-        private const val WAL_MAGIC = 0x57414C31 // "WAL1"
+        private const val WAL_MAGIC = 0x57414C32 // "WAL2"
+        private const val LEGACY_WAL_MAGIC = 0x57414C31 // "WAL1"
         const val OP_ADD_STROKE: Byte = 1
         const val OP_REMOVE_LAST: Byte = 2
         const val OP_CLEAR: Byte = 3
@@ -79,9 +80,10 @@ class PageWal(private val walFile: File) {
                 BufferedInputStream(fis).use { bis ->
                     val dataIn = DataInputStream(bis)
                     val magic = dataIn.readInt()
-                    if (magic != WAL_MAGIC) {
+                    if (magic != WAL_MAGIC && magic != LEGACY_WAL_MAGIC) {
                         return false
                     }
+                    val isV2 = magic == WAL_MAGIC
 
                     while (true) {
                         val opCode = try {
@@ -93,7 +95,7 @@ class PageWal(private val walFile: File) {
 
                         when (opCode) {
                             OP_ADD_STROKE -> {
-                                val stroke = PageSerializer.deserializeSingleStroke(dataIn)
+                                val stroke = PageSerializer.deserializeSingleStroke(dataIn, isV2)
                                 page.addStroke(stroke)
                                 replayedAny = true
                             }

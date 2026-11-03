@@ -64,6 +64,7 @@ import androidx.compose.material.icons.filled.FitScreen
 import androidx.compose.material.icons.filled.FormatPaint
 import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PushPin
@@ -96,6 +97,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -507,7 +509,7 @@ fun InkCanvasScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Top Chrome: Floating Toolbars & Controls (Status Bar Optimized & Two-Row Partitioned)
+        // Top Chrome: Floating Toolbars & Controls (Status Bar Optimized & Sleek Single-Line)
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -518,256 +520,75 @@ fun InkCanvasScreen(
         ) {
             Card(
                 modifier = Modifier
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 14.dp)
                     .fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                 shape = RoundedCornerShape(18.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Line 1: Document, Navigation & Global Actions (Zero Scroll!)
+                    // --- 1. Left: Navigation & Document Utilities ---
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        // Left: Navigation & Meta Controls
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        IconButton(
+                            onClick = { isSidebarOpen = !isSidebarOpen },
+                            modifier = Modifier.size(32.dp)
                         ) {
-                            IconButton(
-                                onClick = { isSidebarOpen = !isSidebarOpen },
-                                modifier = Modifier.size(34.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Menu,
-                                    contentDescription = "DSA Tree Explorer",
-                                    tint = if (isSidebarOpen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            IconButton(
-                                onClick = { isQuickSwitcherOpen = true },
-                                modifier = Modifier.size(34.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = "Quick Switcher (Ctrl+K)",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            IconButton(
-                                onClick = { isReviewTodayOpen = true },
-                                modifier = Modifier.size(34.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Schedule,
-                                    contentDescription = "Review Today",
-                                    tint = if (duePages.isNotEmpty()) Color(0xFFE65100) else MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            BackupStatusChip(
-                                status = backupSyncStatus,
-                                onClick = { isBackupDialogOpen = true }
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "DSA Tree Explorer",
+                                tint = if (isSidebarOpen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(19.dp)
                             )
                         }
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        // Right: Canvas Utilities & Actions
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        IconButton(
+                            onClick = { isQuickSwitcherOpen = true },
+                            modifier = Modifier.size(32.dp)
                         ) {
-                            IconButton(
-                                onClick = { canvasView.undo() },
-                                enabled = canUndo,
-                                modifier = Modifier.size(34.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.Undo,
-                                    contentDescription = "Undo",
-                                    tint = if (canUndo) MaterialTheme.colorScheme.onSurface else Color.LightGray,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            IconButton(
-                                onClick = { canvasView.redo() },
-                                enabled = canRedo,
-                                modifier = Modifier.size(34.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.Redo,
-                                    contentDescription = "Redo",
-                                    tint = if (canRedo) MaterialTheme.colorScheme.onSurface else Color.LightGray,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-
-                            // Paper Template Picker Button
-                            Box {
-                                IconButton(
-                                    onClick = { showTemplateMenu = true },
-                                    modifier = Modifier.size(34.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.GridOn,
-                                        contentDescription = "Paper Template",
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                DropdownMenu(
-                                    expanded = showTemplateMenu,
-                                    onDismissRequest = { showTemplateMenu = false }
-                                ) {
-                                    PaperTemplate.entries.forEach { template ->
-                                        DropdownMenuItem(
-                                            text = { Text(template.displayName) },
-                                            onClick = {
-                                                showTemplateMenu = false
-                                                docManager.setPaperTemplate(template)
-                                                canvasView.setPaperTemplate(template)
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Reset Zoom
-                            IconButton(
-                                onClick = { canvasView.resetZoom() },
-                                modifier = Modifier.size(34.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.FitScreen,
-                                    contentDescription = "Reset Zoom",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-
-                            // Problem / Topic Metadata Info Button (Manual Setup)
-                            IconButton(
-                                onClick = {
-                                    if (currentProblemPage != null) {
-                                        isEditProblemOpen = true
-                                    } else {
-                                        val page = currentPage ?: docManager.currentPage.value
-                                        if (page != null) {
-                                            scope.launch {
-                                                val activeNbId = docManager.getActiveNotebookId()
-                                                libraryRepo.createProblemPage(
-                                                    notebookId = activeNbId,
-                                                    title = page.metadata.title,
-                                                    sourceUrl = null,
-                                                    difficulty = "Medium",
-                                                    tags = ""
-                                                )
-                                                isEditProblemOpen = true
-                                            }
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.size(34.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.PushPin,
-                                    contentDescription = "Topic & Problem Details",
-                                    tint = if (currentProblemPage?.isProblemPage == true) MaterialTheme.colorScheme.primary else Color.Gray,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-
-                            // Audio Sync Record/Stop Button
-                            IconButton(
-                                onClick = {
-                                    if (isRecordingAudio) {
-                                        audioRecorder.stopRecording()
-                                        isRecordingAudio = false
-                                        hasRecordedAudio = true
-                                        Toast.makeText(context, "Audio recording saved", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        val pId = currentPage?.metadata?.pageId ?: "page_default"
-                                        val audioDir = File(context.filesDir, "audio").apply { mkdirs() }
-                                        val audioFile = File(audioDir, "$pId.m4a")
-                                        val ok = audioRecorder.startRecording(audioFile)
-                                        if (ok) {
-                                            isRecordingAudio = true
-                                            Toast.makeText(context, "Recording audio synced to strokes...", Toast.LENGTH_SHORT).show()
-                                        } else {
-                                            Toast.makeText(context, "Could not start audio recorder", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.size(34.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (isRecordingAudio) Icons.Default.Stop else Icons.Default.Mic,
-                                    contentDescription = "Audio Sync",
-                                    tint = if (isRecordingAudio) Color(0xFFD32F2F) else if (hasRecordedAudio) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-
-                            // Export & Share Button
-                            IconButton(
-                                onClick = {
-                                    exportSuccessMessage = null
-                                    isExportDialogOpen = true
-                                },
-                                modifier = Modifier.size(34.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Share,
-                                    contentDescription = "Export & Share",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-
-                            // Probe Mode Button
-                            IconButton(
-                                onClick = onNavigateToProbe,
-                                modifier = Modifier.size(34.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Speed,
-                                    contentDescription = "Hardware Probe",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-
-                            // Clear Canvas (With confirmation dialog)
-                            IconButton(
-                                onClick = { showClearCanvasDialog = true },
-                                modifier = Modifier.size(34.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Clear Canvas",
-                                    tint = Color(0xFFBA1A1A),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Quick Switcher (Ctrl+K)",
+                                modifier = Modifier.size(19.dp)
+                            )
                         }
+                        IconButton(
+                            onClick = { isReviewTodayOpen = true },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = "Review Today",
+                                tint = if (duePages.isNotEmpty()) Color(0xFFE65100) else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(19.dp)
+                            )
+                        }
+                        BackupStatusChip(
+                            status = backupSyncStatus,
+                            onClick = { isBackupDialogOpen = true }
+                        )
                     }
 
-                    HorizontalDivider(
-                        thickness = 0.5.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .height(24.dp)
+                            .width(1.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant)
                     )
+                    Spacer(modifier = Modifier.width(4.dp))
 
-                    // Line 2: Inking Tools, Color Palette & Stroke Widths (Zero Scroll!)
+                    // --- 2. Center: Inking Tools, Color Dropdown & Width Dropdown ---
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        // Tool selection: Pen, Marker, Highlighter, Eraser, Lasso, Shapes, PDF
                         ToolIconButton(
                             icon = Icons.Default.Edit,
                             label = "Pen",
@@ -820,77 +641,362 @@ fun InkCanvasScreen(
                             }
                         )
 
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
                         Box(
                             modifier = Modifier
-                                .height(22.dp)
+                                .height(24.dp)
                                 .width(1.dp)
                                 .background(MaterialTheme.colorScheme.outlineVariant)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
 
-                        // Dynamic Color Palette (Specialized for Pen/Marker vs Highlighter)
-                        activePalette.forEach { color ->
-                            val isSelected = selectedColor == color
-                            Box(
+                        // Compact Color Picker Dropdown (User requested: "color in drop down menu type things")
+                        var showColorPickerMenu by remember { mutableStateOf(false) }
+                        Box {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                                 modifier = Modifier
-                                    .size(24.dp)
-                                    .clip(CircleShape)
-                                    .background(color)
-                                    .border(
-                                        width = if (isSelected) 2.5.dp else 1.dp,
-                                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray,
-                                        shape = CircleShape
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { showColorPickerMenu = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(20.dp)
+                                            .clip(CircleShape)
+                                            .background(selectedColor)
+                                            .border(1.5.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f), CircleShape)
                                     )
-                                    .clickable {
-                                        when (selectedTool) {
-                                            CanvasTool.PRESSURE_PEN -> penColor = color
-                                            CanvasTool.MARKER -> markerColor = color
-                                            CanvasTool.HIGHLIGHTER -> highlighterColor = color
-                                            else -> penColor = color
-                                        }
-                                        val intColor = AndroidColor.argb(
-                                            (color.alpha * 255).toInt(),
-                                            (color.red * 255).toInt(),
-                                            (color.green * 255).toInt(),
-                                            (color.blue * 255).toInt()
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = "Color Menu",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            DropdownMenu(
+                                expanded = showColorPickerMenu,
+                                onDismissRequest = { showColorPickerMenu = false }
+                            ) {
+                                Text(
+                                    text = "Choose Color",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    activePalette.forEach { color ->
+                                        val isSelected = selectedColor == color
+                                        Box(
+                                            modifier = Modifier
+                                                .size(28.dp)
+                                                .clip(CircleShape)
+                                                .background(color)
+                                                .border(
+                                                    width = if (isSelected) 3.dp else 1.dp,
+                                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray,
+                                                    shape = CircleShape
+                                                )
+                                                .clickable {
+                                                    when (selectedTool) {
+                                                        CanvasTool.PRESSURE_PEN -> penColor = color
+                                                        CanvasTool.MARKER -> markerColor = color
+                                                        CanvasTool.HIGHLIGHTER -> highlighterColor = color
+                                                        else -> penColor = color
+                                                    }
+                                                    val intColor = AndroidColor.argb(
+                                                        (color.alpha * 255).toInt(),
+                                                        (color.red * 255).toInt(),
+                                                        (color.green * 255).toInt(),
+                                                        (color.blue * 255).toInt()
+                                                    )
+                                                    canvasView.setInkColor(intColor)
+                                                    showColorPickerMenu = false
+                                                }
                                         )
-                                        canvasView.setInkColor(intColor)
                                     }
+                                }
+                            }
+                        }
+
+                        // Compact Width Picker Dropdown
+                        var showWidthPickerMenu by remember { mutableStateOf(false) }
+                        val currentWidthLabel = activeWidths.firstOrNull { kotlin.math.abs(selectedWidth - it.first) < 0.5f }?.second ?: "Med"
+                        Box {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { showWidthPickerMenu = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text(
+                                        text = currentWidthLabel,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = "Width Menu",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            DropdownMenu(
+                                expanded = showWidthPickerMenu,
+                                onDismissRequest = { showWidthPickerMenu = false }
+                            ) {
+                                Text(
+                                    text = "Stroke Width",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                activeWidths.forEach { (width, label) ->
+                                    val isSelected = kotlin.math.abs(selectedWidth - width) < 0.5f
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(width.dp.coerceIn(4.dp, 16.dp))
+                                                        .clip(CircleShape)
+                                                        .background(selectedColor)
+                                                )
+                                                Text(label, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+                                            }
+                                        },
+                                        onClick = {
+                                            when (selectedTool) {
+                                                CanvasTool.PRESSURE_PEN -> penWidth = width
+                                                CanvasTool.MARKER -> markerWidth = width
+                                                CanvasTool.HIGHLIGHTER -> highlighterWidth = width
+                                                else -> penWidth = width
+                                            }
+                                            canvasView.setInkWidth(width)
+                                            showWidthPickerMenu = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    // --- 3. Right: Canvas Navigation & Collapse More Overflow Menu ---
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        IconButton(
+                            onClick = { canvasView.undo() },
+                            enabled = canUndo,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Undo,
+                                contentDescription = "Undo",
+                                tint = if (canUndo) MaterialTheme.colorScheme.onSurface else Color.LightGray,
+                                modifier = Modifier.size(19.dp)
+                            )
+                        }
+                        IconButton(
+                            onClick = { canvasView.redo() },
+                            enabled = canRedo,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Redo,
+                                contentDescription = "Redo",
+                                tint = if (canRedo) MaterialTheme.colorScheme.onSurface else Color.LightGray,
+                                modifier = Modifier.size(19.dp)
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Box(
-                            modifier = Modifier
-                                .height(22.dp)
-                                .width(1.dp)
-                                .background(MaterialTheme.colorScheme.outlineVariant)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        // Dynamic Stroke Widths (Coordinated per tool)
-                        activeWidths.forEach { (width, label) ->
-                            val isSelected = kotlin.math.abs(selectedWidth - width) < 0.5f
-                            Surface(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable {
-                                        when (selectedTool) {
-                                            CanvasTool.PRESSURE_PEN -> penWidth = width
-                                            CanvasTool.MARKER -> markerWidth = width
-                                            CanvasTool.HIGHLIGHTER -> highlighterWidth = width
-                                            else -> penWidth = width
-                                        }
-                                        canvasView.setInkWidth(width)
-                                    },
-                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                        // Paper Template Picker Button
+                        Box {
+                            IconButton(
+                                onClick = { showTemplateMenu = true },
+                                modifier = Modifier.size(32.dp)
                             ) {
-                                Text(
-                                    text = label,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp)
+                                Icon(
+                                    imageVector = Icons.Default.GridOn,
+                                    contentDescription = "Paper Template",
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showTemplateMenu,
+                                onDismissRequest = { showTemplateMenu = false }
+                            ) {
+                                PaperTemplate.entries.forEach { template ->
+                                    DropdownMenuItem(
+                                        text = { Text(template.displayName) },
+                                        onClick = {
+                                            showTemplateMenu = false
+                                            docManager.setPaperTemplate(template)
+                                            canvasView.setPaperTemplate(template)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        // Reset Zoom
+                        IconButton(
+                            onClick = { canvasView.resetZoom() },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FitScreen,
+                                contentDescription = "Reset Zoom",
+                                modifier = Modifier.size(19.dp)
+                            )
+                        }
+
+                        // Problem / Topic Metadata Info Button
+                        IconButton(
+                            onClick = {
+                                if (currentProblemPage != null) {
+                                    isEditProblemOpen = true
+                                } else {
+                                    val page = currentPage ?: docManager.currentPage.value
+                                    if (page != null) {
+                                        scope.launch {
+                                            val activeNbId = docManager.getActiveNotebookId()
+                                            libraryRepo.createProblemPage(
+                                                notebookId = activeNbId,
+                                                title = page.metadata.title,
+                                                sourceUrl = null,
+                                                difficulty = "Medium",
+                                                tags = ""
+                                            )
+                                            isEditProblemOpen = true
+                                        }
+                                    }
+                                }
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PushPin,
+                                contentDescription = "Topic & Problem Details",
+                                tint = if (currentProblemPage?.isProblemPage == true) MaterialTheme.colorScheme.primary else Color.Gray,
+                                modifier = Modifier.size(19.dp)
+                            )
+                        }
+
+                        // Collapse More Actions Menu (User requested: "keep in collapse/navigation drawer is like share, mic")
+                        var showMoreActionsMenu by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(
+                                onClick = { showMoreActionsMenu = true },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = "More Actions",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = showMoreActionsMenu,
+                                onDismissRequest = { showMoreActionsMenu = false }
+                            ) {
+                                // Audio Sync
+                                DropdownMenuItem(
+                                    text = { Text(if (isRecordingAudio) "Stop Recording Audio" else "Record Audio Sync") },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = if (isRecordingAudio) Icons.Default.Stop else Icons.Default.Mic,
+                                            contentDescription = null,
+                                            tint = if (isRecordingAudio) Color(0xFFD32F2F) else MaterialTheme.colorScheme.primary
+                                        )
+                                    },
+                                    onClick = {
+                                        showMoreActionsMenu = false
+                                        if (isRecordingAudio) {
+                                            audioRecorder.stopRecording()
+                                            isRecordingAudio = false
+                                            hasRecordedAudio = true
+                                            Toast.makeText(context, "Audio recording saved", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            val pId = currentPage?.metadata?.pageId ?: "page_default"
+                                            val audioDir = File(context.filesDir, "audio").apply { mkdirs() }
+                                            val audioFile = File(audioDir, "$pId.m4a")
+                                            val ok = audioRecorder.startRecording(audioFile)
+                                            if (ok) {
+                                                isRecordingAudio = true
+                                                Toast.makeText(context, "Recording audio synced to strokes...", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                Toast.makeText(context, "Could not start audio recorder", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }
+                                )
+
+                                // Export & Share
+                                DropdownMenuItem(
+                                    text = { Text("Export & Share Note") },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.Share, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                    },
+                                    onClick = {
+                                        showMoreActionsMenu = false
+                                        exportSuccessMessage = null
+                                        isExportDialogOpen = true
+                                    }
+                                )
+
+                                // Hardware Probe
+                                DropdownMenuItem(
+                                    text = { Text("Hardware & Stylus Probe") },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.Speed, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                    },
+                                    onClick = {
+                                        showMoreActionsMenu = false
+                                        onNavigateToProbe()
+                                    }
+                                )
+
+                                HorizontalDivider()
+
+                                // Clear Canvas
+                                DropdownMenuItem(
+                                    text = { Text("Clear Canvas", color = Color(0xFFBA1A1A)) },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFBA1A1A))
+                                    },
+                                    onClick = {
+                                        showMoreActionsMenu = false
+                                        showClearCanvasDialog = true
+                                    }
                                 )
                             }
                         }
@@ -1301,140 +1407,232 @@ fun InkCanvasScreen(
                     }
                 }
 
-                // Card 2: Palm Rejection & Input Controls (Stacked 3 Rows, Zero Scroll!)
+                // Card 2: Input Mode & Palm Settings (Single-Line Collapsible Pill)
                 var isFingerEraserOn by remember { mutableStateOf(canvasView.palmFilter.config.isFingerEraserEnabled) }
                 var isHoldToEraseOn by remember { mutableStateOf(canvasView.holdToEraseEnabled) }
+                var showInputSettingsPopup by remember { mutableStateOf(false) }
 
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                Box {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                        tonalElevation = 6.dp,
+                        shadowElevation = 6.dp,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable { showInputSettingsPopup = true }
                     ) {
-                        // Box 1: Inking / Touch Input Mode
                         Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.PanTool,
                                 contentDescription = null,
-                                modifier = Modifier.size(14.dp),
+                                modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
-                            Text("Input:", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-
-                            FilterChip(
-                                selected = inputMode == InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM,
-                                onClick = {
-                                    inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM
-                                    canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
-                                        inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM,
-                                        isFingerEraserEnabled = isFingerEraserOn
-                                    )
-                                },
-                                label = { Text("A: Pen + Gestures", fontSize = 11.sp) }
+                            val modeLabel = when (inputMode) {
+                                InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM -> "Pen + Gestures"
+                                InputMode.PEN_ONLY -> "Pen Only"
+                                InputMode.PEN_AND_FINGER_DRAW -> "All Draw"
+                                else -> "Pen + Gestures"
+                            }
+                            Text(
+                                text = modeLabel,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
-                            FilterChip(
-                                selected = inputMode == InputMode.PEN_ONLY,
-                                onClick = {
-                                    inputMode = InputMode.PEN_ONLY
-                                    canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
-                                        inputMode = InputMode.PEN_ONLY,
-                                        isFingerEraserEnabled = isFingerEraserOn
+                            if (isFingerEraserOn && inputMode == InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM) {
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer
+                                ) {
+                                    Text(
+                                        text = "☝️ Eraser",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
                                     )
-                                },
-                                label = { Text("B: Pen Only", fontSize = 11.sp) }
-                            )
-                            FilterChip(
-                                selected = inputMode == InputMode.PEN_AND_FINGER_DRAW,
-                                onClick = {
-                                    inputMode = InputMode.PEN_AND_FINGER_DRAW
-                                    canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
-                                        inputMode = InputMode.PEN_AND_FINGER_DRAW,
-                                        isFingerEraserEnabled = isFingerEraserOn
-                                    )
-                                },
-                                label = { Text("C: All Draw", fontSize = 11.sp) }
+                                }
+                            }
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = "Input Options",
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                    }
 
-                        // Box 2: Finger as Eraser Toggle (Concurrently active with Pen + Gestures!)
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    // Collapsible Input & Palm Settings Popover Menu
+                    DropdownMenu(
+                        expanded = showInputSettingsPopup,
+                        onDismissRequest = { showInputSettingsPopup = false }
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            FilterChip(
-                                selected = isFingerEraserOn,
-                                onClick = {
-                                    isFingerEraserOn = !isFingerEraserOn
-                                    canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
-                                        isFingerEraserEnabled = isFingerEraserOn
-                                    )
-                                },
-                                leadingIcon = {
+                            Text(
+                                text = "Stylus & Touch Input Settings",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            // Mode Chips
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                FilterChip(
+                                    selected = inputMode == InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM,
+                                    onClick = {
+                                        inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM
+                                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
+                                            inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM,
+                                            isFingerEraserEnabled = isFingerEraserOn
+                                        )
+                                    },
+                                    label = { Text("A: Pen + Gestures", fontSize = 11.sp) }
+                                )
+                                FilterChip(
+                                    selected = inputMode == InputMode.PEN_ONLY,
+                                    onClick = {
+                                        inputMode = InputMode.PEN_ONLY
+                                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
+                                            inputMode = InputMode.PEN_ONLY,
+                                            isFingerEraserEnabled = isFingerEraserOn
+                                        )
+                                    },
+                                    label = { Text("B: Pen Only", fontSize = 11.sp) }
+                                )
+                                FilterChip(
+                                    selected = inputMode == InputMode.PEN_AND_FINGER_DRAW,
+                                    onClick = {
+                                        inputMode = InputMode.PEN_AND_FINGER_DRAW
+                                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
+                                            inputMode = InputMode.PEN_AND_FINGER_DRAW,
+                                            isFingerEraserEnabled = isFingerEraserOn
+                                        )
+                                    },
+                                    label = { Text("C: All Draw", fontSize = 11.sp) }
+                                )
+                            }
+
+                            HorizontalDivider(thickness = 0.5.dp)
+
+                            // Finger Eraser Toggle
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        isFingerEraserOn = !isFingerEraserOn
+                                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
+                                            isFingerEraserEnabled = isFingerEraserOn
+                                        )
+                                    }
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
                                     Icon(
                                         imageVector = Icons.Default.TouchApp,
                                         contentDescription = null,
-                                        modifier = Modifier.size(13.dp)
+                                        modifier = Modifier.size(16.dp),
+                                        tint = if (isFingerEraserOn) MaterialTheme.colorScheme.primary else Color.Gray
                                     )
-                                },
-                                label = {
-                                    Text(
-                                        if (isFingerEraserOn) "☝️ Finger as Eraser: ON (Palm-Safe)" else "☝️ Finger as Eraser: OFF",
-                                        fontSize = 11.sp,
-                                        fontWeight = if (isFingerEraserOn) FontWeight.Bold else FontWeight.Normal
-                                    )
+                                    Column {
+                                        Text("Finger as Eraser (Palm-Safe)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                        Text("Single finger erases; 2 fingers pan & zoom", fontSize = 10.sp, color = Color.Gray)
+                                    }
                                 }
-                            )
-
-                            // Debug HUD Toggle
-                            IconButton(
-                                onClick = {
-                                    isDebugOverlayOn = !isDebugOverlayOn
-                                    canvasView.palmFilter.config = canvasView.palmFilter.config.copy(debugOverlayEnabled = isDebugOverlayOn)
-                                    canvasView.invalidate()
-                                },
-                                modifier = Modifier.size(26.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.BugReport,
-                                    contentDescription = "Toggle Debug HUD",
-                                    tint = if (isDebugOverlayOn) MaterialTheme.colorScheme.primary else Color.Gray,
-                                    modifier = Modifier.size(16.dp)
+                                Switch(
+                                    checked = isFingerEraserOn,
+                                    onCheckedChange = {
+                                        isFingerEraserOn = it
+                                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
+                                            isFingerEraserEnabled = it
+                                        )
+                                    }
                                 )
                             }
-                        }
 
-                        // Box 3: NoteWise-style Hold Pen to Erase Toggle
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            FilterChip(
-                                selected = isHoldToEraseOn,
-                                onClick = {
-                                    isHoldToEraseOn = !isHoldToEraseOn
-                                    canvasView.holdToEraseEnabled = isHoldToEraseOn
-                                },
-                                leadingIcon = {
+                            // Hold Pen to Erase Toggle
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        isHoldToEraseOn = !isHoldToEraseOn
+                                        canvasView.holdToEraseEnabled = isHoldToEraseOn
+                                    }
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
                                     Icon(
                                         imageVector = Icons.Default.Schedule,
                                         contentDescription = null,
-                                        modifier = Modifier.size(13.dp)
+                                        modifier = Modifier.size(16.dp),
+                                        tint = if (isHoldToEraseOn) MaterialTheme.colorScheme.primary else Color.Gray
                                     )
-                                },
-                                label = {
-                                    Text(
-                                        if (isHoldToEraseOn) "⏱️ Hold Pen to Erase: ON (1.2s)" else "⏱️ Hold to Erase: OFF",
-                                        fontSize = 11.sp,
-                                        fontWeight = if (isHoldToEraseOn) FontWeight.Bold else FontWeight.Normal
-                                    )
+                                    Column {
+                                        Text("Hold Pen to Erase (1.2s)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                        Text("NoteWise style stationary pen hold", fontSize = 10.sp, color = Color.Gray)
+                                    }
                                 }
-                            )
+                                Switch(
+                                    checked = isHoldToEraseOn,
+                                    onCheckedChange = {
+                                        isHoldToEraseOn = it
+                                        canvasView.holdToEraseEnabled = it
+                                    }
+                                )
+                            }
+
+                            // Debug HUD Toggle
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        isDebugOverlayOn = !isDebugOverlayOn
+                                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(debugOverlayEnabled = isDebugOverlayOn)
+                                        canvasView.invalidate()
+                                    }
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.BugReport,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = if (isDebugOverlayOn) MaterialTheme.colorScheme.primary else Color.Gray
+                                    )
+                                    Text("Debug Performance HUD", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                                Switch(
+                                    checked = isDebugOverlayOn,
+                                    onCheckedChange = {
+                                        isDebugOverlayOn = it
+                                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(debugOverlayEnabled = it)
+                                        canvasView.invalidate()
+                                    }
+                                )
+                            }
                         }
                     }
                 }

@@ -292,9 +292,8 @@ class InkCanvasView @JvmOverloads constructor(
                     for (stroke in finishedList) {
                         onStrokeCommitted?.invoke(stroke)
                     }
-                    post {
-                        inProgressStrokesView.removeFinishedStrokes(strokes.keys)
-                    }
+                    inProgressStrokesView.removeFinishedStrokes(strokes.keys)
+                    dryInkView.invalidate()
                 }
             }
         })
@@ -1033,7 +1032,7 @@ class InkCanvasView @JvmOverloads constructor(
 
     private fun drawDebugOverlay(canvas: Canvas) {
         val leftPad = 32f
-        val topPad = 340f
+        val topPad = 220f
         val boxWidth = 680f
         val boxHeight = 216f
         val cornerRadius = 16f
