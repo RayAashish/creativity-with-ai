@@ -154,8 +154,64 @@ fun InkCanvasScreen(
     var isSidebarOpen by remember { mutableStateOf(false) }
     var isQuickSwitcherOpen by remember { mutableStateOf(false) }
     var selectedTool by remember { mutableStateOf(CanvasTool.PRESSURE_PEN) }
-    var selectedColor by remember { mutableStateOf(Color(0xFF111318)) }
-    var selectedWidth by remember { mutableFloatStateOf(6f) }
+    var penColor by remember { mutableStateOf(Color(0xFF111318)) }
+    var penWidth by remember { mutableFloatStateOf(4f) }
+    var markerColor by remember { mutableStateOf(Color(0xFF005AC1)) }
+    var markerWidth by remember { mutableFloatStateOf(14f) }
+    var highlighterColor by remember { mutableStateOf(Color(0xFFFFD600)) }
+    var highlighterWidth by remember { mutableFloatStateOf(34f) }
+
+    val selectedColor = when (selectedTool) {
+        CanvasTool.PRESSURE_PEN -> penColor
+        CanvasTool.MARKER -> markerColor
+        CanvasTool.HIGHLIGHTER -> highlighterColor
+        else -> penColor
+    }
+    val selectedWidth = when (selectedTool) {
+        CanvasTool.PRESSURE_PEN -> penWidth
+        CanvasTool.MARKER -> markerWidth
+        CanvasTool.HIGHLIGHTER -> highlighterWidth
+        else -> penWidth
+    }
+
+    val switchToTool: (CanvasTool) -> Unit = { tool ->
+        selectedTool = tool
+        canvasView.setTool(tool)
+        when (tool) {
+            CanvasTool.PRESSURE_PEN -> {
+                canvasView.setInkWidth(penWidth)
+                val c = AndroidColor.argb(
+                    (penColor.alpha * 255).toInt(),
+                    (penColor.red * 255).toInt(),
+                    (penColor.green * 255).toInt(),
+                    (penColor.blue * 255).toInt()
+                )
+                canvasView.setInkColor(c)
+            }
+            CanvasTool.MARKER -> {
+                canvasView.setInkWidth(markerWidth)
+                val c = AndroidColor.argb(
+                    (markerColor.alpha * 255).toInt(),
+                    (markerColor.red * 255).toInt(),
+                    (markerColor.green * 255).toInt(),
+                    (markerColor.blue * 255).toInt()
+                )
+                canvasView.setInkColor(c)
+            }
+            CanvasTool.HIGHLIGHTER -> {
+                canvasView.setInkWidth(highlighterWidth)
+                val c = AndroidColor.argb(
+                    (highlighterColor.alpha * 255).toInt(),
+                    (highlighterColor.red * 255).toInt(),
+                    (highlighterColor.green * 255).toInt(),
+                    (highlighterColor.blue * 255).toInt()
+                )
+                canvasView.setInkColor(c)
+            }
+            else -> {}
+        }
+    }
+
     var canUndo by remember { mutableStateOf(false) }
     var canRedo by remember { mutableStateOf(false) }
     var inputMode by remember { mutableStateOf(InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM) }
@@ -174,6 +230,17 @@ fun InkCanvasScreen(
     var isEditProblemOpen by remember { mutableStateOf(false) }
     var showDeletePageDialog by remember { mutableStateOf(false) }
     var showAddPageMenu by remember { mutableStateOf(false) }
+    var isInfiniteCanvas by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                canvasView.digitalInkManager.ensureModelReady()
+            } catch (e: Exception) {
+                android.util.Log.w("InkCanvasScreen", "Background DigitalInk model warmup: ${e.message}")
+            }
+        }
+    }
 
     // Phase 5 State
     var isReviewTodayOpen by remember { mutableStateOf(false) }
@@ -277,23 +344,23 @@ fun InkCanvasScreen(
                     true
                 }
                 NoteAppShortcut.TOOL_PEN -> {
-                    selectedTool = CanvasTool.PRESSURE_PEN
-                    canvasView.setTool(CanvasTool.PRESSURE_PEN)
+                    switchToTool(CanvasTool.PRESSURE_PEN)
+                    true
+                }
+                NoteAppShortcut.TOOL_MARKER -> {
+                    switchToTool(CanvasTool.MARKER)
                     true
                 }
                 NoteAppShortcut.TOOL_ERASER -> {
-                    selectedTool = CanvasTool.STROKE_ERASER
-                    canvasView.setTool(CanvasTool.STROKE_ERASER)
+                    switchToTool(CanvasTool.STROKE_ERASER)
                     true
                 }
                 NoteAppShortcut.TOOL_HIGHLIGHTER -> {
-                    selectedTool = CanvasTool.HIGHLIGHTER
-                    canvasView.setTool(CanvasTool.HIGHLIGHTER)
+                    switchToTool(CanvasTool.HIGHLIGHTER)
                     true
                 }
                 NoteAppShortcut.TOOL_LASSO -> {
-                    selectedTool = CanvasTool.LASSO
-                    canvasView.setTool(CanvasTool.LASSO)
+                    switchToTool(CanvasTool.LASSO)
                     true
                 }
                 NoteAppShortcut.TOOL_SHAPES -> {
@@ -343,14 +410,31 @@ fun InkCanvasScreen(
         }
     }
 
-    val palette = listOf(
-        Color(0xFF111318), // Black
-        Color(0xFF005AC1), // Ink Blue
-        Color(0xFFBA1A1A), // Red
-        Color(0xFF146C2E), // Green
-        Color(0xFF6750A4), // Purple
-        Color(0xFFFFD600)  // Highlighter Yellow
-    )
+    val activePalette = if (selectedTool == CanvasTool.HIGHLIGHTER) {
+        listOf(
+            Color(0xFFFFD600), // Fluorescent Yellow
+            Color(0xFF69F0AE), // Mint Green
+            Color(0xFF40C4FF), // Neon Blue
+            Color(0xFFFF80AB), // Soft Pink
+            Color(0xFFFFAB40), // Warm Amber
+            Color(0xFFE040FB)  // Bright Violet
+        )
+    } else {
+        listOf(
+            Color(0xFF111318), // Deep Black
+            Color(0xFF005AC1), // Ink Blue
+            Color(0xFFBA1A1A), // Red
+            Color(0xFF146C2E), // Green
+            Color(0xFF6750A4), // Purple
+            Color(0xFFE65100)  // Orange
+        )
+    }
+
+    val activeWidths = when (selectedTool) {
+        CanvasTool.HIGHLIGHTER -> listOf(20f to "Fine", 34f to "Med", 52f to "Broad")
+        CanvasTool.MARKER -> listOf(8f to "Fine", 14f to "Med", 22f to "Bold")
+        else -> listOf(2.5f to "Fine", 4.5f to "Med", 8f to "Bold")
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Dedicated SurfaceView-backed Inking Canvas (Hot Path)
@@ -429,46 +513,31 @@ fun InkCanvasScreen(
                             icon = Icons.Default.Edit,
                             label = "Pen",
                             isSelected = selectedTool == CanvasTool.PRESSURE_PEN,
-                            onClick = {
-                                selectedTool = CanvasTool.PRESSURE_PEN
-                                canvasView.setTool(CanvasTool.PRESSURE_PEN)
-                            }
+                            onClick = { switchToTool(CanvasTool.PRESSURE_PEN) }
                         )
                         ToolIconButton(
                             icon = Icons.Default.Brush,
                             label = "Marker",
                             isSelected = selectedTool == CanvasTool.MARKER,
-                            onClick = {
-                                selectedTool = CanvasTool.MARKER
-                                canvasView.setTool(CanvasTool.MARKER)
-                            }
+                            onClick = { switchToTool(CanvasTool.MARKER) }
                         )
                         ToolIconButton(
                             icon = Icons.Default.FormatPaint,
                             label = "Highlighter",
                             isSelected = selectedTool == CanvasTool.HIGHLIGHTER,
-                            onClick = {
-                                selectedTool = CanvasTool.HIGHLIGHTER
-                                canvasView.setTool(CanvasTool.HIGHLIGHTER)
-                            }
+                            onClick = { switchToTool(CanvasTool.HIGHLIGHTER) }
                         )
                         ToolIconButton(
                             icon = Icons.Default.AutoFixHigh,
                             label = "Eraser",
                             isSelected = selectedTool == CanvasTool.STROKE_ERASER,
-                            onClick = {
-                                selectedTool = CanvasTool.STROKE_ERASER
-                                canvasView.setTool(CanvasTool.STROKE_ERASER)
-                            }
+                            onClick = { switchToTool(CanvasTool.STROKE_ERASER) }
                         )
                         ToolIconButton(
                             icon = Icons.Default.SelectAll,
                             label = "Lasso",
                             isSelected = selectedTool == CanvasTool.LASSO,
-                            onClick = {
-                                selectedTool = CanvasTool.LASSO
-                                canvasView.setTool(CanvasTool.LASSO)
-                            }
+                            onClick = { switchToTool(CanvasTool.LASSO) }
                         )
                         ToolIconButton(
                             icon = Icons.Default.Category,
@@ -503,8 +572,8 @@ fun InkCanvasScreen(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
 
-                        // Color Palette
-                        palette.forEach { color ->
+                        // Dynamic Color Palette (Specialized for Pen/Marker vs Highlighter)
+                        activePalette.forEach { color ->
                             val isSelected = selectedColor == color
                             Box(
                                 modifier = Modifier
@@ -517,7 +586,12 @@ fun InkCanvasScreen(
                                         shape = CircleShape
                                     )
                                     .clickable {
-                                        selectedColor = color
+                                        when (selectedTool) {
+                                            CanvasTool.PRESSURE_PEN -> penColor = color
+                                            CanvasTool.MARKER -> markerColor = color
+                                            CanvasTool.HIGHLIGHTER -> highlighterColor = color
+                                            else -> penColor = color
+                                        }
                                         val intColor = AndroidColor.argb(
                                             (color.alpha * 255).toInt(),
                                             (color.red * 255).toInt(),
@@ -538,14 +612,19 @@ fun InkCanvasScreen(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
 
-                        // Stroke Widths
-                        listOf(3f to "Fine", 6f to "Med", 14f to "Bold").forEach { (width, label) ->
-                            val isSelected = selectedWidth == width
+                        // Dynamic Stroke Widths (Coordinated per tool)
+                        activeWidths.forEach { (width, label) ->
+                            val isSelected = kotlin.math.abs(selectedWidth - width) < 0.5f
                             Surface(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
                                     .clickable {
-                                        selectedWidth = width
+                                        when (selectedTool) {
+                                            CanvasTool.PRESSURE_PEN -> penWidth = width
+                                            CanvasTool.MARKER -> markerWidth = width
+                                            CanvasTool.HIGHLIGHTER -> highlighterWidth = width
+                                            else -> penWidth = width
+                                        }
                                         canvasView.setInkWidth(width)
                                     },
                                 color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
@@ -962,6 +1041,43 @@ fun InkCanvasScreen(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(2.dp))
+                Box(
+                    modifier = Modifier
+                        .height(20.dp)
+                        .width(1.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant)
+                )
+                Spacer(modifier = Modifier.width(2.dp))
+
+                // Infinite Canvas Toggle (OneNote Style)
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (isInfiniteCanvas) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.clickable {
+                        isInfiniteCanvas = !isInfiniteCanvas
+                        canvasView.setInfiniteCanvasMode(isInfiniteCanvas)
+                        Toast.makeText(
+                            context,
+                            if (isInfiniteCanvas) "Infinite Canvas Enabled (OneNote style)" else "Fixed Page Boundaries Enabled",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = if (isInfiniteCanvas) "♾️ Infinite" else "📄 Fixed",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isInfiniteCanvas) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
 
@@ -1162,12 +1278,16 @@ fun InkCanvasScreen(
                     IconButton(
                         onClick = {
                             scope.launch {
+                                Toast.makeText(context, "Transcribing handwriting with ML Kit...", Toast.LENGTH_SHORT).show()
                                 val text = canvasView.convertLassoSelectionToText()
                                 if (!text.isNullOrBlank()) {
                                     recognizedTextResult = text
-                                    Toast.makeText(context, "Transcribed: \"$text\"", Toast.LENGTH_LONG).show()
+                                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                    val clip = android.content.ClipData.newPlainText("Handwriting", text)
+                                    clipboard.setPrimaryClip(clip)
+                                    Toast.makeText(context, "Transcribed & Copied: \"$text\"", Toast.LENGTH_LONG).show()
                                 } else {
-                                    Toast.makeText(context, "No text recognized in selection", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "No text recognized. Ensure clear handwriting or connected to network for first-time model setup.", Toast.LENGTH_LONG).show()
                                 }
                             }
                         }
@@ -1466,6 +1586,7 @@ fun InkCanvasScreen(
                     isShapeSnapOn = enabled
                     canvasView.holdToSnapEnabled = enabled
                 },
+                viewportCenter = canvasView.getViewportCenter(),
                 onInsertShape = { shape ->
                     canvasView.insertShape(shape)
                     isShapesDialogOpen = false

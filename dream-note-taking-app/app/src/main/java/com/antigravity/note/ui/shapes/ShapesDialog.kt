@@ -52,8 +52,11 @@ fun ShapesDialog(
     isHoldToSnapEnabled: Boolean,
     onToggleHoldToSnap: (Boolean) -> Unit,
     onInsertShape: (RecognizedShape) -> Unit,
+    viewportCenter: Pair<Float, Float> = Pair(1000f, 1200f),
     onDismissRequest: () -> Unit
 ) {
+    val cx = viewportCenter.first
+    val cy = viewportCenter.second
     Dialog(onDismissRequest = onDismissRequest) {
         Surface(
             shape = RoundedCornerShape(24.dp),
@@ -160,7 +163,7 @@ fun ShapesDialog(
                         title = "Database",
                         desc = "3D Cylinder (SQL/NoSQL)",
                         onClick = {
-                            onInsertShape(RecognizedShape.DatabaseCylinder(centerX = 600f, centerY = 800f, width = 150f, height = 180f))
+                            onInsertShape(RecognizedShape.DatabaseCylinder(centerX = cx, centerY = cy, width = 280f, height = 360f))
                             onDismissRequest()
                         }
                     )
@@ -169,7 +172,7 @@ fun ShapesDialog(
                         title = "Cloud / VPC",
                         desc = "Network / Gateway / AWS",
                         onClick = {
-                            onInsertShape(RecognizedShape.Cloud(centerX = 600f, centerY = 800f, width = 200f, height = 120f))
+                            onInsertShape(RecognizedShape.Cloud(centerX = cx, centerY = cy, width = 400f, height = 240f))
                             onDismissRequest()
                         }
                     )
@@ -178,7 +181,7 @@ fun ShapesDialog(
                         title = "Network Bus",
                         desc = "Two-way communication <->",
                         onClick = {
-                            onInsertShape(RecognizedShape.BidirectionalArrow(startX = 450f, startY = 800f, endX = 750f, endY = 800f))
+                            onInsertShape(RecognizedShape.BidirectionalArrow(startX = cx - 180f, startY = cy, endX = cx + 180f, endY = cy))
                             onDismissRequest()
                         }
                     )
@@ -187,7 +190,7 @@ fun ShapesDialog(
                         title = "Service Box",
                         desc = "Microservice / Server",
                         onClick = {
-                            onInsertShape(RecognizedShape.Rectangle(left = 480f, top = 720f, right = 720f, bottom = 880f))
+                            onInsertShape(RecognizedShape.Rectangle(left = cx - 160f, top = cy - 110f, right = cx + 160f, bottom = cy + 110f))
                             onDismissRequest()
                         }
                     )
@@ -215,7 +218,7 @@ fun ShapesDialog(
                         title = "Linked List",
                         desc = "Node [ val | • ] ➔",
                         onClick = {
-                            onInsertShape(RecognizedShape.LinkedListNode(centerX = 600f, centerY = 800f, width = 160f, height = 80f))
+                            onInsertShape(RecognizedShape.LinkedListNode(centerX = cx, centerY = cy, width = 300f, height = 130f))
                             onDismissRequest()
                         }
                     )
@@ -224,7 +227,7 @@ fun ShapesDialog(
                         title = "Array / Queue",
                         desc = "Partitioned [0|1|2|3]",
                         onClick = {
-                            onInsertShape(RecognizedShape.ArrayCellSequence(centerX = 600f, centerY = 800f, cellWidth = 65f, cellHeight = 65f, count = 4))
+                            onInsertShape(RecognizedShape.ArrayCellSequence(centerX = cx, centerY = cy, cellWidth = 90f, cellHeight = 90f, count = 4))
                             onDismissRequest()
                         }
                     )
@@ -233,7 +236,7 @@ fun ShapesDialog(
                         title = "Decision",
                         desc = "Flowchart Diamond ❖",
                         onClick = {
-                            onInsertShape(RecognizedShape.Diamond(centerX = 600f, centerY = 800f, width = 150f, height = 110f))
+                            onInsertShape(RecognizedShape.Diamond(centerX = cx, centerY = cy, width = 240f, height = 240f))
                             onDismissRequest()
                         }
                     )
@@ -242,7 +245,7 @@ fun ShapesDialog(
                         title = "Graph Node",
                         desc = "Circle / Vertex ◯",
                         onClick = {
-                            onInsertShape(RecognizedShape.Circle(centerX = 600f, centerY = 800f, radius = 55f))
+                            onInsertShape(RecognizedShape.Circle(centerX = cx, centerY = cy, radius = 90f))
                             onDismissRequest()
                         }
                     )

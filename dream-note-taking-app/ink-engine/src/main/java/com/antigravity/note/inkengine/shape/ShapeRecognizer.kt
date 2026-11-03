@@ -4,27 +4,28 @@ import androidx.ink.brush.Brush
 import androidx.ink.brush.InputToolType
 import androidx.ink.strokes.MutableStrokeInputBatch
 import androidx.ink.strokes.Stroke
-import androidx.ink.strokes.StrokeInputBatch
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
+import kotlin.math.max
 import kotlin.math.sin
 import kotlin.math.sqrt
 
 sealed class RecognizedShape {
     data class Line(val startX: Float, val startY: Float, val endX: Float, val endY: Float) : RecognizedShape()
     data class Arrow(val startX: Float, val startY: Float, val endX: Float, val endY: Float) : RecognizedShape()
-    data class BidirectionalArrow(val startX: Float, val startY: Float, val endX: Float, val endY: Float) : RecognizedShape()
-    data class Rectangle(val left: Float, val top: Float, val right: Float, val bottom: Float) : RecognizedShape()
     data class Circle(val centerX: Float, val centerY: Float, val radius: Float) : RecognizedShape()
+    data class Rectangle(val left: Float, val top: Float, val right: Float, val bottom: Float) : RecognizedShape()
     data class Triangle(val x1: Float, val y1: Float, val x2: Float, val y2: Float, val x3: Float, val y3: Float) : RecognizedShape()
     data class Diamond(val centerX: Float, val centerY: Float, val width: Float, val height: Float) : RecognizedShape()
-    data class DatabaseCylinder(val centerX: Float, val centerY: Float, val width: Float = 140f, val height: Float = 160f) : RecognizedShape()
-    data class LinkedListNode(val centerX: Float, val centerY: Float, val width: Float = 160f, val height: Float = 80f) : RecognizedShape()
-    data class ArrayCellSequence(val centerX: Float, val centerY: Float, val cellWidth: Float = 60f, val cellHeight: Float = 60f, val count: Int = 4) : RecognizedShape()
-    data class Cloud(val centerX: Float, val centerY: Float, val width: Float = 180f, val height: Float = 110f) : RecognizedShape()
+    data class DatabaseCylinder(val centerX: Float, val centerY: Float, val width: Float, val height: Float) : RecognizedShape()
+    data class LinkedListNode(val centerX: Float, val centerY: Float, val width: Float, val height: Float) : RecognizedShape()
+    data class ArrayCellSequence(val centerX: Float, val centerY: Float, val cellWidth: Float, val cellHeight: Float, val count: Int = 4) : RecognizedShape()
+    data class Cloud(val centerX: Float, val centerY: Float, val width: Float, val height: Float) : RecognizedShape()
+    data class BidirectionalArrow(val startX: Float, val startY: Float, val endX: Float, val endY: Float) : RecognizedShape()
+    data class Pentagon(val x1: Float, val y1: Float, val x2: Float, val y2: Float, val x3: Float, val y3: Float, val x4: Float, val y4: Float, val x5: Float, val y5: Float) : RecognizedShape()
 }
 
 class ShapeRecognizer {
@@ -38,33 +39,33 @@ class ShapeRecognizer {
     fun recognize(points: List<Point>): RecognizedShape? {
         if (points.size < 5) return null
 
-        val pathLength = computePathLength(points)
-        if (pathLength < 30f) return null
-
-        val start = points.first()
-        val end = points.last()
-        val directDistance = hypot(end.x - start.x, end.y - start.y)
-
-        // 1. Check for Line or Arrow (Open path)
-        val isClosed = (directDistance / pathLength) < 0.22f
-        if (!isClosed) {
-            val straightness = directDistance / pathLength
-            if (straightness >= 0.88f) {
-                // Check if user drew an arrow head at the end
-                if (hasArrowTip(points)) {
-                    return RecognizedShape.Arrow(start.x, start.y, end.x, end.y)
-                }
-                return RecognizedShape.Line(start.x, start.y, end.x, end.y)
+        // Strip trailing cluster points where user paused pen
+        val cleanPoints = points.toMutableList()
+        if (cleanPoints.size > 10) {
+            val last = cleanPoints.last()
+            var trimIdx = cleanPoints.size - 1
+            while (trimIdx > 5 && hypot(cleanPoints[trimIdx].x - last.x, cleanPoints[trimIdx].y - last.y) < 22f) {
+                trimIdx--
             }
-            return null
+            if (trimIdx < cleanPoints.size - 2) {
+                cleanPoints.subList(trimIdx + 1, cleanPoints.size).clear()
+                cleanPoints.add(last)
+            }
         }
 
-        // 2. Closed path: Evaluate Circle, Rectangle, Triangle, Diamond, or Cylinder
+        val pathLength = computePathLength(cleanPoints)
+        if (pathLength < 30f) return null
+
+        val start = cleanPoints.first()
+        val end = cleanPoints.last()
+        val directDistance = hypot(end.x - start.x, end.y - start.y)
+
+        // Bounding box
         var minX = Float.MAX_VALUE
         var maxX = -Float.MAX_VALUE
         var minY = Float.MAX_VALUE
         var maxY = -Float.MAX_VALUE
-        for (pt in points) {
+        for (pt in cleanPoints) {
             if (pt.x < minX) minX = pt.x
             if (pt.x > maxX) maxX = pt.x
             if (pt.y < minY) minY = pt.y
@@ -73,65 +74,123 @@ class ShapeRecognizer {
 
         val boxWidth = maxX - minX
         val boxHeight = maxY - minY
-        if (boxWidth < 20f || boxHeight < 20f) return null
+        if (boxWidth < 15f && boxHeight < 15f) return null
 
         val centerX = (minX + maxX) / 2f
         val centerY = (minY + maxY) / 2f
+
+        // 1. Check for Line or Arrow (Open path)
+        val isClosed = (directDistance / pathLength) < 0.35f || directDistance < max(45f, (boxWidth + boxHeight) * 0.18f)
+        if (!isClosed) {
+            val straightness = directDistance / pathLength
+            if (straightness >= 0.82f) {
+                if (hasArrowTip(cleanPoints)) {
+                    val tip = findTip(cleanPoints)
+                    return RecognizedShape.Arrow(start.x, start.y, tip.x, tip.y)
+                }
+                return RecognizedShape.Line(start.x, start.y, end.x, end.y)
+            }
+            return null
+        }
+
+        // 2. Closed path: Evaluate Circle, Rectangle, Triangle, Diamond
         val avgRadius = (boxWidth + boxHeight) / 4f
 
         // 2a. Check for Circle (variance in distance from center should be low)
         var radiusVariance = 0f
-        for (pt in points) {
+        for (pt in cleanPoints) {
             val dist = hypot(pt.x - centerX, pt.y - centerY)
             val diff = abs(dist - avgRadius)
             radiusVariance += diff * diff
         }
-        radiusVariance /= points.size
+        radiusVariance /= cleanPoints.size
         val stdDev = sqrt(radiusVariance)
-        val aspectRatio = boxWidth / boxHeight
+        val aspectRatio = boxWidth / max(1f, boxHeight)
 
-        if (stdDev < avgRadius * 0.16f && aspectRatio in 0.82f..1.22f) {
+        // 2b. Simplify polygon using Ramer-Douglas-Peucker algorithm
+        val simplified = ramerDouglasPeucker(cleanPoints, epsilon = (boxWidth + boxHeight) * 0.055f)
+
+        // 2a. Check for Circle (curved with low radial variance and no small vertex count)
+        if (simplified.size >= 6 && stdDev < avgRadius * 0.22f && aspectRatio in 0.70f..1.42f) {
             return RecognizedShape.Circle(centerX, centerY, avgRadius)
         }
 
-        // 2b. Simplify polygon using Ramer-Douglas-Peucker algorithm
-        val simplified = ramerDouglasPeucker(points, epsilon = (boxWidth + boxHeight) * 0.055f)
-
-        // Triangle: 3 distinct dominant vertices
-        if (simplified.size == 4) {
-            return RecognizedShape.Triangle(
-                simplified[0].x, simplified[0].y,
-                simplified[1].x, simplified[1].y,
-                simplified[2].x, simplified[2].y
-            )
+        // Triangle: 3 distinct dominant vertices (simplified size 4 including closed start/end)
+        if (simplified.size in 3..4) {
+            if (simplified.size == 4) {
+                return RecognizedShape.Triangle(
+                    simplified[0].x, simplified[0].y,
+                    simplified[1].x, simplified[1].y,
+                    simplified[2].x, simplified[2].y
+                )
+            }
         }
 
         // 4 vertices: evaluate Rectangle vs Diamond
-        if (simplified.size in 5..6) {
-            val poly = if (simplified.size == 6) simplified.take(5) else simplified
-            // Check if top vertex is near centerX and sides are angled (Diamond)
+        if (simplified.size == 5) {
+            val poly = simplified.take(4)
             val topPt = poly.minByOrNull { it.y }
-            if (topPt != null && abs(topPt.x - centerX) < boxWidth * 0.2f && aspectRatio in 0.7f..1.4f) {
-                // Diamond
+            if (topPt != null && abs(topPt.x - centerX) < boxWidth * 0.22f && aspectRatio in 0.65f..1.5f) {
                 return RecognizedShape.Diamond(centerX, centerY, boxWidth, boxHeight)
             }
             return RecognizedShape.Rectangle(minX, minY, maxX, maxY)
         }
 
-        // Default to clean Bounding Rectangle if mostly rectangular
-        if (simplified.size in 7..8 && (pathLength / (2 * (boxWidth + boxHeight))) in 0.85f..1.35f) {
+        // 5 vertices: Pentagon
+        if (simplified.size == 6) {
+            return RecognizedShape.Pentagon(
+                simplified[0].x, simplified[0].y,
+                simplified[1].x, simplified[1].y,
+                simplified[2].x, simplified[2].y,
+                simplified[3].x, simplified[3].y,
+                simplified[4].x, simplified[4].y
+            )
+        }
+
+        // Default to clean Bounding Rectangle / Square if mostly rectangular in perimeter
+        val perimeter = 2 * (boxWidth + boxHeight)
+        if ((pathLength / perimeter) in 0.72f..1.48f) {
             return RecognizedShape.Rectangle(minX, minY, maxX, maxY)
         }
 
         return null
     }
 
-    /**
-     * Converts a recognized shape into a canonical Stroke with the given Brush.
-     */
     fun createStrokeForShape(shape: RecognizedShape, brush: Brush, toolType: InputToolType = InputToolType.STYLUS): Stroke {
         val strokes = createStrokesForShape(shape, brush, toolType)
         return strokes.first()
+    }
+
+    class SafeBatchBuilder(
+        val toolType: InputToolType = InputToolType.STYLUS,
+        private val baseTime: Long = System.currentTimeMillis()
+    ) {
+        val batch = MutableStrokeInputBatch()
+        private var lastX = Float.NaN
+        private var lastY = Float.NaN
+        private var lastTime = baseTime - 1L
+
+        fun add(x: Float, y: Float, pressure: Float = 0.5f, dtMillis: Long = 4L) {
+            if (!lastX.isNaN() && kotlin.math.hypot(x - lastX, y - lastY) < 0.2f) {
+                return // Deduplicate position
+            }
+            val targetTime = lastTime + max(1L, dtMillis)
+            batch.add(
+                toolType,
+                x,
+                y,
+                targetTime,
+                pressure.coerceIn(0.01f, 1.0f),
+                -1f,
+                0f,
+                -1f
+            )
+            lastX = x
+            lastY = y
+            lastTime = targetTime
+        }
+
+        fun toImmutable() = batch.toImmutable()
     }
 
     /**
@@ -143,62 +202,60 @@ class ShapeRecognizer {
 
         when (shape) {
             is RecognizedShape.Line -> {
-                val inputBatch = MutableStrokeInputBatch()
+                val b = SafeBatchBuilder(toolType, baseTime)
                 val steps = 24
                 for (i in 0..steps) {
                     val t = i.toFloat() / steps
-                    val x = shape.startX + (shape.endX - shape.startX) * t
-                    val y = shape.startY + (shape.endY - shape.startY) * t
-                    inputBatch.add(toolType, x, y, baseTime + i * 5L, 0.5f, 0f, 0f)
+                    b.add(shape.startX + (shape.endX - shape.startX) * t, shape.startY + (shape.endY - shape.startY) * t)
                 }
-                result.add(Stroke(brush, inputBatch.toImmutable()))
+                result.add(Stroke(brush, b.toImmutable()))
             }
             is RecognizedShape.Arrow -> {
-                val inputBatch = MutableStrokeInputBatch()
+                val shaft = SafeBatchBuilder(toolType, baseTime)
                 val steps = 24
                 for (i in 0..steps) {
                     val t = i.toFloat() / steps
-                    val x = shape.startX + (shape.endX - shape.startX) * t
-                    val y = shape.startY + (shape.endY - shape.startY) * t
-                    inputBatch.add(toolType, x, y, baseTime + i * 5L, 0.5f, 0f, 0f)
+                    shaft.add(shape.startX + (shape.endX - shape.startX) * t, shape.startY + (shape.endY - shape.startY) * t)
                 }
-                val angle = atan2(shape.endY - shape.startY, shape.endX - shape.startX)
-                val barbLength = 32f
-                val barb1X = shape.endX - barbLength * cos(angle - PI.toFloat() / 6f)
-                val barb1Y = shape.endY - barbLength * sin(angle - PI.toFloat() / 6f)
-                val barb2X = shape.endX - barbLength * cos(angle + PI.toFloat() / 6f)
-                val barb2Y = shape.endY - barbLength * sin(angle + PI.toFloat() / 6f)
+                result.add(Stroke(brush, shaft.toImmutable()))
 
-                inputBatch.add(toolType, barb1X, barb1Y, baseTime + 130L, 0.5f, 0f, 0f)
-                inputBatch.add(toolType, shape.endX, shape.endY, baseTime + 140L, 0.5f, 0f, 0f)
-                inputBatch.add(toolType, barb2X, barb2Y, baseTime + 150L, 0.5f, 0f, 0f)
-                result.add(Stroke(brush, inputBatch.toImmutable()))
+                // Clean Arrowhead tip
+                val angle = atan2(shape.endY - shape.startY, shape.endX - shape.startX)
+                val barbLength = 26f
+                val tip = SafeBatchBuilder(toolType, baseTime + 110L)
+                tip.add(shape.endX - barbLength * cos(angle - PI.toFloat() / 6f), shape.endY - barbLength * sin(angle - PI.toFloat() / 6f))
+                tip.add(shape.endX, shape.endY)
+                tip.add(shape.endX - barbLength * cos(angle + PI.toFloat() / 6f), shape.endY - barbLength * sin(angle + PI.toFloat() / 6f))
+                result.add(Stroke(brush, tip.toImmutable()))
             }
             is RecognizedShape.BidirectionalArrow -> {
-                val inputBatch = MutableStrokeInputBatch()
+                val shaft = SafeBatchBuilder(toolType, baseTime)
                 val steps = 24
                 for (i in 0..steps) {
                     val t = i.toFloat() / steps
-                    val x = shape.startX + (shape.endX - shape.startX) * t
-                    val y = shape.startY + (shape.endY - shape.startY) * t
-                    inputBatch.add(toolType, x, y, baseTime + i * 5L, 0.5f, 0f, 0f)
+                    shaft.add(shape.startX + (shape.endX - shape.startX) * t, shape.startY + (shape.endY - shape.startY) * t)
                 }
+                result.add(Stroke(brush, shaft.toImmutable()))
+
                 val angle = atan2(shape.endY - shape.startY, shape.endX - shape.startX)
-                val barbLength = 28f
-                // End arrowhead
-                inputBatch.add(toolType, shape.endX - barbLength * cos(angle - PI.toFloat() / 6f), shape.endY - barbLength * sin(angle - PI.toFloat() / 6f), baseTime + 130L, 0.5f, 0f, 0f)
-                inputBatch.add(toolType, shape.endX, shape.endY, baseTime + 135L, 0.5f, 0f, 0f)
-                inputBatch.add(toolType, shape.endX - barbLength * cos(angle + PI.toFloat() / 6f), shape.endY - barbLength * sin(angle + PI.toFloat() / 6f), baseTime + 140L, 0.5f, 0f, 0f)
-                // Start arrowhead
+                val barbLength = 24f
+
+                // End Arrowhead
+                val endTip = SafeBatchBuilder(toolType, baseTime + 110L)
+                endTip.add(shape.endX - barbLength * cos(angle - PI.toFloat() / 6f), shape.endY - barbLength * sin(angle - PI.toFloat() / 6f))
+                endTip.add(shape.endX, shape.endY)
+                endTip.add(shape.endX - barbLength * cos(angle + PI.toFloat() / 6f), shape.endY - barbLength * sin(angle + PI.toFloat() / 6f))
+                result.add(Stroke(brush, endTip.toImmutable()))
+
+                // Start Arrowhead
                 val revAngle = angle + PI.toFloat()
-                inputBatch.add(toolType, shape.startX, shape.startY, baseTime + 145L, 0.5f, 0f, 0f)
-                inputBatch.add(toolType, shape.startX - barbLength * cos(revAngle - PI.toFloat() / 6f), shape.startY - barbLength * sin(revAngle - PI.toFloat() / 6f), baseTime + 150L, 0.5f, 0f, 0f)
-                inputBatch.add(toolType, shape.startX, shape.startY, baseTime + 155L, 0.5f, 0f, 0f)
-                inputBatch.add(toolType, shape.startX - barbLength * cos(revAngle + PI.toFloat() / 6f), shape.startY - barbLength * sin(revAngle + PI.toFloat() / 6f), baseTime + 160L, 0.5f, 0f, 0f)
-                result.add(Stroke(brush, inputBatch.toImmutable()))
+                val startTip = SafeBatchBuilder(toolType, baseTime + 130L)
+                startTip.add(shape.startX - barbLength * cos(revAngle - PI.toFloat() / 6f), shape.startY - barbLength * sin(revAngle - PI.toFloat() / 6f))
+                startTip.add(shape.startX, shape.startY)
+                startTip.add(shape.startX - barbLength * cos(revAngle + PI.toFloat() / 6f), shape.startY - barbLength * sin(revAngle + PI.toFloat() / 6f))
+                result.add(Stroke(brush, startTip.toImmutable()))
             }
             is RecognizedShape.Rectangle -> {
-                val inputBatch = MutableStrokeInputBatch()
                 val corners = listOf(
                     Point(shape.left, shape.top),
                     Point(shape.right, shape.top),
@@ -206,33 +263,33 @@ class ShapeRecognizer {
                     Point(shape.left, shape.bottom),
                     Point(shape.left, shape.top)
                 )
-                generatePolygonPoints(corners, inputBatch, toolType, baseTime)
-                result.add(Stroke(brush, inputBatch.toImmutable()))
+                val b = SafeBatchBuilder(toolType, baseTime)
+                generatePolygonPoints(corners, b)
+                result.add(Stroke(brush, b.toImmutable()))
             }
             is RecognizedShape.Circle -> {
-                val inputBatch = MutableStrokeInputBatch()
+                val b = SafeBatchBuilder(toolType, baseTime)
                 val steps = 64
-                for (i in 0..steps) {
+                for (i in 0 until steps) {
                     val angle = (2.0 * PI * i / steps).toFloat()
-                    val x = shape.centerX + shape.radius * cos(angle)
-                    val y = shape.centerY + shape.radius * sin(angle)
-                    inputBatch.add(toolType, x, y, baseTime + i * 4L, 0.5f, 0f, 0f)
+                    b.add(shape.centerX + shape.radius * cos(angle), shape.centerY + shape.radius * sin(angle))
                 }
-                result.add(Stroke(brush, inputBatch.toImmutable()))
+                // Close loop cleanly
+                b.add(shape.centerX + shape.radius, shape.centerY)
+                result.add(Stroke(brush, b.toImmutable()))
             }
             is RecognizedShape.Triangle -> {
-                val inputBatch = MutableStrokeInputBatch()
                 val corners = listOf(
                     Point(shape.x1, shape.y1),
                     Point(shape.x2, shape.y2),
                     Point(shape.x3, shape.y3),
                     Point(shape.x1, shape.y1)
                 )
-                generatePolygonPoints(corners, inputBatch, toolType, baseTime)
-                result.add(Stroke(brush, inputBatch.toImmutable()))
+                val b = SafeBatchBuilder(toolType, baseTime)
+                generatePolygonPoints(corners, b)
+                result.add(Stroke(brush, b.toImmutable()))
             }
             is RecognizedShape.Diamond -> {
-                val inputBatch = MutableStrokeInputBatch()
                 val halfW = shape.width / 2f
                 val halfH = shape.height / 2f
                 val corners = listOf(
@@ -242,8 +299,22 @@ class ShapeRecognizer {
                     Point(shape.centerX - halfW, shape.centerY),
                     Point(shape.centerX, shape.centerY - halfH)
                 )
-                generatePolygonPoints(corners, inputBatch, toolType, baseTime)
-                result.add(Stroke(brush, inputBatch.toImmutable()))
+                val b = SafeBatchBuilder(toolType, baseTime)
+                generatePolygonPoints(corners, b)
+                result.add(Stroke(brush, b.toImmutable()))
+            }
+            is RecognizedShape.Pentagon -> {
+                val corners = listOf(
+                    Point(shape.x1, shape.y1),
+                    Point(shape.x2, shape.y2),
+                    Point(shape.x3, shape.y3),
+                    Point(shape.x4, shape.y4),
+                    Point(shape.x5, shape.y5),
+                    Point(shape.x1, shape.y1)
+                )
+                val b = SafeBatchBuilder(toolType, baseTime)
+                generatePolygonPoints(corners, b)
+                result.add(Stroke(brush, b.toImmutable()))
             }
             is RecognizedShape.DatabaseCylinder -> {
                 // System Design Database Icon: Top ellipse + vertical walls + bottom curved rim
@@ -254,35 +325,34 @@ class ShapeRecognizer {
                 val topCenterY = shape.centerY - halfH + ry
                 val bottomCenterY = shape.centerY + halfH - ry
 
-                // Stroke 1: Top Ellipse
-                val topBatch = MutableStrokeInputBatch()
-                val steps = 40
-                for (i in 0..steps) {
+                // Stroke 1: Top Ellipse (closed loop)
+                val topBuilder = SafeBatchBuilder(toolType, baseTime)
+                val steps = 48
+                for (i in 0 until steps) {
                     val a = (2.0 * PI * i / steps).toFloat()
-                    topBatch.add(toolType, shape.centerX + rx * cos(a), topCenterY + ry * sin(a), baseTime + i * 3L, 0.5f, 0f, 0f)
+                    topBuilder.add(shape.centerX + rx * cos(a), topCenterY + ry * sin(a))
                 }
-                result.add(Stroke(brush, topBatch.toImmutable()))
+                topBuilder.add(shape.centerX + rx, topCenterY)
+                result.add(Stroke(brush, topBuilder.toImmutable()))
 
-                // Stroke 2: Left wall down, bottom arc, right wall up
-                val bodyBatch = MutableStrokeInputBatch()
-                // Left line
+                // Stroke 2: Left wall down, bottom rim curving DOWN, right wall up
+                val bodyBuilder = SafeBatchBuilder(toolType, baseTime + 150L)
+                // Left wall down from topCenterY to bottomCenterY at x = centerX - rx
                 for (i in 0..12) {
                     val t = i / 12f
-                    val y = topCenterY + (bottomCenterY - topCenterY) * t
-                    bodyBatch.add(toolType, shape.centerX - rx, y, baseTime + 150L + i * 3L, 0.5f, 0f, 0f)
+                    bodyBuilder.add(shape.centerX - rx, topCenterY + (bottomCenterY - topCenterY) * t)
                 }
-                // Bottom arc (0 to PI)
-                for (i in 0..24) {
-                    val a = PI.toFloat() + (PI.toFloat() * i / 24f)
-                    bodyBatch.add(toolType, shape.centerX + rx * cos(a), bottomCenterY + ry * sin(a), baseTime + 200L + i * 3L, 0.5f, 0f, 0f)
+                // Bottom arc from left to right curving downwards (i from 1 to 23 avoids duplicate endpoints)
+                for (i in 1 until 24) {
+                    val a = PI.toFloat() * i / 24f
+                    bodyBuilder.add(shape.centerX - rx * cos(a), bottomCenterY + ry * sin(a))
                 }
-                // Right line up
+                // Right wall up from bottomCenterY to topCenterY at x = centerX + rx
                 for (i in 0..12) {
                     val t = i / 12f
-                    val y = bottomCenterY - (bottomCenterY - topCenterY) * t
-                    bodyBatch.add(toolType, shape.centerX + rx, y, baseTime + 280L + i * 3L, 0.5f, 0f, 0f)
+                    bodyBuilder.add(shape.centerX + rx, bottomCenterY - (bottomCenterY - topCenterY) * t)
                 }
-                result.add(Stroke(brush, bodyBatch.toImmutable()))
+                result.add(Stroke(brush, bodyBuilder.toImmutable()))
             }
             is RecognizedShape.LinkedListNode -> {
                 // Linked List Node: [ value | next ] ->
@@ -294,33 +364,47 @@ class ShapeRecognizer {
                 val bottom = shape.centerY + halfH
 
                 // 1. Box
-                val boxBatch = MutableStrokeInputBatch()
+                val boxBuilder = SafeBatchBuilder(toolType, baseTime)
                 val corners = listOf(Point(left, top), Point(right, top), Point(right, bottom), Point(left, bottom), Point(left, top))
-                generatePolygonPoints(corners, boxBatch, toolType, baseTime)
-                result.add(Stroke(brush, boxBatch.toImmutable()))
+                generatePolygonPoints(corners, boxBuilder)
+                result.add(Stroke(brush, boxBuilder.toImmutable()))
 
                 // 2. Divider line between value and next pointer
-                val divX = right - (shape.width * 0.35f)
-                val divBatch = MutableStrokeInputBatch()
+                val divX = right - (shape.width * 0.32f)
+                val divBuilder = SafeBatchBuilder(toolType, baseTime + 100L)
                 for (i in 0..10) {
                     val t = i / 10f
-                    divBatch.add(toolType, divX, top + (bottom - top) * t, baseTime + 100L + i * 3L, 0.5f, 0f, 0f)
+                    divBuilder.add(divX, top + (bottom - top) * t)
                 }
-                result.add(Stroke(brush, divBatch.toImmutable()))
+                result.add(Stroke(brush, divBuilder.toImmutable()))
 
-                // 3. Pointer arrow exiting the right side
-                val pointerStartX = divX + (right - divX) / 2f
-                val pointerEndX = right + 45f
-                val arrowBatch = MutableStrokeInputBatch()
+                // 3. Pointer Bullet dot inside pointer compartment
+                val bulletCenterX = divX + (right - divX) / 2f
+                val bulletBuilder = SafeBatchBuilder(toolType, baseTime + 140L)
+                val bulletR = 7f
+                for (i in 0 until 16) {
+                    val a = (2.0 * PI * i / 16).toFloat()
+                    bulletBuilder.add(bulletCenterX + bulletR * cos(a), shape.centerY + bulletR * sin(a))
+                }
+                bulletBuilder.add(bulletCenterX + bulletR, shape.centerY)
+                result.add(Stroke(brush, bulletBuilder.toImmutable()))
+
+                // 4. Pointer Arrow extending from right of node
+                val arrowStartX = right
+                val arrowEndX = right + 65f
+                val shaftBuilder = SafeBatchBuilder(toolType, baseTime + 180L)
                 for (i in 0..12) {
                     val t = i / 12f
-                    arrowBatch.add(toolType, pointerStartX + (pointerEndX - pointerStartX) * t, shape.centerY, baseTime + 140L + i * 3L, 0.5f, 0f, 0f)
+                    shaftBuilder.add(arrowStartX + (arrowEndX - arrowStartX) * t, shape.centerY)
                 }
-                // Arrow tip
-                arrowBatch.add(toolType, pointerEndX - 14f, shape.centerY - 12f, baseTime + 180L, 0.5f, 0f, 0f)
-                arrowBatch.add(toolType, pointerEndX, shape.centerY, baseTime + 185L, 0.5f, 0f, 0f)
-                arrowBatch.add(toolType, pointerEndX - 14f, shape.centerY + 12f, baseTime + 190L, 0.5f, 0f, 0f)
-                result.add(Stroke(brush, arrowBatch.toImmutable()))
+                result.add(Stroke(brush, shaftBuilder.toImmutable()))
+
+                // 5. Arrowhead tip
+                val tipBuilder = SafeBatchBuilder(toolType, baseTime + 210L)
+                tipBuilder.add(arrowEndX - 16f, shape.centerY - 14f)
+                tipBuilder.add(arrowEndX, shape.centerY)
+                tipBuilder.add(arrowEndX - 16f, shape.centerY + 14f)
+                result.add(Stroke(brush, tipBuilder.toImmutable()))
             }
             is RecognizedShape.ArrayCellSequence -> {
                 // DSA Array / Queue block: [ 0 | 1 | 2 | 3 ]
@@ -331,36 +415,36 @@ class ShapeRecognizer {
                 val bottom = shape.centerY + shape.cellHeight / 2f
 
                 // Outer box
-                val boxBatch = MutableStrokeInputBatch()
+                val boxBuilder = SafeBatchBuilder(toolType, baseTime)
                 val corners = listOf(Point(left, top), Point(right, top), Point(right, bottom), Point(left, bottom), Point(left, top))
-                generatePolygonPoints(corners, boxBatch, toolType, baseTime)
-                result.add(Stroke(brush, boxBatch.toImmutable()))
+                generatePolygonPoints(corners, boxBuilder)
+                result.add(Stroke(brush, boxBuilder.toImmutable()))
 
                 // Internal cell dividers
                 for (c in 1 until shape.count) {
                     val divX = left + c * shape.cellWidth
-                    val divBatch = MutableStrokeInputBatch()
+                    val divBuilder = SafeBatchBuilder(toolType, baseTime + 100L + c * 30L)
                     for (i in 0..10) {
                         val t = i / 10f
-                        divBatch.add(toolType, divX, top + (bottom - top) * t, baseTime + 100L + c * 30L + i * 3L, 0.5f, 0f, 0f)
+                        divBuilder.add(divX, top + (bottom - top) * t)
                     }
-                    result.add(Stroke(brush, divBatch.toImmutable()))
+                    result.add(Stroke(brush, divBuilder.toImmutable()))
                 }
             }
             is RecognizedShape.Cloud -> {
                 // System Design Cloud (Network / External Service)
-                val cloudBatch = MutableStrokeInputBatch()
+                val cloudBuilder = SafeBatchBuilder(toolType, baseTime)
                 val rx = shape.width / 2f
                 val ry = shape.height / 2f
                 val steps = 60
-                for (i in 0..steps) {
+                for (i in 0 until steps) {
                     val angle = (2.0 * PI * i / steps).toFloat()
                     val bump = 1f + 0.15f * sin(5f * angle)
-                    val x = shape.centerX + rx * bump * cos(angle)
-                    val y = shape.centerY + ry * bump * sin(angle)
-                    cloudBatch.add(toolType, x, y, baseTime + i * 4L, 0.5f, 0f, 0f)
+                    cloudBuilder.add(shape.centerX + rx * bump * cos(angle), shape.centerY + ry * bump * sin(angle))
                 }
-                result.add(Stroke(brush, cloudBatch.toImmutable()))
+                val startBump = 1f + 0.15f * sin(0f)
+                cloudBuilder.add(shape.centerX + rx * startBump, shape.centerY)
+                result.add(Stroke(brush, cloudBuilder.toImmutable()))
             }
         }
 
@@ -369,25 +453,19 @@ class ShapeRecognizer {
 
     private fun generatePolygonPoints(
         corners: List<Point>,
-        batch: MutableStrokeInputBatch,
-        toolType: InputToolType,
-        baseTime: Long
+        builder: SafeBatchBuilder
     ) {
-        var timeOffset = 0L
         for (idx in 0 until corners.size - 1) {
             val c1 = corners[idx]
             val c2 = corners[idx + 1]
-            val steps = 12
+            val steps = 14
             for (step in 0 until steps) {
                 val t = step.toFloat() / steps
-                val x = c1.x + (c2.x - c1.x) * t
-                val y = c1.y + (c2.y - c1.y) * t
-                batch.add(toolType, x, y, baseTime + timeOffset, 0.5f, 0f, 0f)
-                timeOffset += 4L
+                builder.add(c1.x + (c2.x - c1.x) * t, c1.y + (c2.y - c1.y) * t)
             }
         }
         val last = corners.last()
-        batch.add(toolType, last.x, last.y, baseTime + timeOffset, 0.5f, 0f, 0f)
+        builder.add(last.x, last.y)
     }
 
     private fun computePathLength(points: List<Point>): Float {
@@ -398,15 +476,48 @@ class ShapeRecognizer {
         return total
     }
 
+    private fun findTip(points: List<Point>): Point {
+        val start = points.first()
+        var maxDistIdx = points.lastIndex
+        var maxDist = 0f
+        for (i in points.indices) {
+            val d = hypot(points[i].x - start.x, points[i].y - start.y)
+            if (d > maxDist) {
+                maxDist = d
+                maxDistIdx = i
+            }
+        }
+        return points[maxDistIdx]
+    }
+
     private fun hasArrowTip(points: List<Point>): Boolean {
         if (points.size < 12) return false
-        val tail = points.takeLast(6)
-        val mainStart = points.first()
-        val mainEnd = points[points.size - 7]
-        val mainAngle = atan2(mainEnd.y - mainStart.y, mainEnd.x - mainStart.x)
-        val tipAngle = atan2(tail.last().y - tail.first().y, tail.last().x - tail.first().x)
-        val diff = abs(mainAngle - tipAngle)
-        return diff > 1.2f && diff < 3.0f
+        val n = points.size
+        val start = points.first()
+        var maxDistIdx = 0
+        var maxDist = 0f
+        for (i in points.indices) {
+            val d = hypot(points[i].x - start.x, points[i].y - start.y)
+            if (d > maxDist) {
+                maxDist = d
+                maxDistIdx = i
+            }
+        }
+        // If the tip was reached before the end of the stroke (pen doubled back to draw a barb)
+        if (maxDistIdx in (n / 2) until (n - 2)) {
+            val tip = points[maxDistIdx]
+            val end = points.last()
+            val shaftDx = tip.x - start.x
+            val shaftDy = tip.y - start.y
+            val barbDx = end.x - tip.x
+            val barbDy = end.y - tip.y
+            val dot = (shaftDx * barbDx + shaftDy * barbDy)
+            val barbLen = hypot(barbDx, barbDy)
+            if (barbLen >= 15f && dot <= 0f) {
+                return true
+            }
+        }
+        return false
     }
 
     private fun ramerDouglasPeucker(points: List<Point>, epsilon: Float): List<Point> {
@@ -437,8 +548,9 @@ class ShapeRecognizer {
     private fun perpendicularDistance(pt: Point, lineStart: Point, lineEnd: Point): Float {
         val dx = lineEnd.x - lineStart.x
         val dy = lineEnd.y - lineStart.y
-        val lineLen = hypot(dx, dy)
-        if (lineLen < 0.001f) return hypot(pt.x - lineStart.x, pt.y - lineStart.y)
-        return abs(dy * pt.x - dx * pt.y + lineEnd.x * lineStart.y - lineEnd.y * lineStart.x) / lineLen
+        val mag = hypot(dx, dy)
+        if (mag == 0f) return hypot(pt.x - lineStart.x, pt.y - lineStart.y)
+        val area = abs(dy * pt.x - dx * pt.y + lineEnd.x * lineStart.y - lineEnd.y * lineStart.x)
+        return area / mag
     }
 }

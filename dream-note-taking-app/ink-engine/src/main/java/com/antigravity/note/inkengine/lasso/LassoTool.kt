@@ -219,20 +219,37 @@ class LassoTool {
         for (stroke in clipboardStrokes) {
             val newBatch = MutableStrokeInputBatch()
             val inputs = stroke.inputs
+            var lastX = Float.NaN
+            var lastY = Float.NaN
+            var lastTime = -1L
             for (i in 0 until inputs.size) {
                 val pt = inputs.get(i)
+                val targetX = pt.x + offsetX
+                val targetY = pt.y + offsetY
+                if (!lastX.isNaN() && kotlin.math.hypot(targetX - lastX, targetY - lastY) < 0.1f) {
+                    continue
+                }
+                val safeTime = if (pt.elapsedTimeMillis <= lastTime) lastTime + 2L else pt.elapsedTimeMillis
+                val safeTilt = if (pt.tiltRadians < 0f) -1f else pt.tiltRadians.coerceIn(0f, (Math.PI / 2).toFloat())
+                val safeOrientation = pt.orientationRadians.coerceIn(-Math.PI.toFloat(), Math.PI.toFloat())
+                val safePressure = pt.pressure.coerceIn(0.01f, 1.0f)
                 newBatch.add(
                     pt.toolType,
-                    pt.x + offsetX,
-                    pt.y + offsetY,
-                    pt.elapsedTimeMillis,
-                    pt.pressure,
-                    pt.tiltRadians,
-                    pt.orientationRadians,
+                    targetX,
+                    targetY,
+                    safeTime,
+                    safePressure,
+                    safeTilt,
+                    safeOrientation,
                     pt.strokeUnitLengthCm
                 )
+                lastX = targetX
+                lastY = targetY
+                lastTime = safeTime
             }
-            pasted.add(Stroke(stroke.brush, newBatch.toImmutable()))
+            if (newBatch.size > 0) {
+                pasted.add(Stroke(stroke.brush, newBatch.toImmutable()))
+            }
         }
         selectedStrokes.clear()
         selectedStrokes.addAll(pasted)
@@ -256,20 +273,37 @@ class LassoTool {
         for (stroke in selectedStrokes) {
             val newBatch = MutableStrokeInputBatch()
             val inputs = stroke.inputs
+            var lastX = Float.NaN
+            var lastY = Float.NaN
+            var lastTime = -1L
             for (i in 0 until inputs.size) {
                 val pt = inputs.get(i)
+                val targetX = pt.x + 30f
+                val targetY = pt.y + 30f
+                if (!lastX.isNaN() && kotlin.math.hypot(targetX - lastX, targetY - lastY) < 0.1f) {
+                    continue
+                }
+                val safeTime = if (pt.elapsedTimeMillis <= lastTime) lastTime + 2L else pt.elapsedTimeMillis
+                val safeTilt = if (pt.tiltRadians < 0f) -1f else pt.tiltRadians.coerceIn(0f, (Math.PI / 2).toFloat())
+                val safeOrientation = pt.orientationRadians.coerceIn(-Math.PI.toFloat(), Math.PI.toFloat())
+                val safePressure = pt.pressure.coerceIn(0.01f, 1.0f)
                 newBatch.add(
                     pt.toolType,
-                    pt.x + 30f,
-                    pt.y + 30f,
-                    pt.elapsedTimeMillis,
-                    pt.pressure,
-                    pt.tiltRadians,
-                    pt.orientationRadians,
+                    targetX,
+                    targetY,
+                    safeTime,
+                    safePressure,
+                    safeTilt,
+                    safeOrientation,
                     pt.strokeUnitLengthCm
                 )
+                lastX = targetX
+                lastY = targetY
+                lastTime = safeTime
             }
-            duplicated.add(Stroke(stroke.brush, newBatch.toImmutable()))
+            if (newBatch.size > 0) {
+                duplicated.add(Stroke(stroke.brush, newBatch.toImmutable()))
+            }
         }
         selectedStrokes.clear()
         selectedStrokes.addAll(duplicated)

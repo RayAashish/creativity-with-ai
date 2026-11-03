@@ -102,4 +102,70 @@ object PaperBackgroundRenderer {
             }
         }
     }
+
+    fun drawInfinitePaper(
+        canvas: Canvas,
+        template: PaperTemplate,
+        viewport: android.graphics.RectF
+    ) {
+        when (template) {
+            PaperTemplate.BLANK -> {
+                // Pure blank infinite canvas
+            }
+            PaperTemplate.RULED -> {
+                val lineSpacing = 44f
+                val startY = kotlin.math.floor(viewport.top / lineSpacing) * lineSpacing
+                val endY = kotlin.math.ceil(viewport.bottom / lineSpacing) * lineSpacing
+                var y = startY
+                while (y <= endY) {
+                    canvas.drawLine(viewport.left - 50f, y, viewport.right + 50f, y, gridLinePaint)
+                    y += lineSpacing
+                }
+            }
+            PaperTemplate.GRID -> {
+                val gridSize = 36f
+                val startY = kotlin.math.floor(viewport.top / gridSize) * gridSize
+                val endY = kotlin.math.ceil(viewport.bottom / gridSize) * gridSize
+                var y = startY
+                while (y <= endY) {
+                    canvas.drawLine(viewport.left - 50f, y, viewport.right + 50f, y, gridLinePaint)
+                    y += gridSize
+                }
+                val startX = kotlin.math.floor(viewport.left / gridSize) * gridSize
+                val endX = kotlin.math.ceil(viewport.right / gridSize) * gridSize
+                var x = startX
+                while (x <= endX) {
+                    canvas.drawLine(x, viewport.top - 50f, x, viewport.bottom + 50f, gridLinePaint)
+                    x += gridSize
+                }
+            }
+            PaperTemplate.DOT -> {
+                val dotSpacing = 36f
+                val startY = kotlin.math.floor(viewport.top / dotSpacing) * dotSpacing
+                val endY = kotlin.math.ceil(viewport.bottom / dotSpacing) * dotSpacing
+                val startX = kotlin.math.floor(viewport.left / dotSpacing) * dotSpacing
+                val endX = kotlin.math.ceil(viewport.right / dotSpacing) * dotSpacing
+                var y = startY
+                while (y <= endY) {
+                    var x = startX
+                    while (x <= endX) {
+                        canvas.drawCircle(x, y, 1.5f, dotPaint)
+                        x += dotSpacing
+                    }
+                    y += dotSpacing
+                }
+            }
+            PaperTemplate.CORNELL -> {
+                val lineSpacing = 44f
+                val startY = kotlin.math.floor(viewport.top / lineSpacing) * lineSpacing
+                val endY = kotlin.math.ceil(viewport.bottom / lineSpacing) * lineSpacing
+                var y = startY
+                while (y <= endY) {
+                    canvas.drawLine(viewport.left - 50f, y, viewport.right + 50f, y, gridLinePaint)
+                    y += lineSpacing
+                }
+                canvas.drawLine(320f, viewport.top - 50f, 320f, viewport.bottom + 50f, marginLinePaint)
+            }
+        }
+    }
 }

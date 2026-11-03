@@ -105,15 +105,16 @@ class DryInkCanvasView @JvmOverloads constructor(
         }
 
         // Draw dry vector strokes (2-pass: highlighters first so text stays crisp on top)
+        val highlighterFamily = StockBrushes.highlighter()
         for (i in 0 until strokes.size) {
             val stroke = strokes[i]
-            if (stroke.brush.family == StockBrushes.highlighter()) {
+            if (stroke.brush.family == highlighterFamily) {
                 strokeRenderer.draw(canvas, stroke, identityMatrix)
             }
         }
         for (i in 0 until strokes.size) {
             val stroke = strokes[i]
-            if (stroke.brush.family != StockBrushes.highlighter()) {
+            if (stroke.brush.family != highlighterFamily) {
                 strokeRenderer.draw(canvas, stroke, identityMatrix)
             }
         }
@@ -172,10 +173,18 @@ class DryInkCanvasView @JvmOverloads constructor(
         invalidate()
     }
 
+    var isInfiniteCanvas: Boolean = true
+
     private fun drawPaperGrid(canvas: Canvas) {
-        val virtualWidth = 4000f
-        val virtualHeight = 6000f
-        PaperBackgroundRenderer.drawPaper(canvas, currentTemplate, virtualWidth, virtualHeight)
+        if (isInfiniteCanvas) {
+            viewportRect.set(0f, 0f, width.toFloat(), height.toFloat())
+            transform.screenToWorld(viewportRect)
+            PaperBackgroundRenderer.drawInfinitePaper(canvas, currentTemplate, viewportRect)
+        } else {
+            val virtualWidth = 2400f
+            val virtualHeight = 3400f
+            PaperBackgroundRenderer.drawPaper(canvas, currentTemplate, virtualWidth, virtualHeight)
+        }
     }
 
     /**

@@ -11,6 +11,7 @@ enum class NoteAppShortcut {
     PREV_PAGE,
     NEXT_PAGE,
     TOOL_PEN,
+    TOOL_MARKER,
     TOOL_ERASER,
     TOOL_HIGHLIGHTER,
     TOOL_LASSO,
@@ -56,6 +57,7 @@ object KeyboardShortcutManager {
             }
             // Tool hotkeys (when ctrl is NOT held)
             !isCtrl && keyCode == KeyEvent.KEYCODE_P -> NoteAppShortcut.TOOL_PEN
+            !isCtrl && keyCode == KeyEvent.KEYCODE_M -> NoteAppShortcut.TOOL_MARKER
             !isCtrl && keyCode == KeyEvent.KEYCODE_E -> NoteAppShortcut.TOOL_ERASER
             !isCtrl && keyCode == KeyEvent.KEYCODE_H -> NoteAppShortcut.TOOL_HIGHLIGHTER
             !isCtrl && keyCode == KeyEvent.KEYCODE_L -> NoteAppShortcut.TOOL_LASSO

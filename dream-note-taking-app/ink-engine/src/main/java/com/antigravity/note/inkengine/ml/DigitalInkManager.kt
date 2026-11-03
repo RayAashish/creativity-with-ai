@@ -77,6 +77,18 @@ class DigitalInkManager(
             }
     }
 
+    suspend fun ensureModelReady(): Boolean {
+        if (recognizer != null) return true
+        val m = model ?: return false
+        val isDown = isModelDownloaded()
+        if (!isDown) {
+            val ok = downloadModelIfNeeded()
+            if (!ok) return false
+        }
+        initRecognizer()
+        return recognizer != null
+    }
+
     /**
      * Performs on-device ML Kit handwriting recognition on a group of strokes.
      * Returns top recognition candidate strings.
@@ -93,6 +105,7 @@ class DigitalInkManager(
             return@suspendCancellableCoroutine
         }
 
+        var syntheticTime = 100L
         val inkBuilder = Ink.builder()
         for (stroke in strokes) {
             val strokeBuilder = Ink.Stroke.builder()
@@ -100,10 +113,12 @@ class DigitalInkManager(
             for (i in 0 until inputs.size) {
                 val pt = inputs.get(i)
                 strokeBuilder.addPoint(
-                    Ink.Point.create(pt.x, pt.y, pt.elapsedTimeMillis)
+                    Ink.Point.create(pt.x, pt.y, syntheticTime)
                 )
+                syntheticTime += 10L
             }
             inkBuilder.addStroke(strokeBuilder.build())
+            syntheticTime += 50L
         }
 
         val ink = inkBuilder.build()
@@ -112,7 +127,8 @@ class DigitalInkManager(
                 val texts = result.candidates.map { it.text }
                 cont.resume(texts)
             }
-            .addOnFailureListener {
+            .addOnFailureListener { e ->
+                android.util.Log.e("DigitalInkManager", "Recognition failed", e)
                 cont.resume(emptyList())
             }
     }
