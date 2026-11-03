@@ -93,10 +93,13 @@ object MarkdownExporter {
             sb.append(ocrText.trim()).append("\n\n")
         }
 
-        // Thumbnail attachment link (relative path)
+        // Visual Note & Vector Drawing Section
+        val safeTitle = sanitizeName(page.title)
         val relativeThumb = "../../notebooks/${page.notebookId}/pages/${page.pageId}.thumb.webp"
-        sb.append("## Visual Note\n\n")
-        sb.append("![Page Thumbnail](").append(relativeThumb).append(")\n")
+        sb.append("## Handwritten Note & Diagram\n\n")
+        sb.append("![Vector Note Drawing]($safeTitle.svg)\n\n")
+        sb.append("> *Interactive vector graphic: click [`$safeTitle.svg`]($safeTitle.svg) to view in GitHub.*  \n")
+        sb.append("![Page Thumbnail](").append(relativeThumb).append(")\n\n")
 
         return sb.toString()
     }

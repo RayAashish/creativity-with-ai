@@ -153,12 +153,65 @@ class LibraryRepository(
         pageEntity
     }
 
+    val trashPages: Flow<List<PageEntity>> = pageDao.getTrashPages()
+
+    fun getAllActivePages(): Flow<List<PageEntity>> = pageDao.getAllActivePages()
+
+    suspend fun movePageToTrash(pageId: String) = withContext(ioDispatcher) {
+        pageDao.moveToTrash(pageId)
+    }
+
+    suspend fun movePagesToTrash(pageIds: List<String>) = withContext(ioDispatcher) {
+        pageDao.moveMultipleToTrash(pageIds)
+    }
+
+    suspend fun restorePageFromTrash(pageId: String) = withContext(ioDispatcher) {
+        pageDao.restoreFromTrash(pageId)
+    }
+
+    suspend fun renamePage(pageId: String, newTitle: String) = withContext(ioDispatcher) {
+        pageDao.updatePageTitle(pageId, newTitle)
+    }
+
+    suspend fun renameNotebook(notebookId: String, newTitle: String) = withContext(ioDispatcher) {
+        notebookDao.updateNotebookTitle(notebookId, newTitle)
+    }
+
+    suspend fun renameFolder(folderId: String, newName: String) = withContext(ioDispatcher) {
+        folderDao.updateFolderName(folderId, newName)
+    }
+
+    suspend fun deleteNotebook(notebookId: String) = withContext(ioDispatcher) {
+        notebookDao.deleteNotebook(notebookId)
+    }
+
+    suspend fun deleteFolder(folderId: String) = withContext(ioDispatcher) {
+        folderDao.deleteFolder(folderId)
+    }
+
     suspend fun deletePage(pageId: String) = withContext(ioDispatcher) {
+        movePageToTrash(pageId)
+    }
+
+    suspend fun deletePagePermanently(pageId: String) = withContext(ioDispatcher) {
         val page = pageDao.getPageById(pageId)
         if (page != null) {
             pageRepository.deletePage(page.notebookId, pageId)
             pageDao.deletePage(pageId)
         }
+    }
+
+    suspend fun emptyTrash() = withContext(ioDispatcher) {
+        val trash = pageDao.getTrashPages().first()
+        for (page in trash) {
+            pageRepository.deletePage(page.notebookId, page.pageId)
+        }
+        pageDao.emptyTrash()
+    }
+
+    suspend fun purgeExpiredTrash() = withContext(ioDispatcher) {
+        val thirtyDaysAgo = System.currentTimeMillis() - (30L * 24 * 60 * 60 * 1000L)
+        pageDao.purgeOldTrash(thirtyDaysAgo)
     }
 
     suspend fun seedDsaDreamTemplate(): String = withContext(ioDispatcher) {

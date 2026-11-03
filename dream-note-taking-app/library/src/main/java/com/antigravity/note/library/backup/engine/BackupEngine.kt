@@ -1,5 +1,6 @@
 package com.antigravity.note.library.backup.engine
 
+import com.antigravity.note.document.export.SvgExporter
 import com.antigravity.note.document.storage.PageRepository
 import com.antigravity.note.library.backup.auth.TokenStorage
 import com.antigravity.note.library.backup.crypto.BackupEncryptionEngine
@@ -149,17 +150,32 @@ class BackupEngine(
                 treeEntries.add(GitTreeEntry(path = item.path, sha = blobSha))
                 processedCleanPaths.add(item.path)
 
-                // If this is a page, also generate readable Markdown export (Step 5)
+                // If this is a page, also generate readable Markdown, SVG vector graphics & companion MD
                 if (item.path.startsWith("notebooks/") && item.path.endsWith(".inkflow") && !isEncryptionEnabled) {
                     val mdEntry = generateMarkdownTreeEntry(item.path, owner, repo)
                     if (mdEntry != null) {
                         treeEntries.add(mdEntry)
+                    }
+                    val svgEntries = generateSvgTreeEntries(item.path, owner, repo)
+                    treeEntries.addAll(svgEntries)
+
+                    val notebookMd = generateNotebookPageMdEntry(item.path, owner, repo)
+                    if (notebookMd != null) {
+                        treeEntries.add(notebookMd)
                     }
                 }
             }
 
             if (treeEntries.isEmpty()) {
                 return@withContext BackupResult.UpToDate
+            }
+
+            // Also generate root README.md with complete interactive Table of Contents
+            if (!isEncryptionEnabled) {
+                val readmeEntry = generateReadmeTreeEntry(owner, repo)
+                if (readmeEntry != null) {
+                    treeEntries.add(readmeEntry)
+                }
             }
 
             // Step 7: Create atomic Git Tree
@@ -293,6 +309,170 @@ class BackupEngine(
             ).getOrNull() ?: return null
 
             return GitTreeEntry(path = mdPath, sha = blobSha)
+        } catch (_: Exception) {
+            return null
+        }
+    }
+
+    private suspend fun generateSvgTreeEntries(
+        inkflowPath: String,
+        owner: String,
+        repo: String
+    ): List<GitTreeEntry> {
+        val entries = mutableListOf<GitTreeEntry>()
+        try {
+            val parts = inkflowPath.split("/")
+            if (parts.size < 4) return emptyList()
+            val notebookId = parts[1]
+            val pageId = parts[3].removeSuffix(".inkflow")
+
+            val (docPage, _) = pageRepository.loadPage(notebookId, pageId)
+            val svgString = SvgExporter.exportToSvg(docPage)
+            val svgBytes = svgString.toByteArray(Charsets.UTF_8)
+
+            val blobSha = gitDataClient.uploadBlob(
+                owner = owner,
+                repo = repo,
+                contentBytes = svgBytes,
+                isBinary = false
+            ).getOrNull() ?: return emptyList()
+
+            // 1. In notebook pages alongside .inkflow: notebooks/<nbId>/pages/<pageId>.svg
+            val nbSvgPath = "notebooks/$notebookId/pages/$pageId.svg"
+            entries.add(GitTreeEntry(path = nbSvgPath, sha = blobSha))
+
+            // 2. In exports alongside .md: exports/<NotebookTitle>/<SafeTitle>.svg
+            val pageEntity = pageDao.getPageById(pageId)
+            val notebook = notebookDao.getNotebookById(notebookId)
+            if (pageEntity != null && notebook != null) {
+                val safeNb = MarkdownExporter.sanitizeName(notebook.title)
+                val safeTitle = MarkdownExporter.sanitizeName(pageEntity.title)
+                entries.add(GitTreeEntry(path = "exports/$safeNb/$safeTitle.svg", sha = blobSha))
+            }
+        } catch (_: Exception) {}
+        return entries
+    }
+
+    private suspend fun generateNotebookPageMdEntry(
+        inkflowPath: String,
+        owner: String,
+        repo: String
+    ): GitTreeEntry? {
+        try {
+            val parts = inkflowPath.split("/")
+            if (parts.size < 4) return null
+            val notebookId = parts[1]
+            val pageId = parts[3].removeSuffix(".inkflow")
+
+            val pageEntity = pageDao.getPageById(pageId)
+            val notebook = notebookDao.getNotebookById(notebookId)
+            val title = pageEntity?.title ?: "Note Page"
+            val notebookTitle = notebook?.title ?: "Notebook"
+
+            val sb = StringBuilder()
+            sb.append("# ").append(title).append("\n\n")
+            sb.append("> **Notebook:** `").append(notebookTitle).append("`  \n")
+            sb.append("> **Page ID:** `").append(pageId).append("`  \n")
+            sb.append("> **Template:** `").append(pageEntity?.template ?: "RULED").append("`  \n\n")
+            if (pageEntity?.isProblemPage == true) {
+                sb.append("### Problem Overview\n")
+                sb.append("- **Difficulty:** `").append(pageEntity.difficulty ?: "None").append("`\n")
+                sb.append("- **Status:** `").append(pageEntity.problemStatus).append("`\n")
+                if (pageEntity.timeComplexity.isNotEmpty()) sb.append("- **Time Complexity:** `").append(pageEntity.timeComplexity).append("`\n")
+                if (pageEntity.spaceComplexity.isNotEmpty()) sb.append("- **Space Complexity:** `").append(pageEntity.spaceComplexity).append("`\n")
+                if (pageEntity.codeSnippet.isNotEmpty()) {
+                    sb.append("\n```").append(pageEntity.codeLanguage.lowercase()).append("\n")
+                    sb.append(pageEntity.codeSnippet).append("\n```\n\n")
+                }
+            }
+            sb.append("## Handwritten Note & Diagram\n\n")
+            sb.append("![Handwritten Vector Note]($pageId.svg)\n\n")
+            sb.append("> *Click [`$pageId.svg`]($pageId.svg) to view the vector canvas directly on GitHub.*\n\n")
+            sb.append("---\n")
+            sb.append("*Lossless binary backup stored in [`$pageId.inkflow`]($pageId.inkflow)*\n")
+
+            val mdPath = "notebooks/$notebookId/pages/$pageId.md"
+            val blobSha = gitDataClient.uploadBlob(
+                owner = owner,
+                repo = repo,
+                contentBytes = sb.toString().toByteArray(Charsets.UTF_8),
+                isBinary = false
+            ).getOrNull() ?: return null
+
+            return GitTreeEntry(path = mdPath, sha = blobSha)
+        } catch (_: Exception) {
+            return null
+        }
+    }
+
+    private suspend fun generateReadmeTreeEntry(
+        owner: String,
+        repo: String
+    ): GitTreeEntry? {
+        try {
+            val folders = folderDao.getAllFolders().first()
+            val notebooks = notebookDao.getAllNotebooks().first()
+            val allPages = pageDao.getAllActivePages().first()
+
+            val timestampStr = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
+            val sb = StringBuilder()
+            sb.append("# 📓 InkFlow Notes & Knowledge Base\n\n")
+            sb.append("> **Device:** Motorola Moto Pad 70 Pro (Android 16, 144Hz)  \n")
+            sb.append("> **Last Backup:** ").append(timestampStr).append("  \n")
+            sb.append("> **Total Active Pages:** ").append(allPages.size).append("  \n\n")
+            sb.append("All notes are rendered as crisp vector SVGs and GitHub-formatted Markdown for seamless reading and browsing directly in any web browser.\n\n")
+            sb.append("---\n\n")
+            sb.append("## 📚 Library Directory\n\n")
+
+            val rootFolders = folders.filter { it.parentFolderId == null }
+            for (subject in rootFolders) {
+                sb.append("### 📂 ").append(subject.name).append("\n\n")
+                val subFolders = folders.filter { it.parentFolderId == subject.folderId }
+                for (topic in subFolders) {
+                    sb.append("#### 📁 ").append(topic.name).append("\n\n")
+                    val topicNotebooks = notebooks.filter { it.folderId == topic.folderId }
+                    for (nb in topicNotebooks) {
+                        sb.append("##### 📘 ").append(nb.title).append("\n\n")
+                        val pages = allPages.filter { it.notebookId == nb.notebookId }.sortedBy { it.pageIndex }
+                        for (p in pages) {
+                            val safeNb = MarkdownExporter.sanitizeName(nb.title)
+                            val safeTitle = MarkdownExporter.sanitizeName(p.title)
+                            val diffBadge = if (p.difficulty != null) " `[${p.difficulty}]`" else ""
+                            sb.append("- 📝 **[").append(p.title).append("](exports/").append(safeNb).append("/").append(safeTitle).append(".md)**").append(diffBadge)
+                            sb.append(" &nbsp;•&nbsp; [🖼️ Vector SVG](notebooks/").append(nb.notebookId).append("/pages/").append(p.pageId).append(".svg)")
+                            sb.append("\n")
+                        }
+                        sb.append("\n")
+                    }
+                }
+            }
+
+            // Also any root notebooks
+            val rootNotebooks = notebooks.filter { it.folderId == null }
+            if (rootNotebooks.isNotEmpty()) {
+                sb.append("### 📘 General Notebooks\n\n")
+                for (nb in rootNotebooks) {
+                    sb.append("#### ").append(nb.title).append("\n\n")
+                    val pages = allPages.filter { it.notebookId == nb.notebookId }.sortedBy { it.pageIndex }
+                    for (p in pages) {
+                        val safeNb = MarkdownExporter.sanitizeName(nb.title)
+                        val safeTitle = MarkdownExporter.sanitizeName(p.title)
+                        sb.append("- 📝 **[").append(p.title).append("](exports/").append(safeNb).append("/").append(safeTitle).append(".md)**")
+                        sb.append(" &nbsp;•&nbsp; [🖼️ Vector SVG](notebooks/").append(nb.notebookId).append("/pages/").append(p.pageId).append(".svg)")
+                        sb.append("\n")
+                    }
+                    sb.append("\n")
+                }
+            }
+
+            val blobSha = gitDataClient.uploadBlob(
+                owner = owner,
+                repo = repo,
+                contentBytes = sb.toString().toByteArray(Charsets.UTF_8),
+                isBinary = false
+            ).getOrNull() ?: return null
+
+            return GitTreeEntry(path = "README.md", sha = blobSha)
         } catch (_: Exception) {
             return null
         }

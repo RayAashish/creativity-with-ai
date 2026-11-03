@@ -77,7 +77,9 @@ import com.antigravity.note.ui.library.ReviewTodayDialog
 import com.antigravity.note.ui.shapes.ShapesDialog
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
+import kotlinx.coroutines.flow.first
 import androidx.compose.material3.Card
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
@@ -156,6 +158,7 @@ fun InkCanvasScreen(
     val notebooks by libraryRepo.getAllNotebooks().collectAsStateWithLifecycle(emptyList())
     val allPages by libraryRepo.searchPages("").collectAsStateWithLifecycle(emptyList())
     val duePages by libraryRepo.getDueReviewPages().collectAsStateWithLifecycle(emptyList())
+    val trashPages by libraryRepo.trashPages.collectAsStateWithLifecycle(emptyList())
 
     // Document Manager
     val docManager = remember { DocumentManager(pageRepo, "nb_two_pointers") }
@@ -252,6 +255,7 @@ fun InkCanvasScreen(
     // Page Management & Edit State
     var isEditProblemOpen by remember { mutableStateOf(false) }
     var showDeletePageDialog by remember { mutableStateOf(false) }
+    var showClearCanvasDialog by remember { mutableStateOf(false) }
     var showAddPageMenu by remember { mutableStateOf(false) }
     var isInfiniteCanvas by remember { mutableStateOf(true) }
 
@@ -792,8 +796,8 @@ fun InkCanvasScreen(
                             )
                         }
 
-                        // Clear Canvas
-                        IconButton(onClick = { canvasView.clearCanvas() }) {
+                        // Clear Canvas (With confirmation dialog)
+                        IconButton(onClick = { showClearCanvasDialog = true }) {
                             Icon(Icons.Default.Delete, contentDescription = "Clear Canvas", tint = Color(0xFFBA1A1A))
                         }
 
@@ -1286,6 +1290,7 @@ fun InkCanvasScreen(
                 folders = folders,
                 notebooks = notebooks,
                 pages = allPages,
+                trashPages = trashPages,
                 activePageId = currentPage?.metadata?.pageId,
                 dueReviewCount = duePages.size,
                 onPageSelected = { notebookId, pageId ->
@@ -1341,6 +1346,61 @@ fun InkCanvasScreen(
                         }
                         isSidebarOpen = false
                         Toast.makeText(context, "Created problem: $title", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onRenamePage = { pageId, newTitle ->
+                    scope.launch {
+                        libraryRepo.renamePage(pageId, newTitle)
+                        if (currentPage?.metadata?.pageId == pageId) {
+                            currentPage?.metadata = currentPage?.metadata?.copy(title = newTitle) ?: currentPage!!.metadata
+                        }
+                        Toast.makeText(context, "Renamed to: $newTitle", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onRenameNotebook = { notebookId, newTitle ->
+                    scope.launch {
+                        libraryRepo.renameNotebook(notebookId, newTitle)
+                        Toast.makeText(context, "Notebook renamed to: $newTitle", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onRenameFolder = { folderId, newName ->
+                    scope.launch {
+                        libraryRepo.renameFolder(folderId, newName)
+                        Toast.makeText(context, "Folder renamed to: $newName", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onMovePagesToTrash = { pageIds ->
+                    scope.launch {
+                        libraryRepo.movePagesToTrash(pageIds)
+                        val currId = currentPage?.metadata?.pageId
+                        if (currId != null && pageIds.contains(currId)) {
+                            val remaining = libraryRepo.getAllActivePages().first().filter { !pageIds.contains(it.pageId) }
+                            val next = remaining.firstOrNull()
+                            if (next != null) {
+                                docManager.switchToNotebookAndPage(next.notebookId, next.pageId) { p ->
+                                    canvasView.loadPage(p, docManager.lastOpenLatencyMs.value)
+                                }
+                            }
+                        }
+                        Toast.makeText(context, "${pageIds.size} note(s) moved to Trash", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onRestorePageFromTrash = { pageId ->
+                    scope.launch {
+                        libraryRepo.restorePageFromTrash(pageId)
+                        Toast.makeText(context, "Note restored!", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onDeletePagePermanently = { pageId ->
+                    scope.launch {
+                        libraryRepo.deletePagePermanently(pageId)
+                        Toast.makeText(context, "Permanently deleted", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onEmptyTrash = {
+                    scope.launch {
+                        libraryRepo.emptyTrash()
+                        Toast.makeText(context, "Trash emptied", Toast.LENGTH_SHORT).show()
                     }
                 }
             )
@@ -1755,12 +1815,40 @@ fun InkCanvasScreen(
             )
         }
 
-        // Delete Page Confirmation Dialog
+        // Clear Canvas Confirmation Dialog (Top bar red trash icon)
+        if (showClearCanvasDialog) {
+            AlertDialog(
+                onDismissRequest = { showClearCanvasDialog = false },
+                icon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                title = { Text("Clear Entire Canvas?") },
+                text = { Text("Are you sure you want to clear all ink strokes on this page? This action cannot be undone.") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            canvasView.clearCanvas()
+                            showClearCanvasDialog = false
+                            Toast.makeText(context, "Canvas cleared", Toast.LENGTH_SHORT).show()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Clear Canvas", color = MaterialTheme.colorScheme.onError)
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = { showClearCanvasDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        // Delete Page Confirmation Dialog (Moves to 30-day Trash)
         if (showDeletePageDialog) {
             AlertDialog(
                 onDismissRequest = { showDeletePageDialog = false },
-                title = { Text("Delete This Page?") },
-                text = { Text("Are you sure you want to delete this page? All handwritten ink strokes on this page will be removed permanently.") },
+                icon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                title = { Text("Move Page to Trash?") },
+                text = { Text("Are you sure you want to move this page to Trash? You can restore it from Trash within 30 days.") },
                 confirmButton = {
                     Button(
                         onClick = {
@@ -1770,13 +1858,13 @@ fun InkCanvasScreen(
                                 canvasView.loadPage(p, docManager.lastOpenLatencyMs.value)
                             }
                             if (pId != null) {
-                                scope.launch { libraryRepo.deletePage(pId) }
+                                scope.launch { libraryRepo.movePageToTrash(pId) }
                             }
-                            Toast.makeText(context, "Page deleted", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Page moved to Trash", Toast.LENGTH_SHORT).show()
                         },
-                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                     ) {
-                        Text("Delete", color = MaterialTheme.colorScheme.onError)
+                        Text("Move to Trash", color = MaterialTheme.colorScheme.onError)
                     }
                 },
                 dismissButton = {

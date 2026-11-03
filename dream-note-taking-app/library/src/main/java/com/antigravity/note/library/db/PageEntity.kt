@@ -47,5 +47,9 @@ data class PageEntity(
 
     // Spaced Repetition fields
     val revisitIntervalDays: Int = 0,
-    val nextReviewTimestamp: Long = 0L
+    val nextReviewTimestamp: Long = 0L,
+
+    // Trash & Recycle Bin (30-day retention)
+    val isDeleted: Boolean = false,
+    val deletedAt: Long? = null
 )

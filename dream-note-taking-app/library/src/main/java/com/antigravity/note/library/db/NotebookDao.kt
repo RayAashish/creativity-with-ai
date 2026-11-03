@@ -31,6 +31,9 @@ interface NotebookDao {
     @Update
     suspend fun updateNotebook(notebook: NotebookEntity)
 
+    @Query("UPDATE notebooks SET title = :newTitle, modifiedAt = :timestamp WHERE notebookId = :notebookId")
+    suspend fun updateNotebookTitle(notebookId: String, newTitle: String, timestamp: Long = System.currentTimeMillis())
+
     @Query("DELETE FROM notebooks WHERE notebookId = :notebookId")
     suspend fun deleteNotebook(notebookId: String)
 }
