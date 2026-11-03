@@ -595,8 +595,21 @@ private fun FolderTreeItem(
                 imageVector = if (isExpanded) Icons.Default.FolderOpen else Icons.Default.Folder,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = if (indentLevel == 0) MaterialTheme.colorScheme.primary else Color(0xFFE65100)
             )
+            // Hierarchical level badge: Subject vs Topic
+            Surface(
+                shape = RoundedCornerShape(4.dp),
+                color = if (indentLevel == 0) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+            ) {
+                Text(
+                    text = if (indentLevel == 0) "Subject" else "Topic",
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (indentLevel == 0) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                )
+            }
             Text(
                 text = folder.name,
                 fontSize = 13.sp,
@@ -624,14 +637,14 @@ private fun FolderTreeItem(
                     onDismissRequest = { isMenuOpen = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("+ Add Subtopic (Folder)") },
+                        text = { Text(if (indentLevel == 0) "+ Add Topic (Folder)" else "+ Add Subtopic (Folder)") },
                         onClick = {
                             isMenuOpen = false
                             onAddSubtopic(folder.folderId)
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("+ Add Topic Notebook") },
+                        text = { Text("+ Add Subtopic Notebook") },
                         onClick = {
                             isMenuOpen = false
                             onAddNotebook(folder.folderId)
@@ -713,6 +726,18 @@ private fun NotebookTreeItem(
                 modifier = Modifier.size(18.dp),
                 tint = MaterialTheme.colorScheme.secondary
             )
+            Surface(
+                shape = RoundedCornerShape(4.dp),
+                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
+            ) {
+                Text(
+                    text = "Subtopic",
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                )
+            }
             Text(
                 text = notebook.title,
                 fontSize = 13.sp,
@@ -790,6 +815,20 @@ private fun PageRowItem(
                 .clip(CircleShape)
                 .background(statusDotColor)
         )
+
+        // Page Number Badge: P1, P2... Pn
+        Surface(
+            shape = RoundedCornerShape(4.dp),
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+        ) {
+            Text(
+                text = "P${page.pageIndex + 1}",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+            )
+        }
 
         Icon(
             imageVector = Icons.Default.Description,

@@ -52,7 +52,9 @@ class LassoTool {
     private var activeHandle = TransformHandle.NONE
     private var lastTouchX = 0f
     private var lastTouchY = 0f
-    private val handleTouchRadius = 40f
+    private val handleTouchRadius = 80f
+
+    var onStrokesTransformed: ((oldStrokes: List<Stroke>, newStrokes: List<Stroke>) -> Unit)? = null
 
     // Corner handle rects for drawing & hit-testing
     private val handleTL = RectF()
@@ -238,10 +240,10 @@ class LassoTool {
                     targetX,
                     targetY,
                     safeTime,
+                    pt.strokeUnitLengthCm,
                     safePressure,
                     safeTilt,
-                    safeOrientation,
-                    pt.strokeUnitLengthCm
+                    safeOrientation
                 )
                 lastX = targetX
                 lastY = targetY
@@ -292,10 +294,10 @@ class LassoTool {
                     targetX,
                     targetY,
                     safeTime,
+                    pt.strokeUnitLengthCm,
                     safePressure,
                     safeTilt,
-                    safeOrientation,
-                    pt.strokeUnitLengthCm
+                    safeOrientation
                 )
                 lastX = targetX
                 lastY = targetY
@@ -334,6 +336,7 @@ class LassoTool {
 
     fun translateSelected(dx: Float, dy: Float) {
         if (selectedStrokes.isEmpty()) return
+        val oldStrokes = selectedStrokes.toList()
         val updated = mutableListOf<Stroke>()
         for (stroke in selectedStrokes) {
             val newBatch = MutableStrokeInputBatch()
@@ -345,10 +348,10 @@ class LassoTool {
                     pt.x + dx,
                     pt.y + dy,
                     pt.elapsedTimeMillis,
-                    pt.pressure,
-                    pt.tiltRadians,
-                    pt.orientationRadians,
-                    pt.strokeUnitLengthCm
+                    pt.strokeUnitLengthCm,
+                    pt.pressure.coerceIn(0.1f, 1.0f),
+                    pt.tiltRadians.coerceIn(0f, 1.57f),
+                    pt.orientationRadians
                 )
             }
             updated.add(Stroke(stroke.brush, newBatch.toImmutable()))
@@ -357,36 +360,42 @@ class LassoTool {
         selectedStrokes.addAll(updated)
         selectionBounds.offset(dx, dy)
         updateHandles()
+        onStrokesTransformed?.invoke(oldStrokes, updated)
     }
 
     private fun scaleSelected(dx: Float, dy: Float, fromLeft: Boolean, fromTop: Boolean) {
         val oldWidth = selectionBounds.width()
         val oldHeight = selectionBounds.height()
-        if (oldWidth <= 1f || oldHeight <= 1f) return
+        if (oldWidth <= 15f || oldHeight <= 15f) return
 
         val scaleX = if (fromLeft) (oldWidth - dx) / oldWidth else (oldWidth + dx) / oldWidth
         val scaleY = if (fromTop) (oldHeight - dy) / oldHeight else (oldHeight + dy) / oldHeight
 
+        // Clamp to prevent negative or extreme scale
+        val clampedScaleX = scaleX.coerceIn(0.15f, 6.0f)
+        val clampedScaleY = scaleY.coerceIn(0.15f, 6.0f)
+
         val pivotX = if (fromLeft) selectionBounds.right else selectionBounds.left
         val pivotY = if (fromTop) selectionBounds.bottom else selectionBounds.top
 
+        val oldStrokes = selectedStrokes.toList()
         val updated = mutableListOf<Stroke>()
         for (stroke in selectedStrokes) {
             val newBatch = MutableStrokeInputBatch()
             val inputs = stroke.inputs
             for (i in 0 until inputs.size) {
                 val pt = inputs.get(i)
-                val newX = pivotX + (pt.x - pivotX) * scaleX
-                val newY = pivotY + (pt.y - pivotY) * scaleY
+                val newX = pivotX + (pt.x - pivotX) * clampedScaleX
+                val newY = pivotY + (pt.y - pivotY) * clampedScaleY
                 newBatch.add(
                     pt.toolType,
                     newX,
                     newY,
                     pt.elapsedTimeMillis,
-                    pt.pressure,
-                    pt.tiltRadians,
-                    pt.orientationRadians,
-                    pt.strokeUnitLengthCm
+                    pt.strokeUnitLengthCm,
+                    pt.pressure.coerceIn(0.1f, 1.0f),
+                    pt.tiltRadians.coerceIn(0f, 1.57f),
+                    pt.orientationRadians
                 )
             }
             updated.add(Stroke(stroke.brush, newBatch.toImmutable()))
@@ -394,6 +403,7 @@ class LassoTool {
         selectedStrokes.clear()
         selectedStrokes.addAll(updated)
         recomputeSelectionBounds()
+        onStrokesTransformed?.invoke(oldStrokes, updated)
     }
 
     private fun recomputeSelectionBounds() {
@@ -420,11 +430,15 @@ class LassoTool {
     }
 
     private fun updateHandles() {
-        val hr = 16f
+        val hr = 24f
         handleTL.set(selectionBounds.left - hr, selectionBounds.top - hr, selectionBounds.left + hr, selectionBounds.top + hr)
         handleTR.set(selectionBounds.right - hr, selectionBounds.top - hr, selectionBounds.right + hr, selectionBounds.top + hr)
         handleBL.set(selectionBounds.left - hr, selectionBounds.bottom - hr, selectionBounds.left + hr, selectionBounds.bottom + hr)
         handleBR.set(selectionBounds.right - hr, selectionBounds.bottom - hr, selectionBounds.right + hr, selectionBounds.bottom + hr)
+    }
+
+    fun hitTest(worldX: Float, worldY: Float): Boolean {
+        return hitTestHandle(worldX, worldY) != TransformHandle.NONE
     }
 
     private fun hitTestHandle(worldX: Float, worldY: Float): TransformHandle {
@@ -455,8 +469,8 @@ class LassoTool {
     private fun drawHandle(canvas: Canvas, rect: RectF) {
         val cx = rect.centerX()
         val cy = rect.centerY()
-        canvas.drawCircle(cx, cy, 14f, handlePaint)
-        canvas.drawCircle(cx, cy, 14f, handleBorderPaint)
+        canvas.drawCircle(cx, cy, 18f, handlePaint)
+        canvas.drawCircle(cx, cy, 18f, handleBorderPaint)
     }
 
     private fun isPointInPolygon(x: Float, y: Float, polygon: List<PointF>): Boolean {

@@ -145,6 +145,8 @@ class LibraryRepository(
     }
 
     suspend fun seedDsaDreamTemplate(): String = withContext(ioDispatcher) {
+        seedAdditionalSubjectsIfNeeded()
+
         // Check if already seeded
         val existingNotebooks = notebookDao.getAllNotebooks().first()
         if (existingNotebooks.isNotEmpty()) {
@@ -275,6 +277,149 @@ fun threeSum(nums: IntArray): List<List<Int>> {
         pageDao.updatePage(q2.copy(problemStatus = "Revisit"))
 
         twoPointersNotebook.notebookId
+    }
+
+    suspend fun seedAdditionalSubjectsIfNeeded() = withContext(ioDispatcher) {
+        if (folderDao.getFolderById("folder_sys_design") != null) return@withContext
+
+        // Subject 1: System Design
+        val sysDesignFolder = FolderEntity(
+            folderId = "folder_sys_design",
+            parentFolderId = null,
+            name = "System Design",
+            colorHex = "#795548",
+            isPinned = true
+        )
+        folderDao.insertFolder(sysDesignFolder)
+
+        // Topic 1.1: Distributed Caching
+        val cachingFolder = FolderEntity(
+            folderId = "folder_sd_caching",
+            parentFolderId = sysDesignFolder.folderId,
+            name = "Distributed Caching",
+            colorHex = "#FF6F00"
+        )
+        folderDao.insertFolder(cachingFolder)
+
+        // Subtopic Notebook: Redis Architecture
+        val redisNb = NotebookEntity(
+            notebookId = "nb_redis_cache",
+            folderId = cachingFolder.folderId,
+            title = "Redis & Caching",
+            pageCount = 2,
+            isStarred = true
+        )
+        notebookDao.insertNotebook(redisNb)
+
+        createProblemPage(
+            notebookId = redisNb.notebookId,
+            title = "Cache-Aside vs Write-Through",
+            sourceUrl = "https://en.wikipedia.org/wiki/Cache_(computing)",
+            difficulty = "Medium",
+            tags = "System Design,Cache,Redis",
+            timeComplexity = "O(1) cache read",
+            spaceComplexity = "O(N) memory",
+            codeSnippet = """
+// Cache-Aside Pattern:
+fun getProduct(id: String): Product {
+    val cached = redis.get("prod:" + id)
+    if (cached != null) return cached
+    val product = db.queryProduct(id)
+    redis.set("prod:" + id, product, ttl = 3600)
+    return product
+}
+            """.trimIndent(),
+            codeLanguage = "Kotlin"
+        )
+
+        createGeneralNotePage(
+            notebookId = redisNb.notebookId,
+            title = "Cache Invalidation & Eviction (LRU/LFU)",
+            template = PaperTemplate.GRID
+        )
+
+        // Topic 1.2: Database Scaling & Sharding
+        val dbScalingFolder = FolderEntity(
+            folderId = "folder_sd_db",
+            parentFolderId = sysDesignFolder.folderId,
+            name = "Database Scaling",
+            colorHex = "#0288D1"
+        )
+        folderDao.insertFolder(dbScalingFolder)
+
+        val shardingNb = NotebookEntity(
+            notebookId = "nb_sharding",
+            folderId = dbScalingFolder.folderId,
+            title = "Sharding & Replication",
+            pageCount = 2
+        )
+        notebookDao.insertNotebook(shardingNb)
+
+        createProblemPage(
+            notebookId = shardingNb.notebookId,
+            title = "Consistent Hashing & Ring Partitioning",
+            sourceUrl = "https://en.wikipedia.org/wiki/Consistent_hashing",
+            difficulty = "Hard",
+            tags = "System Design,Hashing,Distributed",
+            timeComplexity = "O(log N) lookup",
+            spaceComplexity = "O(N) ring nodes",
+            codeSnippet = """
+class ConsistentHashRing(val replicas: Int = 3) {
+    val ring = java.util.TreeMap<Int, String>()
+    fun getNode(key: String): String {
+        val hash = key.hashCode()
+        val tail = ring.tailMap(hash)
+        val target = if (tail.isEmpty()) ring.firstKey() else tail.firstKey()
+        return ring[target]!!
+    }
+}
+            """.trimIndent(),
+            codeLanguage = "Kotlin"
+        )
+
+        createGeneralNotePage(
+            notebookId = shardingNb.notebookId,
+            title = "Leader-Follower Replication & WAL",
+            template = PaperTemplate.RULED
+        )
+
+        // Subject 2: General Notes & Creative
+        val generalFolder = FolderEntity(
+            folderId = "folder_general_notes",
+            parentFolderId = null,
+            name = "General Notes",
+            colorHex = "#00897B",
+            isPinned = true
+        )
+        folderDao.insertFolder(generalFolder)
+
+        val ideasFolder = FolderEntity(
+            folderId = "folder_ideas",
+            parentFolderId = generalFolder.folderId,
+            name = "Project Ideas & Journal",
+            colorHex = "#43A047"
+        )
+        folderDao.insertFolder(ideasFolder)
+
+        val brainstormNb = NotebookEntity(
+            notebookId = "nb_brainstorm",
+            folderId = ideasFolder.folderId,
+            title = "Architecture & Roadmaps",
+            pageCount = 2
+        )
+        notebookDao.insertNotebook(brainstormNb)
+
+        createGeneralNotePage(
+            notebookId = brainstormNb.notebookId,
+            title = "Dream Note Taking App Architecture",
+            template = PaperTemplate.RULED
+        )
+
+        createGeneralNotePage(
+            notebookId = brainstormNb.notebookId,
+            title = "Freeform Canvas & Diagram Sketches",
+            template = PaperTemplate.BLANK
+        )
     }
 
     suspend fun schedulePageReview(pageId: String, intervalDays: Int) = withContext(ioDispatcher) {

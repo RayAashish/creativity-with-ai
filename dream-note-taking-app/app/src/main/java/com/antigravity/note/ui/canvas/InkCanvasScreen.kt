@@ -47,6 +47,7 @@ import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.BugReport
@@ -63,6 +64,7 @@ import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Search
@@ -84,6 +86,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -205,6 +208,16 @@ fun InkCanvasScreen(
                     (highlighterColor.red * 255).toInt(),
                     (highlighterColor.green * 255).toInt(),
                     (highlighterColor.blue * 255).toInt()
+                )
+                canvasView.setInkColor(c)
+            }
+            CanvasTool.SHAPE -> {
+                canvasView.setInkWidth(penWidth.coerceAtLeast(3.5f))
+                val c = AndroidColor.argb(
+                    (penColor.alpha * 255).toInt(),
+                    (penColor.red * 255).toInt(),
+                    (penColor.green * 255).toInt(),
+                    (penColor.blue * 255).toInt()
                 )
                 canvasView.setInkColor(c)
             }
@@ -541,8 +554,8 @@ fun InkCanvasScreen(
                         )
                         ToolIconButton(
                             icon = Icons.Default.Category,
-                            label = "Shapes",
-                            isSelected = isShapesDialogOpen || isShapeSnapOn,
+                            label = if (selectedTool == CanvasTool.SHAPE) "Shapes ▾" else "Shapes",
+                            isSelected = selectedTool == CanvasTool.SHAPE || isShapesDialogOpen,
                             onClick = {
                                 isShapesDialogOpen = true
                             }
@@ -699,6 +712,36 @@ fun InkCanvasScreen(
                         // Reset Zoom
                         IconButton(onClick = { canvasView.resetZoom() }) {
                             Icon(Icons.Default.FitScreen, contentDescription = "Reset Zoom")
+                        }
+
+                        // Problem / Topic Metadata Info Button (Manual Setup)
+                        IconButton(
+                            onClick = {
+                                if (currentProblemPage != null) {
+                                    isEditProblemOpen = true
+                                } else {
+                                    val page = currentPage ?: docManager.currentPage.value
+                                    if (page != null) {
+                                        scope.launch {
+                                            val activeNbId = docManager.getActiveNotebookId()
+                                            libraryRepo.createProblemPage(
+                                                notebookId = activeNbId,
+                                                title = page.metadata.title,
+                                                sourceUrl = null,
+                                                difficulty = "Medium",
+                                                tags = ""
+                                            )
+                                            isEditProblemOpen = true
+                                        }
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PushPin,
+                                contentDescription = "Topic & Problem Details",
+                                tint = if (currentProblemPage?.isProblemPage == true) MaterialTheme.colorScheme.primary else Color.Gray
+                            )
                         }
 
                         // Clear Canvas
@@ -890,259 +933,296 @@ fun InkCanvasScreen(
             }
         }
 
-        // Bottom Left: Page Navigation Bar
-        Card(
+        // Bottom Bar: Unified, Non-Overlapping Controls (Centered & Scrollable)
+        Box(
             modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 20.dp, bottom = 16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)),
-            shape = RoundedCornerShape(14.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
+            contentAlignment = Alignment.BottomCenter
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                val currentIndex = pagesList.indexOfFirst { it.pageId == currentPage?.metadata?.pageId }.coerceAtLeast(0)
-                val totalPages = pagesList.size.coerceAtLeast(1)
-
-                IconButton(
-                    onClick = {
-                        docManager.previousPage { page ->
-                            canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
-                        }
-                    },
-                    enabled = currentIndex > 0,
-                    modifier = Modifier.size(32.dp)
+                // Card 1: Page Navigation, Add & Delete Page, Infinite Canvas
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
-                        contentDescription = "Previous Page",
-                        tint = if (currentIndex > 0) MaterialTheme.colorScheme.onSurface else Color.LightGray
-                    )
-                }
-
-                Text(
-                    text = "Page ${currentIndex + 1} / $totalPages",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-
-                IconButton(
-                    onClick = {
-                        docManager.nextPage { page ->
-                            canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
-                        }
-                    },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                        contentDescription = "Next Page"
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(4.dp))
-                Box(
-                    modifier = Modifier
-                        .height(20.dp)
-                        .width(1.dp)
-                        .background(MaterialTheme.colorScheme.outlineVariant)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-
-                // + Add Page Button with popup
-                Box {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.clickable { showAddPageMenu = true }
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        val currentIndex = pagesList.indexOfFirst { it.pageId == currentPage?.metadata?.pageId }.coerceAtLeast(0)
+                        val totalPages = pagesList.size.coerceAtLeast(1)
+
+                        IconButton(
+                            onClick = {
+                                docManager.previousPage { page ->
+                                    canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                                }
+                            },
+                            enabled = currentIndex > 0,
+                            modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Add Page",
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Text(
-                                text = "Add Page",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
+                                contentDescription = "Previous Page",
+                                tint = if (currentIndex > 0) MaterialTheme.colorScheme.onSurface else Color.LightGray
                             )
                         }
-                    }
 
-                    DropdownMenu(
-                        expanded = showAddPageMenu,
-                        onDismissRequest = { showAddPageMenu = false }
-                    ) {
-                        val currentTpl = currentPage?.metadata?.template ?: PaperTemplate.RULED
-                        DropdownMenuItem(
-                            text = { Text("+ Current Template (${currentTpl.displayName})") },
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                        ) {
+                            Text(
+                                text = "Page ${currentIndex + 1} / $totalPages",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                            )
+                        }
+
+                        IconButton(
                             onClick = {
-                                showAddPageMenu = false
-                                val activeNbId = docManager.getActiveNotebookId()
-                                scope.launch {
-                                    val p = libraryRepo.createGeneralNotePage(activeNbId, "Page ${pagesList.size + 1}", currentTpl)
-                                    docManager.switchToPage(p.pageId) { page ->
-                                        canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                                docManager.nextPage { page ->
+                                    canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                                }
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                                contentDescription = "Next Page"
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Box(
+                            modifier = Modifier
+                                .height(22.dp)
+                                .width(1.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant)
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+
+                        // + Add Page Button (One-tap adds page with current template, chevron opens template menu)
+                        Box {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.clickable {
+                                    val currentTpl = currentPage?.metadata?.template ?: PaperTemplate.RULED
+                                    val activeNbId = docManager.getActiveNotebookId()
+                                    scope.launch {
+                                        val p = libraryRepo.createGeneralNotePage(activeNbId, "Page ${pagesList.size + 1}", currentTpl)
+                                        docManager.switchToNotebookAndPage(activeNbId, p.pageId) { page ->
+                                            canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                                        }
+                                        Toast.makeText(context, "Added Page ${pagesList.size + 1}", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(start = 10.dp, top = 6.dp, bottom = 6.dp, end = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Add Page",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                    Text(
+                                        text = "Add Page",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                    IconButton(
+                                        onClick = { showAddPageMenu = true },
+                                        modifier = Modifier.size(20.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.ArrowDropDown,
+                                            contentDescription = "Choose Paper Template",
+                                            tint = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
                                     }
                                 }
                             }
-                        )
-                        PaperTemplate.entries.forEach { template ->
-                            DropdownMenuItem(
-                                text = { Text("+ ${template.displayName} Page") },
-                                onClick = {
-                                    showAddPageMenu = false
-                                    val activeNbId = docManager.getActiveNotebookId()
-                                    scope.launch {
-                                        val p = libraryRepo.createGeneralNotePage(activeNbId, "Page ${pagesList.size + 1}", template)
-                                        docManager.switchToPage(p.pageId) { page ->
-                                            canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+
+                            DropdownMenu(
+                                expanded = showAddPageMenu,
+                                onDismissRequest = { showAddPageMenu = false }
+                            ) {
+                                val currentTpl = currentPage?.metadata?.template ?: PaperTemplate.RULED
+                                DropdownMenuItem(
+                                    text = { Text("+ Current (${currentTpl.displayName})", fontWeight = FontWeight.Bold) },
+                                    onClick = {
+                                        showAddPageMenu = false
+                                        val activeNbId = docManager.getActiveNotebookId()
+                                        scope.launch {
+                                            val p = libraryRepo.createGeneralNotePage(activeNbId, "Page ${pagesList.size + 1}", currentTpl)
+                                            docManager.switchToNotebookAndPage(activeNbId, p.pageId) { page ->
+                                                canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                                            }
                                         }
                                     }
+                                )
+                                HorizontalDivider()
+                                PaperTemplate.entries.forEach { template ->
+                                    DropdownMenuItem(
+                                        text = { Text("+ ${template.displayName} Page") },
+                                        onClick = {
+                                            showAddPageMenu = false
+                                            val activeNbId = docManager.getActiveNotebookId()
+                                            scope.launch {
+                                                val p = libraryRepo.createGeneralNotePage(activeNbId, "Page ${pagesList.size + 1}", template)
+                                                docManager.switchToNotebookAndPage(activeNbId, p.pageId) { page ->
+                                                    canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                                                }
+                                            }
+                                        }
+                                    )
                                 }
-                            )
+                            }
+                        }
+
+                        // Delete Page Button
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f),
+                            modifier = Modifier.clickable { showDeletePageDialog = true }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete Page",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Text(
+                                    text = "Delete",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Box(
+                            modifier = Modifier
+                                .height(22.dp)
+                                .width(1.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant)
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+
+                        // Infinite Canvas Toggle (OneNote Style)
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isInfiniteCanvas) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.clickable {
+                                isInfiniteCanvas = !isInfiniteCanvas
+                                canvasView.setInfiniteCanvasMode(isInfiniteCanvas)
+                                Toast.makeText(
+                                    context,
+                                    if (isInfiniteCanvas) "Infinite Canvas Enabled (OneNote style)" else "Fixed Page Boundaries Enabled",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = if (isInfiniteCanvas) "♾️ Infinite" else "📄 Fixed",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isInfiniteCanvas) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
 
-                // Delete Page Button
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
-                    modifier = Modifier.clickable { showDeletePageDialog = true }
+                // Card 2: Palm Rejection & Input Mode Selector Pill
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete Page",
+                            imageVector = Icons.Default.PanTool,
+                            contentDescription = null,
                             modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onErrorContainer
+                            tint = MaterialTheme.colorScheme.primary
                         )
-                        Text(
-                            text = "Delete",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onErrorContainer
+                        Text("Input:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+
+                        FilterChip(
+                            selected = inputMode == InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM,
+                            onClick = {
+                                inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM
+                                canvasView.palmFilter.config = canvasView.palmFilter.config.copy(inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM)
+                            },
+                            label = { Text("A: Pen + Gestures", fontSize = 11.sp) }
                         )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(2.dp))
-                Box(
-                    modifier = Modifier
-                        .height(20.dp)
-                        .width(1.dp)
-                        .background(MaterialTheme.colorScheme.outlineVariant)
-                )
-                Spacer(modifier = Modifier.width(2.dp))
-
-                // Infinite Canvas Toggle (OneNote Style)
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = if (isInfiniteCanvas) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.clickable {
-                        isInfiniteCanvas = !isInfiniteCanvas
-                        canvasView.setInfiniteCanvasMode(isInfiniteCanvas)
-                        Toast.makeText(
-                            context,
-                            if (isInfiniteCanvas) "Infinite Canvas Enabled (OneNote style)" else "Fixed Page Boundaries Enabled",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = if (isInfiniteCanvas) "♾️ Infinite" else "📄 Fixed",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isInfiniteCanvas) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                        FilterChip(
+                            selected = inputMode == InputMode.PEN_ONLY,
+                            onClick = {
+                                inputMode = InputMode.PEN_ONLY
+                                canvasView.palmFilter.config = canvasView.palmFilter.config.copy(inputMode = InputMode.PEN_ONLY)
+                            },
+                            label = { Text("B: Pen Only", fontSize = 11.sp) }
                         )
+                        FilterChip(
+                            selected = inputMode == InputMode.PEN_AND_FINGER_DRAW,
+                            onClick = {
+                                inputMode = InputMode.PEN_AND_FINGER_DRAW
+                                canvasView.palmFilter.config = canvasView.palmFilter.config.copy(inputMode = InputMode.PEN_AND_FINGER_DRAW)
+                            },
+                            label = { Text("C: All Draw", fontSize = 11.sp) }
+                        )
+
+                        // Debug HUD Toggle
+                        IconButton(
+                            onClick = {
+                                isDebugOverlayOn = !isDebugOverlayOn
+                                canvasView.palmFilter.config = canvasView.palmFilter.config.copy(debugOverlayEnabled = isDebugOverlayOn)
+                                canvasView.invalidate()
+                            },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.BugReport,
+                                contentDescription = "Toggle Debug HUD",
+                                tint = if (isDebugOverlayOn) MaterialTheme.colorScheme.primary else Color.Gray,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
-                }
-            }
-        }
-
-        // Bottom Right: Palm Rejection & Input Mode Selector Pill
-        Card(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)),
-            shape = RoundedCornerShape(14.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.PanTool,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Text("Input Mode:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-
-                FilterChip(
-                    selected = inputMode == InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM,
-                    onClick = {
-                        inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM
-                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM)
-                    },
-                    label = { Text("A: Pen + Gestures", fontSize = 11.sp) }
-                )
-                FilterChip(
-                    selected = inputMode == InputMode.PEN_ONLY,
-                    onClick = {
-                        inputMode = InputMode.PEN_ONLY
-                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(inputMode = InputMode.PEN_ONLY)
-                    },
-                    label = { Text("B: Pen Only", fontSize = 11.sp) }
-                )
-                FilterChip(
-                    selected = inputMode == InputMode.PEN_AND_FINGER_DRAW,
-                    onClick = {
-                        inputMode = InputMode.PEN_AND_FINGER_DRAW
-                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(inputMode = InputMode.PEN_AND_FINGER_DRAW)
-                    },
-                    label = { Text("C: All Draw", fontSize = 11.sp) }
-                )
-
-                // Debug HUD Toggle
-                IconButton(
-                    onClick = {
-                        isDebugOverlayOn = !isDebugOverlayOn
-                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(debugOverlayEnabled = isDebugOverlayOn)
-                        canvasView.invalidate()
-                    },
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.BugReport,
-                        contentDescription = "Toggle Debug HUD",
-                        tint = if (isDebugOverlayOn) MaterialTheme.colorScheme.primary else Color.Gray,
-                        modifier = Modifier.size(18.dp)
-                    )
                 }
             }
         }
@@ -1326,7 +1406,12 @@ fun InkCanvasScreen(
                     }
 
                     // Done / Clear selection
-                    IconButton(onClick = { canvasView.clearLassoSelection() }) {
+                    IconButton(
+                        onClick = {
+                            canvasView.clearLassoSelection()
+                            switchToTool(CanvasTool.PRESSURE_PEN)
+                        }
+                    ) {
                         Icon(Icons.Default.Check, contentDescription = "Done", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                     }
                 }
@@ -1578,13 +1663,21 @@ fun InkCanvasScreen(
             )
         }
 
-        // Shapes & Diagrams Dialog (System Design & DSA shapes + hold-to-snap)
+        // Shapes & Diagrams Dialog (Basic Shapes, System Design & DSA shapes + hold-to-snap)
         if (isShapesDialogOpen) {
             ShapesDialog(
                 isHoldToSnapEnabled = isShapeSnapOn,
                 onToggleHoldToSnap = { enabled ->
                     isShapeSnapOn = enabled
                     canvasView.holdToSnapEnabled = enabled
+                },
+                isShapeToolActive = selectedTool == CanvasTool.SHAPE,
+                onToggleShapeTool = { active ->
+                    if (active) {
+                        switchToTool(CanvasTool.SHAPE)
+                    } else {
+                        switchToTool(CanvasTool.PRESSURE_PEN)
+                    }
                 },
                 viewportCenter = canvasView.getViewportCenter(),
                 onInsertShape = { shape ->

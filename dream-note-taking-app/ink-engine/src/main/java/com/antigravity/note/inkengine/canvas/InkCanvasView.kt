@@ -42,7 +42,8 @@ enum class CanvasTool {
     MARKER,
     HIGHLIGHTER,
     STROKE_ERASER,
-    LASSO
+    LASSO,
+    SHAPE
 }
 
 data class StrokeAction(
@@ -95,9 +96,12 @@ class InkCanvasView @JvmOverloads constructor(
     private var activePointerIdForSnap = -1
 
     private val holdToSnapRunnable = Runnable {
-        if (!holdToSnapEnabled || isStrokeSnapped || strokePoints.size < 6) return@Runnable
+        android.util.Log.d("ANTIGRAVITY_INK", "holdToSnapRunnable triggered! enabled=$holdToSnapEnabled, isSnapped=$isStrokeSnapped, ptCount=${strokePoints.size}")
+        if (!holdToSnapEnabled || isStrokeSnapped || strokePoints.size < 5) return@Runnable
         val strokeId = activeStrokeIds[activePointerIdForSnap] ?: return@Runnable
-        val shape = shapeRecognizer.recognize(strokePoints) ?: return@Runnable
+        val shape = shapeRecognizer.recognize(strokePoints)
+        android.util.Log.d("ANTIGRAVITY_INK", "holdToSnapRunnable recognize result: $shape")
+        if (shape == null) return@Runnable
 
         // Morph rough wet ink into clean geometric shape!
         val dummyEvent = MotionEvent.obtain(
@@ -108,10 +112,13 @@ class InkCanvasView @JvmOverloads constructor(
             lastMoveY,
             0
         )
-        inProgressStrokesView.cancelStroke(strokeId, dummyEvent)
+        try {
+            inProgressStrokesView.cancelStroke(strokeId, dummyEvent)
+        } catch (_: Exception) {}
         dummyEvent.recycle()
 
         val snappedStrokes = shapeRecognizer.createStrokesForShape(shape, activeBrush)
+        android.util.Log.d("ANTIGRAVITY_INK", "holdToSnapRunnable created ${snappedStrokes.size} snappedStrokes")
         snappedStrokesForCurrentTouch.clear()
         snappedStrokesForCurrentTouch.addAll(snappedStrokes)
         dryInkView.addStrokes(snappedStrokes)
@@ -121,6 +128,7 @@ class InkCanvasView @JvmOverloads constructor(
     }
 
     var onLassoSelectionChanged: ((hasSelection: Boolean) -> Unit)? = null
+    private var isTransformingSelection = false
 
     // Gesture tracking for 2-finger pan & pinch-zoom
     private var isGestureActive = false
@@ -189,6 +197,13 @@ class InkCanvasView @JvmOverloads constructor(
         dryInkView.lassoTool = lassoTool
         dryInkView.pdfTiler = pdfTiler
 
+        lassoTool.onStrokesTransformed = { oldStrokes, newStrokes ->
+            dryInkView.replaceStrokes(oldStrokes, newStrokes)
+            for (s in newStrokes) {
+                onStrokeCommitted?.invoke(s)
+            }
+        }
+
         // Commit finished wet ink into dry ink view
         inProgressStrokesView.addFinishedStrokesListener(object : InProgressStrokesFinishedListener {
             override fun onStrokesFinished(strokes: Map<InProgressStrokeId, Stroke>) {
@@ -219,6 +234,9 @@ class InkCanvasView @JvmOverloads constructor(
         activeStrokeIds.clear()
         inProgressStrokesView.cancelUnfinishedStrokes()
         inProgressStrokesView.removeFinishedStrokes(inProgressStrokesView.getFinishedStrokes().keys)
+        lassoTool.clearSelection()
+        isTransformingSelection = false
+        onLassoSelectionChanged?.invoke(false)
         dryInkView.loadStrokes(page.strokes)
         dryInkView.setPaperTemplate(page.metadata.template)
         undoStack.clear()
@@ -267,8 +285,8 @@ class InkCanvasView @JvmOverloads constructor(
                 val translucentColor = (color and 0x00FFFFFF) or (0x55 shl 24)
                 Brush.createWithColorIntArgb(StockBrushes.highlighter(), translucentColor, highlighterSize, 0.01f)
             }
-            CanvasTool.STROKE_ERASER, CanvasTool.LASSO -> {
-                Brush.createWithColorIntArgb(StockBrushes.marker(), color, size, 0.01f)
+            CanvasTool.STROKE_ERASER, CanvasTool.LASSO, CanvasTool.SHAPE -> {
+                Brush.createWithColorIntArgb(StockBrushes.marker(), color, size.coerceAtLeast(3.5f), 0.01f)
             }
         }
     }
@@ -282,6 +300,17 @@ class InkCanvasView @JvmOverloads constructor(
         val h = height.toFloat()
         val pointerIndex = event.actionIndex.coerceIn(0, (event.pointerCount - 1).coerceAtLeast(0))
         val pointerId = event.getPointerId(pointerIndex)
+
+        // Allow finger touch to resize/move active selection handles!
+        if (event.pointerCount == 1 && lassoTool.mode == com.antigravity.note.inkengine.lasso.LassoMode.TRANSFORMING && lassoTool.selectedStrokes.isNotEmpty()) {
+            val screenX = event.getX(pointerIndex)
+            val screenY = event.getY(pointerIndex)
+            dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
+            if (lassoTool.hitTest(tempPoint.x, tempPoint.y) || isTransformingSelection) {
+                handleStylusAction(event, pointerIndex, pointerId, false)
+                return true
+            }
+        }
 
         // Evaluate Palm Rejection & Pointer Classification
         val filterResult = palmFilter.evaluatePointer(event, pointerIndex, w, h)
@@ -353,6 +382,35 @@ class InkCanvasView @JvmOverloads constructor(
             return
         }
 
+        // Selection Transform Mode (handles resize/move when shape is inserted or lassoed)
+        if (lassoTool.mode == com.antigravity.note.inkengine.lasso.LassoMode.TRANSFORMING && lassoTool.selectedStrokes.isNotEmpty()) {
+            dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                if (lassoTool.hitTest(tempPoint.x, tempPoint.y)) {
+                    isTransformingSelection = true
+                    lassoTool.startLasso(tempPoint.x, tempPoint.y)
+                    dryInkView.invalidate()
+                    return
+                } else {
+                    // Tap outside selection: deselect handles so normal drawing proceeds seamlessly
+                    isTransformingSelection = false
+                    lassoTool.clearSelection()
+                    dryInkView.invalidate()
+                    onLassoSelectionChanged?.invoke(false)
+                }
+            } else if (isTransformingSelection) {
+                if (action == MotionEvent.ACTION_MOVE) {
+                    val changed = lassoTool.continueLasso(tempPoint.x, tempPoint.y)
+                    if (changed) dryInkView.invalidate()
+                    return
+                } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP || action == MotionEvent.ACTION_CANCEL) {
+                    isTransformingSelection = false
+                    dryInkView.invalidate()
+                    return
+                }
+            }
+        }
+
         // Lasso Tool Mode
         if (currentTool == CanvasTool.LASSO) {
             dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
@@ -390,7 +448,7 @@ class InkCanvasView @JvmOverloads constructor(
 
                 removeCallbacks(holdToSnapRunnable)
                 if (holdToSnapEnabled) {
-                    postDelayed(holdToSnapRunnable, 400L)
+                    postDelayed(holdToSnapRunnable, 350L)
                 }
 
                 predictor.record(event)
@@ -408,13 +466,13 @@ class InkCanvasView @JvmOverloads constructor(
                     dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
                     strokePoints.add(ShapeRecognizer.Point(tempPoint.x, tempPoint.y, event.eventTime))
                     val moveDist = hypot(screenX - lastMoveX, screenY - lastMoveY)
-                    if (moveDist > 16f) {
+                    if (moveDist > 28f) {
                         lastMoveTime = SystemClock.uptimeMillis()
                         lastMoveX = screenX
                         lastMoveY = screenY
                         removeCallbacks(holdToSnapRunnable)
                         if (holdToSnapEnabled) {
-                            postDelayed(holdToSnapRunnable, 400L)
+                            postDelayed(holdToSnapRunnable, 350L)
                         }
                     }
 
@@ -429,7 +487,7 @@ class InkCanvasView @JvmOverloads constructor(
                 removeCallbacks(holdToSnapRunnable)
                 val strokeId = activeStrokeIds.remove(pointerId)
 
-                if (isStrokeSnapped) {
+                if (isStrokeSnapped && snappedStrokesForCurrentTouch.isNotEmpty()) {
                     val actionRecord = StrokeAction(addedStrokes = snappedStrokesForCurrentTouch.toList())
                     undoStack.add(actionRecord)
                     redoStack.clear()
@@ -446,11 +504,14 @@ class InkCanvasView @JvmOverloads constructor(
                 if (strokeId == null) return
 
                 val holdDuration = SystemClock.uptimeMillis() - lastMoveTime
-                // Hold-to-Snap fallback on release
-                if (holdToSnapEnabled && holdDuration >= 350L && strokePoints.size >= 6) {
+                val isShapeTool = currentTool == CanvasTool.SHAPE
+                // Fallback on release: either hold was >= 250ms OR we are in SHAPE tool mode!
+                if ((holdToSnapEnabled && holdDuration >= 250L && strokePoints.size >= 5) || (isShapeTool && strokePoints.size >= 5)) {
                     val shape = shapeRecognizer.recognize(strokePoints)
                     if (shape != null) {
-                        inProgressStrokesView.cancelStroke(strokeId, event)
+                        try {
+                            inProgressStrokesView.cancelStroke(strokeId, event)
+                        } catch (_: Exception) {}
                         val snappedStrokes = shapeRecognizer.createStrokesForShape(shape, activeBrush)
                         dryInkView.addStrokes(snappedStrokes)
                         val actionRecord = StrokeAction(addedStrokes = snappedStrokes)
@@ -474,15 +535,26 @@ class InkCanvasView @JvmOverloads constructor(
 
     private fun handleCancelStroke(event: MotionEvent, pointerId: Int) {
         removeCallbacks(holdToSnapRunnable)
-        if (isStrokeSnapped) {
-            dryInkView.removeStrokes(snappedStrokesForCurrentTouch)
-            isStrokeSnapped = false
-            snappedStrokesForCurrentTouch.clear()
-            dryInkView.invalidate()
-        }
-        val strokeId = activeStrokeIds.remove(pointerId)
-        if (strokeId != null) {
-            inProgressStrokesView.cancelStroke(strokeId, event)
+        if (pointerId == activePointerIdForSnap) {
+            if (isStrokeSnapped && snappedStrokesForCurrentTouch.isNotEmpty()) {
+                // If it was already snapped while holding, treat cancel as release/commit! Ink is never lost!
+                val actionRecord = StrokeAction(addedStrokes = snappedStrokesForCurrentTouch.toList())
+                undoStack.add(actionRecord)
+                redoStack.clear()
+                notifyUndoRedoState()
+                for (s in snappedStrokesForCurrentTouch) {
+                    onStrokeCommitted?.invoke(s)
+                }
+                isStrokeSnapped = false
+                snappedStrokesForCurrentTouch.clear()
+                dryInkView.invalidate()
+            }
+            val strokeId = activeStrokeIds.remove(pointerId)
+            if (strokeId != null) {
+                try {
+                    inProgressStrokesView.cancelStroke(strokeId, event)
+                } catch (_: Exception) {}
+            }
         }
     }
 
@@ -631,7 +703,9 @@ class InkCanvasView @JvmOverloads constructor(
     }
 
     fun insertShape(shape: RecognizedShape) {
+        android.util.Log.d("ANTIGRAVITY_INK", "insertShape: $shape, activeBrushSize=${activeBrush.size}")
         val strokes = shapeRecognizer.createStrokesForShape(shape, activeBrush)
+        android.util.Log.d("ANTIGRAVITY_INK", "insertShape generated ${strokes.size} strokes")
         dryInkView.addStrokes(strokes)
         undoStack.add(StrokeAction(addedStrokes = strokes))
         redoStack.clear()

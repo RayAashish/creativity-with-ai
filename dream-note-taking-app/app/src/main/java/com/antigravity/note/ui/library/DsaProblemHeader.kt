@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
@@ -63,6 +64,7 @@ fun DsaProblemHeader(
     val context = LocalContext.current
     var isCodeExpanded by remember { mutableStateOf(false) }
     var isStatusMenuOpen by remember { mutableStateOf(false) }
+    var isCardCollapsed by remember { mutableStateOf(false) }
 
     val difficultyColor = when (problemPage.difficulty?.lowercase()) {
         "easy" -> Color(0xFF146C2E) // Green
@@ -76,6 +78,82 @@ fun DsaProblemHeader(
         "Revisit" -> Color(0xFF7D5260)
         "Mastered" -> Color(0xFF6750A4)
         else -> Color.Gray
+    }
+
+    if (isCardCollapsed) {
+        // Collapsed Compact 1-Line Pill
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+            shadowElevation = 3.dp,
+            modifier = modifier
+                .padding(horizontal = 24.dp, vertical = 4.dp)
+                .clickable { isCardCollapsed = false }
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PushPin,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(14.dp)
+                )
+                Text(
+                    text = problemPage.title,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                problemPage.difficulty?.let { diff ->
+                    Text(
+                        text = "• $diff",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = difficultyColor
+                    )
+                }
+                if (problemPage.timeComplexity.isNotBlank()) {
+                    Text(
+                        text = "• Time: ${problemPage.timeComplexity}",
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (problemPage.spaceComplexity.isNotBlank()) {
+                    Text(
+                        text = "• Space: ${problemPage.spaceComplexity}",
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                    modifier = Modifier.clickable(onClick = onEditClicked)
+                ) {
+                    Text(
+                        text = "Edit ✎",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Default.ExpandMore,
+                    contentDescription = "Expand",
+                    modifier = Modifier.size(16.dp),
+                    tint = Color.Gray
+                )
+            }
+        }
+        return
     }
 
     Card(
@@ -220,6 +298,32 @@ fun DsaProblemHeader(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    // Minimize Card Button
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.clickable { isCardCollapsed = true }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ExpandLess,
+                                contentDescription = "Minimize Banner",
+                                modifier = Modifier.size(15.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "Minimize",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }

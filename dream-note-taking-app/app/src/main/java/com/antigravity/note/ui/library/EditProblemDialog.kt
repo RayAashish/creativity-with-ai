@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -57,6 +58,7 @@ fun EditProblemDialog(
     var codeSnippet by remember { mutableStateOf(page.codeSnippet) }
     var codeLanguage by remember { mutableStateOf(page.codeLanguage) }
     var isLangDropdownOpen by remember { mutableStateOf(false) }
+    var isProblemPage by remember { mutableStateOf(page.isProblemPage) }
 
     Dialog(onDismissRequest = onDismissRequest) {
         Surface(
@@ -88,7 +90,7 @@ fun EditProblemDialog(
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "Edit Problem Details",
+                            text = "Edit Problem / Topic Details",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
@@ -98,7 +100,37 @@ fun EditProblemDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Toggle Banner Visibility
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text(
+                            text = "Display Metadata Banner",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = if (isProblemPage) "Banner visible at top of page" else "Hidden (clean general note canvas)",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    androidx.compose.material3.Switch(
+                        checked = isProblemPage,
+                        onCheckedChange = { isProblemPage = it }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
 
                 // Title Field
                 OutlinedTextField(
@@ -276,6 +308,7 @@ fun EditProblemDialog(
                                 sourceUrl = sourceUrl.trim().ifEmpty { null },
                                 difficulty = difficulty,
                                 problemStatus = status,
+                                isProblemPage = isProblemPage,
                                 timeComplexity = timeComplexity.trim(),
                                 spaceComplexity = spaceComplexity.trim(),
                                 tags = tags.trim(),

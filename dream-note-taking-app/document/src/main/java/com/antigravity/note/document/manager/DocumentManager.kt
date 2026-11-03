@@ -120,6 +120,8 @@ class DocumentManager(
             if (current != null) {
                 repository.savePageAtomic(current)
             }
+            val pages = repository.listPages(activeNotebookId)
+            _pagesList.value = pages
             // Load target page
             val (page, latency) = repository.loadPage(activeNotebookId, pageId)
             _lastOpenLatencyMs.value = latency

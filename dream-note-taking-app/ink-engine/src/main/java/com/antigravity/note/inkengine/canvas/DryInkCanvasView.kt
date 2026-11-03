@@ -239,12 +239,41 @@ class DryInkCanvasView @JvmOverloads constructor(
         return removed
     }
 
+    fun replaceStrokes(oldStrokes: List<Stroke>, newStrokes: List<Stroke>) {
+        if (oldStrokes.isEmpty() || newStrokes.isEmpty() || oldStrokes.size != newStrokes.size) return
+        val map = HashMap<Stroke, Stroke>(oldStrokes.size)
+        for (i in oldStrokes.indices) {
+            map[oldStrokes[i]] = newStrokes[i]
+        }
+        for (i in strokes.indices) {
+            val replacement = map[strokes[i]]
+            if (replacement != null) {
+                strokes[i] = replacement
+            }
+        }
+        invalidate()
+    }
+
     fun addStroke(stroke: Stroke) {
+        val box = stroke.shape.computeBoundingBox()
+        android.util.Log.d("ANTIGRAVITY_INK", "addStroke: inputs=${stroke.inputs.size}, bbox=$box, brushSize=${stroke.brush.size}, color=${Integer.toHexString(stroke.brush.colorIntArgb)}")
+        if (stroke.inputs.size > 0) {
+            val p0 = stroke.inputs.get(0)
+            android.util.Log.d("ANTIGRAVITY_INK", "  p0: x=${p0.x}, y=${p0.y}, time=${p0.elapsedTimeMillis}, tool=${p0.toolType}, unit=${p0.strokeUnitLengthCm}, p=${p0.pressure}, tilt=${p0.tiltRadians}, ori=${p0.orientationRadians}")
+        }
         strokes.add(stroke)
         invalidate()
     }
 
     fun addStrokes(newStrokes: List<Stroke>) {
+        for (s in newStrokes) {
+            val box = s.shape.computeBoundingBox()
+            android.util.Log.d("ANTIGRAVITY_INK", "addStrokes item: inputs=${s.inputs.size}, bbox=$box, brushSize=${s.brush.size}, color=${Integer.toHexString(s.brush.colorIntArgb)}")
+            if (s.inputs.size > 0) {
+                val p0 = s.inputs.get(0)
+                android.util.Log.d("ANTIGRAVITY_INK", "  p0: x=${p0.x}, y=${p0.y}, time=${p0.elapsedTimeMillis}, tool=${p0.toolType}, unit=${p0.strokeUnitLengthCm}, p=${p0.pressure}, tilt=${p0.tiltRadians}, ori=${p0.orientationRadians}")
+            }
+        }
         strokes.addAll(newStrokes)
         invalidate()
     }
