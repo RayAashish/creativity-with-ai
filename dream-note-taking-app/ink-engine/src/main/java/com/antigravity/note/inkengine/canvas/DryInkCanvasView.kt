@@ -13,8 +13,22 @@ import androidx.ink.brush.StockBrushes
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.Stroke
 import com.antigravity.note.document.model.PaperTemplate
+import com.antigravity.note.inkengine.eraser.EraserMode
+import com.antigravity.note.inkengine.eraser.PrecisionEraser
+import com.antigravity.note.inkengine.eraser.SpatialStrokeIndex
 import com.antigravity.note.inkengine.lasso.LassoTool
 import com.antigravity.note.inkengine.pdf.PdfTiler
+
+data class EraseModification(
+    val removedStrokes: List<Stroke> = emptyList(),
+    val addedStrokes: List<Stroke> = emptyList(),
+    val replacements: List<StrokeReplacement> = emptyList()
+)
+
+data class StrokeReplacement(
+    val oldStroke: Stroke,
+    val newStrokes: List<Stroke>
+)
 
 /**
  * Underlying view responsible for rendering finalized "dry" ink strokes.
@@ -27,6 +41,8 @@ class DryInkCanvasView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     val strokes = mutableListOf<Stroke>()
+    val spatialIndex = SpatialStrokeIndex(cellSize = 256f)
+    private val queryCandidates = ArrayList<Stroke>(32)
     private val strokeRenderer: CanvasStrokeRenderer = CanvasStrokeRenderer.create()
     val transform = CanvasTransform()
     var currentTemplate: PaperTemplate = PaperTemplate.RULED
@@ -172,7 +188,7 @@ class DryInkCanvasView @JvmOverloads constructor(
     private fun isHighlighterStroke(stroke: Stroke): Boolean {
         if (stroke.brush.family == StockBrushes.highlighter()) return true
         val familyId = stroke.brush.family.clientBrushFamilyId
-        if (familyId != null && familyId.contains("highlighter", ignoreCase = true)) return true
+        if (familyId.contains("highlighter", ignoreCase = true)) return true
         // Translucent alpha check (highlighters use 0x55 alpha <= 0x99, whereas pen/marker use 0xFF)
         val alpha = (stroke.brush.colorIntArgb ushr 24) and 0xFF
         return alpha <= 0x99
@@ -215,6 +231,7 @@ class DryInkCanvasView @JvmOverloads constructor(
             if (!isDup) unique.add(s)
         }
         strokes.addAll(unique)
+        spatialIndex.rebuild(strokes)
         invalidate()
     }
 
@@ -233,70 +250,108 @@ class DryInkCanvasView @JvmOverloads constructor(
     }
 
     /**
-     * Erase any stroke near the world coordinate (worldX, worldY).
-     * Returns true if any stroke was removed.
+     * Erases strokes at (worldX, worldY) using the specified [mode].
+     * Returns detailed [EraseModification] with surviving and removed strokes.
      */
-    fun eraseStrokesAt(worldX: Float, worldY: Float, eraseRadius: Float): List<Stroke> {
+    fun eraseStrokesWithDetails(
+        worldX: Float,
+        worldY: Float,
+        eraseRadius: Float,
+        mode: EraserMode = EraserMode.PRECISION
+    ): EraseModification {
+        spatialIndex.query(
+            worldX - eraseRadius,
+            worldY - eraseRadius,
+            worldX + eraseRadius,
+            worldY + eraseRadius,
+            queryCandidates
+        )
+        if (queryCandidates.isEmpty()) {
+            return EraseModification()
+        }
+
         val removed = mutableListOf<Stroke>()
+        val added = mutableListOf<Stroke>()
+        val replacements = mutableListOf<StrokeReplacement>()
         val eraseRadiusSq = eraseRadius * eraseRadius
 
-        val iterator = strokes.iterator()
-        while (iterator.hasNext()) {
-            val stroke = iterator.next()
-            val bounds = stroke.shape.computeBoundingBox()
-            if (bounds != null) {
-                // Quick bounding box rejection
-                if (worldX >= bounds.xMin - eraseRadius &&
-                    worldX <= bounds.xMax + eraseRadius &&
-                    worldY >= bounds.yMin - eraseRadius &&
-                    worldY <= bounds.yMax + eraseRadius
-                ) {
-                    // Check if stroke is small or if eraser is near any sampled point
-                    val boxW = bounds.xMax - bounds.xMin
-                    val boxH = bounds.yMax - bounds.yMin
-                    var hit = (boxW <= eraseRadius * 2.5f && boxH <= eraseRadius * 2.5f)
+        for (i in 0 until queryCandidates.size) {
+            val stroke = queryCandidates[i]
+            if (mode == EraserMode.HIGHLIGHTER && !isHighlighterStroke(stroke)) {
+                continue
+            }
 
-                    if (!hit) {
-                        val inputs = stroke.inputs
-                        val step = (inputs.size / 40).coerceAtLeast(1)
-                        for (i in 0 until inputs.size step step) {
-                            val pt = inputs.get(i)
-                            val dx = pt.x - worldX
-                            val dy = pt.y - worldY
-                            if (dx * dx + dy * dy <= eraseRadiusSq) {
-                                hit = true
-                                break
-                            }
+            if (mode == EraserMode.STROKE) {
+                val bounds = stroke.shape.computeBoundingBox() ?: continue
+                val boxW = bounds.xMax - bounds.xMin
+                val boxH = bounds.yMax - bounds.yMin
+                var hit = (boxW <= eraseRadius * 2.5f && boxH <= eraseRadius * 2.5f)
+                if (!hit) {
+                    val inputs = stroke.inputs
+                    val step = (inputs.size / 40).coerceAtLeast(1)
+                    for (j in 0 until inputs.size step step) {
+                        val pt = inputs.get(j)
+                        val dx = pt.x - worldX
+                        val dy = pt.y - worldY
+                        if (dx * dx + dy * dy <= eraseRadiusSq) {
+                            hit = true
+                            break
                         }
                     }
+                }
+                if (hit) {
+                    removed.add(stroke)
+                    strokes.remove(stroke)
+                    spatialIndex.remove(stroke)
+                    replacements.add(StrokeReplacement(stroke, emptyList()))
+                }
+            } else {
+                // Precision / partial eraser mode
+                val cutResult = PrecisionEraser.cutStroke(stroke, worldX, worldY, eraseRadius)
+                if (cutResult.wasCut) {
+                    removed.add(stroke)
+                    strokes.remove(stroke)
+                    spatialIndex.remove(stroke)
 
-                    if (hit) {
-                        removed.add(stroke)
-                        iterator.remove()
+                    for (surviving in cutResult.survivingStrokes) {
+                        added.add(surviving)
+                        strokes.add(surviving)
+                        spatialIndex.add(surviving)
                     }
+                    replacements.add(StrokeReplacement(stroke, cutResult.survivingStrokes))
                 }
             }
         }
 
-        if (removed.isNotEmpty()) {
+        if (removed.isNotEmpty() || added.isNotEmpty()) {
             darkStrokeCache.clear()
             invalidate()
         }
-        return removed
+        return EraseModification(
+            removedStrokes = removed,
+            addedStrokes = added,
+            replacements = replacements
+        )
+    }
+
+    /**
+     * Erase any stroke near the world coordinate (worldX, worldY).
+     * Returns list of removed strokes for backward compatibility.
+     */
+    fun eraseStrokesAt(worldX: Float, worldY: Float, eraseRadius: Float): List<Stroke> {
+        return eraseStrokesWithDetails(worldX, worldY, eraseRadius, EraserMode.PRECISION).removedStrokes
     }
 
     fun replaceStrokes(oldStrokes: List<Stroke>, newStrokes: List<Stroke>) {
-        if (oldStrokes.isEmpty() || newStrokes.isEmpty() || oldStrokes.size != newStrokes.size) return
+        if (oldStrokes.isEmpty() && newStrokes.isEmpty()) return
         darkStrokeCache.clear()
-        val map = HashMap<Stroke, Stroke>(oldStrokes.size)
-        for (i in oldStrokes.indices) {
-            map[oldStrokes[i]] = newStrokes[i]
+        for (old in oldStrokes) {
+            strokes.remove(old)
+            spatialIndex.remove(old)
         }
-        for (i in strokes.indices) {
-            val replacement = map[strokes[i]]
-            if (replacement != null) {
-                strokes[i] = replacement
-            }
+        for (newS in newStrokes) {
+            strokes.add(newS)
+            spatialIndex.add(newS)
         }
         invalidate()
     }
@@ -309,6 +364,7 @@ class DryInkCanvasView @JvmOverloads constructor(
             android.util.Log.d("ANTIGRAVITY_INK", "  p0: x=${p0.x}, y=${p0.y}, time=${p0.elapsedTimeMillis}, tool=${p0.toolType}, unit=${p0.strokeUnitLengthCm}, p=${p0.pressure}, tilt=${p0.tiltRadians}, ori=${p0.orientationRadians}")
         }
         strokes.add(stroke)
+        spatialIndex.add(stroke)
         invalidate()
     }
 
@@ -322,16 +378,25 @@ class DryInkCanvasView @JvmOverloads constructor(
             }
         }
         strokes.addAll(newStrokes)
+        for (s in newStrokes) {
+            spatialIndex.add(s)
+        }
         invalidate()
     }
 
     fun removeStrokes(strokesToRemove: List<Stroke>) {
-        strokes.removeAll(strokesToRemove)
+        darkStrokeCache.clear()
+        for (s in strokesToRemove) {
+            strokes.remove(s)
+            spatialIndex.remove(s)
+        }
         invalidate()
     }
 
     fun clearAllStrokes() {
         strokes.clear()
+        spatialIndex.clear()
+        darkStrokeCache.clear()
         invalidate()
     }
 }

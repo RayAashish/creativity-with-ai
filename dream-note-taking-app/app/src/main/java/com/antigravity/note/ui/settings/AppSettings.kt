@@ -3,6 +3,7 @@ package com.antigravity.note.ui.settings
 import android.content.Context
 import android.content.SharedPreferences
 import com.antigravity.note.inkengine.canvas.CanvasTool
+import com.antigravity.note.inkengine.eraser.EraserMode
 import com.antigravity.note.inkengine.palm.InputMode
 
 class AppSettings(context: Context) {
@@ -27,6 +28,17 @@ class AppSettings(context: Context) {
     var isHoldToEraseEnabled: Boolean
         get() = prefs.getBoolean("hold_to_erase_enabled", true)
         set(value) = prefs.edit().putBoolean("hold_to_erase_enabled", value).apply()
+
+    var eraserMode: EraserMode
+        get() {
+            val name = prefs.getString("eraser_mode", EraserMode.PRECISION.name)
+            return try {
+                EraserMode.valueOf(name ?: EraserMode.PRECISION.name)
+            } catch (e: Exception) {
+                EraserMode.PRECISION
+            }
+        }
+        set(value) = prefs.edit().putString("eraser_mode", value.name).apply()
 
     var holdToEraseDelayMs: Long
         get() = prefs.getLong("hold_to_erase_delay_ms", 800L)

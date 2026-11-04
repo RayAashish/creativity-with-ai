@@ -36,7 +36,11 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Slider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material.icons.filled.ContentCut
+import androidx.compose.material.icons.filled.DeleteOutline
 import com.antigravity.note.inkengine.audio.AudioStrokeRecorder
+import com.antigravity.note.inkengine.eraser.EraserMode
 import com.antigravity.note.inkengine.export.InkflowManifest
 import com.antigravity.note.inkengine.export.InkflowPageEntry
 import com.antigravity.note.inkengine.export.PageExporter
@@ -329,6 +333,8 @@ fun InkCanvasScreen(
 
     // Page Management & Edit State
     var isEditProblemOpen by remember { mutableStateOf(false) }
+    var currentEraserMode by remember { mutableStateOf(appSettings.eraserMode) }
+    var showEraserMenu by remember { mutableStateOf(false) }
     var showDeletePageDialog by remember { mutableStateOf(false) }
     var showClearCanvasDialog by remember { mutableStateOf(false) }
     var showAddPageMenu by remember { mutableStateOf(false) }
@@ -342,6 +348,7 @@ fun InkCanvasScreen(
         )
         canvasView.holdToEraseEnabled = appSettings.isHoldToEraseEnabled
         canvasView.holdToEraseDelayMs = 800L
+        canvasView.eraserMode = appSettings.eraserMode
         canvasView.setInfiniteCanvasMode(appSettings.isInfiniteCanvas)
         switchToTool(appSettings.selectedTool)
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -713,12 +720,132 @@ fun InkCanvasScreen(
                             isSelected = selectedTool == CanvasTool.HIGHLIGHTER,
                             onClick = { switchToTool(CanvasTool.HIGHLIGHTER) }
                         )
-                        ToolIconButton(
-                            icon = Icons.Default.AutoFixHigh,
-                            label = "Eraser",
-                            isSelected = selectedTool == CanvasTool.STROKE_ERASER,
-                            onClick = { switchToTool(CanvasTool.STROKE_ERASER) }
-                        )
+                        Box {
+                            val eraserIcon = when (currentEraserMode) {
+                                EraserMode.PRECISION -> Icons.Default.ContentCut
+                                EraserMode.STROKE -> Icons.Default.AutoFixHigh
+                                EraserMode.HIGHLIGHTER -> Icons.Default.FormatPaint
+                            }
+                            val eraserLabel = when (currentEraserMode) {
+                                EraserMode.PRECISION -> "Precision"
+                                EraserMode.STROKE -> "Stroke"
+                                EraserMode.HIGHLIGHTER -> "Highlighter"
+                            }
+                            ToolIconButton(
+                                icon = eraserIcon,
+                                label = if (selectedTool == CanvasTool.STROKE_ERASER) "$eraserLabel ▾" else "Eraser",
+                                isSelected = selectedTool == CanvasTool.STROKE_ERASER,
+                                onClick = {
+                                    if (selectedTool == CanvasTool.STROKE_ERASER) {
+                                        showEraserMenu = true
+                                    } else {
+                                        switchToTool(CanvasTool.STROKE_ERASER)
+                                    }
+                                },
+                                onLongClick = {
+                                    showEraserMenu = true
+                                }
+                            )
+
+                            DropdownMenu(
+                                expanded = showEraserMenu,
+                                onDismissRequest = { showEraserMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Column {
+                                            Text("Precision Eraser", fontWeight = FontWeight.Bold)
+                                            Text(
+                                                "Cuts strokes: erases only touched segments",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.ContentCut, contentDescription = null)
+                                    },
+                                    trailingIcon = {
+                                        if (currentEraserMode == EraserMode.PRECISION) {
+                                            Icon(
+                                                Icons.Default.Check,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        currentEraserMode = EraserMode.PRECISION
+                                        appSettings.eraserMode = EraserMode.PRECISION
+                                        canvasView.eraserMode = EraserMode.PRECISION
+                                        switchToTool(CanvasTool.STROKE_ERASER)
+                                        showEraserMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Column {
+                                            Text("Stroke Eraser", fontWeight = FontWeight.Bold)
+                                            Text(
+                                                "Deletes entire touched stroke",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.DeleteOutline, contentDescription = null)
+                                    },
+                                    trailingIcon = {
+                                        if (currentEraserMode == EraserMode.STROKE) {
+                                            Icon(
+                                                Icons.Default.Check,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        currentEraserMode = EraserMode.STROKE
+                                        appSettings.eraserMode = EraserMode.STROKE
+                                        canvasView.eraserMode = EraserMode.STROKE
+                                        switchToTool(CanvasTool.STROKE_ERASER)
+                                        showEraserMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Column {
+                                            Text("Highlighter Only", fontWeight = FontWeight.Bold)
+                                            Text(
+                                                "Only erases highlighter marks",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.FormatPaint, contentDescription = null)
+                                    },
+                                    trailingIcon = {
+                                        if (currentEraserMode == EraserMode.HIGHLIGHTER) {
+                                            Icon(
+                                                Icons.Default.Check,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        currentEraserMode = EraserMode.HIGHLIGHTER
+                                        appSettings.eraserMode = EraserMode.HIGHLIGHTER
+                                        canvasView.eraserMode = EraserMode.HIGHLIGHTER
+                                        switchToTool(CanvasTool.STROKE_ERASER)
+                                        showEraserMenu = false
+                                    }
+                                )
+                            }
+                        }
                         ToolIconButton(
                             icon = Icons.Default.SelectAll,
                             label = "Lasso",
@@ -2818,17 +2945,22 @@ private fun getOrCreateSamplePdf(context: Context): File {
     return file
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun ToolIconButton(
     icon: ImageVector,
     label: String,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null
 ) {
     Surface(
         modifier = Modifier
             .clip(RoundedCornerShape(10.dp))
-            .clickable(onClick = onClick),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
     ) {
         Row(

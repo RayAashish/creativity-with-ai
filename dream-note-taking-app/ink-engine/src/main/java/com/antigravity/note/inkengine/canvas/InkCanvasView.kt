@@ -25,6 +25,7 @@ import androidx.ink.strokes.Stroke
 import androidx.input.motionprediction.MotionEventPredictor
 import com.antigravity.note.document.model.DocumentPage
 import com.antigravity.note.document.model.PaperTemplate
+import com.antigravity.note.inkengine.eraser.EraserMode
 import com.antigravity.note.inkengine.lasso.LassoMode
 import com.antigravity.note.inkengine.lasso.LassoTool
 import com.antigravity.note.inkengine.palm.InputMode
@@ -158,21 +159,16 @@ class InkCanvasView @JvmOverloads constructor(
         isHoldErasing = true
         performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
 
-        // Erase strokes intersecting current stylus tip point
+        // Start scoped erase gesture for stationary hold
         dryInkView.transform.screenToWorld(lastMoveX, lastMoveY, tempPoint)
         val currentScale = dryInkView.transform.scale.coerceAtLeast(0.1f)
-        val eraseRadius = (strokeWidth * 4.5f / currentScale).coerceAtLeast(36f / currentScale)
-        val removed = dryInkView.eraseStrokesAt(tempPoint.x, tempPoint.y, eraseRadius)
-        if (removed.isNotEmpty()) {
-            val actionRecord = StrokeAction(removedStrokes = removed)
-            undoStack.add(actionRecord)
-            redoStack.clear()
-            notifyUndoRedoState()
-            for (r in removed) {
-                onUndoCommitted?.invoke(r)
-            }
-        }
-        dryInkView.invalidate()
+        val eraseRadius = (strokeWidth * 4.5f / currentScale).coerceAtLeast(24f / currentScale)
+
+        val gesture = ActiveEraseGesture()
+        gesture.previousWorldX = tempPoint.x
+        gesture.previousWorldY = tempPoint.y
+        activeEraseGesture = gesture
+        executeEraseStep(tempPoint.x, tempPoint.y, eraseRadius, gesture)
         invalidate()
     }
 
@@ -204,6 +200,78 @@ class InkCanvasView @JvmOverloads constructor(
 
     var onLassoSelectionChanged: ((hasSelection: Boolean) -> Unit)? = null
     private var isTransformingSelection = false
+
+    // Precision & Stroke Eraser Settings and Scoped Gesture Session
+    var eraserMode: EraserMode = EraserMode.PRECISION
+
+    private class ActiveEraseGesture {
+        val strokeToOriginal = HashMap<Stroke, Stroke>()
+        val touchedOriginals = HashSet<Stroke>()
+        var previousWorldX: Float = Float.NaN
+        var previousWorldY: Float = Float.NaN
+    }
+    private var activeEraseGesture: ActiveEraseGesture? = null
+
+    private fun executeEraseSweep(
+        x1: Float, y1: Float,
+        x2: Float, y2: Float,
+        radius: Float,
+        gesture: ActiveEraseGesture
+    ) {
+        val dist = kotlin.math.hypot(x2 - x1, y2 - y1)
+        val stepSize = (radius * 0.5f).coerceAtLeast(10f)
+        val steps = kotlin.math.ceil(dist / stepSize).toInt().coerceAtLeast(1)
+
+        for (s in 1..steps) {
+            val t = s.toFloat() / steps
+            val cx = x1 + t * (x2 - x1)
+            val cy = y1 + t * (y2 - y1)
+            executeEraseStep(cx, cy, radius, gesture)
+        }
+    }
+
+    private fun executeEraseStep(
+        cx: Float, cy: Float,
+        radius: Float,
+        gesture: ActiveEraseGesture
+    ) {
+        val mod = dryInkView.eraseStrokesWithDetails(cx, cy, radius, eraserMode)
+        if (mod.removedStrokes.isEmpty()) return
+
+        for (rep in mod.replacements) {
+            val original = gesture.strokeToOriginal.remove(rep.oldStroke) ?: rep.oldStroke
+            gesture.touchedOriginals.add(original)
+            for (newS in rep.newStrokes) {
+                gesture.strokeToOriginal[newS] = original
+            }
+        }
+    }
+
+    private fun finishEraseGesture() {
+        val gesture = activeEraseGesture ?: return
+        activeEraseGesture = null
+
+        if (gesture.touchedOriginals.isEmpty()) return
+
+        val originals = gesture.touchedOriginals.toList()
+        val surviving = gesture.strokeToOriginal.keys.toList()
+
+        val actionRecord = StrokeAction(
+            addedStrokes = surviving,
+            removedStrokes = originals
+        )
+        undoStack.add(actionRecord)
+        redoStack.clear()
+        notifyUndoRedoState()
+
+        if (surviving.isNotEmpty()) {
+            onStrokesReplaced?.invoke(originals, surviving)
+        } else {
+            for (orig in originals) {
+                onUndoCommitted?.invoke(orig)
+            }
+        }
+    }
 
     // Gesture tracking for 2-finger pan & pinch-zoom
     private var isGestureActive = false
@@ -459,18 +527,36 @@ class InkCanvasView @JvmOverloads constructor(
         val screenY = event.getY(pointerIndex)
 
         if (isEraser) {
-            // Eraser mode: Erase dry strokes intersecting current world point
             dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
+            val worldX = tempPoint.x
+            val worldY = tempPoint.y
             val currentScale = dryInkView.transform.scale.coerceAtLeast(0.1f)
-            val eraseRadius = (strokeWidth * 4f / currentScale).coerceAtLeast(36f / currentScale)
-            val removed = dryInkView.eraseStrokesAt(tempPoint.x, tempPoint.y, eraseRadius)
-            if (removed.isNotEmpty()) {
-                val actionRecord = StrokeAction(removedStrokes = removed)
-                undoStack.add(actionRecord)
-                redoStack.clear()
-                notifyUndoRedoState()
-                for (r in removed) {
-                    onUndoCommitted?.invoke(r)
+            val eraseRadius = (strokeWidth * 4f / currentScale).coerceAtLeast(24f / currentScale)
+
+            when (action) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                    val gesture = ActiveEraseGesture()
+                    gesture.previousWorldX = worldX
+                    gesture.previousWorldY = worldY
+                    activeEraseGesture = gesture
+                    executeEraseStep(worldX, worldY, eraseRadius, gesture)
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val gesture = activeEraseGesture ?: ActiveEraseGesture().also {
+                        it.previousWorldX = worldX
+                        it.previousWorldY = worldY
+                        activeEraseGesture = it
+                    }
+                    if (!gesture.previousWorldX.isNaN()) {
+                        executeEraseSweep(gesture.previousWorldX, gesture.previousWorldY, worldX, worldY, eraseRadius, gesture)
+                    } else {
+                        executeEraseStep(worldX, worldY, eraseRadius, gesture)
+                    }
+                    gesture.previousWorldX = worldX
+                    gesture.previousWorldY = worldY
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
+                    finishEraseGesture()
                 }
             }
             return
@@ -571,19 +657,22 @@ class InkCanvasView @JvmOverloads constructor(
                     lastMoveX = screenX
                     lastMoveY = screenY
                     dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
+                    val worldX = tempPoint.x
+                    val worldY = tempPoint.y
                     val currentScale = dryInkView.transform.scale.coerceAtLeast(0.1f)
-                    val eraseRadius = (strokeWidth * 4.5f / currentScale).coerceAtLeast(36f / currentScale)
-                    val removed = dryInkView.eraseStrokesAt(tempPoint.x, tempPoint.y, eraseRadius)
-                    if (removed.isNotEmpty()) {
-                        val actionRecord = StrokeAction(removedStrokes = removed)
-                        undoStack.add(actionRecord)
-                        redoStack.clear()
-                        notifyUndoRedoState()
-                        for (r in removed) {
-                            onUndoCommitted?.invoke(r)
-                        }
+                    val eraseRadius = (strokeWidth * 4.5f / currentScale).coerceAtLeast(24f / currentScale)
+                    val gesture = activeEraseGesture ?: ActiveEraseGesture().also {
+                        it.previousWorldX = worldX
+                        it.previousWorldY = worldY
+                        activeEraseGesture = it
                     }
-                    dryInkView.invalidate()
+                    if (!gesture.previousWorldX.isNaN()) {
+                        executeEraseSweep(gesture.previousWorldX, gesture.previousWorldY, worldX, worldY, eraseRadius, gesture)
+                    } else {
+                        executeEraseStep(worldX, worldY, eraseRadius, gesture)
+                    }
+                    gesture.previousWorldX = worldX
+                    gesture.previousWorldY = worldY
                     invalidate()
                     return
                 }
@@ -618,6 +707,7 @@ class InkCanvasView @JvmOverloads constructor(
                 removeCallbacks(holdToEraseRunnable)
                 if (isHoldErasing) {
                     isHoldErasing = false
+                    finishEraseGesture()
                     dryInkView.invalidate()
                     invalidate()
                     return
@@ -702,19 +792,40 @@ class InkCanvasView @JvmOverloads constructor(
         val screenX = event.getX(pointerIndex)
         val screenY = event.getY(pointerIndex)
 
+        dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
+        val worldX = tempPoint.x
+        val worldY = tempPoint.y
+        val currentScale = dryInkView.transform.scale.coerceAtLeast(0.1f)
+        val eraseRadius = (44f / currentScale).coerceAtLeast(24f / currentScale)
+
         when (action) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                 isFingerErasing = true
                 fingerEraseScreenX = screenX
                 fingerEraseScreenY = screenY
-                performFingerEraseAt(screenX, screenY)
+                val gesture = ActiveEraseGesture()
+                gesture.previousWorldX = worldX
+                gesture.previousWorldY = worldY
+                activeEraseGesture = gesture
+                executeEraseStep(worldX, worldY, eraseRadius, gesture)
                 invalidate()
             }
             MotionEvent.ACTION_MOVE -> {
                 if (isFingerErasing) {
                     fingerEraseScreenX = screenX
                     fingerEraseScreenY = screenY
-                    performFingerEraseAt(screenX, screenY)
+                    val gesture = activeEraseGesture ?: ActiveEraseGesture().also {
+                        it.previousWorldX = worldX
+                        it.previousWorldY = worldY
+                        activeEraseGesture = it
+                    }
+                    if (!gesture.previousWorldX.isNaN()) {
+                        executeEraseSweep(gesture.previousWorldX, gesture.previousWorldY, worldX, worldY, eraseRadius, gesture)
+                    } else {
+                        executeEraseStep(worldX, worldY, eraseRadius, gesture)
+                    }
+                    gesture.previousWorldX = worldX
+                    gesture.previousWorldY = worldY
                     invalidate()
                 }
             }
@@ -722,23 +833,8 @@ class InkCanvasView @JvmOverloads constructor(
                 isFingerErasing = false
                 fingerEraseScreenX = 0f
                 fingerEraseScreenY = 0f
+                finishEraseGesture()
                 invalidate()
-            }
-        }
-    }
-
-    private fun performFingerEraseAt(screenX: Float, screenY: Float) {
-        dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
-        val currentScale = dryInkView.transform.scale.coerceAtLeast(0.1f)
-        val eraseRadius = (44f / currentScale).coerceAtLeast(24f / currentScale)
-        val removed = dryInkView.eraseStrokesAt(tempPoint.x, tempPoint.y, eraseRadius)
-        if (removed.isNotEmpty()) {
-            val actionRecord = StrokeAction(removedStrokes = removed)
-            undoStack.add(actionRecord)
-            redoStack.clear()
-            notifyUndoRedoState()
-            for (r in removed) {
-                onUndoCommitted?.invoke(r)
             }
         }
     }
