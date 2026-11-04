@@ -22,6 +22,15 @@ data class EncryptionConfig(
 )
 
 @Serializable
+data class GitHubRepoPermissions(
+    val admin: Boolean = false,
+    val maintain: Boolean = false,
+    val push: Boolean = true,
+    val triage: Boolean = false,
+    val pull: Boolean = true
+)
+
+@Serializable
 data class GitHubRepoSummary(
     val id: Long = 0L,
     val name: String,
@@ -29,7 +38,8 @@ data class GitHubRepoSummary(
     val private: Boolean,
     @SerialName("default_branch") val defaultBranch: String = "main",
     val description: String? = null,
-    val owner: GitHubRepoOwner? = null
+    val owner: GitHubRepoOwner? = null,
+    val permissions: GitHubRepoPermissions? = null
 )
 
 @Serializable

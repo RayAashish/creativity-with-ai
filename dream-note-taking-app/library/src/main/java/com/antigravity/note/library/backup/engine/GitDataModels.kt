@@ -55,3 +55,20 @@ data class CreateTreeResponse(
     val sha: String,
     val url: String? = null
 )
+
+@Serializable
+data class GitTreeDetailItem(
+    val path: String,
+    val mode: String = "100644",
+    val type: String = "blob",
+    val sha: String,
+    val size: Long? = null,
+    val url: String? = null
+)
+
+@Serializable
+data class GitTreeDetailResponse(
+    val sha: String,
+    val tree: List<GitTreeDetailItem> = emptyList(),
+    val truncated: Boolean = false
+)

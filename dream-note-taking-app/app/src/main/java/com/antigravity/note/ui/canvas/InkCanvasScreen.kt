@@ -451,6 +451,17 @@ fun InkCanvasScreen(
         }
     }
 
+    var githubBackupIdleJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    val scheduleSettledIdleGitHubBackup: () -> Unit = {
+        if (tokenStorage.getSelectedRepo() != null) {
+            githubBackupIdleJob?.cancel()
+            githubBackupIdleJob = scope.launch {
+                kotlinx.coroutines.delay(120_000L) // 2 minutes settled idle
+                com.antigravity.note.library.backup.worker.BackupWorker.enqueueImmediate(context)
+            }
+        }
+    }
+
     // Register canvas callbacks
     remember(canvasView, docManager) {
         canvasView.onUndoRedoStateChanged = { u, r ->
@@ -459,18 +470,22 @@ fun InkCanvasScreen(
         }
         canvasView.onStrokeCommitted = { stroke ->
             docManager.onStrokeCommitted(stroke)
+            scheduleSettledIdleGitHubBackup()
             if (isRecordingAudio) {
                 audioRecorder.recordStrokeTiming(docManager.currentPage.value?.strokes?.size ?: 0)
             }
         }
         canvasView.onUndoCommitted = { stroke ->
             docManager.onUndoCommitted(stroke)
+            scheduleSettledIdleGitHubBackup()
         }
         canvasView.onClearCommitted = {
             docManager.onClearCommitted()
+            scheduleSettledIdleGitHubBackup()
         }
         canvasView.onStrokesReplaced = { oldStrokes, newStrokes ->
             docManager.onStrokesReplaced(oldStrokes, newStrokes)
+            scheduleSettledIdleGitHubBackup()
         }
         canvasView.onLassoSelectionChanged = { selected ->
             hasLassoSelection = selected
@@ -486,6 +501,7 @@ fun InkCanvasScreen(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
+            githubBackupIdleJob?.cancel()
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }

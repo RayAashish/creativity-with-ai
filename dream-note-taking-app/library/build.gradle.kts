@@ -52,6 +52,7 @@ android {
 
 dependencies {
     implementation(project(":document"))
+    implementation(project(":ink-engine"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

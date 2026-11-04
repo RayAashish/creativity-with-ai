@@ -19,6 +19,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudSync
@@ -26,6 +28,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -68,8 +71,17 @@ import com.antigravity.note.library.backup.auth.AuthState
 import com.antigravity.note.library.backup.auth.EncryptedTokenStorage
 import com.antigravity.note.library.backup.auth.GitHubDeviceFlowClient
 import com.antigravity.note.library.backup.engine.BackupResult
+import com.antigravity.note.library.backup.engine.BackupEngine
+import com.antigravity.note.library.backup.engine.GitHubGitDataClient
+import com.antigravity.note.library.backup.engine.SlimDownExecutionResult
+import com.antigravity.note.library.backup.engine.SlimDownScanResult
 import com.antigravity.note.library.backup.repo.GitHubRepoManager
+import com.antigravity.note.library.backup.repo.RepoAvailability
 import com.antigravity.note.library.backup.worker.BackupWorker
+import com.antigravity.note.library.db.NoteDatabase
+import com.antigravity.note.document.storage.PageRepository
+import java.io.File
+import java.util.Locale
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -88,9 +100,12 @@ fun GitHubBackupDialog(
 
     var authState by remember { mutableStateOf<AuthState>(AuthState.SignedOut) }
     var selectedRepo by remember { mutableStateOf(tokenStorage.getSelectedRepo()) }
+    var repoNameInput by remember { mutableStateOf(selectedRepo?.second ?: GitHubRepoManager.DEFAULT_REPO_NAME) }
+    var repoAvailability by remember { mutableStateOf<RepoAvailability>(RepoAvailability.Idle) }
 
     var wifiOnly by remember { mutableStateOf(tokenStorage.isWifiOnly()) }
     var chargingOnly by remember { mutableStateOf(tokenStorage.isChargingOnly()) }
+    var exportSvg by remember { mutableStateOf(tokenStorage.isExportSvg()) }
     var encryptionEnabled by remember { mutableStateOf(tokenStorage.isEncryptionEnabled()) }
     var mirrorDeletions by remember { mutableStateOf(tokenStorage.isMirrorDeletions()) }
     var passphraseInput by remember { mutableStateOf(tokenStorage.getEncryptionPassphrase() ?: "") }
@@ -102,9 +117,44 @@ fun GitHubBackupDialog(
     var showCompactHistoryDialog by remember { mutableStateOf(false) }
     var isCompacting by remember { mutableStateOf(false) }
 
+    var showSlimDownDialog by remember { mutableStateOf(false) }
+    var isScanningSlimDown by remember { mutableStateOf(false) }
+    var isExecutingSlimDown by remember { mutableStateOf(false) }
+    var slimDownScanResult by remember { mutableStateOf<SlimDownScanResult?>(null) }
+    var slimDownExecutionResult by remember { mutableStateOf<SlimDownExecutionResult?>(null) }
+
+    val engine = remember(context) {
+        val database = NoteDatabase.getInstance(context)
+        val rootDir = File(context.filesDir, "notebooks")
+        val pageRepository = PageRepository(rootDir)
+        val okHttpClient = okhttp3.OkHttpClient.Builder().build()
+        val gitDataClient = GitHubGitDataClient(tokenStorage, okHttpClient)
+        BackupEngine(database, pageRepository, tokenStorage, gitDataClient)
+    }
+
     LaunchedEffect(Unit) {
         authState = deviceFlowClient.getCurrentAuthState()
-        selectedRepo = tokenStorage.getSelectedRepo()
+        val repo = tokenStorage.getSelectedRepo()
+        selectedRepo = repo
+        if (repo != null) {
+            repoNameInput = repo.second
+        }
+    }
+
+    LaunchedEffect(repoNameInput, authState) {
+        val owner = (authState as? AuthState.Authenticated)?.username
+        if (owner.isNullOrBlank() || repoNameInput.isBlank()) {
+            repoAvailability = RepoAvailability.Idle
+            return@LaunchedEffect
+        }
+        val err = GitHubRepoManager.validateRepoName(repoNameInput)
+        if (err != null) {
+            repoAvailability = RepoAvailability.InvalidName(err)
+            return@LaunchedEffect
+        }
+        repoAvailability = RepoAvailability.Checking
+        kotlinx.coroutines.delay(400L)
+        repoAvailability = repoManager.checkRepoAvailability(owner, repoNameInput.trim())
     }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -316,6 +366,7 @@ fun GitHubBackupDialog(
 
                 // Section 2: Repository Configuration
                 if (authState is AuthState.Authenticated) {
+                    val currentOwner = (authState as AuthState.Authenticated).username
                     Card(
                         shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
@@ -324,7 +375,7 @@ fun GitHubBackupDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
                                 text = "Target Repository",
@@ -335,12 +386,15 @@ fun GitHubBackupDialog(
 
                             if (selectedRepo != null) {
                                 val (owner, repo, branch) = selectedRepo!!
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFFE8F5E9),
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(10.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
@@ -352,49 +406,141 @@ fun GitHubBackupDialog(
                                         )
                                         Column {
                                             Text(
-                                                text = "$owner/$repo",
+                                                text = "Active: $owner/$repo",
                                                 fontWeight = FontWeight.Bold,
-                                                fontSize = 15.sp
+                                                fontSize = 14.sp,
+                                                color = Color(0xFF1B5E20)
                                             )
                                             Text(
                                                 text = "Branch: $branch (Private)",
-                                                fontSize = 12.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                fontSize = 11.sp,
+                                                color = Color(0xFF2E7D32)
                                             )
                                         }
                                     }
                                 }
-                            } else {
-                                Text(
-                                    text = "No backup repository linked.",
-                                    fontSize = 13.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Button(
-                                    onClick = {
-                                        scope.launch {
-                                            val createRes = repoManager.createBackupRepo()
-                                            createRes.fold(
-                                                onSuccess = { created ->
+                            }
+
+                            // Editable repo name input
+                            OutlinedTextField(
+                                value = repoNameInput,
+                                onValueChange = { repoNameInput = it.trim() },
+                                label = { Text("Backup Repository Name") },
+                                prefix = {
+                                    Text(
+                                        text = "$currentOwner/",
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            // Availability Status
+                            when (val avail = repoAvailability) {
+                                is RepoAvailability.Checking -> {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                        Text("Checking GitHub repository...", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                                is RepoAvailability.Existing -> {
+                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(16.dp))
+                                            Text(
+                                                text = "Found existing repo (will sync)",
+                                                fontSize = 12.sp,
+                                                color = Color(0xFF2E7D32),
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                        if (selectedRepo?.second != repoNameInput.trim()) {
+                                            Button(
+                                                onClick = {
+                                                    tokenStorage.saveSelectedRepo(currentOwner, repoNameInput.trim(), "main")
                                                     selectedRepo = tokenStorage.getSelectedRepo()
-                                                    statusMessage = "Created private repository ${created.fullName}!"
+                                                    statusMessage = "Switched target repo to $currentOwner/${repoNameInput.trim()}"
                                                     isSuccessMessage = true
                                                 },
-                                                onFailure = { err ->
-                                                    statusMessage = "Error: ${err.message}"
-                                                    isSuccessMessage = false
-                                                }
-                                            )
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Text("Use This Repository")
+                                            }
                                         }
                                     }
-                                ) {
-                                    Text("Create Private Backup Repo (inkflow-notes-backup)")
                                 }
+                                is RepoAvailability.NotExistsCanCreate -> {
+                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                            Text(
+                                                text = "New repo (will create as private)",
+                                                fontSize = 12.sp,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                        Button(
+                                            onClick = {
+                                                scope.launch {
+                                                    val createRes = repoManager.createBackupRepo(name = repoNameInput.trim(), isPrivate = true)
+                                                    createRes.fold(
+                                                        onSuccess = { created ->
+                                                            selectedRepo = tokenStorage.getSelectedRepo()
+                                                            statusMessage = "Created private repository ${created.fullName}!"
+                                                            isSuccessMessage = true
+                                                        },
+                                                        onFailure = { err ->
+                                                            statusMessage = "Failed: ${err.message}"
+                                                            isSuccessMessage = false
+                                                        }
+                                                    )
+                                                }
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text("Create & Link Private Repo (${repoNameInput.trim()})")
+                                        }
+                                    }
+                                }
+                                is RepoAvailability.InvalidName -> {
+                                    Text(
+                                        text = "⚠️ ${avail.reason}",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                                is RepoAvailability.AccessDenied -> {
+                                    Text(
+                                        text = "⚠️ ${avail.message}",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                                is RepoAvailability.Error -> {
+                                    Text(
+                                        text = "⚠️ ${avail.message}",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                                is RepoAvailability.Idle -> {}
                             }
                         }
                     }
 
-                    // Section 3: Sync & Storage Limits (Step 10)
+                    // Section 3: Sync & Storage Limits
                     Card(
                         shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
@@ -432,6 +578,29 @@ fun GitHubBackupDialog(
                             )
 
                             Spacer(modifier = Modifier.height(4.dp))
+                            OutlinedButton(
+                                onClick = {
+                                    showSlimDownDialog = true
+                                    slimDownScanResult = null
+                                    slimDownExecutionResult = null
+                                    scope.launch {
+                                        isScanningSlimDown = true
+                                        val scanRes = engine.scanForSlimDown()
+                                        slimDownScanResult = scanRes.getOrNull()
+                                        if (scanRes.isFailure) {
+                                            statusMessage = "Scan error: ${scanRes.exceptionOrNull()?.message}"
+                                            isSuccessMessage = false
+                                        }
+                                        isScanningSlimDown = false
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Default.Speed, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Slim Down Repository (Remove legacy SVGs)")
+                            }
+
                             OutlinedButton(
                                 onClick = { showCompactHistoryDialog = true },
                                 modifier = Modifier.fillMaxWidth()
@@ -491,6 +660,24 @@ fun GitHubBackupDialog(
                                     onCheckedChange = {
                                         chargingOnly = it
                                         tokenStorage.setChargingOnly(it)
+                                    }
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Also export vector SVG (slow, heavy)", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                    Text("WebP previews (50–150 KB) active by default. Turn on only if raw XML vectors are needed.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Switch(
+                                    checked = exportSvg,
+                                    onCheckedChange = {
+                                        exportSvg = it
+                                        tokenStorage.setExportSvg(it)
                                     }
                                 )
                             }
@@ -643,6 +830,97 @@ fun GitHubBackupDialog(
             dismissButton = {
                 TextButton(onClick = { showCompactHistoryDialog = false }) {
                     Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Slim Down Repository Dialog
+    if (showSlimDownDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isExecutingSlimDown) showSlimDownDialog = false },
+            icon = { Icon(Icons.Default.Speed, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            title = { Text("Slim Down Repository") },
+            text = {
+                when {
+                    isScanningSlimDown -> {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            Text("Scanning remote repository for legacy SVGs...")
+                        }
+                    }
+                    isExecutingSlimDown -> {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            Text("Deleting legacy SVGs & updating commit...")
+                        }
+                    }
+                    slimDownExecutionResult != null -> {
+                        val res = slimDownExecutionResult!!
+                        val mb = String.format(Locale.US, "%.1f", res.reclaimedBytes / (1024f * 1024f))
+                        Text(
+                            "🎉 Repository successfully slimmed down!\n\n" +
+                            "• Removed ${res.removedSvgCount} bloated SVG files\n" +
+                            "• Reclaimed ~$mb MB remote quota\n" +
+                            "• Notes now load instantly on GitHub via fast WebP previews"
+                        )
+                    }
+                    slimDownScanResult != null -> {
+                        val scan = slimDownScanResult!!
+                        if (scan.svgCount == 0) {
+                            Text("No legacy SVG files found! Your repository is already lean and optimized.")
+                        } else {
+                            val mb = String.format(Locale.US, "%.1f", scan.totalSvgBytes / (1024f * 1024f))
+                            Text(
+                                "Found ${scan.svgCount} legacy vector SVG files taking ~$mb MB on GitHub.\n\n" +
+                                "Slimming down will remove these heavy files, push lightweight WebP previews (50–150 KB) for all pages, and reclaim ~$mb MB of quota."
+                            )
+                        }
+                    }
+                    else -> {
+                        Text("Ready to scan repository.")
+                    }
+                }
+            },
+            confirmButton = {
+                if (slimDownExecutionResult != null || (slimDownScanResult != null && slimDownScanResult?.svgCount == 0)) {
+                    Button(onClick = { showSlimDownDialog = false }) {
+                        Text("Done")
+                    }
+                } else if (slimDownScanResult != null && slimDownScanResult!!.svgCount > 0) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                isExecutingSlimDown = true
+                                val execRes = engine.executeSlimDown()
+                                slimDownExecutionResult = execRes.getOrNull()
+                                isExecutingSlimDown = false
+                                if (execRes.isSuccess) {
+                                    statusMessage = "Slim down completed! Reclaimed storage."
+                                    isSuccessMessage = true
+                                } else {
+                                    statusMessage = "Slim down error: ${execRes.exceptionOrNull()?.message}"
+                                    isSuccessMessage = false
+                                }
+                            }
+                        },
+                        enabled = !isExecutingSlimDown
+                    ) {
+                        Text("Slim Down Now")
+                    }
+                }
+            },
+            dismissButton = {
+                if (!isExecutingSlimDown && slimDownExecutionResult == null && (slimDownScanResult == null || slimDownScanResult!!.svgCount > 0)) {
+                    TextButton(onClick = { showSlimDownDialog = false }) {
+                        Text("Cancel")
+                    }
                 }
             }
         )

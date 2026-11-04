@@ -127,4 +127,121 @@ class GitHubRepoManagerTest {
         assertTrue(result.isSuccess)
         assertTrue(putCalled)
     }
+
+    @Test
+    fun testValidateRepoName() {
+        // Valid names
+        assertEquals(null, GitHubRepoManager.validateRepoName("inkflow-notes-backup"))
+        assertEquals(null, GitHubRepoManager.validateRepoName("DSA_Java-2026.v1"))
+        assertEquals(null, GitHubRepoManager.validateRepoName("notes"))
+
+        // Invalid names
+        assertEquals("Repository name cannot be empty", GitHubRepoManager.validateRepoName(""))
+        assertEquals("Repository name cannot be empty", GitHubRepoManager.validateRepoName("   "))
+        assertEquals("Invalid repository name", GitHubRepoManager.validateRepoName("."))
+        assertEquals("Invalid repository name", GitHubRepoManager.validateRepoName(".."))
+        assertTrue(GitHubRepoManager.validateRepoName("my notes backup")?.contains("Only letters") == true)
+        assertTrue(GitHubRepoManager.validateRepoName("repo/slash")?.contains("Only letters") == true)
+        val veryLong = "a".repeat(101)
+        assertTrue(GitHubRepoManager.validateRepoName(veryLong)?.contains("Name too long") == true)
+    }
+
+    @Test
+    fun testCheckRepoAvailabilityExistingRepo() = runBlocking {
+        val mockInterceptor = Interceptor { chain ->
+            val request = chain.request()
+            if (request.url.encodedPath == "/repos/octocat/inkflow-notes-backup") {
+                Response.Builder()
+                    .request(request)
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .body(
+                        """
+                        {
+                            "id": 999,
+                            "name": "inkflow-notes-backup",
+                            "full_name": "octocat/inkflow-notes-backup",
+                            "private": true,
+                            "permissions": { "push": true }
+                        }
+                        """.trimIndent().toResponseBody("application/json".toMediaType())
+                    )
+                    .build()
+            } else {
+                chain.proceed(request)
+            }
+        }
+
+        val client = OkHttpClient.Builder().addInterceptor(mockInterceptor).build()
+        val repoManager = GitHubRepoManager(
+            tokenStorage = fakeStorage,
+            okHttpClient = client,
+            ioDispatcher = kotlinx.coroutines.Dispatchers.Unconfined
+        )
+
+        val avail = repoManager.checkRepoAvailability("octocat", "inkflow-notes-backup")
+        assertTrue(avail is com.antigravity.note.library.backup.repo.RepoAvailability.Existing)
+        val existing = avail as com.antigravity.note.library.backup.repo.RepoAvailability.Existing
+        assertEquals("octocat/inkflow-notes-backup", existing.fullName)
+        assertTrue(existing.isPrivate)
+        assertTrue(existing.hasPushAccess)
+    }
+
+    @Test
+    fun testCheckRepoAvailabilityNotExistsCanCreate() = runBlocking {
+        val mockInterceptor = Interceptor { chain ->
+            val request = chain.request()
+            Response.Builder()
+                .request(request)
+                .protocol(Protocol.HTTP_1_1)
+                .code(404)
+                .message("Not Found")
+                .body("""{"message": "Not Found"}""".toResponseBody("application/json".toMediaType()))
+                .build()
+        }
+
+        val client = OkHttpClient.Builder().addInterceptor(mockInterceptor).build()
+        val repoManager = GitHubRepoManager(
+            tokenStorage = fakeStorage,
+            okHttpClient = client,
+            ioDispatcher = kotlinx.coroutines.Dispatchers.Unconfined
+        )
+
+        val avail = repoManager.checkRepoAvailability("octocat", "brand-new-repo")
+        assertTrue(avail is com.antigravity.note.library.backup.repo.RepoAvailability.NotExistsCanCreate)
+    }
+
+    @Test
+    fun testCheckRepoAvailabilityAccessDenied() = runBlocking {
+        val mockInterceptor = Interceptor { chain ->
+            val request = chain.request()
+            Response.Builder()
+                .request(request)
+                .protocol(Protocol.HTTP_1_1)
+                .code(403)
+                .message("Forbidden")
+                .body("""{"message": "Forbidden"}""".toResponseBody("application/json".toMediaType()))
+                .build()
+        }
+
+        val client = OkHttpClient.Builder().addInterceptor(mockInterceptor).build()
+        val repoManager = GitHubRepoManager(
+            tokenStorage = fakeStorage,
+            okHttpClient = client,
+            ioDispatcher = kotlinx.coroutines.Dispatchers.Unconfined
+        )
+
+        val avail = repoManager.checkRepoAvailability("octocat", "secret-private-repo")
+        assertTrue(avail is com.antigravity.note.library.backup.repo.RepoAvailability.AccessDenied)
+    }
+
+    @Test
+    fun testTokenStorageExportSvgDefaultAndToggle() {
+        org.junit.Assert.assertFalse("SVG export must be disabled by default", fakeStorage.isExportSvg())
+        fakeStorage.setExportSvg(true)
+        assertTrue(fakeStorage.isExportSvg())
+        fakeStorage.setExportSvg(false)
+        org.junit.Assert.assertFalse(fakeStorage.isExportSvg())
+    }
 }

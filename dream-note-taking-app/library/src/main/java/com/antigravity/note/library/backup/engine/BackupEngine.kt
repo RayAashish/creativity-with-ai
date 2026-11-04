@@ -150,14 +150,22 @@ class BackupEngine(
                 treeEntries.add(GitTreeEntry(path = item.path, sha = blobSha))
                 processedCleanPaths.add(item.path)
 
-                // If this is a page, also generate readable Markdown, SVG vector graphics & companion MD
+                // If this is a page, also generate readable Markdown, lightweight WebP preview & companion MD
                 if (item.path.startsWith("notebooks/") && item.path.endsWith(".inkflow") && !isEncryptionEnabled) {
                     val mdEntry = generateMarkdownTreeEntry(item.path, owner, repo)
                     if (mdEntry != null) {
                         treeEntries.add(mdEntry)
                     }
-                    val svgEntries = generateSvgTreeEntries(item.path, owner, repo)
-                    treeEntries.addAll(svgEntries)
+
+                    // Default lightweight raster preview (50–150 KB)
+                    val webpEntries = generateWebpTreeEntries(item.path, owner, repo)
+                    treeEntries.addAll(webpEntries)
+
+                    // Optional heavy SVG (slow, heavy) - only if opt-in enabled
+                    if (tokenStorage.isExportSvg()) {
+                        val svgEntries = generateSvgTreeEntries(item.path, owner, repo)
+                        treeEntries.addAll(svgEntries)
+                    }
 
                     val notebookMd = generateNotebookPageMdEntry(item.path, owner, repo)
                     if (notebookMd != null) {
@@ -314,6 +322,51 @@ class BackupEngine(
         }
     }
 
+    private suspend fun generateWebpTreeEntries(
+        inkflowPath: String,
+        owner: String,
+        repo: String
+    ): List<GitTreeEntry> {
+        val entries = mutableListOf<GitTreeEntry>()
+        try {
+            val parts = inkflowPath.split("/")
+            if (parts.size < 4) return emptyList()
+            val notebookId = parts[1]
+            val pageId = parts[3].removeSuffix(".inkflow")
+
+            val (docPage, _) = pageRepository.loadPage(notebookId, pageId)
+            val baos = java.io.ByteArrayOutputStream()
+            com.antigravity.note.inkengine.export.PageExporter.exportToWebp(
+                page = docPage,
+                outputStream = baos,
+                maxDimension = 1920,
+                quality = 85
+            )
+            val webpBytes = baos.toByteArray()
+
+            val blobSha = gitDataClient.uploadBlob(
+                owner = owner,
+                repo = repo,
+                contentBytes = webpBytes,
+                isBinary = true
+            ).getOrNull() ?: return emptyList()
+
+            // 1. In notebook pages alongside .inkflow: notebooks/<nbId>/pages/<pageId>.webp
+            val nbWebpPath = "notebooks/$notebookId/pages/$pageId.webp"
+            entries.add(GitTreeEntry(path = nbWebpPath, sha = blobSha))
+
+            // 2. In exports alongside .md: exports/<NotebookTitle>/<SafeTitle>.webp
+            val pageEntity = pageDao.getPageById(pageId)
+            val notebook = notebookDao.getNotebookById(notebookId)
+            if (pageEntity != null && notebook != null) {
+                val safeNb = MarkdownExporter.sanitizeName(notebook.title)
+                val safeTitle = MarkdownExporter.sanitizeName(pageEntity.title)
+                entries.add(GitTreeEntry(path = "exports/$safeNb/$safeTitle.webp", sha = blobSha))
+            }
+        } catch (_: Exception) {}
+        return entries
+    }
+
     private suspend fun generateSvgTreeEntries(
         inkflowPath: String,
         owner: String,
@@ -386,10 +439,11 @@ class BackupEngine(
                 }
             }
             sb.append("## Handwritten Note & Diagram\n\n")
-            sb.append("![Handwritten Vector Note]($pageId.svg)\n\n")
-            sb.append("> *Click [`$pageId.svg`]($pageId.svg) to view the vector canvas directly on GitHub.*\n\n")
-            sb.append("---\n")
-            sb.append("*Lossless binary backup stored in [`$pageId.inkflow`]($pageId.inkflow)*\n")
+            sb.append("![Handwritten Note Preview]($pageId.webp)\n\n")
+            if (tokenStorage.isExportSvg()) {
+                sb.append("> *Vector SVG: [`$pageId.svg`]($pageId.svg)*  \n")
+            }
+            sb.append("> *Lossless vector binary backup stored in [`$pageId.inkflow`]($pageId.inkflow)*\n")
 
             val mdPath = "notebooks/$notebookId/pages/$pageId.md"
             val blobSha = gitDataClient.uploadBlob(
@@ -439,7 +493,10 @@ class BackupEngine(
                             val safeTitle = MarkdownExporter.sanitizeName(p.title)
                             val diffBadge = if (p.difficulty != null) " `[${p.difficulty}]`" else ""
                             sb.append("- 📝 **[").append(p.title).append("](exports/").append(safeNb).append("/").append(safeTitle).append(".md)**").append(diffBadge)
-                            sb.append(" &nbsp;•&nbsp; [🖼️ Vector SVG](notebooks/").append(nb.notebookId).append("/pages/").append(p.pageId).append(".svg)")
+                            sb.append(" &nbsp;•&nbsp; [🖼️ Preview](notebooks/").append(nb.notebookId).append("/pages/").append(p.pageId).append(".webp)")
+                            if (tokenStorage.isExportSvg()) {
+                                sb.append(" &nbsp;•&nbsp; [📐 SVG](notebooks/").append(nb.notebookId).append("/pages/").append(p.pageId).append(".svg)")
+                            }
                             sb.append("\n")
                         }
                         sb.append("\n")
@@ -458,7 +515,10 @@ class BackupEngine(
                         val safeNb = MarkdownExporter.sanitizeName(nb.title)
                         val safeTitle = MarkdownExporter.sanitizeName(p.title)
                         sb.append("- 📝 **[").append(p.title).append("](exports/").append(safeNb).append("/").append(safeTitle).append(".md)**")
-                        sb.append(" &nbsp;•&nbsp; [🖼️ Vector SVG](notebooks/").append(nb.notebookId).append("/pages/").append(p.pageId).append(".svg)")
+                        sb.append(" &nbsp;•&nbsp; [🖼️ Preview](notebooks/").append(nb.notebookId).append("/pages/").append(p.pageId).append(".webp)")
+                        if (tokenStorage.isExportSvg()) {
+                            sb.append(" &nbsp;•&nbsp; [📐 SVG](notebooks/").append(nb.notebookId).append("/pages/").append(p.pageId).append(".svg)")
+                        }
                         sb.append("\n")
                     }
                     sb.append("\n")
@@ -477,4 +537,121 @@ class BackupEngine(
             return null
         }
     }
+
+    /**
+     * Scan remote repository tree for legacy heavyweight SVGs.
+     */
+    suspend fun scanForSlimDown(): Result<SlimDownScanResult> = withContext(ioDispatcher) {
+        try {
+            val repoSelection = tokenStorage.getSelectedRepo()
+                ?: return@withContext Result.failure(IllegalStateException("No backup repository configured in settings."))
+            val (owner, repo, branch) = repoSelection
+
+            val branchRef = gitDataClient.getBranchHeadRef(owner, repo, branch).getOrThrow()
+            val commit = gitDataClient.getCommit(owner, repo, branchRef.`object`.sha).getOrThrow()
+            val treeRes = gitDataClient.getTreeRecursive(owner, repo, commit.tree.sha).getOrThrow()
+
+            val svgItems = treeRes.tree.filter { it.path.endsWith(".svg", ignoreCase = true) }
+            val totalBytes = svgItems.sumOf { it.size ?: 0L }
+            Result.success(
+                SlimDownScanResult(
+                    svgCount = svgItems.size,
+                    totalSvgBytes = totalBytes,
+                    svgPaths = svgItems.map { it.path }
+                )
+            )
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Delete legacy remote SVGs, push lightweight WebP previews for all active pages, and update commit.
+     */
+    suspend fun executeSlimDown(): Result<SlimDownExecutionResult> = withContext(ioDispatcher) {
+        try {
+            val repoSelection = tokenStorage.getSelectedRepo()
+                ?: return@withContext Result.failure(IllegalStateException("No backup repository configured in settings."))
+            val (owner, repo, branch) = repoSelection
+
+            val branchRef = gitDataClient.getBranchHeadRef(owner, repo, branch).getOrThrow()
+            val remoteHeadSha = branchRef.`object`.sha
+            val commit = gitDataClient.getCommit(owner, repo, remoteHeadSha).getOrThrow()
+            val baseTreeSha = commit.tree.sha
+            val treeRes = gitDataClient.getTreeRecursive(owner, repo, baseTreeSha).getOrThrow()
+
+            val svgItems = treeRes.tree.filter { it.path.endsWith(".svg", ignoreCase = true) }
+            if (svgItems.isEmpty()) {
+                return@withContext Result.success(SlimDownExecutionResult(0, 0L, 0, remoteHeadSha))
+            }
+
+            val treeEntries = mutableListOf<GitTreeEntry>()
+            // 1. Delete all SVGs from remote tree
+            for (item in svgItems) {
+                treeEntries.add(GitTreeEntry(path = item.path, sha = null))
+            }
+
+            // 2. Ensure all active pages have lightweight WebP previews & updated Markdown
+            val allPages = pageDao.getAllActivePages().first()
+            var webpPushed = 0
+            for (page in allPages) {
+                val inkflowPath = "notebooks/${page.notebookId}/pages/${page.pageId}.inkflow"
+                val webpEntries = generateWebpTreeEntries(inkflowPath, owner, repo)
+                treeEntries.addAll(webpEntries)
+                webpPushed += webpEntries.size
+
+                val notebookMd = generateNotebookPageMdEntry(inkflowPath, owner, repo)
+                if (notebookMd != null) {
+                    treeEntries.add(notebookMd)
+                }
+            }
+
+            // 3. Updated README.md
+            val readme = generateReadmeTreeEntry(owner, repo)
+            if (readme != null) {
+                treeEntries.add(readme)
+            }
+
+            // 4. Create new tree & commit
+            val newTreeSha = gitDataClient.createTree(owner, repo, baseTreeSha, treeEntries).getOrThrow()
+            val reclaimedMb = String.format(Locale.US, "%.1f", svgItems.sumOf { it.size ?: 0L } / (1024f * 1024f))
+            val commitMessage = "Slim down repository: Replaced ${svgItems.size} legacy SVGs (~$reclaimedMb MB) with lightweight WebP previews"
+            val newCommitSha = gitDataClient.createCommit(
+                owner = owner,
+                repo = repo,
+                message = commitMessage,
+                treeSha = newTreeSha,
+                parentCommitShas = listOf(remoteHeadSha)
+            ).getOrThrow()
+
+            gitDataClient.updateBranchRef(owner, repo, branch, newCommitSha, force = false).getOrThrow()
+            lastCommitTimeMs = System.currentTimeMillis()
+
+            Result.success(
+                SlimDownExecutionResult(
+                    removedSvgCount = svgItems.size,
+                    reclaimedBytes = svgItems.sumOf { it.size ?: 0L },
+                    pushedWebpCount = webpPushed,
+                    commitSha = newCommitSha
+                )
+            )
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Result.failure(e)
+        }
+    }
 }
+
+data class SlimDownScanResult(
+    val svgCount: Int,
+    val totalSvgBytes: Long,
+    val svgPaths: List<String>
+)
+
+data class SlimDownExecutionResult(
+    val removedSvgCount: Int,
+    val reclaimedBytes: Long,
+    val pushedWebpCount: Int,
+    val commitSha: String
+)

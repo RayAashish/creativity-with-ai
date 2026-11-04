@@ -18,6 +18,16 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.util.Base64
 
+sealed interface RepoAvailability {
+    data class Existing(val fullName: String, val isPrivate: Boolean, val hasPushAccess: Boolean) : RepoAvailability
+    data object NotExistsCanCreate : RepoAvailability
+    data class AccessDenied(val message: String) : RepoAvailability
+    data class InvalidName(val reason: String) : RepoAvailability
+    data class Error(val message: String) : RepoAvailability
+    data object Checking : RepoAvailability
+    data object Idle : RepoAvailability
+}
+
 class GitHubRepoManager(
     private val tokenStorage: TokenStorage,
     private val okHttpClient: OkHttpClient = OkHttpClient.Builder().build(),
@@ -32,6 +42,50 @@ class GitHubRepoManager(
     companion object {
         private const val API_BASE = "https://api.github.com"
         const val DEFAULT_REPO_NAME = "inkflow-notes-backup"
+
+        fun validateRepoName(name: String): String? {
+            val trimmed = name.trim()
+            if (trimmed.isEmpty()) return "Repository name cannot be empty"
+            if (trimmed.length > 100) return "Name too long (maximum 100 characters)"
+            if (!Regex("^[a-zA-Z0-9._-]+$").matches(trimmed)) {
+                return "Only letters, numbers, hyphens (-), underscores (_), and dots (.) are allowed"
+            }
+            if (trimmed == "." || trimmed == "..") return "Invalid repository name"
+            return null
+        }
+    }
+
+    suspend fun checkRepoAvailability(owner: String, repoName: String): RepoAvailability = withContext(ioDispatcher) {
+        val validationErr = validateRepoName(repoName)
+        if (validationErr != null) {
+            return@withContext RepoAvailability.InvalidName(validationErr)
+        }
+        try {
+            val token = getAuthToken()
+            val request = Request.Builder()
+                .url("$API_BASE/repos/$owner/${repoName.trim()}")
+                .header("Accept", "application/vnd.github+json")
+                .header("Authorization", "Bearer $token")
+                .get()
+                .build()
+
+            okHttpClient.newCall(request).execute().use { response ->
+                when (response.code) {
+                    200 -> {
+                        val body = response.body?.string() ?: ""
+                        val repo = json.decodeFromString<GitHubRepoSummary>(body)
+                        val hasPush = repo.permissions?.push ?: true
+                        RepoAvailability.Existing(repo.fullName, repo.private, hasPush)
+                    }
+                    404 -> RepoAvailability.NotExistsCanCreate
+                    401, 403 -> RepoAvailability.AccessDenied("Access denied or insufficient repository permissions (HTTP ${response.code})")
+                    else -> RepoAvailability.Error("HTTP ${response.code}: Failed to query repository")
+                }
+            }
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            RepoAvailability.Error(e.message ?: "Failed checking repository status")
+        }
     }
 
     private fun getAuthToken(): String {

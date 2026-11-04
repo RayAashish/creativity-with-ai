@@ -248,6 +248,37 @@ class GitHubGitDataClient(
     }
 
     /**
+     * Fetch tree recursively to scan files and sizes
+     */
+    suspend fun getTreeRecursive(
+        owner: String,
+        repo: String,
+        treeSha: String
+    ): Result<GitTreeDetailResponse> = withContext(ioDispatcher) {
+        try {
+            val token = getAuthToken()
+            val request = Request.Builder()
+                .url("$API_BASE/repos/$owner/$repo/git/trees/$treeSha?recursive=1")
+                .header("Accept", "application/vnd.github+json")
+                .header("Authorization", "Bearer $token")
+                .get()
+                .build()
+
+            executeWithRetry { okHttpClient.newCall(request).execute() }.use { response ->
+                val body = response.body?.string() ?: ""
+                if (!response.isSuccessful) {
+                    return@withContext Result.failure(IOException("Failed to fetch tree: HTTP ${response.code}"))
+                }
+                val treeRes = json.decodeFromString<GitTreeDetailResponse>(body)
+                Result.success(treeRes)
+            }
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Result.failure(e)
+        }
+    }
+
+    /**
      * Create atomic commit
      */
     suspend fun createCommit(

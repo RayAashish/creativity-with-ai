@@ -285,6 +285,7 @@ class FakeTokenStorage : TokenStorage {
     private var encryption = false
     private var passphrase: String? = null
     private var mirrorDeletions = false
+    private var exportSvg = false
 
     override fun saveToken(token: String) { this.token = token }
     override fun getToken(): String? = token
@@ -310,4 +311,7 @@ class FakeTokenStorage : TokenStorage {
 
     override fun isMirrorDeletions(): Boolean = mirrorDeletions
     override fun setMirrorDeletions(enabled: Boolean) { mirrorDeletions = enabled }
+
+    override fun isExportSvg(): Boolean = exportSvg
+    override fun setExportSvg(enabled: Boolean) { exportSvg = enabled }
 }

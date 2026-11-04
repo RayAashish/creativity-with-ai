@@ -28,6 +28,9 @@ interface TokenStorage {
 
     fun isMirrorDeletions(): Boolean
     fun setMirrorDeletions(enabled: Boolean)
+
+    fun isExportSvg(): Boolean
+    fun setExportSvg(enabled: Boolean)
 }
 
 class EncryptedTokenStorage(context: Context) : TokenStorage {
@@ -119,6 +122,14 @@ class EncryptedTokenStorage(context: Context) : TokenStorage {
         prefs.edit().putBoolean(KEY_MIRROR_DELETIONS, enabled).apply()
     }
 
+    override fun isExportSvg(): Boolean {
+        return prefs.getBoolean(KEY_EXPORT_SVG, false)
+    }
+
+    override fun setExportSvg(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_EXPORT_SVG, enabled).apply()
+    }
+
     companion object {
         private const val KEY_AUTH_TOKEN = "github_oauth_token"
         private const val KEY_REPO_OWNER = "backup_repo_owner"
@@ -129,5 +140,6 @@ class EncryptedTokenStorage(context: Context) : TokenStorage {
         private const val KEY_ENCRYPTION_ENABLED = "backup_pref_encryption_enabled"
         private const val KEY_ENCRYPTION_PASSPHRASE = "backup_pref_encryption_passphrase"
         private const val KEY_MIRROR_DELETIONS = "backup_pref_mirror_deletions"
+        private const val KEY_EXPORT_SVG = "backup_pref_export_svg"
     }
 }
