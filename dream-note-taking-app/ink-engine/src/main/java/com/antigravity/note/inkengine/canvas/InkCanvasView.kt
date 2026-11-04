@@ -244,6 +244,7 @@ class InkCanvasView @JvmOverloads constructor(
     var onStrokeCommitted: ((Stroke) -> Unit)? = null
     var onUndoCommitted: ((Stroke?) -> Unit)? = null
     var onClearCommitted: (() -> Unit)? = null
+    var onStrokesReplaced: ((oldStrokes: List<Stroke>, newStrokes: List<Stroke>) -> Unit)? = null
 
     // Document state
     var pageOpenLatencyMs: Long = 0L
@@ -272,11 +273,16 @@ class InkCanvasView @JvmOverloads constructor(
         dryInkView.lassoTool = lassoTool
         dryInkView.pdfTiler = pdfTiler
 
-        lassoTool.onStrokesTransformed = { oldStrokes, newStrokes ->
+        lassoTool.onStrokesTransformPreview = { oldStrokes, newStrokes ->
             dryInkView.replaceStrokes(oldStrokes, newStrokes)
-            for (s in newStrokes) {
-                onStrokeCommitted?.invoke(s)
-            }
+        }
+
+        lassoTool.onStrokesTransformCommitted = { oldStrokes, newStrokes ->
+            undoStack.add(StrokeAction(addedStrokes = newStrokes, removedStrokes = oldStrokes))
+            redoStack.clear()
+            notifyUndoRedoState()
+            onStrokesReplaced?.invoke(oldStrokes, newStrokes)
+            dryInkView.invalidate()
         }
 
         // Commit finished wet ink into dry ink view
@@ -493,6 +499,7 @@ class InkCanvasView @JvmOverloads constructor(
                     return
                 } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP || action == MotionEvent.ACTION_CANCEL) {
                     isTransformingSelection = false
+                    lassoTool.finishTransform()
                     dryInkView.invalidate()
                     return
                 }
@@ -512,9 +519,14 @@ class InkCanvasView @JvmOverloads constructor(
                     if (changed) dryInkView.invalidate()
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
-                    val hasSelection = lassoTool.finishLasso(dryInkView.strokes)
-                    dryInkView.invalidate()
-                    onLassoSelectionChanged?.invoke(hasSelection)
+                    if (lassoTool.mode == com.antigravity.note.inkengine.lasso.LassoMode.TRANSFORMING) {
+                        lassoTool.finishTransform()
+                        dryInkView.invalidate()
+                    } else {
+                        val hasSelection = lassoTool.finishLasso(dryInkView.strokes)
+                        dryInkView.invalidate()
+                        onLassoSelectionChanged?.invoke(hasSelection)
+                    }
                 }
             }
             return
@@ -787,32 +799,55 @@ class InkCanvasView @JvmOverloads constructor(
     fun undo() {
         if (undoStack.isEmpty()) return
         val action = undoStack.removeAt(undoStack.lastIndex)
-        // Revert added strokes
-        if (action.addedStrokes.isNotEmpty()) {
-            dryInkView.removeStrokes(action.addedStrokes)
-            onUndoCommitted?.invoke(action.addedStrokes.firstOrNull())
-        }
-        // Restore removed strokes
-        if (action.removedStrokes.isNotEmpty()) {
-            dryInkView.addStrokes(action.removedStrokes)
+        if (action.addedStrokes.isNotEmpty() && action.removedStrokes.isNotEmpty()) {
+            dryInkView.replaceStrokes(action.addedStrokes, action.removedStrokes)
+            onStrokesReplaced?.invoke(action.addedStrokes, action.removedStrokes)
+        } else {
+            // Revert added strokes
+            if (action.addedStrokes.isNotEmpty()) {
+                dryInkView.removeStrokes(action.addedStrokes)
+                for (s in action.addedStrokes) {
+                    onUndoCommitted?.invoke(s)
+                }
+            }
+            // Restore removed strokes
+            if (action.removedStrokes.isNotEmpty()) {
+                dryInkView.addStrokes(action.removedStrokes)
+                for (s in action.removedStrokes) {
+                    onStrokeCommitted?.invoke(s)
+                }
+            }
         }
         redoStack.add(action)
         notifyUndoRedoState()
+        dryInkView.invalidate()
     }
 
     fun redo() {
         if (redoStack.isEmpty()) return
         val action = redoStack.removeAt(redoStack.lastIndex)
-        // Re-apply added strokes
-        if (action.addedStrokes.isNotEmpty()) {
-            dryInkView.addStrokes(action.addedStrokes)
-        }
-        // Re-apply removals
-        if (action.removedStrokes.isNotEmpty()) {
-            dryInkView.removeStrokes(action.removedStrokes)
+        if (action.addedStrokes.isNotEmpty() && action.removedStrokes.isNotEmpty()) {
+            dryInkView.replaceStrokes(action.removedStrokes, action.addedStrokes)
+            onStrokesReplaced?.invoke(action.removedStrokes, action.addedStrokes)
+        } else {
+            // Re-apply added strokes
+            if (action.addedStrokes.isNotEmpty()) {
+                dryInkView.addStrokes(action.addedStrokes)
+                for (s in action.addedStrokes) {
+                    onStrokeCommitted?.invoke(s)
+                }
+            }
+            // Re-apply removals
+            if (action.removedStrokes.isNotEmpty()) {
+                dryInkView.removeStrokes(action.removedStrokes)
+                for (s in action.removedStrokes) {
+                    onUndoCommitted?.invoke(s)
+                }
+            }
         }
         undoStack.add(action)
         notifyUndoRedoState()
+        dryInkView.invalidate()
     }
 
     fun clearCanvas() {
@@ -899,6 +934,7 @@ class InkCanvasView @JvmOverloads constructor(
             undoStack.add(StrokeAction(addedStrokes = result.newStrokes, removedStrokes = result.oldStrokes))
             redoStack.clear()
             notifyUndoRedoState()
+            onStrokesReplaced?.invoke(result.oldStrokes, result.newStrokes)
             dryInkView.invalidate()
         }
     }

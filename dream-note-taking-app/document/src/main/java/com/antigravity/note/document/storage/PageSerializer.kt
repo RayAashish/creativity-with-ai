@@ -18,11 +18,16 @@ import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.OutputStream
+import java.nio.ByteBuffer
+import java.util.UUID
+import java.util.zip.CRC32
+
+class CorruptedPageException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
 object PageSerializer {
 
-    private const val MAGIC_HEADER = 0x494E4B31 // "INK1"
-    private const val FORMAT_VERSION = 2
+    const val MAGIC_HEADER = 0x494E4B31 // "INK1"
+    const val FORMAT_VERSION = 3
 
     const val BRUSH_FAMILY_PRESSURE_PEN: Byte = 0
     const val BRUSH_FAMILY_HIGHLIGHTER: Byte = 1
@@ -34,7 +39,9 @@ object PageSerializer {
     val defaultBrushFamily: BrushFamily by lazy { StockBrushes.pressurePen() }
 
     fun serialize(page: DocumentPage, outputStream: OutputStream) {
-        val dataOut = DataOutputStream(outputStream)
+        val byteOut = ByteArrayOutputStream()
+        val dataOut = DataOutputStream(byteOut)
+
         // 1. Header
         dataOut.writeInt(MAGIC_HEADER)
         dataOut.writeInt(FORMAT_VERSION)
@@ -53,7 +60,13 @@ object PageSerializer {
         dataOut.writeInt(page.strokes.size)
         val strokeInputTemp = StrokeInput()
 
-        for (stroke in page.strokes) {
+        for (i in page.strokes.indices) {
+            val stroke = page.strokes[i]
+            val strokeId = page.strokeIds.getOrNull(i) ?: UUID.randomUUID().toString()
+
+            // Write Stroke ID in v3
+            dataOut.writeUTF(strokeId)
+
             val brush = stroke.brush
             val familyId = when (brush.family) {
                 StockBrushes.highlighter() -> BRUSH_FAMILY_HIGHLIGHTER
@@ -69,9 +82,9 @@ object PageSerializer {
             var encodedBytes: ByteArray? = null
             var encodingType = ENCODING_NATIVE_INK_PROTO
             try {
-                val byteOut = ByteArrayOutputStream()
-                StrokeInputBatchSerialization.encode(stroke.inputs, byteOut)
-                encodedBytes = byteOut.toByteArray()
+                val protoOut = ByteArrayOutputStream()
+                StrokeInputBatchSerialization.encode(stroke.inputs, protoOut)
+                encodedBytes = protoOut.toByteArray()
             } catch (t: Throwable) {
                 // Fallback to portable raw input stream
                 encodingType = ENCODING_RAW_INPUT_STREAM
@@ -80,8 +93,8 @@ object PageSerializer {
                 val batch = stroke.inputs
                 val count = batch.size
                 rawData.writeInt(count)
-                for (i in 0 until count) {
-                    batch.populate(i, strokeInputTemp)
+                for (p in 0 until count) {
+                    batch.populate(p, strokeInputTemp)
                     rawData.writeFloat(strokeInputTemp.x)
                     rawData.writeFloat(strokeInputTemp.y)
                     rawData.writeLong(strokeInputTemp.elapsedTimeMillis)
@@ -100,20 +113,55 @@ object PageSerializer {
             dataOut.write(encodedBytes)
         }
         dataOut.flush()
+
+        // 4. Compute CRC32 Checksum over entire payload
+        val contentBytes = byteOut.toByteArray()
+        val crc = CRC32().apply { update(contentBytes) }.value
+
+        // 5. Write to destination stream: Content + 8-byte CRC32
+        val finalOut = DataOutputStream(outputStream)
+        finalOut.write(contentBytes)
+        finalOut.writeLong(crc)
+        finalOut.flush()
     }
 
     fun deserialize(inputStream: InputStream): DocumentPage {
-        val dataIn = DataInputStream(inputStream)
+        val allBytes = inputStream.readBytes()
+        if (allBytes.size < 8) {
+            throw CorruptedPageException("File too short (${allBytes.size} bytes)")
+        }
 
-        // 1. Header check
-        val magic = dataIn.readInt()
+        val byteBuffer = ByteBuffer.wrap(allBytes)
+        val magic = byteBuffer.int
         if (magic != MAGIC_HEADER) {
-            throw IllegalArgumentException("Invalid file magic: 0x%08X (expected 0x%08X)".format(magic, MAGIC_HEADER))
+            throw CorruptedPageException("Invalid file magic: 0x%08X (expected 0x%08X)".format(magic, MAGIC_HEADER))
         }
-        val version = dataIn.readInt()
+
+        val version = byteBuffer.int
         if (version > FORMAT_VERSION) {
-            throw IllegalArgumentException("Unsupported file version: $version (max supported: $FORMAT_VERSION)")
+            throw CorruptedPageException("Unsupported file version: $version (max supported: $FORMAT_VERSION)")
         }
+
+        val payloadBytes: ByteArray
+        if (version >= 3) {
+            if (allBytes.size < 16) {
+                throw CorruptedPageException("File too short for version 3 with CRC32 (${allBytes.size} bytes)")
+            }
+            val contentLen = allBytes.size - 8
+            val expectedCrc = ByteBuffer.wrap(allBytes, contentLen, 8).long
+            val computedCrc = CRC32().apply { update(allBytes, 0, contentLen) }.value
+            if (expectedCrc != computedCrc) {
+                throw CorruptedPageException("Checksum mismatch: expected $expectedCrc, computed $computedCrc")
+            }
+            payloadBytes = allBytes.copyOfRange(0, contentLen)
+        } else {
+            payloadBytes = allBytes
+        }
+
+        val dataIn = DataInputStream(ByteArrayInputStream(payloadBytes))
+        // Skip magic and version already read
+        dataIn.readInt()
+        dataIn.readInt()
 
         // 2. Metadata
         val pageId = dataIn.readUTF()
@@ -138,14 +186,18 @@ object PageSerializer {
         // 3. Strokes
         val strokeCount = dataIn.readInt()
         val strokes = ArrayList<Stroke>(strokeCount)
+        val strokeIds = ArrayList<String>(strokeCount)
+        val seenIds = HashSet<String>()
 
         for (i in 0 until strokeCount) {
+            val strokeId: String
             val brushFamily: BrushFamily
             val colorArgb: Int
             val size: Float
             val epsilon: Float
 
-            if (version >= 2) {
+            if (version >= 3) {
+                strokeId = dataIn.readUTF()
                 val familyId = dataIn.readByte()
                 brushFamily = when (familyId) {
                     BRUSH_FAMILY_HIGHLIGHTER -> StockBrushes.highlighter()
@@ -155,30 +207,52 @@ object PageSerializer {
                 colorArgb = dataIn.readInt()
                 size = dataIn.readFloat()
                 epsilon = dataIn.readFloat()
+            } else if (version == 2) {
+                val familyId = dataIn.readByte()
+                brushFamily = when (familyId) {
+                    BRUSH_FAMILY_HIGHLIGHTER -> StockBrushes.highlighter()
+                    BRUSH_FAMILY_MARKER -> StockBrushes.marker()
+                    else -> StockBrushes.pressurePen()
+                }
+                colorArgb = dataIn.readInt()
+                size = dataIn.readFloat()
+                epsilon = dataIn.readFloat()
+                strokeId = "" // will be synthesized below
             } else {
                 colorArgb = dataIn.readInt()
                 size = dataIn.readFloat()
                 epsilon = dataIn.readFloat()
                 val alpha = (colorArgb ushr 24) and 0xFF
-                // Auto-detect highlighters in v1 by translucent alpha channel
                 brushFamily = if (alpha <= 0x80) StockBrushes.highlighter() else StockBrushes.pressurePen()
+                strokeId = ""
             }
 
             val encodingType = dataIn.readByte()
-            val payloadLength = dataIn.readInt()
-            val payloadBytes = ByteArray(payloadLength)
-            dataIn.readFully(payloadBytes)
+            val strokePayloadLength = dataIn.readInt()
+            val strokePayloadBytes = ByteArray(strokePayloadLength)
+            dataIn.readFully(strokePayloadBytes)
+
+            val resolvedStrokeId = if (strokeId.isNotEmpty()) {
+                strokeId
+            } else {
+                "legacy_" + generateStrokeHash(colorArgb, size, strokePayloadBytes)
+            }
+
+            // Deduplicate by ID on load!
+            if (seenIds.contains(resolvedStrokeId)) {
+                continue
+            }
+            seenIds.add(resolvedStrokeId)
 
             val inputs: ImmutableStrokeInputBatch = if (encodingType == ENCODING_NATIVE_INK_PROTO) {
                 try {
-                    val byteIn = ByteArrayInputStream(payloadBytes)
+                    val byteIn = ByteArrayInputStream(strokePayloadBytes)
                     StrokeInputBatchSerialization.decode(byteIn)
                 } catch (t: Throwable) {
-                    // Fallback empty if native decode fails
                     MutableStrokeInputBatch().toImmutable()
                 }
             } else {
-                val rawIn = DataInputStream(ByteArrayInputStream(payloadBytes))
+                val rawIn = DataInputStream(ByteArrayInputStream(strokePayloadBytes))
                 val count = rawIn.readInt()
                 val mutableBatch = MutableStrokeInputBatch()
                 for (p in 0 until count) {
@@ -199,16 +273,29 @@ object PageSerializer {
             val brush = Brush.createWithColorIntArgb(brushFamily, colorArgb, size, epsilon)
             val stroke = Stroke(brush, inputs)
             strokes.add(stroke)
+            strokeIds.add(resolvedStrokeId)
         }
 
         return DocumentPage(
             metadata = metadata.copy(strokeCount = strokes.size),
-            strokes = strokes
+            strokes = strokes,
+            strokeIds = strokeIds
         )
     }
 
-    fun serializeSingleStroke(stroke: Stroke, outputStream: OutputStream) {
+    private fun generateStrokeHash(color: Int, size: Float, payload: ByteArray): String {
+        var h = 0x811c9dc5L
+        h = (h xor color.toLong()) * 0x01000193L
+        h = (h xor java.lang.Float.floatToIntBits(size).toLong()) * 0x01000193L
+        for (b in payload) {
+            h = (h xor (b.toInt() and 0xFF).toLong()) * 0x01000193L
+        }
+        return h.toString(16)
+    }
+
+    fun serializeSingleStroke(stroke: Stroke, outputStream: OutputStream, strokeId: String = UUID.randomUUID().toString()) {
         val dataOut = DataOutputStream(outputStream)
+        dataOut.writeUTF(strokeId)
         val brush = stroke.brush
         val familyId = when (brush.family) {
             StockBrushes.highlighter() -> BRUSH_FAMILY_HIGHLIGHTER
@@ -255,14 +342,16 @@ object PageSerializer {
         dataOut.flush()
     }
 
-    fun deserializeSingleStroke(inputStream: InputStream, isV2: Boolean = true): Stroke {
+    fun deserializeSingleStroke(inputStream: InputStream, isV3: Boolean = true): Pair<String, Stroke> {
         val dataIn = DataInputStream(inputStream)
+        val strokeId: String
         val brushFamily: BrushFamily
         val colorArgb: Int
         val size: Float
         val epsilon: Float
 
-        if (isV2) {
+        if (isV3) {
+            strokeId = dataIn.readUTF()
             val familyId = dataIn.readByte()
             brushFamily = when (familyId) {
                 BRUSH_FAMILY_HIGHLIGHTER -> StockBrushes.highlighter()
@@ -273,6 +362,7 @@ object PageSerializer {
             size = dataIn.readFloat()
             epsilon = dataIn.readFloat()
         } else {
+            strokeId = UUID.randomUUID().toString()
             colorArgb = dataIn.readInt()
             size = dataIn.readFloat()
             epsilon = dataIn.readFloat()
@@ -311,7 +401,7 @@ object PageSerializer {
             mutableBatch.toImmutable()
         }
 
-        val brush = Brush.createWithColorIntArgb(defaultBrushFamily, colorArgb, size, epsilon)
-        return Stroke(brush, inputs)
+        val brush = Brush.createWithColorIntArgb(brushFamily, colorArgb, size, epsilon)
+        return Pair(strokeId, Stroke(brush, inputs))
     }
 }

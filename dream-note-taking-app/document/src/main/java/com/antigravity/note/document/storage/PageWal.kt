@@ -10,19 +10,21 @@ import java.io.EOFException
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.util.UUID
 
 class PageWal(private val walFile: File) {
 
     companion object {
-        private const val WAL_MAGIC = 0x57414C32 // "WAL2"
-        private const val LEGACY_WAL_MAGIC = 0x57414C31 // "WAL1"
+        private const val WAL_MAGIC = 0x57414C33 // "WAL3"
+        private const val LEGACY_WAL2_MAGIC = 0x57414C32 // "WAL2"
+        private const val LEGACY_WAL1_MAGIC = 0x57414C31 // "WAL1"
         const val OP_ADD_STROKE: Byte = 1
         const val OP_REMOVE_LAST: Byte = 2
         const val OP_CLEAR: Byte = 3
     }
 
     @Synchronized
-    fun appendAddStroke(stroke: Stroke) {
+    fun appendAddStroke(stroke: Stroke, strokeId: String = UUID.randomUUID().toString()) {
         val appendHeader = !walFile.exists() || walFile.length() == 0L
         FileOutputStream(walFile, true).use { fos ->
             BufferedOutputStream(fos).use { bos ->
@@ -32,7 +34,7 @@ class PageWal(private val walFile: File) {
                 }
                 dataOut.writeByte(OP_ADD_STROKE.toInt())
                 dataOut.writeLong(System.currentTimeMillis())
-                PageSerializer.serializeSingleStroke(stroke, dataOut)
+                PageSerializer.serializeSingleStroke(stroke, dataOut, strokeId)
                 dataOut.flush()
             }
         }
@@ -80,10 +82,10 @@ class PageWal(private val walFile: File) {
                 BufferedInputStream(fis).use { bis ->
                     val dataIn = DataInputStream(bis)
                     val magic = dataIn.readInt()
-                    if (magic != WAL_MAGIC && magic != LEGACY_WAL_MAGIC) {
+                    if (magic != WAL_MAGIC && magic != LEGACY_WAL2_MAGIC && magic != LEGACY_WAL1_MAGIC) {
                         return false
                     }
-                    val isV2 = magic == WAL_MAGIC
+                    val isV3 = magic == WAL_MAGIC
 
                     while (true) {
                         val opCode = try {
@@ -95,9 +97,11 @@ class PageWal(private val walFile: File) {
 
                         when (opCode) {
                             OP_ADD_STROKE -> {
-                                val stroke = PageSerializer.deserializeSingleStroke(dataIn, isV2)
-                                page.addStroke(stroke)
-                                replayedAny = true
+                                val (strokeId, stroke) = PageSerializer.deserializeSingleStroke(dataIn, isV3)
+                                val added = page.addStroke(stroke, strokeId)
+                                if (added) {
+                                    replayedAny = true
+                                }
                             }
                             OP_REMOVE_LAST -> {
                                 if (page.strokes.isNotEmpty()) {

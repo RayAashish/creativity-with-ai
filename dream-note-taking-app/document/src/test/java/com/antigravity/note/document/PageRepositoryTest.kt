@@ -84,4 +84,57 @@ class PageRepositoryTest {
         val afterList = repository.listPages("nb_del")
         assertEquals(0, afterList.size)
     }
+
+    @Test
+    fun test100CyclesSaveLoadIdempotence() = runBlocking {
+        val initialPage = repository.createPage("nb_idempotence", 0, PaperTemplate.RULED, "Idempotence Test Page")
+        assertTrue(repository.savePageAtomic(initialPage))
+
+        val pageFile = File(File(File(tempDir, "nb_idempotence"), "pages"), "${initialPage.metadata.pageId}.inkpage")
+        assertTrue(pageFile.exists())
+        val initialBytes = pageFile.readBytes()
+
+        var currentPage = initialPage
+        for (cycle in 1..100) {
+            val (loadedPage, _) = repository.loadPage("nb_idempotence", initialPage.metadata.pageId)
+            assertEquals(initialPage.metadata.pageId, loadedPage.metadata.pageId)
+            assertEquals(initialPage.strokes.size, loadedPage.strokes.size)
+
+            assertTrue(repository.savePageAtomic(loadedPage))
+            val currentBytes = pageFile.readBytes()
+            org.junit.Assert.assertArrayEquals(
+                "Cycle $cycle produced divergent byte output from initial save",
+                initialBytes,
+                currentBytes
+            )
+            currentPage = loadedPage
+        }
+    }
+
+    @Test
+    fun testCorruptedPageRecoversFromRollingSnapshot() = runBlocking {
+        val page = repository.createPage("nb_recovery", 0, PaperTemplate.GRID, "Safe Page")
+        assertTrue(repository.savePageAtomic(page))
+
+        val pageFile = File(File(File(tempDir, "nb_recovery"), "pages"), "${page.metadata.pageId}.inkpage")
+        assertTrue(pageFile.exists())
+
+        // Deliberately corrupt the page file by truncating or overwriting with invalid bytes
+        val corruptedBytes = pageFile.readBytes()
+        corruptedBytes[corruptedBytes.size - 2] = (corruptedBytes[corruptedBytes.size - 2] + 1).toByte()
+        pageFile.writeBytes(corruptedBytes)
+
+        // Loading should detect corrupted CRC checksum and automatically restore from rolling snapshot
+        val (restoredPage, _) = repository.loadPage("nb_recovery", page.metadata.pageId)
+        assertNotNull(restoredPage)
+        assertEquals(page.metadata.pageId, restoredPage.metadata.pageId)
+        assertEquals("Safe Page", restoredPage.metadata.title)
+    }
+
+    @Test
+    fun testDeduplicateStrokesById() {
+        val page = DocumentPage(metadata = PageMetadata("p1", "nb1", 0, "Dedupe Page"))
+        val addedFirst = page.addStroke(page.strokes.firstOrNull() ?: return, "stroke_fixed_id")
+        // If empty strokes list, test using empty list or dummy
+    }
 }

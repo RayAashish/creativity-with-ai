@@ -55,6 +55,55 @@ class PageRepository(
         return File(getPagesDir(notebookId), "$pageId.wal")
     }
 
+    private fun getSnapshotsDir(notebookId: String, pageId: String): File {
+        return File(getPagesDir(notebookId), "snapshots_$pageId").apply {
+            if (!exists()) mkdirs()
+        }
+    }
+
+    private fun createSnapshot(notebookId: String, pageId: String, pageFile: File) {
+        try {
+            val dir = getSnapshotsDir(notebookId, pageId)
+            val timestamp = System.currentTimeMillis()
+            val snapFile = File(dir, "$pageId.$timestamp.snapshot")
+            pageFile.copyTo(snapFile, overwrite = true)
+
+            // Keep only the last 5 rolling versions
+            val allSnaps = dir.listFiles { f -> f.name.endsWith(".snapshot") }
+                ?.sortedBy { it.lastModified() } ?: emptyList()
+            if (allSnaps.size > 5) {
+                for (i in 0 until (allSnaps.size - 5)) {
+                    allSnaps[i].delete()
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun restoreFromBestSnapshot(notebookId: String, pageId: String): DocumentPage? {
+        val dir = getSnapshotsDir(notebookId, pageId)
+        val allSnaps = dir.listFiles { f -> f.name.endsWith(".snapshot") }
+            ?.sortedByDescending { it.lastModified() } ?: emptyList()
+
+        for (snap in allSnaps) {
+            try {
+                val page = FileInputStream(snap).use { fis ->
+                    BufferedInputStream(fis).use { bis ->
+                        PageSerializer.deserialize(bis)
+                    }
+                }
+                val pageFile = getPageFile(notebookId, pageId)
+                snap.copyTo(pageFile, overwrite = true)
+                android.util.Log.w("PageRepository", "Restored corrupted page $pageId from rolling snapshot: ${snap.name}")
+                return page
+            } catch (_: Exception) {
+                // Try next snapshot
+            }
+        }
+        return null
+    }
+
     suspend fun loadPage(notebookId: String, pageId: String): Pair<DocumentPage, Long> = withContext(ioDispatcher) {
         fileMutex.withLock {
             val startTime = System.currentTimeMillis()
@@ -62,15 +111,29 @@ class PageRepository(
             val walFile = getWalFile(notebookId, pageId)
             val wal = PageWal(walFile)
 
-            val page: DocumentPage = if (pageFile.exists() && pageFile.length() > 0L) {
-                FileInputStream(pageFile).use { fis ->
-                    BufferedInputStream(fis).use { bis ->
-                        PageSerializer.deserialize(bis)
+            var page: DocumentPage = try {
+                if (pageFile.exists() && pageFile.length() > 0L) {
+                    FileInputStream(pageFile).use { fis ->
+                        BufferedInputStream(fis).use { bis ->
+                            PageSerializer.deserialize(bis)
+                        }
                     }
+                } else {
+                    // New blank/ruled page
+                    DocumentPage(
+                        metadata = PageMetadata(
+                            pageId = pageId,
+                            notebookId = notebookId,
+                            pageIndex = 0,
+                            title = "Page 1",
+                            template = PaperTemplate.RULED
+                        )
+                    )
                 }
-            } else {
-                // New blank/ruled page
-                DocumentPage(
+            } catch (e: Throwable) {
+                android.util.Log.e("PageRepository", "Page load failure (corruption/checksum), attempting snapshot restore", e)
+                val restored = restoreFromBestSnapshot(notebookId, pageId)
+                restored ?: DocumentPage(
                     metadata = PageMetadata(
                         pageId = pageId,
                         notebookId = notebookId,
@@ -124,6 +187,7 @@ class PageRepository(
 
             val renamed = tmpFile.renameTo(pageFile)
             if (renamed) {
+                createSnapshot(meta.notebookId, meta.pageId, pageFile)
                 wal.deleteWal()
                 onPageSavedListener?.invoke(meta.notebookId, meta.pageId, pageFile)
             }
@@ -135,11 +199,11 @@ class PageRepository(
         }
     }
 
-    fun appendStrokeAsync(notebookId: String, pageId: String, stroke: Stroke) {
+    fun appendStrokeAsync(notebookId: String, pageId: String, stroke: Stroke, strokeId: String = java.util.UUID.randomUUID().toString()) {
         repositoryScope.launch {
             fileMutex.withLock {
                 val wal = PageWal(getWalFile(notebookId, pageId))
-                wal.appendAddStroke(stroke)
+                wal.appendAddStroke(stroke, strokeId)
             }
         }
     }

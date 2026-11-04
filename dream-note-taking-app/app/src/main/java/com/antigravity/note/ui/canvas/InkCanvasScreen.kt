@@ -122,6 +122,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.antigravity.note.document.manager.DocumentManager
 import com.antigravity.note.document.model.PaperTemplate
@@ -350,6 +353,10 @@ fun InkCanvasScreen(
     var isBackupDialogOpen by remember { mutableStateOf(false) }
     var backupSyncStatus by remember { mutableStateOf(BackupSyncStatus.OFFLINE) }
 
+    // Page Repair State
+    var isRepairDialogOpen by remember { mutableStateOf(false) }
+    var repairScanResult by remember { mutableStateOf<com.antigravity.note.document.repair.PageRepairTool.RepairScanResult?>(null) }
+
     val tokenStorage = remember { EncryptedTokenStorage(context) }
     val backupOkHttpClient = remember {
         OkHttpClient.Builder()
@@ -442,8 +449,24 @@ fun InkCanvasScreen(
         canvasView.onClearCommitted = {
             docManager.onClearCommitted()
         }
+        canvasView.onStrokesReplaced = { oldStrokes, newStrokes ->
+            docManager.onStrokesReplaced(oldStrokes, newStrokes)
+        }
         canvasView.onLassoSelectionChanged = { selected ->
             hasLassoSelection = selected
+        }
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, docManager) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
+                docManager.autoSaveCurrentPage()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
@@ -1270,6 +1293,22 @@ fun InkCanvasScreen(
                                 )
 
                                 HorizontalDivider()
+
+                                // Repair Damaged Ink
+                                DropdownMenuItem(
+                                    text = { Text("Repair Damaged Ink") },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.AutoFixHigh, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                    },
+                                    onClick = {
+                                        showMoreActionsMenu = false
+                                        val page = docManager.currentPage.value
+                                        if (page != null) {
+                                            repairScanResult = com.antigravity.note.document.repair.PageRepairTool.scan(page)
+                                            isRepairDialogOpen = true
+                                        }
+                                    }
+                                )
 
                                 // Clear Canvas
                                 DropdownMenuItem(
@@ -2587,6 +2626,61 @@ fun InkCanvasScreen(
                 onTriggerBackupNow = {
                     BackupWorker.enqueueImmediate(context)
                     backupSyncStatus = BackupSyncStatus.BACKING_UP
+                }
+            )
+        }
+
+        // Page Repair Dialog
+        if (isRepairDialogOpen && repairScanResult != null) {
+            val scan = repairScanResult!!
+            AlertDialog(
+                onDismissRequest = { isRepairDialogOpen = false },
+                title = { Text(if (scan.isDamaged) "Repair Damaged Ink" else "Ink Integrity Check") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (scan.isDamaged) {
+                            Text("Detected ${scan.redundantStrokeIndices.size} redundant intermediate drag frames on page '${scan.pageTitle}'.")
+                            Text("• Original strokes: ${scan.originalStrokeCount}")
+                            Text("• Cleaned strokes: ${scan.cleanedStrokeCount}")
+                            Text(
+                                "A safety snapshot backup will be taken before applying changes.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            Text("Page '${scan.pageTitle}' is completely healthy! All ${scan.originalStrokeCount} strokes are valid with zero redundant frames.")
+                        }
+                    }
+                },
+                confirmButton = {
+                    if (scan.isDamaged) {
+                        Button(
+                            onClick = {
+                                isRepairDialogOpen = false
+                                val current = docManager.currentPage.value
+                                if (current != null) {
+                                    val repaired = com.antigravity.note.document.repair.PageRepairTool.applyRepair(current)
+                                    scope.launch {
+                                        docManager.repository.savePageAtomic(repaired)
+                                        canvasView.loadPage(repaired)
+                                    }
+                                }
+                            }
+                        ) {
+                            Text("Apply Repair")
+                        }
+                    } else {
+                        Button(onClick = { isRepairDialogOpen = false }) {
+                            Text("OK")
+                        }
+                    }
+                },
+                dismissButton = {
+                    if (scan.isDamaged) {
+                        OutlinedButton(onClick = { isRepairDialogOpen = false }) {
+                            Text("Cancel")
+                        }
+                    }
                 }
             )
         }

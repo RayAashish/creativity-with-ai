@@ -46,6 +46,7 @@ class LassoTool {
 
     // Currently selected strokes
     val selectedStrokes = mutableListOf<Stroke>()
+    val initialStrokesBeforeTransform = mutableListOf<Stroke>()
     val selectionBounds = RectF()
 
     // Transform tracking
@@ -54,6 +55,10 @@ class LassoTool {
     private var lastTouchY = 0f
     private val handleTouchRadius = 80f
 
+    var onStrokesTransformPreview: ((oldStrokes: List<Stroke>, newStrokes: List<Stroke>) -> Unit)? = null
+    var onStrokesTransformCommitted: ((initialStrokes: List<Stroke>, finalStrokes: List<Stroke>) -> Unit)? = null
+
+    @Deprecated("Use onStrokesTransformPreview or onStrokesTransformCommitted instead")
     var onStrokesTransformed: ((oldStrokes: List<Stroke>, newStrokes: List<Stroke>) -> Unit)? = null
 
     // Corner handle rects for drawing & hit-testing
@@ -110,6 +115,8 @@ class LassoTool {
                 activeHandle = handle
                 lastTouchX = worldX
                 lastTouchY = worldY
+                initialStrokesBeforeTransform.clear()
+                initialStrokesBeforeTransform.addAll(selectedStrokes)
                 return
             }
         }
@@ -121,6 +128,7 @@ class LassoTool {
         lassoPath.reset()
         lassoPath.moveTo(worldX, worldY)
         selectedStrokes.clear()
+        initialStrokesBeforeTransform.clear()
     }
 
     fun continueLasso(worldX: Float, worldY: Float): Boolean {
@@ -183,6 +191,8 @@ class LassoTool {
             if (selectedStrokes.isNotEmpty()) {
                 mode = LassoMode.TRANSFORMING
                 recomputeSelectionBounds()
+                initialStrokesBeforeTransform.clear()
+                initialStrokesBeforeTransform.addAll(selectedStrokes)
                 lassoPoints.clear()
                 lassoPath.reset()
                 return true
@@ -191,8 +201,22 @@ class LassoTool {
                 return false
             }
         } else if (mode == LassoMode.TRANSFORMING) {
+            return finishTransform()
+        }
+        return false
+    }
+
+    fun finishTransform(): Boolean {
+        if (activeHandle != TransformHandle.NONE) {
             activeHandle = TransformHandle.NONE
-            return true
+            if (initialStrokesBeforeTransform.isNotEmpty() && selectedStrokes != initialStrokesBeforeTransform) {
+                val initial = initialStrokesBeforeTransform.toList()
+                val current = selectedStrokes.toList()
+                initialStrokesBeforeTransform.clear()
+                initialStrokesBeforeTransform.addAll(current)
+                onStrokesTransformCommitted?.invoke(initial, current)
+                return true
+            }
         }
         return false
     }
@@ -205,6 +229,8 @@ class LassoTool {
         clearSelection()
         if (strokes.isEmpty()) return
         selectedStrokes.addAll(strokes)
+        initialStrokesBeforeTransform.clear()
+        initialStrokesBeforeTransform.addAll(strokes)
         mode = LassoMode.TRANSFORMING
         recomputeSelectionBounds()
     }
@@ -266,6 +292,7 @@ class LassoTool {
         lassoPoints.clear()
         lassoPath.reset()
         selectedStrokes.clear()
+        initialStrokesBeforeTransform.clear()
         selectionBounds.setEmpty()
     }
 
@@ -360,6 +387,8 @@ class LassoTool {
         selectedStrokes.addAll(updated)
         selectionBounds.offset(dx, dy)
         updateHandles()
+        onStrokesTransformPreview?.invoke(oldStrokes, updated)
+        @Suppress("DEPRECATION")
         onStrokesTransformed?.invoke(oldStrokes, updated)
     }
 
@@ -403,6 +432,8 @@ class LassoTool {
         selectedStrokes.clear()
         selectedStrokes.addAll(updated)
         recomputeSelectionBounds()
+        onStrokesTransformPreview?.invoke(oldStrokes, updated)
+        @Suppress("DEPRECATION")
         onStrokesTransformed?.invoke(oldStrokes, updated)
     }
 

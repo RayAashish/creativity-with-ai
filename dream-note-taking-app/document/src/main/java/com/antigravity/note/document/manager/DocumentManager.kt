@@ -54,10 +54,12 @@ class DocumentManager(
         }
     }
 
-    fun onStrokeCommitted(stroke: Stroke) {
+    fun onStrokeCommitted(stroke: Stroke, strokeId: String = java.util.UUID.randomUUID().toString()) {
         val page = _currentPage.value ?: return
-        page.addStroke(stroke)
-        repository.appendStrokeAsync(page.metadata.notebookId, page.metadata.pageId, stroke)
+        val added = page.addStroke(stroke, strokeId)
+        if (added) {
+            repository.appendStrokeAsync(page.metadata.notebookId, page.metadata.pageId, stroke, strokeId)
+        }
     }
 
     fun onUndoCommitted(revertedStroke: Stroke?) {
@@ -72,6 +74,12 @@ class DocumentManager(
         val page = _currentPage.value ?: return
         page.clearAllStrokes()
         repository.appendClearAsync(page.metadata.notebookId, page.metadata.pageId)
+    }
+
+    fun onStrokesReplaced(oldStrokes: List<Stroke>, newStrokes: List<Stroke>) {
+        val page = _currentPage.value ?: return
+        page.replaceStrokes(oldStrokes, newStrokes)
+        autoSaveCurrentPage()
     }
 
     fun setPaperTemplate(template: PaperTemplate) {
