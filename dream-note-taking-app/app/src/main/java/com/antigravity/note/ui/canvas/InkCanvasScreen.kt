@@ -136,6 +136,7 @@ import com.antigravity.note.library.backup.worker.BackupWorker
 import com.antigravity.note.ui.backup.BackupStatusChip
 import com.antigravity.note.ui.backup.BackupSyncStatus
 import com.antigravity.note.ui.backup.GitHubBackupDialog
+import com.antigravity.note.ui.settings.AppSettings
 import okhttp3.OkHttpClient
 import com.antigravity.note.library.db.NoteDatabase
 import com.antigravity.note.library.repository.LibraryRepository
@@ -175,16 +176,18 @@ fun InkCanvasScreen(
     val pagesList by docManager.pagesList.collectAsStateWithLifecycle()
     val openLatency by docManager.lastOpenLatencyMs.collectAsStateWithLifecycle()
 
+    val appSettings = remember { AppSettings(context) }
+
     // UI State
     var isSidebarOpen by remember { mutableStateOf(false) }
     var isQuickSwitcherOpen by remember { mutableStateOf(false) }
-    var selectedTool by remember { mutableStateOf(CanvasTool.PRESSURE_PEN) }
-    var penColor by remember { mutableStateOf(Color(0xFF111318)) }
-    var penWidth by remember { mutableFloatStateOf(4f) }
-    var markerColor by remember { mutableStateOf(Color(0xFF005AC1)) }
-    var markerWidth by remember { mutableFloatStateOf(14f) }
-    var highlighterColor by remember { mutableStateOf(Color(0xFFFFD600)) }
-    var highlighterWidth by remember { mutableFloatStateOf(34f) }
+    var selectedTool by remember { mutableStateOf(appSettings.selectedTool) }
+    var penColor by remember { mutableStateOf(Color(appSettings.penColorArgb.toLong() and 0xFFFFFFFFL)) }
+    var penWidth by remember { mutableFloatStateOf(appSettings.penWidth) }
+    var markerColor by remember { mutableStateOf(Color(appSettings.markerColorArgb.toLong() and 0xFFFFFFFFL)) }
+    var markerWidth by remember { mutableFloatStateOf(appSettings.markerWidth) }
+    var highlighterColor by remember { mutableStateOf(Color(appSettings.highlighterColorArgb.toLong() and 0xFFFFFFFFL)) }
+    var highlighterWidth by remember { mutableFloatStateOf(appSettings.highlighterWidth) }
 
     val selectedColor = when (selectedTool) {
         CanvasTool.PRESSURE_PEN -> penColor
@@ -203,12 +206,6 @@ fun InkCanvasScreen(
     }
 
     val applyColor: (Color) -> Unit = { color ->
-        when (selectedTool) {
-            CanvasTool.PRESSURE_PEN -> penColor = color
-            CanvasTool.MARKER -> markerColor = color
-            CanvasTool.HIGHLIGHTER -> highlighterColor = color
-            else -> penColor = color
-        }
         val alpha = if (selectedTool == CanvasTool.HIGHLIGHTER) 0x55 else (color.alpha * 255).toInt()
         val intColor = AndroidColor.argb(
             alpha,
@@ -216,6 +213,24 @@ fun InkCanvasScreen(
             (color.green * 255).toInt(),
             (color.blue * 255).toInt()
         )
+        when (selectedTool) {
+            CanvasTool.PRESSURE_PEN -> {
+                penColor = color
+                appSettings.penColorArgb = intColor
+            }
+            CanvasTool.MARKER -> {
+                markerColor = color
+                appSettings.markerColorArgb = intColor
+            }
+            CanvasTool.HIGHLIGHTER -> {
+                highlighterColor = color
+                appSettings.highlighterColorArgb = intColor
+            }
+            else -> {
+                penColor = color
+                appSettings.penColorArgb = intColor
+            }
+        }
         canvasView.setInkColor(intColor)
     }
     val selectedWidth = when (selectedTool) {
@@ -227,6 +242,7 @@ fun InkCanvasScreen(
 
     val switchToTool: (CanvasTool) -> Unit = { tool ->
         selectedTool = tool
+        appSettings.selectedTool = tool
         canvasView.setTool(tool)
         when (tool) {
             CanvasTool.PRESSURE_PEN -> {
@@ -275,8 +291,8 @@ fun InkCanvasScreen(
 
     var canUndo by remember { mutableStateOf(false) }
     var canRedo by remember { mutableStateOf(false) }
-    var inputMode by remember { mutableStateOf(InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM) }
-    var isDebugOverlayOn by remember { mutableStateOf(true) }
+    var inputMode by remember { mutableStateOf(appSettings.inputMode) }
+    var isDebugOverlayOn by remember { mutableStateOf(appSettings.isDebugOverlayEnabled) }
     var showTemplateMenu by remember { mutableStateOf(false) }
 
     // Phase 4 State
@@ -292,9 +308,18 @@ fun InkCanvasScreen(
     var showDeletePageDialog by remember { mutableStateOf(false) }
     var showClearCanvasDialog by remember { mutableStateOf(false) }
     var showAddPageMenu by remember { mutableStateOf(false) }
-    var isInfiniteCanvas by remember { mutableStateOf(true) }
+    var isInfiniteCanvas by remember { mutableStateOf(appSettings.isInfiniteCanvas) }
 
     LaunchedEffect(Unit) {
+        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
+            inputMode = appSettings.inputMode,
+            isFingerEraserEnabled = appSettings.isFingerEraserEnabled,
+            debugOverlayEnabled = appSettings.isDebugOverlayEnabled
+        )
+        canvasView.holdToEraseEnabled = appSettings.isHoldToEraseEnabled
+        canvasView.holdToEraseDelayMs = 800L
+        canvasView.setInfiniteCanvasMode(appSettings.isInfiniteCanvas)
+        switchToTool(appSettings.selectedTool)
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 canvasView.digitalInkManager.ensureModelReady()
@@ -983,10 +1008,22 @@ fun InkCanvasScreen(
                                         },
                                         onClick = {
                                             when (selectedTool) {
-                                                CanvasTool.PRESSURE_PEN -> penWidth = width
-                                                CanvasTool.MARKER -> markerWidth = width
-                                                CanvasTool.HIGHLIGHTER -> highlighterWidth = width
-                                                else -> penWidth = width
+                                                CanvasTool.PRESSURE_PEN -> {
+                                                    penWidth = width
+                                                    appSettings.penWidth = width
+                                                }
+                                                CanvasTool.MARKER -> {
+                                                    markerWidth = width
+                                                    appSettings.markerWidth = width
+                                                }
+                                                CanvasTool.HIGHLIGHTER -> {
+                                                    highlighterWidth = width
+                                                    appSettings.highlighterWidth = width
+                                                }
+                                                else -> {
+                                                    penWidth = width
+                                                    appSettings.penWidth = width
+                                                }
                                             }
                                             canvasView.setInkWidth(width)
                                             showWidthPickerMenu = false
@@ -1575,6 +1612,7 @@ fun InkCanvasScreen(
                             color = if (isInfiniteCanvas) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                             modifier = Modifier.clickable {
                                 isInfiniteCanvas = !isInfiniteCanvas
+                                appSettings.isInfiniteCanvas = isInfiniteCanvas
                                 canvasView.setInfiniteCanvasMode(isInfiniteCanvas)
                                 Toast.makeText(
                                     context,
@@ -1600,8 +1638,8 @@ fun InkCanvasScreen(
                 }
 
                 // Card 2: Input Mode & Palm Settings (Single-Line Collapsible Pill)
-                var isFingerEraserOn by remember { mutableStateOf(canvasView.palmFilter.config.isFingerEraserEnabled) }
-                var isHoldToEraseOn by remember { mutableStateOf(canvasView.holdToEraseEnabled) }
+                var isFingerEraserOn by remember { mutableStateOf(appSettings.isFingerEraserEnabled) }
+                var isHoldToEraseOn by remember { mutableStateOf(appSettings.isHoldToEraseEnabled) }
                 var showInputSettingsPopup by remember { mutableStateOf(false) }
 
                 Box {
@@ -1682,6 +1720,7 @@ fun InkCanvasScreen(
                                     selected = inputMode == InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM,
                                     onClick = {
                                         inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM
+                                        appSettings.inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM
                                         canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
                                             inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM,
                                             isFingerEraserEnabled = isFingerEraserOn
@@ -1693,6 +1732,7 @@ fun InkCanvasScreen(
                                     selected = inputMode == InputMode.PEN_ONLY,
                                     onClick = {
                                         inputMode = InputMode.PEN_ONLY
+                                        appSettings.inputMode = InputMode.PEN_ONLY
                                         canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
                                             inputMode = InputMode.PEN_ONLY,
                                             isFingerEraserEnabled = isFingerEraserOn
@@ -1704,6 +1744,7 @@ fun InkCanvasScreen(
                                     selected = inputMode == InputMode.PEN_AND_FINGER_DRAW,
                                     onClick = {
                                         inputMode = InputMode.PEN_AND_FINGER_DRAW
+                                        appSettings.inputMode = InputMode.PEN_AND_FINGER_DRAW
                                         canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
                                             inputMode = InputMode.PEN_AND_FINGER_DRAW,
                                             isFingerEraserEnabled = isFingerEraserOn
@@ -1721,6 +1762,7 @@ fun InkCanvasScreen(
                                     .fillMaxWidth()
                                     .clickable {
                                         isFingerEraserOn = !isFingerEraserOn
+                                        appSettings.isFingerEraserEnabled = isFingerEraserOn
                                         canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
                                             isFingerEraserEnabled = isFingerEraserOn
                                         )
@@ -1748,6 +1790,7 @@ fun InkCanvasScreen(
                                     checked = isFingerEraserOn,
                                     onCheckedChange = {
                                         isFingerEraserOn = it
+                                        appSettings.isFingerEraserEnabled = it
                                         canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
                                             isFingerEraserEnabled = it
                                         )
@@ -1761,6 +1804,7 @@ fun InkCanvasScreen(
                                     .fillMaxWidth()
                                     .clickable {
                                         isHoldToEraseOn = !isHoldToEraseOn
+                                        appSettings.isHoldToEraseEnabled = isHoldToEraseOn
                                         canvasView.holdToEraseEnabled = isHoldToEraseOn
                                     }
                                     .padding(vertical = 4.dp),
@@ -1778,14 +1822,15 @@ fun InkCanvasScreen(
                                         tint = if (isHoldToEraseOn) MaterialTheme.colorScheme.primary else Color.Gray
                                     )
                                     Column {
-                                        Text("Hold Pen to Erase (1.2s)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                                        Text("NoteWise style stationary pen hold", fontSize = 10.sp, color = Color.Gray)
+                                        Text("Hold Pen to Erase (800ms)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                        Text("NoteWise style stationary pen hold (800ms)", fontSize = 10.sp, color = Color.Gray)
                                     }
                                 }
                                 Switch(
                                     checked = isHoldToEraseOn,
                                     onCheckedChange = {
                                         isHoldToEraseOn = it
+                                        appSettings.isHoldToEraseEnabled = it
                                         canvasView.holdToEraseEnabled = it
                                     }
                                 )
@@ -1797,6 +1842,7 @@ fun InkCanvasScreen(
                                     .fillMaxWidth()
                                     .clickable {
                                         isDebugOverlayOn = !isDebugOverlayOn
+                                        appSettings.isDebugOverlayEnabled = isDebugOverlayOn
                                         canvasView.palmFilter.config = canvasView.palmFilter.config.copy(debugOverlayEnabled = isDebugOverlayOn)
                                         canvasView.invalidate()
                                     }
@@ -1820,6 +1866,7 @@ fun InkCanvasScreen(
                                     checked = isDebugOverlayOn,
                                     onCheckedChange = {
                                         isDebugOverlayOn = it
+                                        appSettings.isDebugOverlayEnabled = it
                                         canvasView.palmFilter.config = canvasView.palmFilter.config.copy(debugOverlayEnabled = it)
                                         canvasView.invalidate()
                                     }

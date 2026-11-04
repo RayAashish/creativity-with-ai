@@ -14,7 +14,7 @@ data class PalmRejectionConfig(
     val palmTouchMajorThresholdPx: Float = 42f, // Contacts larger than this are classified as palm
     val edgeZoneMarginPx: Float = 36f,          // Touches originating near screen bezel
     val gestureDisambiguationWindowMs: Long = 35L,
-    val debugOverlayEnabled: Boolean = true
+    val debugOverlayEnabled: Boolean = false
 )
 
 enum class PointerStatus {

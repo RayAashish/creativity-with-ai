@@ -134,7 +134,7 @@ class InkCanvasView @JvmOverloads constructor(
 
     // NoteWise-Style Hold-Pen-to-Erase Feature
     var holdToEraseEnabled: Boolean = true
-    var holdToEraseDelayMs: Long = 1200L // 1.2s stationary hold activates eraser
+    var holdToEraseDelayMs: Long = 800L // 800ms stationary hold activates eraser
     var isHoldErasing: Boolean = false
         private set
 
