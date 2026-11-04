@@ -74,4 +74,22 @@ class AppSettings(context: Context) {
     var isInfiniteCanvas: Boolean
         get() = prefs.getBoolean("is_infinite_canvas", false)
         set(value) = prefs.edit().putBoolean("is_infinite_canvas", value).apply()
+
+    var isDarkMode: Boolean
+        get() = prefs.getBoolean("is_dark_mode", false)
+        set(value) = prefs.edit().putBoolean("is_dark_mode", value).apply()
+
+    var isFloatingWindowDarkMode: Boolean?
+        get() {
+            return if (prefs.contains("is_floating_window_dark_mode")) {
+                prefs.getBoolean("is_floating_window_dark_mode", false)
+            } else null
+        }
+        set(value) {
+            if (value == null) {
+                prefs.edit().remove("is_floating_window_dark_mode").apply()
+            } else {
+                prefs.edit().putBoolean("is_floating_window_dark_mode", value).apply()
+            }
+        }
 }

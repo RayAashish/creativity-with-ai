@@ -18,6 +18,7 @@ import com.antigravity.note.inkengine.probe.DeviceProbeController
 import com.antigravity.note.ui.canvas.InkCanvasScreen
 import com.antigravity.note.ui.keyboard.KeyboardShortcutManager
 import com.antigravity.note.ui.probe.DeviceProbeScreen
+import com.antigravity.note.ui.settings.AppSettings
 
 class MainActivity : ComponentActivity() {
 
@@ -33,13 +34,21 @@ class MainActivity : ComponentActivity() {
         probeController = DeviceProbeController(applicationContext)
 
         setContent {
-            DreamNoteTheme {
+            val appSettings = remember { AppSettings(applicationContext) }
+            var isDarkMode by remember { mutableStateOf(appSettings.isDarkMode) }
+
+            DreamNoteTheme(darkTheme = isDarkMode) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     var currentScreen by remember { mutableStateOf("canvas") }
 
                     when (currentScreen) {
                         "canvas" -> {
                             InkCanvasScreen(
+                                isDarkMode = isDarkMode,
+                                onToggleDarkMode = { newDark ->
+                                    isDarkMode = newDark
+                                    appSettings.isDarkMode = newDark
+                                },
                                 onNavigateToProbe = {
                                     currentScreen = "probe"
                                 }

@@ -8,6 +8,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import androidx.ink.brush.Brush
 import androidx.ink.brush.StockBrushes
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.Stroke
@@ -78,6 +79,41 @@ class DryInkCanvasView @JvmOverloads constructor(
         setLayerType(LAYER_TYPE_HARDWARE, null)
     }
 
+    var isDarkMode: Boolean = false
+        set(value) {
+            if (field != value) {
+                field = value
+                paperPaint.color = if (value) Color.parseColor("#18191D") else Color.parseColor("#FCFAF6")
+                darkStrokeCache.clear()
+                invalidate()
+            }
+        }
+
+    private val darkStrokeCache = mutableMapOf<Stroke, Stroke>()
+
+    private fun getStrokeForTheme(stroke: Stroke): Stroke {
+        if (!isDarkMode) return stroke
+        val color = stroke.brush.colorIntArgb
+        val a = (color ushr 24) and 0xFF
+        if (a < 0x80) return stroke // don't alter translucent highlighters
+        val r = (color ushr 16) and 0xFF
+        val g = (color ushr 8) and 0xFF
+        val b = color and 0xFF
+        val lum = 0.299f * r + 0.587f * g + 0.114f * b
+        if (lum < 60f) {
+            return darkStrokeCache.getOrPut(stroke) {
+                val lightBrush = Brush.createWithColorIntArgb(
+                    stroke.brush.family,
+                    0xFFF0F0F0.toInt(),
+                    stroke.brush.size,
+                    stroke.brush.epsilon
+                )
+                stroke.copy(lightBrush)
+            }
+        }
+        return stroke
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
@@ -108,13 +144,13 @@ class DryInkCanvasView @JvmOverloads constructor(
         for (i in 0 until strokes.size) {
             val stroke = strokes[i]
             if (isHighlighterStroke(stroke)) {
-                strokeRenderer.draw(canvas, stroke, identityMatrix)
+                strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
             }
         }
         for (i in 0 until strokes.size) {
             val stroke = strokes[i]
             if (!isHighlighterStroke(stroke)) {
-                strokeRenderer.draw(canvas, stroke, identityMatrix)
+                strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
             }
         }
 
@@ -162,6 +198,7 @@ class DryInkCanvasView @JvmOverloads constructor(
 
     fun loadStrokes(newStrokes: List<Stroke>) {
         strokes.clear()
+        darkStrokeCache.clear()
         val unique = mutableListOf<Stroke>()
         for (s in newStrokes) {
             val sBox = s.shape.computeBoundingBox()
@@ -187,11 +224,11 @@ class DryInkCanvasView @JvmOverloads constructor(
         if (isInfiniteCanvas) {
             viewportRect.set(0f, 0f, width.toFloat(), height.toFloat())
             transform.screenToWorld(viewportRect)
-            PaperBackgroundRenderer.drawInfinitePaper(canvas, currentTemplate, viewportRect)
+            PaperBackgroundRenderer.drawInfinitePaper(canvas, currentTemplate, viewportRect, isDarkMode)
         } else {
             val virtualWidth = 2400f
             val virtualHeight = 3400f
-            PaperBackgroundRenderer.drawPaper(canvas, currentTemplate, virtualWidth, virtualHeight)
+            PaperBackgroundRenderer.drawPaper(canvas, currentTemplate, virtualWidth, virtualHeight, isDarkMode)
         }
     }
 
@@ -242,6 +279,7 @@ class DryInkCanvasView @JvmOverloads constructor(
         }
 
         if (removed.isNotEmpty()) {
+            darkStrokeCache.clear()
             invalidate()
         }
         return removed
@@ -249,6 +287,7 @@ class DryInkCanvasView @JvmOverloads constructor(
 
     fun replaceStrokes(oldStrokes: List<Stroke>, newStrokes: List<Stroke>) {
         if (oldStrokes.isEmpty() || newStrokes.isEmpty() || oldStrokes.size != newStrokes.size) return
+        darkStrokeCache.clear()
         val map = HashMap<Stroke, Stroke>(oldStrokes.size)
         for (i in oldStrokes.indices) {
             map[oldStrokes[i]] = newStrokes[i]

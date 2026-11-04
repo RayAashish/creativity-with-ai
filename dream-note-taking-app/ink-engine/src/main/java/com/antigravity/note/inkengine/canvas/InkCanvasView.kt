@@ -324,6 +324,17 @@ class InkCanvasView @JvmOverloads constructor(
         invalidate()
     }
 
+    var isDarkMode: Boolean = false
+        private set
+
+    fun setDarkMode(isDark: Boolean) {
+        if (isDarkMode != isDark) {
+            isDarkMode = isDark
+            dryInkView.isDarkMode = isDark
+            invalidate()
+        }
+    }
+
     fun setTool(tool: CanvasTool) {
         if (currentTool == CanvasTool.LASSO && tool != CanvasTool.LASSO) {
             lassoTool.clearSelection()

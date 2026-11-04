@@ -33,13 +33,21 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Hub
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -75,6 +83,107 @@ import com.antigravity.note.library.db.FolderEntity
 import com.antigravity.note.library.db.NotebookEntity
 import com.antigravity.note.library.db.PageEntity
 
+data class BrandTag(
+    val icon: ImageVector,
+    val badgeLabel: String,
+    val badgeBg: Color,
+    val badgeText: Color,
+    val iconTint: Color
+)
+
+fun resolveBrandTag(name: String, isFolder: Boolean, isSubject: Boolean): BrandTag {
+    val lower = name.lowercase().trim()
+    return when {
+        lower.contains("spring") -> BrandTag(
+            icon = Icons.Default.Spa,
+            badgeLabel = "SPRING",
+            badgeBg = Color(0xFFE8F5E9),
+            badgeText = Color(0xFF2E7D32),
+            iconTint = Color(0xFF43A047)
+        )
+        lower.contains("dsa") || lower.contains("algo") || lower.contains("leetcode") ||
+        lower.contains("array") || lower.contains("pointer") || lower.contains("tree") ||
+        lower.contains("graph") || lower.contains("dp") || lower.contains("recursion") ||
+        lower.contains("sort") || lower.contains("search") || lower.contains("hashing") -> BrandTag(
+            icon = Icons.Default.Terminal,
+            badgeLabel = "DSA",
+            badgeBg = Color(0xFFE1F5FE),
+            badgeText = Color(0xFF0277BD),
+            iconTint = Color(0xFF0288D1)
+        )
+        lower.contains("system design") || lower.contains("architect") || lower.contains("distributed") ||
+        lower.contains("scal") || lower.contains("load balanc") || lower.contains("cluster") ||
+        lower.contains("microservice") || lower.contains("shard") || lower.contains("replica") -> BrandTag(
+            icon = Icons.Default.Hub,
+            badgeLabel = "SYS DESIGN",
+            badgeBg = Color(0xFFEDE7F6),
+            badgeText = Color(0xFF512DA8),
+            iconTint = Color(0xFF7C4DFF)
+        )
+        lower.contains("db") || lower.contains("database") || lower.contains("sql") ||
+        lower.contains("redis") || lower.contains("cache") || lower.contains("caching") ||
+        lower.contains("mongo") || lower.contains("postgres") || lower.contains("storage") -> BrandTag(
+            icon = Icons.Default.Storage,
+            badgeLabel = "DATABASE",
+            badgeBg = Color(0xFFFFF3E0),
+            badgeText = Color(0xFFE65100),
+            iconTint = Color(0xFFF57C00)
+        )
+        lower.contains("cn") || lower.contains("network") || lower.contains("tcp") ||
+        lower.contains("http") || lower.contains("socket") || lower.contains("ip") ||
+        lower.contains("dns") || lower.contains("protocol") -> BrandTag(
+            icon = Icons.Default.Public,
+            badgeLabel = "NETWORK",
+            badgeBg = Color(0xFFE0F2F1),
+            badgeText = Color(0xFF00695C),
+            iconTint = Color(0xFF00897B)
+        )
+        lower.contains("os") || lower.contains("operating system") || lower.contains("linux") ||
+        lower.contains("kernel") || lower.contains("thread") || lower.contains("concurren") ||
+        lower.contains("memory") || lower.contains("process") -> BrandTag(
+            icon = Icons.Default.Memory,
+            badgeLabel = "OS",
+            badgeBg = Color(0xFFFFEBEE),
+            badgeText = Color(0xFFC62828),
+            iconTint = Color(0xFFE53935)
+        )
+        lower.contains("web") || lower.contains("frontend") || lower.contains("react") ||
+        lower.contains("javascript") || lower.contains("html") || lower.contains("css") ||
+        lower.contains("ui") -> BrandTag(
+            icon = Icons.Default.Language,
+            badgeLabel = "WEB",
+            badgeBg = Color(0xFFE0F7FA),
+            badgeText = Color(0xFF00838F),
+            iconTint = Color(0xFF00ACC1)
+        )
+        else -> if (isSubject) {
+            BrandTag(
+                icon = Icons.Default.Folder,
+                badgeLabel = "Subject",
+                badgeBg = Color(0xFFD8E2FF),
+                badgeText = Color(0xFF001A41),
+                iconTint = Color(0xFF005AC1)
+            )
+        } else if (isFolder) {
+            BrandTag(
+                icon = Icons.Default.Folder,
+                badgeLabel = "Topic",
+                badgeBg = Color(0xFFFFE0B2),
+                badgeText = Color(0xFFE65100),
+                iconTint = Color(0xFFFB8C00)
+            )
+        } else {
+            BrandTag(
+                icon = Icons.Default.MenuBook,
+                badgeLabel = "Subtopic",
+                badgeBg = Color(0xFFE1BEE7),
+                badgeText = Color(0xFF6A1B9A),
+                iconTint = Color(0xFF8E24AA)
+            )
+        }
+    }
+}
+
 @Composable
 fun LibrarySidebarDrawer(
     folders: List<FolderEntity>,
@@ -95,7 +204,14 @@ fun LibrarySidebarDrawer(
     onRenamePage: (pageId: String, newTitle: String) -> Unit = { _, _ -> },
     onRenameNotebook: (notebookId: String, newTitle: String) -> Unit = { _, _ -> },
     onRenameFolder: (folderId: String, newName: String) -> Unit = { _, _ -> },
+    onDeleteFolder: (folderId: String) -> Unit = {},
+    onDeleteNotebook: (notebookId: String) -> Unit = {},
     onMovePagesToTrash: (pageIds: List<String>) -> Unit = {},
+    onMoveItemsToTrash: (folderIds: List<String>, notebookIds: List<String>, pageIds: List<String>) -> Unit = { fIds, nbIds, pIds ->
+        fIds.forEach { onDeleteFolder(it) }
+        nbIds.forEach { onDeleteNotebook(it) }
+        if (pIds.isNotEmpty()) onMovePagesToTrash(pIds)
+    },
     onRestorePageFromTrash: (pageId: String) -> Unit = {},
     onDeletePagePermanently: (pageId: String) -> Unit = {},
     onEmptyTrash: () -> Unit = {},
@@ -109,7 +225,13 @@ fun LibrarySidebarDrawer(
     // Multi-select state
     var isMultiSelectMode by remember { mutableStateOf(false) }
     val selectedPageIds = remember { mutableStateListOf<String>() }
+    val selectedNotebookIds = remember { mutableStateListOf<String>() }
+    val selectedFolderIds = remember { mutableStateListOf<String>() }
     var showConfirmMultiDelete by remember { mutableStateOf(false) }
+
+    // Direct single delete state
+    var folderToDelete by remember { mutableStateOf<FolderEntity?>(null) }
+    var notebookToDelete by remember { mutableStateOf<NotebookEntity?>(null) }
 
     // Dialog state
     var showCreateSubjectDialog by remember { mutableStateOf(false) }
@@ -234,7 +356,11 @@ fun LibrarySidebarDrawer(
                     color = if (isMultiSelectMode) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                     modifier = Modifier.clickable {
                         isMultiSelectMode = !isMultiSelectMode
-                        if (!isMultiSelectMode) selectedPageIds.clear()
+                        if (!isMultiSelectMode) {
+                            selectedPageIds.clear()
+                            selectedNotebookIds.clear()
+                            selectedFolderIds.clear()
+                        }
                     }
                 ) {
                     Row(
@@ -288,6 +414,7 @@ fun LibrarySidebarDrawer(
 
             // Multi-Select Action Banner
             if (isMultiSelectMode) {
+                val totalSelected = selectedFolderIds.size + selectedNotebookIds.size + selectedPageIds.size
                 Surface(
                     color = MaterialTheme.colorScheme.secondaryContainer,
                     shape = RoundedCornerShape(8.dp),
@@ -301,14 +428,14 @@ fun LibrarySidebarDrawer(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "${selectedPageIds.size} selected",
+                            text = "$totalSelected selected",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
 
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            if (selectedPageIds.isNotEmpty()) {
+                            if (totalSelected > 0) {
                                 Button(
                                     onClick = { showConfirmMultiDelete = true },
                                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
@@ -323,6 +450,8 @@ fun LibrarySidebarDrawer(
                                 onClick = {
                                     isMultiSelectMode = false
                                     selectedPageIds.clear()
+                                    selectedNotebookIds.clear()
+                                    selectedFolderIds.clear()
                                 },
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                             ) {
@@ -443,6 +572,16 @@ fun LibrarySidebarDrawer(
                             onTogglePageSelection = {
                                 if (selectedPageIds.contains(it)) selectedPageIds.remove(it) else selectedPageIds.add(it)
                             },
+                            isFolderSelected = { selectedFolderIds.contains(it) },
+                            onToggleFolderSelection = {
+                                if (selectedFolderIds.contains(it)) selectedFolderIds.remove(it) else selectedFolderIds.add(it)
+                            },
+                            onDeleteFolderClick = { folderToDelete = it },
+                            isNotebookSelected = { selectedNotebookIds.contains(it) },
+                            onToggleNotebookSelection = {
+                                if (selectedNotebookIds.contains(it)) selectedNotebookIds.remove(it) else selectedNotebookIds.add(it)
+                            },
+                            onDeleteNotebookClick = { notebookToDelete = it },
                             onPageSelected = onPageSelected,
                             onAddSubtopic = { parentFolderForNewSubtopic = it },
                             onAddNotebook = { folderForNewNotebook = it },
@@ -468,6 +607,11 @@ fun LibrarySidebarDrawer(
                             onTogglePageSelection = {
                                 if (selectedPageIds.contains(it)) selectedPageIds.remove(it) else selectedPageIds.add(it)
                             },
+                            isNotebookSelected = { selectedNotebookIds.contains(it) },
+                            onToggleNotebookSelection = {
+                                if (selectedNotebookIds.contains(it)) selectedNotebookIds.remove(it) else selectedNotebookIds.add(it)
+                            },
+                            onDeleteNotebookClick = { notebookToDelete = it },
                             onPageSelected = onPageSelected,
                             onAddPage = { targetNotebookForNewPage = it },
                             onRenameNotebook = { notebookToRename = it },
@@ -836,17 +980,20 @@ fun LibrarySidebarDrawer(
 
     // Dialog: Confirm Multi-Delete
     if (showConfirmMultiDelete) {
+        val totalSelected = selectedFolderIds.size + selectedNotebookIds.size + selectedPageIds.size
         AlertDialog(
             onDismissRequest = { showConfirmMultiDelete = false },
             icon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
             title = { Text("Move to Trash?") },
             text = {
-                Text("Move ${selectedPageIds.size} note(s) to Trash? You can restore them from Trash within 30 days.")
+                Text("Move $totalSelected selected item(s) to Trash? All contained notes will be safely preserved in the 30-day Trash where you can restore them.")
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        onMovePagesToTrash(selectedPageIds.toList())
+                        onMoveItemsToTrash(selectedFolderIds.toList(), selectedNotebookIds.toList(), selectedPageIds.toList())
+                        selectedFolderIds.clear()
+                        selectedNotebookIds.clear()
                         selectedPageIds.clear()
                         isMultiSelectMode = false
                         showConfirmMultiDelete = false
@@ -858,6 +1005,62 @@ fun LibrarySidebarDrawer(
             },
             dismissButton = {
                 OutlinedButton(onClick = { showConfirmMultiDelete = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Dialog: Delete Single Folder / Subject
+    folderToDelete?.let { folder ->
+        AlertDialog(
+            onDismissRequest = { folderToDelete = null },
+            icon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text("Delete '${folder.name}'?") },
+            text = {
+                Text("Delete this folder and all its topics? All contained notes will be moved to the 30-day Trash where they can be restored.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeleteFolder(folder.folderId)
+                        folderToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete to Trash", color = MaterialTheme.colorScheme.onError)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { folderToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Dialog: Delete Single Notebook
+    notebookToDelete?.let { nb ->
+        AlertDialog(
+            onDismissRequest = { notebookToDelete = null },
+            icon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text("Delete '${nb.title}'?") },
+            text = {
+                Text("Delete this notebook? All contained notes will be moved to the 30-day Trash where they can be restored.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeleteNotebook(nb.notebookId)
+                        notebookToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete to Trash", color = MaterialTheme.colorScheme.onError)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { notebookToDelete = null }) {
                     Text("Cancel")
                 }
             }
@@ -994,6 +1197,12 @@ private fun FolderTreeItem(
     isMultiSelectMode: Boolean,
     isPageSelected: (String) -> Boolean,
     onTogglePageSelection: (String) -> Unit,
+    isFolderSelected: (String) -> Boolean = { false },
+    onToggleFolderSelection: (String) -> Unit = {},
+    onDeleteFolderClick: (FolderEntity) -> Unit = {},
+    isNotebookSelected: (String) -> Boolean = { false },
+    onToggleNotebookSelection: (String) -> Unit = {},
+    onDeleteNotebookClick: (NotebookEntity) -> Unit = {},
     onPageSelected: (notebookId: String, pageId: String) -> Unit,
     onAddSubtopic: (parentFolderId: String) -> Unit,
     onAddNotebook: (folderId: String) -> Unit,
@@ -1007,6 +1216,7 @@ private fun FolderTreeItem(
     val isExpanded = expandedFolders[folder.folderId] == true
     val subFolders = allFolders.filter { it.parentFolderId == folder.folderId }
     val childNotebooks = allNotebooks.filter { it.folderId == folder.folderId }
+    val brandTag = resolveBrandTag(folder.name, isFolder = true, isSubject = indentLevel == 0)
     var isMenuOpen by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -1020,6 +1230,14 @@ private fun FolderTreeItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
+            if (isMultiSelectMode) {
+                Checkbox(
+                    checked = isFolderSelected(folder.folderId),
+                    onCheckedChange = { onToggleFolderSelection(folder.folderId) },
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
             Icon(
                 imageVector = if (isExpanded) Icons.Default.ExpandMore else Icons.Default.ChevronRight,
                 contentDescription = null,
@@ -1027,20 +1245,20 @@ private fun FolderTreeItem(
                 tint = Color.Gray
             )
             Icon(
-                imageVector = if (isExpanded) Icons.Default.FolderOpen else Icons.Default.Folder,
+                imageVector = brandTag.icon,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = if (indentLevel == 0) MaterialTheme.colorScheme.primary else Color(0xFFE65100)
+                tint = brandTag.iconTint
             )
             Surface(
                 shape = RoundedCornerShape(4.dp),
-                color = if (indentLevel == 0) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                color = brandTag.badgeBg
             ) {
                 Text(
-                    text = if (indentLevel == 0) "Subject" else "Topic",
+                    text = brandTag.badgeLabel,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (indentLevel == 0) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
+                    color = brandTag.badgeText,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                 )
             }
@@ -1052,7 +1270,7 @@ private fun FolderTreeItem(
                 modifier = Modifier.weight(1f)
             )
 
-            // Menu button for Folder (Add Subtopic, Add Notebook, Rename)
+            // Menu button for Folder (Add Subtopic, Add Notebook, Rename, Delete)
             Box {
                 IconButton(
                     onClick = { isMenuOpen = true },
@@ -1091,6 +1309,19 @@ private fun FolderTreeItem(
                             onRenameFolder(folder)
                         }
                     )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                                Text(if (indentLevel == 0) "Delete Subject..." else "Delete Topic...", color = MaterialTheme.colorScheme.error)
+                            }
+                        },
+                        onClick = {
+                            isMenuOpen = false
+                            onDeleteFolderClick(folder)
+                        }
+                    )
                 }
             }
         }
@@ -1110,6 +1341,12 @@ private fun FolderTreeItem(
                         isMultiSelectMode = isMultiSelectMode,
                         isPageSelected = isPageSelected,
                         onTogglePageSelection = onTogglePageSelection,
+                        isFolderSelected = isFolderSelected,
+                        onToggleFolderSelection = onToggleFolderSelection,
+                        onDeleteFolderClick = onDeleteFolderClick,
+                        isNotebookSelected = isNotebookSelected,
+                        onToggleNotebookSelection = onToggleNotebookSelection,
+                        onDeleteNotebookClick = onDeleteNotebookClick,
                         onPageSelected = onPageSelected,
                         onAddSubtopic = onAddSubtopic,
                         onAddNotebook = onAddNotebook,
@@ -1131,6 +1368,9 @@ private fun FolderTreeItem(
                         isMultiSelectMode = isMultiSelectMode,
                         isPageSelected = isPageSelected,
                         onTogglePageSelection = onTogglePageSelection,
+                        isNotebookSelected = isNotebookSelected,
+                        onToggleNotebookSelection = onToggleNotebookSelection,
+                        onDeleteNotebookClick = onDeleteNotebookClick,
                         onPageSelected = onPageSelected,
                         onAddPage = onAddPage,
                         onRenameNotebook = onRenameNotebook,
@@ -1153,6 +1393,9 @@ private fun NotebookTreeItem(
     isMultiSelectMode: Boolean,
     isPageSelected: (String) -> Boolean,
     onTogglePageSelection: (String) -> Unit,
+    isNotebookSelected: (String) -> Boolean = { false },
+    onToggleNotebookSelection: (String) -> Unit = {},
+    onDeleteNotebookClick: (NotebookEntity) -> Unit = {},
     onPageSelected: (notebookId: String, pageId: String) -> Unit,
     onAddPage: (NotebookEntity) -> Unit,
     onRenameNotebook: (NotebookEntity) -> Unit,
@@ -1162,6 +1405,7 @@ private fun NotebookTreeItem(
 ) {
     val isExpanded = expandedNotebooks[notebook.notebookId] == true
     val childPages = allPages.filter { it.notebookId == notebook.notebookId }.sortedBy { it.pageIndex }
+    val brandTag = resolveBrandTag(notebook.title, isFolder = false, isSubject = false)
     var isMenuOpen by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -1175,6 +1419,14 @@ private fun NotebookTreeItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
+            if (isMultiSelectMode) {
+                Checkbox(
+                    checked = isNotebookSelected(notebook.notebookId),
+                    onCheckedChange = { onToggleNotebookSelection(notebook.notebookId) },
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
             Icon(
                 imageVector = if (isExpanded) Icons.Default.ExpandMore else Icons.Default.ChevronRight,
                 contentDescription = null,
@@ -1182,20 +1434,20 @@ private fun NotebookTreeItem(
                 tint = Color.Gray
             )
             Icon(
-                imageVector = Icons.Default.MenuBook,
+                imageVector = brandTag.icon,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.secondary
+                tint = brandTag.iconTint
             )
             Surface(
                 shape = RoundedCornerShape(4.dp),
-                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
+                color = brandTag.badgeBg
             ) {
                 Text(
-                    text = "Subtopic",
+                    text = brandTag.badgeLabel,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    color = brandTag.badgeText,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                 )
             }
@@ -1215,7 +1467,7 @@ private fun NotebookTreeItem(
                 )
             }
 
-            // Notebook Options (Add Note & Rename)
+            // Notebook Options (Add Note, Rename, Delete)
             Box {
                 IconButton(
                     onClick = { isMenuOpen = true },
@@ -1245,6 +1497,19 @@ private fun NotebookTreeItem(
                         onClick = {
                             isMenuOpen = false
                             onRenameNotebook(notebook)
+                        }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                                Text("Delete Notebook...", color = MaterialTheme.colorScheme.error)
+                            }
+                        },
+                        onClick = {
+                            isMenuOpen = false
+                            onDeleteNotebookClick(notebook)
                         }
                     )
                 }

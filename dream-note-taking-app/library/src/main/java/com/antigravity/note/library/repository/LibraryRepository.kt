@@ -190,11 +190,39 @@ class LibraryRepository(
     }
 
     suspend fun deleteNotebook(notebookId: String) = withContext(ioDispatcher) {
+        val pages = pageDao.getPagesForNotebook(notebookId).first()
+        if (pages.isNotEmpty()) {
+            pageDao.moveMultipleToTrash(pages.map { it.pageId })
+        }
         notebookDao.deleteNotebook(notebookId)
     }
 
     suspend fun deleteFolder(folderId: String) = withContext(ioDispatcher) {
-        folderDao.deleteFolder(folderId)
+        val allFolders = folderDao.getAllFolders().first()
+        val targetFolderIds = mutableSetOf(folderId)
+        var added = true
+        while (added) {
+            val nextLevel = allFolders.filter { it.parentFolderId != null && targetFolderIds.contains(it.parentFolderId) && !targetFolderIds.contains(it.folderId) }
+            if (nextLevel.isEmpty()) {
+                added = false
+            } else {
+                targetFolderIds.addAll(nextLevel.map { it.folderId })
+            }
+        }
+
+        val allNotebooks = notebookDao.getAllNotebooks().first()
+        val notebooksToDelete = allNotebooks.filter { it.folderId != null && targetFolderIds.contains(it.folderId) }
+        for (nb in notebooksToDelete) {
+            val pages = pageDao.getPagesForNotebook(nb.notebookId).first()
+            if (pages.isNotEmpty()) {
+                pageDao.moveMultipleToTrash(pages.map { it.pageId })
+            }
+            notebookDao.deleteNotebook(nb.notebookId)
+        }
+
+        for (fId in targetFolderIds) {
+            folderDao.deleteFolder(fId)
+        }
     }
 
     suspend fun deletePage(pageId: String) = withContext(ioDispatcher) {

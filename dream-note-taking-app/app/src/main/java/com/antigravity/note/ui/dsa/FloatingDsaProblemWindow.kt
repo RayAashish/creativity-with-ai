@@ -34,13 +34,20 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,6 +55,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -66,6 +75,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -75,6 +85,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.antigravity.note.library.db.PageEntity
 import com.antigravity.note.library.model.TestCaseItem
+import com.antigravity.note.ui.settings.AppSettings
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -86,8 +97,15 @@ fun FloatingDsaProblemWindow(
     onUpdatePage: (PageEntity) -> Unit,
     onCloseWindow: () -> Unit,
     onInsertTraceTable: (() -> Unit)? = null,
+    isAppDark: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val appSettings = remember { AppSettings(context) }
+    var isWindowDark by remember(page.pageId, isAppDark) {
+        mutableStateOf(appSettings.isFloatingWindowDarkMode ?: isAppDark)
+    }
+
     val coroutineScope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
@@ -232,6 +250,9 @@ fun FloatingDsaProblemWindow(
         }
     }
 
+    var testCaseToEdit by remember { mutableStateOf<TestCaseItem?>(null) }
+    var isNewTestCaseDialog by remember { mutableStateOf(false) }
+
     fun toggleTestCaseCheck(index: Int) {
         if (index in testCases.indices) {
             val old = testCases[index]
@@ -241,11 +262,25 @@ fun FloatingDsaProblemWindow(
         }
     }
 
-    fun addNewTestCase() {
-        val nextId = (testCases.maxOfOrNull { it.id } ?: 0) + 1
-        testCases.add(TestCaseItem(nextId, "Case $nextId", "", "", false))
+    fun updateTestCase(updated: TestCaseItem) {
+        val idx = testCases.indexOfFirst { it.id == updated.id }
+        if (idx != -1) {
+            testCases[idx] = updated
+            val jsonStr = Json.encodeToString(testCases.toList())
+            onUpdatePage(page.copy(testCasesJson = jsonStr))
+        }
+    }
+
+    fun deleteTestCase(id: Int) {
+        testCases.removeAll { it.id == id }
         val jsonStr = Json.encodeToString(testCases.toList())
         onUpdatePage(page.copy(testCasesJson = jsonStr))
+    }
+
+    fun openNewTestCaseDialog() {
+        val nextId = (testCases.maxOfOrNull { it.id } ?: 0) + 1
+        testCaseToEdit = TestCaseItem(nextId, "Case $nextId", "", "", false)
+        isNewTestCaseDialog = true
     }
 
     val difficultyColor = when (page.difficulty?.lowercase()) {
@@ -255,7 +290,11 @@ fun FloatingDsaProblemWindow(
         else -> MaterialTheme.colorScheme.primary
     }
 
-    val isDark = isSystemInDarkTheme()
+    val windowBg = if (isWindowDark) Color(0xFF1E1F24) else Color(0xFFFFFFFF)
+    val headerBg = if (isWindowDark) Color(0xFF26272E) else Color(0xFFF0F2F6)
+    val ribbonBg = if (isWindowDark) Color(0xFF26272E).copy(alpha = 0.95f) else Color(0xFFF0F2F6).copy(alpha = 0.95f)
+    val headerTextColor = if (isWindowDark) Color(0xFFF0F0F4) else Color(0xFF1B1B1F)
+    val borderColor = if (isWindowDark) Color(0xFF3E404D) else Color(0xFFD6D9E3)
 
     Box(
         modifier = modifier
@@ -355,8 +394,9 @@ fun FloatingDsaProblemWindow(
                     .width(windowWidthDp.dp)
                     .height(windowHeightDp.dp),
                 shape = RoundedCornerShape(18.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, borderColor),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = windowAlpha)
+                    containerColor = windowBg.copy(alpha = windowAlpha)
                 ),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
@@ -366,7 +406,7 @@ fun FloatingDsaProblemWindow(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(18.dp)
-                            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f))
+                            .background(headerBg.copy(alpha = 0.7f))
                             .pointerInput(Unit) {
                                 detectDragGestures(
                                     onDrag = { change, dragAmount ->
@@ -394,7 +434,7 @@ fun FloatingDsaProblemWindow(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            .background(headerBg)
                             .pointerInput(Unit) {
                                 detectDragGestures(
                                     onDrag = { change, dragAmount ->
@@ -426,7 +466,7 @@ fun FloatingDsaProblemWindow(
                                 text = page.title,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = headerTextColor,
                                 maxLines = 1
                             )
                             page.difficulty?.let { diff ->
@@ -477,6 +517,23 @@ fun FloatingDsaProblemWindow(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(1.dp)
                         ) {
+                            // Dark / Light Mode Toggle for problem window
+                            IconButton(
+                                onClick = {
+                                    val next = !isWindowDark
+                                    isWindowDark = next
+                                    appSettings.isFloatingWindowDarkMode = next
+                                },
+                                modifier = Modifier.size(26.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isWindowDark) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                    contentDescription = if (isWindowDark) "Switch to Light Mode" else "Switch to Dark Mode",
+                                    tint = if (isWindowDark) Color(0xFFFFD54F) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+
                             // Ghost / Opacity Mode Toggle (Cycles 0.98 -> 0.65 -> 0.35)
                             IconButton(
                                 onClick = {
@@ -643,9 +700,11 @@ fun FloatingDsaProblemWindow(
                                     }
                                 },
                                 update = { webView ->
-                                    val textColor = if (isDark) "#E2E2E6" else "#1B1B1F"
-                                    val codeBg = if (isDark) "#2B2B30" else "#F0F0F4"
-                                    val preBorder = if (isDark) "#44444A" else "#E0E0E6"
+                                    val textColor = if (isWindowDark) "#F0F0F4" else "#1B1B1F"
+                                    val codeBg = if (isWindowDark) "#2B2B30" else "#F1F3F8"
+                                    val preBorder = if (isWindowDark) "#44444A" else "#D4D7E2"
+                                    val bodyBg = if (isWindowDark) "#1E1F24" else "#FFFFFF"
+                                    webView.setBackgroundColor(if (isWindowDark) 0xFF1E1F24.toInt() else 0xFFFFFFFF.toInt())
 
                                     val styledHtml = """
                                         <!DOCTYPE html>
@@ -660,7 +719,7 @@ fun FloatingDsaProblemWindow(
                                                 color: $textColor;
                                                 margin: 0;
                                                 padding: 12px;
-                                                background: transparent;
+                                                background-color: $bodyBg;
                                                 word-break: break-word;
                                             }
                                             img {
@@ -700,7 +759,7 @@ fun FloatingDsaProblemWindow(
                                                 margin: 6px 0;
                                             }
                                             strong {
-                                                color: ${if (isDark) "#90CAF9" else "#005AC1"};
+                                                color: ${if (isWindowDark) "#90CAF9" else "#005AC1"};
                                             }
                                         </style>
                                         </head>
@@ -728,14 +787,14 @@ fun FloatingDsaProblemWindow(
                         }
                     }
 
-                    HorizontalDivider(thickness = 0.6.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                    HorizontalDivider(thickness = 0.6.dp, color = borderColor)
 
                     // ================= MINIMAL BOTTOM CONTROLS RIBBON =================
                     // (Takes only ~38 dp height; Minimal testcase checklist, Game-changer trace stamp, Resize thumb)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f))
+                            .background(ribbonBg)
                             .padding(horizontal = 10.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -752,37 +811,51 @@ fun FloatingDsaProblemWindow(
                                 text = "✓ Tests:",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isWindowDark) Color(0xFFBBC7DB) else MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
                             testCases.forEachIndexed { index, tc ->
                                 val isChecked = tc.isChecked
                                 Surface(
                                     shape = RoundedCornerShape(14.dp),
-                                    color = if (isChecked) Color(0xFF146C2E).copy(alpha = 0.18f) else MaterialTheme.colorScheme.surface,
+                                    color = if (isChecked) Color(0xFF146C2E).copy(alpha = 0.18f) else if (isWindowDark) Color(0xFF2E303B) else Color.White,
                                     border = androidx.compose.foundation.BorderStroke(
                                         1.dp,
-                                        if (isChecked) Color(0xFF146C2E) else MaterialTheme.colorScheme.outlineVariant
+                                        if (isChecked) Color(0xFF146C2E) else borderColor
                                     ),
                                     modifier = Modifier.clickable { toggleTestCaseCheck(index) }
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                        modifier = Modifier.padding(start = 8.dp, end = 4.dp, top = 3.dp, bottom = 3.dp),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(3.dp)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Check,
                                             contentDescription = "Test passed toggle",
-                                            tint = if (isChecked) Color(0xFF146C2E) else MaterialTheme.colorScheme.outlineVariant,
+                                            tint = if (isChecked) Color(0xFF146C2E) else borderColor,
                                             modifier = Modifier.size(12.dp)
                                         )
                                         Text(
                                             text = tc.title,
                                             fontSize = 11.sp,
                                             fontWeight = if (isChecked) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isChecked) Color(0xFF146C2E) else MaterialTheme.colorScheme.onSurface
+                                            color = if (isChecked) Color(0xFF146C2E) else if (isWindowDark) Color(0xFFE2E2E6) else Color(0xFF1B1B1F)
                                         )
+                                        IconButton(
+                                            onClick = {
+                                                testCaseToEdit = tc
+                                                isNewTestCaseDialog = false
+                                            },
+                                            modifier = Modifier.size(18.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Edit,
+                                                contentDescription = "Modify or Delete Test Case",
+                                                tint = if (isWindowDark) Color(0xFFAAAAAA) else Color(0xFF757575),
+                                                modifier = Modifier.size(10.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -790,10 +863,10 @@ fun FloatingDsaProblemWindow(
                             // Add Test Case Chip
                             Surface(
                                 shape = CircleShape,
-                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                color = if (isWindowDark) Color(0xFF3A3C4A) else MaterialTheme.colorScheme.surfaceVariant,
                                 modifier = Modifier
                                     .size(24.dp)
-                                    .clickable { addNewTestCase() }
+                                    .clickable { openNewTestCaseDialog() }
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Add,
@@ -931,5 +1004,94 @@ fun FloatingDsaProblemWindow(
                 }
             }
         }
+    }
+
+    // Dialog: Modify or Delete Test Case
+    testCaseToEdit?.let { tc ->
+        var editTitle by remember(tc.id) { mutableStateOf(tc.title) }
+        var editInput by remember(tc.id) { mutableStateOf(tc.input) }
+        var editOutput by remember(tc.id) { mutableStateOf(tc.output) }
+
+        AlertDialog(
+            onDismissRequest = { testCaseToEdit = null },
+            icon = {
+                Icon(
+                    imageVector = if (isNewTestCaseDialog) Icons.Default.Add else Icons.Default.Edit,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            title = {
+                Text(if (isNewTestCaseDialog) "Add Test Case" else "Modify Test Case")
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedTextField(
+                        value = editTitle,
+                        onValueChange = { editTitle = it },
+                        label = { Text("Case Title (e.g. Example 1, Edge Case)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editInput,
+                        onValueChange = { editInput = it },
+                        label = { Text("Input (e.g. n = 4)") },
+                        minLines = 2,
+                        maxLines = 4,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editOutput,
+                        onValueChange = { editOutput = it },
+                        label = { Text("Expected Output (e.g. 5)") },
+                        minLines = 1,
+                        maxLines = 3,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val finalTitle = editTitle.trim().ifEmpty { "Case ${tc.id}" }
+                        val updated = tc.copy(title = finalTitle, input = editInput.trim(), output = editOutput.trim())
+                        if (isNewTestCaseDialog) {
+                            testCases.add(updated)
+                            val jsonStr = Json.encodeToString(testCases.toList())
+                            onUpdatePage(page.copy(testCasesJson = jsonStr))
+                        } else {
+                            updateTestCase(updated)
+                        }
+                        testCaseToEdit = null
+                    }
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (!isNewTestCaseDialog) {
+                        OutlinedButton(
+                            onClick = {
+                                deleteTestCase(tc.id)
+                                testCaseToEdit = null
+                            },
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Delete")
+                        }
+                    }
+                    OutlinedButton(onClick = { testCaseToEdit = null }) {
+                        Text("Cancel")
+                    }
+                }
+            }
+        )
     }
 }

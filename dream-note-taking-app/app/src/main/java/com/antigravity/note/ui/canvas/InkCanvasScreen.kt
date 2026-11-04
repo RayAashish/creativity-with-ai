@@ -58,11 +58,13 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.CopyAll
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FitScreen
 import androidx.compose.material.icons.filled.FormatPaint
 import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PanTool
@@ -152,11 +154,19 @@ import java.io.File
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InkCanvasScreen(
+    isDarkMode: Boolean = false,
+    onToggleDarkMode: ((Boolean) -> Unit)? = null,
     onNavigateToProbe: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val canvasView = remember { InkCanvasView(context) }
+    val appSettings = remember { AppSettings(context) }
+    var currentDarkMode by remember(isDarkMode) { mutableStateOf(isDarkMode) }
+
+    LaunchedEffect(currentDarkMode) {
+        canvasView.setDarkMode(currentDarkMode)
+    }
 
     // Repositories & Database
     val pageRepo = remember { PageRepository(File(context.filesDir, "notebooks")) }
@@ -175,8 +185,6 @@ fun InkCanvasScreen(
     val currentPage by docManager.currentPage.collectAsStateWithLifecycle()
     val pagesList by docManager.pagesList.collectAsStateWithLifecycle()
     val openLatency by docManager.lastOpenLatencyMs.collectAsStateWithLifecycle()
-
-    val appSettings = remember { AppSettings(context) }
 
     // UI State
     var isSidebarOpen by remember { mutableStateOf(false) }
@@ -536,6 +544,15 @@ fun InkCanvasScreen(
             Color(0xFF40C4FF), // Neon Blue
             Color(0xFFFF80AB), // Soft Pink
             Color(0xFFFFAB40), // Warm Amber
+            Color(0xFFE040FB)  // Bright Violet
+        )
+    } else if (currentDarkMode) {
+        listOf(
+            Color(0xFFF5F5F5), // Crisp White / Light Silver
+            Color(0xFF40C4FF), // Vivid Sky Blue
+            Color(0xFFFF5252), // Bright Coral Red
+            Color(0xFF69F0AE), // Mint Green
+            Color(0xFFFFD740), // Bright Gold / Amber
             Color(0xFFE040FB)  // Bright Violet
         )
     } else {
@@ -1139,6 +1156,25 @@ fun InkCanvasScreen(
                             )
                         }
 
+                        // Dark / Light Mode Toggle
+                        IconButton(
+                            onClick = {
+                                val next = !currentDarkMode
+                                currentDarkMode = next
+                                appSettings.isDarkMode = next
+                                canvasView.setDarkMode(next)
+                                onToggleDarkMode?.invoke(next)
+                            },
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (currentDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                contentDescription = if (currentDarkMode) "Switch to Light Mode" else "Switch to Dark Mode",
+                                tint = if (currentDarkMode) Color(0xFFFFD54F) else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+
                         // Collapse More Actions Menu (User requested: "keep in collapse/navigation drawer is like share, mic")
                         var showMoreActionsMenu by remember { mutableStateOf(false) }
                         Box {
@@ -1157,6 +1193,25 @@ fun InkCanvasScreen(
                                 expanded = showMoreActionsMenu,
                                 onDismissRequest = { showMoreActionsMenu = false }
                             ) {
+                                // Dark Mode Toggle
+                                DropdownMenuItem(
+                                    text = { Text(if (currentDarkMode) "Light Mode" else "Dark Mode") },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = if (currentDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                            contentDescription = null,
+                                            tint = if (currentDarkMode) Color(0xFFFFD54F) else MaterialTheme.colorScheme.primary
+                                        )
+                                    },
+                                    onClick = {
+                                        showMoreActionsMenu = false
+                                        val next = !currentDarkMode
+                                        currentDarkMode = next
+                                        appSettings.isDarkMode = next
+                                        canvasView.setDarkMode(next)
+                                        onToggleDarkMode?.invoke(next)
+                                    }
+                                )
                                 // Audio Sync
                                 DropdownMenuItem(
                                     text = { Text(if (isRecordingAudio) "Stop Recording Audio" else "Record Audio Sync") },
@@ -1402,7 +1457,8 @@ fun InkCanvasScreen(
                             count = 5
                         )
                     )
-                }
+                },
+                isAppDark = currentDarkMode
             )
         }
 
@@ -1966,6 +2022,42 @@ fun InkCanvasScreen(
                     scope.launch {
                         libraryRepo.renameFolder(folderId, newName)
                         Toast.makeText(context, "Folder renamed to: $newName", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onDeleteFolder = { folderId ->
+                    scope.launch {
+                        libraryRepo.deleteFolder(folderId)
+                        Toast.makeText(context, "Subject/Topic deleted", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onDeleteNotebook = { notebookId ->
+                    scope.launch {
+                        libraryRepo.deleteNotebook(notebookId)
+                        Toast.makeText(context, "Notebook deleted", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onMoveItemsToTrash = { folderIds, notebookIds, pageIds ->
+                    scope.launch {
+                        for (fId in folderIds) {
+                            libraryRepo.deleteFolder(fId)
+                        }
+                        for (nbId in notebookIds) {
+                            libraryRepo.deleteNotebook(nbId)
+                        }
+                        if (pageIds.isNotEmpty()) {
+                            libraryRepo.movePagesToTrash(pageIds)
+                            val currId = currentPage?.metadata?.pageId
+                            if (currId != null && pageIds.contains(currId)) {
+                                val remaining = libraryRepo.getAllActivePages().first().filter { !pageIds.contains(it.pageId) }
+                                val next = remaining.firstOrNull()
+                                if (next != null) {
+                                    docManager.switchToNotebookAndPage(next.notebookId, next.pageId) { p ->
+                                        canvasView.loadPage(p, docManager.lastOpenLatencyMs.value)
+                                    }
+                                }
+                            }
+                        }
+                        Toast.makeText(context, "Selected items deleted / moved to Trash", Toast.LENGTH_SHORT).show()
                     }
                 },
                 onMovePagesToTrash = { pageIds ->
