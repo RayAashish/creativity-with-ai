@@ -20,7 +20,7 @@ import java.io.FileOutputStream
 import java.util.UUID
 
 class PageRepository(
-    private val rootDir: File,
+    val rootDir: File,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
     private val repositoryScope = CoroutineScope(SupervisorJob() + ioDispatcher)
@@ -47,7 +47,7 @@ class PageRepository(
         return dir
     }
 
-    private fun getPageFile(notebookId: String, pageId: String): File {
+    fun getPageFile(notebookId: String, pageId: String): File {
         return File(getPagesDir(notebookId), "$pageId.inkpage")
     }
 

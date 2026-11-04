@@ -113,3 +113,10 @@ dependencies {
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
 }
+
+// Task Pack 2: Dev Guard against accidental uninstalls or data loss
+tasks.matching { it.name.startsWith("uninstall") }.configureEach {
+    doFirst {
+        throw GradleException("DANGER: 'uninstall' is disabled by Task Pack 2 data protection rules! Use 'adb install -r' instead.")
+    }
+}

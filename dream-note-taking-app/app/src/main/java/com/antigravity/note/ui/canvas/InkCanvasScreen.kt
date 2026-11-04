@@ -26,6 +26,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Pause
@@ -174,7 +176,18 @@ fun InkCanvasScreen(
     // Repositories & Database
     val pageRepo = remember { PageRepository(File(context.filesDir, "notebooks")) }
     val database = remember { NoteDatabase.getInstance(context) }
-    val libraryRepo = remember { LibraryRepository(database, pageRepo) }
+    val localBackupManager = remember { com.antigravity.note.library.backup.local.LocalBackupManager(context, database, pageRepo) }
+    val libraryRepo = remember { LibraryRepository(database, pageRepo, localBackupManager = localBackupManager) }
+
+    var isLocalBackupDialogOpen by remember { mutableStateOf(false) }
+    var detectedNotesPrompt by remember { mutableStateOf<com.antigravity.note.library.backup.local.ExistingNotesDetection.Found?>(null) }
+
+    LaunchedEffect(Unit) {
+        val detection = localBackupManager.detectExistingNotes()
+        if (detection is com.antigravity.note.library.backup.local.ExistingNotesDetection.Found) {
+            detectedNotesPrompt = detection
+        }
+    }
 
     // Library State Flows
     val folders by libraryRepo.getAllFolders().collectAsStateWithLifecycle(emptyList())
@@ -2006,6 +2019,9 @@ fun InkCanvasScreen(
                 onOpenBackupSettings = {
                     isBackupDialogOpen = true
                 },
+                onOpenLocalBackupSettings = {
+                    isLocalBackupDialogOpen = true
+                },
                 onCreateFolder = { name, parentId ->
                     scope.launch {
                         libraryRepo.createFolder(name, parentId)
@@ -2600,6 +2616,54 @@ fun InkCanvasScreen(
                 dismissButton = {
                     OutlinedButton(onClick = { showDeletePageDialog = false }) {
                         Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        // Persistent Local Backup Dialog
+        if (isLocalBackupDialogOpen) {
+            com.antigravity.note.ui.backup.LocalBackupDialog(
+                localBackupManager = localBackupManager,
+                onDismiss = { isLocalBackupDialogOpen = false }
+            )
+        }
+
+        // Auto-Restore Detected Notes Dialog (Fresh install / data wipe recovery)
+        if (detectedNotesPrompt != null) {
+            val prompt = detectedNotesPrompt!!
+            AlertDialog(
+                onDismissRequest = { detectedNotesPrompt = null },
+                icon = { Icon(Icons.Default.FolderOpen, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                title = { Text("Restore Your Notes") },
+                text = {
+                    Text("Found existing notes in ${prompt.folderDisplayPath} (${prompt.pageCount} pages, ${prompt.notebookCount} notebooks).\n\nWould you like to restore them now?")
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val p = detectedNotesPrompt ?: return@Button
+                            detectedNotesPrompt = null
+                            scope.launch {
+                                val result = localBackupManager.restoreFromPersistentFolder(p)
+                                if (result.success) {
+                                    docManager.initialize(docManager.defaultNotebookId) {
+                                        val cur = docManager.currentPage.value
+                                        if (cur != null) canvasView.loadPage(cur)
+                                    }
+                                    Toast.makeText(context, "Restored ${result.restoredPages} pages successfully!", Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, "Restore failed: ${result.error}", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Restore Notes")
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = { detectedNotesPrompt = null }) {
+                        Text("Start Fresh")
                     }
                 }
             )

@@ -201,6 +201,7 @@ fun LibrarySidebarDrawer(
     onCreateGeneralPage: (notebookId: String, title: String, template: PaperTemplate) -> Unit = { _, _, _ -> },
     onCreateProblemPage: (notebookId: String, title: String, url: String, diff: String, tags: String) -> Unit = { _, _, _, _, _ -> },
     onOpenBackupSettings: () -> Unit = {},
+    onOpenLocalBackupSettings: () -> Unit = {},
     onRenamePage: (pageId: String, newTitle: String) -> Unit = { _, _ -> },
     onRenameNotebook: (notebookId: String, newTitle: String) -> Unit = { _, _ -> },
     onRenameFolder: (folderId: String, newName: String) -> Unit = { _, _ -> },
@@ -306,6 +307,9 @@ fun LibrarySidebarDrawer(
                 ) {
                     IconButton(onClick = onOpenQuickSwitcher, modifier = Modifier.size(36.dp)) {
                         Icon(Icons.Default.Search, contentDescription = "Quick Switcher", modifier = Modifier.size(20.dp))
+                    }
+                    IconButton(onClick = onOpenLocalBackupSettings, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.Default.Storage, contentDescription = "Local Persistent Backup", modifier = Modifier.size(20.dp))
                     }
                     IconButton(onClick = onOpenBackupSettings, modifier = Modifier.size(36.dp)) {
                         Icon(Icons.Default.CloudSync, contentDescription = "GitHub Backup & Sync", modifier = Modifier.size(20.dp))

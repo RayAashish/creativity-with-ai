@@ -23,7 +23,8 @@ class LibraryRepository(
     private val database: NoteDatabase,
     private val pageRepository: PageRepository,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-    val backupChangeTracker: BackupChangeTracker = BackupChangeTracker(database.backupManifestDao(), ioDispatcher)
+    val backupChangeTracker: BackupChangeTracker = BackupChangeTracker(database.backupManifestDao(), ioDispatcher),
+    val localBackupManager: com.antigravity.note.library.backup.local.LocalBackupManager? = null
 ) {
     private val repoScope = CoroutineScope(SupervisorJob() + ioDispatcher)
     private val folderDao = database.folderDao()
@@ -33,6 +34,7 @@ class LibraryRepository(
     init {
         pageRepository.onPageSavedListener = { notebookId, pageId, file ->
             backupChangeTracker.schedulePageSave(notebookId, pageId, file)
+            localBackupManager?.schedulePageMirror(notebookId, pageId, file)
         }
         pageRepository.onPageDeletedListener = { notebookId, pageId ->
             repoScope.launch {
