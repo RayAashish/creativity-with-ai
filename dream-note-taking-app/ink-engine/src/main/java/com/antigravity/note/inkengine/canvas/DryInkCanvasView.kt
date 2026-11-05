@@ -101,30 +101,67 @@ class DryInkCanvasView @JvmOverloads constructor(
                 field = value
                 paperPaint.color = if (value) Color.parseColor("#18191D") else Color.parseColor("#FCFAF6")
                 darkStrokeCache.clear()
+                lightStrokeCache.clear()
+                invalidate()
+            }
+        }
+
+    var isAdaptiveContrastEnabled: Boolean = true
+        set(value) {
+            if (field != value) {
+                field = value
+                darkStrokeCache.clear()
+                lightStrokeCache.clear()
                 invalidate()
             }
         }
 
     private val darkStrokeCache = mutableMapOf<Stroke, Stroke>()
+    private val lightStrokeCache = mutableMapOf<Stroke, Stroke>()
 
     private fun getStrokeForTheme(stroke: Stroke): Stroke {
-        if (!isDarkMode) return stroke
+        if (!isAdaptiveContrastEnabled) return stroke
         val color = stroke.brush.colorIntArgb
         val a = (color ushr 24) and 0xFF
         if (a < 0x80) return stroke // don't alter translucent highlighters
         val r = (color ushr 16) and 0xFF
         val g = (color ushr 8) and 0xFF
         val b = color and 0xFF
+        val maxC = maxOf(r, maxOf(g, b))
+        val minC = minOf(r, minOf(g, b))
+        val sat = maxC - minC
+        // Only adapt monochrome ink (black, grays, whites). Colored inks (blue, red, green) preserve hue.
+        if (sat > 35) return stroke
+
         val lum = 0.299f * r + 0.587f * g + 0.114f * b
-        if (lum < 60f) {
-            return darkStrokeCache.getOrPut(stroke) {
-                val lightBrush = Brush.createWithColorIntArgb(
-                    stroke.brush.family,
-                    0xFFF0F0F0.toInt(),
-                    stroke.brush.size,
-                    stroke.brush.epsilon
-                )
-                stroke.copy(lightBrush)
+
+        if (isDarkMode) {
+            // Dark Mode canvas (#18191D): background is near black.
+            // If stroke is dark (black, deep gray, low luminance < 85), map to crisp off-white #F5F5F5
+            if (lum < 85f) {
+                return darkStrokeCache.getOrPut(stroke) {
+                    val lightBrush = Brush.createWithColorIntArgb(
+                        stroke.brush.family,
+                        0xFFF5F5F5.toInt(),
+                        stroke.brush.size,
+                        stroke.brush.epsilon
+                    )
+                    stroke.copy(lightBrush)
+                }
+            }
+        } else {
+            // Light Mode canvas (#FCFAF6): background is near white.
+            // If stroke is light (white, pale gray, high luminance > 175), map to crisp deep ink #111318
+            if (lum > 175f) {
+                return lightStrokeCache.getOrPut(stroke) {
+                    val darkBrush = Brush.createWithColorIntArgb(
+                        stroke.brush.family,
+                        0xFF111318.toInt(),
+                        stroke.brush.size,
+                        stroke.brush.epsilon
+                    )
+                    stroke.copy(darkBrush)
+                }
             }
         }
         return stroke
@@ -215,6 +252,7 @@ class DryInkCanvasView @JvmOverloads constructor(
     fun loadStrokes(newStrokes: List<Stroke>) {
         strokes.clear()
         darkStrokeCache.clear()
+        lightStrokeCache.clear()
         val unique = mutableListOf<Stroke>()
         for (s in newStrokes) {
             val sBox = s.shape.computeBoundingBox()
@@ -345,6 +383,7 @@ class DryInkCanvasView @JvmOverloads constructor(
     fun replaceStrokes(oldStrokes: List<Stroke>, newStrokes: List<Stroke>) {
         if (oldStrokes.isEmpty() && newStrokes.isEmpty()) return
         darkStrokeCache.clear()
+        lightStrokeCache.clear()
         for (old in oldStrokes) {
             strokes.remove(old)
             spatialIndex.remove(old)
@@ -386,6 +425,7 @@ class DryInkCanvasView @JvmOverloads constructor(
 
     fun removeStrokes(strokesToRemove: List<Stroke>) {
         darkStrokeCache.clear()
+        lightStrokeCache.clear()
         for (s in strokesToRemove) {
             strokes.remove(s)
             spatialIndex.remove(s)
@@ -397,6 +437,7 @@ class DryInkCanvasView @JvmOverloads constructor(
         strokes.clear()
         spatialIndex.clear()
         darkStrokeCache.clear()
+        lightStrokeCache.clear()
         invalidate()
     }
 }

@@ -1,5 +1,7 @@
 package com.antigravity.note
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.WindowManager
@@ -23,6 +25,7 @@ import com.antigravity.note.ui.settings.AppSettings
 class MainActivity : ComponentActivity() {
 
     private lateinit var probeController: DeviceProbeController
+    private var incomingUri by mutableStateOf<Uri?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,6 +35,7 @@ class MainActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         probeController = DeviceProbeController(applicationContext)
+        incomingUri = intent?.data ?: intent?.getParcelableExtra(Intent.EXTRA_STREAM)
 
         setContent {
             val appSettings = remember { AppSettings(applicationContext) }
@@ -51,7 +55,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onNavigateToProbe = {
                                     currentScreen = "probe"
-                                }
+                                },
+                                incomingFileUri = incomingUri
                             )
                         }
                         "probe" -> {
@@ -66,6 +71,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        incomingUri = intent.data ?: intent.getParcelableExtra(Intent.EXTRA_STREAM)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {

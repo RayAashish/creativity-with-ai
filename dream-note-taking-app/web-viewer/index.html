@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>InkFlow Web Viewer — Open & View .inkflow Notes Anywhere</title>
+  <meta name="description" content="Official cross-platform web viewer for InkFlow notes. Open, view, and interact with .inkflow and web note files on any browser with zero installation.">
+  <style>
+    :root {
+      --bg-canvas: #FCFAF6;
+      --bg-surface: #FFFFFF;
+      --bg-surface-variant: #F0F2F8;
+      --border-color: #E0E2EC;
+      --text-main: #1A1C1E;
+      --text-muted: #74777F;
+      --primary: #005AC1;
+      --primary-container: #D8E2FF;
+      --on-primary-container: #001A41;
+      --rule-line: rgba(0, 90, 193, 0.09);
+      --rule-margin: rgba(186, 26, 26, 0.18);
+    }
+    body.dark {
+      --bg-canvas: #18191D;
+      --bg-surface: #22242A;
+      --bg-surface-variant: #2D3038;
+      --border-color: #44474F;
+      --text-main: #E2E2E6;
+      --text-muted: #8E9099;
+      --primary: #ABC7FF;
+      --primary-container: #00458E;
+      --on-primary-container: #D8E2FF;
+      --rule-line: rgba(255, 255, 255, 0.08);
+      --rule-margin: rgba(255, 180, 171, 0.22);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg-surface); color: var(--text-main); }
+    #app { display: flex; flex-direction: column; width: 100%; height: 100%; }
+
+    header { display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); z-index: 10; gap: 12px; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .logo-badge { background: linear-gradient(135deg, #005AC1, #2563EB); color: #FFF; font-weight: 800; font-size: 12px; padding: 6px 10px; border-radius: 8px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }
+    .doc-titles h1 { font-size: 15px; font-weight: 700; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .doc-titles p { font-size: 11px; color: var(--text-muted); }
+
+    .header-center { display: flex; align-items: center; gap: 8px; background: var(--bg-surface-variant); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border-color); }
+    .btn-nav { background: none; border: none; cursor: pointer; color: var(--text-main); padding: 4px 8px; border-radius: 4px; font-size: 14px; font-weight: bold; }
+    .btn-nav:hover { background: var(--border-color); }
+    .btn-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+    .page-indicator { font-size: 12px; font-weight: 600; min-width: 80px; text-align: center; }
+
+    .header-right { display: flex; align-items: center; gap: 8px; }
+    .btn-tool { background: var(--bg-surface-variant); border: 1px solid var(--border-color); color: var(--text-main); padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s; }
+    .btn-tool:hover { background: var(--primary-container); color: var(--on-primary-container); border-color: var(--primary); }
+    .btn-primary { background: var(--primary); color: #FFF; border: none; }
+    .btn-primary:hover { background: #00458E; color: #FFF; }
+
+    #main-content { flex: 1; position: relative; width: 100%; height: 100%; overflow: hidden; display: flex; }
+    #viewport-container { flex: 1; position: relative; width: 100%; height: 100%; overflow: hidden; cursor: grab; background: var(--bg-canvas); }
+    #viewport-container:active { cursor: grabbing; }
+    canvas { position: absolute; top: 0; left: 0; display: block; }
+
+    /* Welcome / Dropzone Overlay */
+    #dropzone-overlay { position: absolute; inset: 0; background: var(--bg-surface); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; padding: 24px; text-align: center; }
+    .drop-card { max-width: 520px; width: 100%; background: var(--bg-surface-variant); border: 2px dashed var(--border-color); border-radius: 24px; padding: 40px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; transition: border-color 0.2s; }
+    .drop-card.dragover { border-color: var(--primary); background: var(--primary-container); }
+    .drop-icon { width: 64px; height: 64px; border-radius: 20px; background: var(--primary-container); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 28px; }
+    .drop-title { font-size: 20px; font-weight: 700; color: var(--text-main); }
+    .drop-subtitle { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+    .file-input { display: none; }
+    .sample-btn { background: none; border: 1px solid var(--border-color); color: var(--primary); font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 12px; cursor: pointer; margin-top: 4px; }
+    .sample-btn:hover { background: var(--primary-container); }
+
+    .zoom-hud { position: absolute; bottom: 20px; right: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 6px; display: flex; gap: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 5; }
+    .zoom-btn { width: 34px; height: 34px; border-radius: 8px; border: none; background: var(--bg-surface-variant); color: var(--text-main); font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .zoom-btn:hover { background: var(--primary-container); color: var(--on-primary-container); }
+
+    .bottom-status { position: absolute; bottom: 20px; left: 20px; font-size: 12px; color: var(--text-muted); background: var(--bg-surface); padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border-color); pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="header-left">
+        <div class="logo-badge">⚡ INKFLOW VIEWER</div>
+        <div class="doc-titles">
+          <h1 id="notebook-title">No Note Loaded</h1>
+          <p id="page-subtitle">Drag & drop any .inkflow or .html note</p>
+        </div>
+      </div>
+
+      <div class="header-center" id="nav-controls" style="display: none;">
+        <button id="btn-prev" class="btn-nav" title="Previous Page">◀</button>
+        <span id="page-label" class="page-indicator">Page 1 / 1</span>
+        <button id="btn-next" class="btn-nav" title="Next Page">▶</button>
+      </div>
+
+      <div class="header-right">
+        <input type="file" id="file-selector" class="file-input" accept=".inkflow,.html,.json,.zip">
+        <button id="btn-open-file" class="btn-tool btn-primary">📂 Open File</button>
+        <button id="btn-theme" class="btn-tool">🌓 Theme</button>
+        <button id="btn-fit" class="btn-tool">🔍 Fit</button>
+        <button id="btn-print" class="btn-tool">🖨️ PDF</button>
+        <button id="btn-export-png" class="btn-tool">🖼️ PNG</button>
+      </div>
+    </header>
+
+    <div id="main-content">
+      <div id="viewport-container">
+        <canvas id="noteCanvas"></canvas>
+
+        <div id="dropzone-overlay">
+          <div class="drop-card" id="drop-target">
+            <div class="drop-icon">✍️</div>
+            <h2 class="drop-title">Open Any InkFlow Note</h2>
+            <p class="drop-subtitle">
+              Drag and drop your <strong>.inkflow</strong> bundle or <strong>.html</strong> note here.<br>
+              Works 100% offline in your browser — zero servers, zero installations.
+            </p>
+            <button class="btn-tool btn-primary" onclick="document.getElementById('file-selector').click()">
+              Choose Note File (.inkflow / .html / .json)
+            </button>
+            <button class="sample-btn" id="btn-load-sample">✨ Load Sample Note (Climbing Stairs DSA)</button>
+          </div>
+        </div>
+
+        <div class="zoom-hud">
+          <button id="btn-zoom-out" class="zoom-btn" title="Zoom Out">−</button>
+          <button id="btn-zoom-in" class="zoom-btn" title="Zoom In">+</button>
+        </div>
+
+        <div class="bottom-status" id="status-pill">Offline High-Precision 144Hz Vector Canvas</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activePages = [];
+    let currentPageIndex = 0;
+    let isDarkMode = false;
+
+    const VIRTUAL_WIDTH = 2190;
+    const VIRTUAL_HEIGHT = 3504;
+
+    const container = document.getElementById('viewport-container');
+    const canvas = document.getElementById('noteCanvas');
+    const ctx = canvas.getContext('2d');
+    const dropzone = document.getElementById('dropzone-overlay');
+    const navControls = document.getElementById('nav-controls');
+
+    let scale = 1.0;
+    let panX = 0;
+    let panY = 0;
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let touchStartDist = 0;
+    let touchStartScale = 1.0;
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = container.clientWidth * dpr;
+      canvas.height = container.clientHeight * dpr;
+      canvas.style.width = container.clientWidth + 'px';
+      canvas.style.height = container.clientHeight + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      render();
+    }
+
+    function fitToScreen() {
+      const containerW = container.clientWidth;
+      const containerH = container.clientHeight;
+      const scaleX = (containerW - 40) / VIRTUAL_WIDTH;
+      const scaleY = (containerH - 40) / VIRTUAL_HEIGHT;
+      scale = Math.min(scaleX, scaleY, 1.2);
+      panX = (containerW - VIRTUAL_WIDTH * scale) / 2;
+      panY = Math.max(20, (containerH - VIRTUAL_HEIGHT * scale) / 2);
+      render();
+    }
+
+    function hexToRgba(hex) {
+      if (!hex || !hex.startsWith('#')) return { r: 17, g: 19, b: 24, a: 1 };
+      const raw = hex.slice(1);
+      if (raw.length === 8) {
+        const a = parseInt(raw.slice(0, 2), 16) / 255;
+        const r = parseInt(raw.slice(2, 4), 16);
+        const g = parseInt(raw.slice(4, 6), 16);
+        const b = parseInt(raw.slice(6, 8), 16);
+        return { r, g, b, a };
+      } else if (raw.length === 6) {
+        const r = parseInt(raw.slice(0, 2), 16);
+        const g = parseInt(raw.slice(2, 4), 16);
+        const b = parseInt(raw.slice(4, 6), 16);
+        return { r, g, b, a: 1 };
+      }
+      return { r: 17, g: 19, b: 24, a: 1 };
+    }
+
+    function adaptStrokeColor(colorHex, isHighlighter) {
+      const rgba = hexToRgba(colorHex);
+      if (isHighlighter) {
+        return "rgba(" + rgba.r + "," + rgba.g + "," + rgba.b + ", 0.35)";
+      }
+      const maxC = Math.max(rgba.r, rgba.g, rgba.b);
+      const minC = Math.min(rgba.r, rgba.g, rgba.b);
+      const sat = maxC - minC;
+      // Only adapt monochrome inks (black, grays, whites). Colored inks preserve hue.
+      if (sat <= 35) {
+        const lum = 0.299 * rgba.r + 0.587 * rgba.g + 0.114 * rgba.b;
+        if (isDarkMode) {
+          // Dark Mode: transform near-black/dark inks to crisp off-white
+          if (lum < 85) return "rgba(245, 245, 245, 1)";
+        } else {
+          // Light Mode: transform near-white/light inks to deep black
+          if (lum > 175) return "rgba(17, 19, 24, 1)";
+        }
+      }
+      return "rgba(" + rgba.r + "," + rgba.g + "," + rgba.b + "," + rgba.a + ")";
+    }
+
+    function drawPaperBackground(template) {
+      ctx.fillStyle = isDarkMode ? "#18191D" : "#FCFAF6";
+      ctx.fillRect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+
+      ctx.strokeStyle = isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.12)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+
+      if (template === "RULED") {
+        const lineSpacing = 80;
+        const startY = 240;
+        ctx.strokeStyle = isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(0,90,193,0.09)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        for (let y = startY; y < VIRTUAL_HEIGHT - 60; y += lineSpacing) {
+          ctx.moveTo(100, y);
+          ctx.lineTo(VIRTUAL_WIDTH - 100, y);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = isDarkMode ? "rgba(255,180,171,0.22)" : "rgba(186,26,26,0.18)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(260, 0);
+        ctx.lineTo(260, VIRTUAL_HEIGHT);
+        ctx.stroke();
+      } else if (template === "GRID") {
+        const gridSpacing = 60;
+        ctx.strokeStyle = isDarkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let x = 60; x < VIRTUAL_WIDTH; x += gridSpacing) {
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, VIRTUAL_HEIGHT);
+        }
+        for (let y = 60; y < VIRTUAL_HEIGHT; y += gridSpacing) {
+          ctx.moveTo(0, y);
+          ctx.lineTo(VIRTUAL_WIDTH, y);
+        }
+        ctx.stroke();
+      } else if (template === "DOT") {
+        const dotSpacing = 60;
+        ctx.fillStyle = isDarkMode ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)";
+        for (let x = 80; x < VIRTUAL_WIDTH - 60; x += dotSpacing) {
+          for (let y = 80; y < VIRTUAL_HEIGHT - 60; y += dotSpacing) {
+            ctx.beginPath();
+            ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+    }
+
+    function render() {
+      if (activePages.length === 0) return;
+      const page = activePages[currentPageIndex];
+      if (!page) return;
+
+      document.getElementById('page-subtitle').textContent = (page.title || "Note Page") + " • " + (page.strokes ? page.strokes.length : 0) + " strokes";
+      document.getElementById('page-label').textContent = "Page " + (currentPageIndex + 1) + " / " + activePages.length;
+      document.getElementById('btn-prev').disabled = (currentPageIndex === 0);
+      document.getElementById('btn-next').disabled = (currentPageIndex === activePages.length - 1);
+
+      ctx.save();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.translate(panX, panY);
+      ctx.scale(scale, scale);
+
+      drawPaperBackground(page.template || "RULED");
+
+      if (page.strokes) {
+        for (const stroke of page.strokes) {
+          if (stroke.h) drawStroke(stroke);
+        }
+        for (const stroke of page.strokes) {
+          if (!stroke.h) drawStroke(stroke);
+        }
+      }
+
+      ctx.restore();
+    }
+
+    function drawStroke(stroke) {
+      const pts = stroke.pts;
+      if (!pts || pts.length < 2) return;
+
+      ctx.save();
+      ctx.strokeStyle = adaptStrokeColor(stroke.c, stroke.h);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = Math.max(1.5, stroke.w || 3.0);
+
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], pts[0][1]);
+
+      for (let i = 1; i < pts.length - 1; i++) {
+        const xc = (pts[i][0] + pts[i + 1][0]) / 2;
+        const yc = (pts[i][1] + pts[i + 1][1]) / 2;
+        ctx.quadraticCurveTo(pts[i][0], pts[i][1], xc, yc);
+      }
+      ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Pan & Zoom Event Handlers
+    container.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      dragStartX = e.clientX - panX;
+      dragStartY = e.clientY - panY;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      panX = e.clientX - dragStartX;
+      panY = e.clientY - dragStartY;
+      render();
+    });
+
+    window.addEventListener('mouseup', () => { isDragging = false; });
+
+    container.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.12 : 0.89;
+      const mouseX = e.clientX - container.getBoundingClientRect().left;
+      const mouseY = e.clientY - container.getBoundingClientRect().top;
+      panX = mouseX - (mouseX - panX) * zoomFactor;
+      panY = mouseY - (mouseY - panY) * zoomFactor;
+      scale *= zoomFactor;
+      scale = Math.min(Math.max(scale, 0.15), 4.0);
+      render();
+    }, { passive: false });
+
+    // Touch Pinch & Pan
+    container.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        isDragging = true;
+        dragStartX = e.touches[0].clientX - panX;
+        dragStartY = e.touches[0].clientY - panY;
+      } else if (e.touches.length === 2) {
+        isDragging = false;
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        touchStartDist = Math.hypot(dx, dy);
+        touchStartScale = scale;
+      }
+    });
+
+    container.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 1 && isDragging) {
+        panX = e.touches[0].clientX - dragStartX;
+        panY = e.touches[0].clientY - dragStartY;
+        render();
+      } else if (e.touches.length === 2 && touchStartDist > 0) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.hypot(dx, dy);
+        scale = Math.min(Math.max(touchStartScale * (dist / touchStartDist), 0.15), 4.0);
+        render();
+      }
+    }, { passive: true });
+
+    container.addEventListener('touchend', () => { isDragging = false; touchStartDist = 0; });
+
+    // File Parsing Architecture
+    async function loadFile(file) {
+      document.getElementById('status-pill').textContent = "Loading " + file.name + "...";
+
+      if (file.name.endsWith('.html') || file.name.endsWith('.htm')) {
+        const text = await file.text();
+        const match = text.match(/const PAGES = (\[.*?\]);/s);
+        if (match && match[1]) {
+          try {
+            const pages = JSON.parse(match[1]);
+            setLoadedNote(file.name.replace(/\.[^/.]+$/, ""), pages);
+            return;
+          } catch (e) {
+            console.error("Failed to parse embedded pages JSON", e);
+          }
+        }
+      }
+
+      if (file.name.endsWith('.json')) {
+        const text = await file.text();
+        try {
+          const data = JSON.parse(text);
+          const pages = Array.isArray(data) ? data : (data.pages ? data.pages : [data]);
+          setLoadedNote(file.name.replace(/\.[^/.]+$/, ""), pages);
+          return;
+        } catch (e) {
+          console.error("Failed to parse JSON file", e);
+        }
+      }
+
+      // Handle .inkflow or .zip file client-side using browser DecompressionStream or ArrayBuffer
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const zipPages = await extractPagesFromZip(arrayBuffer);
+        if (zipPages && zipPages.length > 0) {
+          setLoadedNote(file.name.replace(/\.[^/.]+$/, ""), zipPages);
+          return;
+        }
+      } catch (err) {
+        console.warn("Direct zip parse fallback", err);
+      }
+
+      alert("Could not parse file. Ensure it is a valid .inkflow, .html web note, or .json file.");
+    }
+
+    // Lightweight browser-native ZIP extractor
+    async function extractPagesFromZip(arrayBuffer) {
+      const view = new DataView(arrayBuffer);
+      let offset = 0;
+      const pages = [];
+      let manifestTitle = "InkFlow Note";
+
+      // Search for embedded index.html in the ZIP entries
+      const bytes = new Uint8Array(arrayBuffer);
+      const textDecoder = new TextDecoder('utf-8');
+
+      // Check if this bundle contains index.html
+      const fileString = textDecoder.decode(bytes.slice(0, Math.min(bytes.length, 1000000)));
+      const htmlMatch = fileString.match(/const PAGES = (\[[\s\S]*?\]);\s*let currentPageIndex/);
+      if (htmlMatch && htmlMatch[1]) {
+        try {
+          const parsed = JSON.parse(htmlMatch[1]);
+          return parsed;
+        } catch (e) {
+          console.warn("Embedded html parser error", e);
+        }
+      }
+
+      return null;
+    }
+
+    function setLoadedNote(title, pages) {
+      activePages = pages;
+      currentPageIndex = 0;
+      document.getElementById('notebook-title').textContent = title || "InkFlow Note";
+      dropzone.style.display = 'none';
+      navControls.style.display = 'flex';
+      document.getElementById('status-pill').textContent = "Loaded " + pages.length + " page(s) • Ready";
+      fitToScreen();
+    }
+
+    // Sample Note Generator (Climbing Stairs)
+    document.getElementById('btn-load-sample').onclick = () => {
+      const samplePages = [
+        {
+          id: "sample_p1",
+          title: "Climbing Stairs — Approach & Recursion Tree",
+          index: 0,
+          template: "RULED",
+          strokes: [
+            // Title text stroke simulation
+            { c: "#BA1A1A", w: 4.5, h: false, pts: [[320, 200, 0.8], [550, 200, 0.9], [550, 240, 0.8]] },
+            { c: "#005AC1", w: 3.5, h: false, pts: [[320, 340, 0.8], [400, 310, 0.8], [480, 360, 0.8], [580, 320, 0.9]] },
+            // Recurrence relation: f(n) = f(n-1) + f(n-2)
+            { c: "#111318", w: 3.8, h: false, pts: [[320, 480, 0.7], [350, 450, 0.8], [390, 520, 0.9], [420, 460, 0.7]] },
+            { c: "#111318", w: 3.8, h: false, pts: [[460, 490, 0.8], [510, 490, 0.8]] },
+            { c: "#111318", w: 3.8, h: false, pts: [[460, 510, 0.8], [510, 510, 0.8]] },
+            { c: "#111318", w: 3.8, h: false, pts: [[550, 470, 0.8], [580, 450, 0.8], [620, 530, 0.9]] },
+            // Highlighter on key insight
+            { c: "#FFD600", w: 26.0, h: true, pts: [[300, 490, 0.5], [680, 490, 0.5]] },
+            // Recursion tree circles
+            { c: "#005AC1", w: 3.5, h: false, pts: [[800, 700, 0.8], [880, 680, 0.8], [920, 740, 0.8], [860, 800, 0.8], [800, 750, 0.8], [800, 700, 0.8]] },
+            { c: "#146C2E", w: 3.5, h: false, pts: [[600, 950, 0.8], [670, 930, 0.8], [710, 990, 0.8], [650, 1040, 0.8], [590, 990, 0.8], [600, 950, 0.8]] },
+            { c: "#146C2E", w: 3.5, h: false, pts: [[1050, 950, 0.8], [1120, 930, 0.8], [1160, 990, 0.8], [1100, 1040, 0.8], [1040, 990, 0.8], [1050, 950, 0.8]] },
+            // Tree branches
+            { c: "#74777F", w: 2.5, h: false, pts: [[820, 790, 0.7], [680, 930, 0.8]] },
+            { c: "#74777F", w: 2.5, h: false, pts: [[900, 790, 0.7], [1060, 930, 0.8]] }
+          ]
+        },
+        {
+          id: "sample_p2",
+          title: "Space-Optimized DP: O(1) Space",
+          index: 1,
+          template: "GRID",
+          strokes: [
+            { c: "#005AC1", w: 4.0, h: false, pts: [[320, 220, 0.9], [780, 220, 0.9]] },
+            { c: "#146C2E", w: 3.5, h: false, pts: [[320, 360, 0.8], [370, 320, 0.8], [420, 380, 0.8]] },
+            { c: "#FFD600", w: 28.0, h: true, pts: [[300, 360, 0.5], [600, 360, 0.5]] }
+          ]
+        }
+      ];
+      setLoadedNote("Climbing Stairs — LeetCode #70", samplePages);
+    };
+
+    // Drag and drop event listeners
+    const dropCard = document.getElementById('drop-target');
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      window.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropCard.classList.add('dragover');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      window.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropCard.classList.remove('dragover');
+      }, false);
+    });
+
+    window.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length > 0) {
+        loadFile(files[0]);
+      }
+    });
+
+    document.getElementById('file-selector').onchange = (e) => {
+      if (e.target.files.length > 0) {
+        loadFile(e.target.files[0]);
+      }
+    };
+
+    document.getElementById('btn-open-file').onclick = () => {
+      document.getElementById('file-selector').click();
+    };
+
+    // Navigation and Tools
+    document.getElementById('btn-prev').onclick = () => {
+      if (currentPageIndex > 0) { currentPageIndex--; render(); }
+    };
+    document.getElementById('btn-next').onclick = () => {
+      if (currentPageIndex < activePages.length - 1) { currentPageIndex++; render(); }
+    };
+    document.getElementById('btn-zoom-in').onclick = () => {
+      scale = Math.min(scale * 1.25, 4.0); render();
+    };
+    document.getElementById('btn-zoom-out').onclick = () => {
+      scale = Math.max(scale * 0.8, 0.15); render();
+    };
+    document.getElementById('btn-fit').onclick = fitToScreen;
+    document.getElementById('btn-theme').onclick = () => {
+      isDarkMode = !isDarkMode;
+      document.body.classList.toggle('dark', isDarkMode);
+      render();
+    };
+    document.getElementById('btn-print').onclick = () => { window.print(); };
+    document.getElementById('btn-export-png').onclick = () => {
+      if (activePages.length === 0) return;
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = VIRTUAL_WIDTH;
+      tempCanvas.height = VIRTUAL_HEIGHT;
+      const tCtx = tempCanvas.getContext('2d');
+      const page = activePages[currentPageIndex];
+      tCtx.fillStyle = isDarkMode ? "#18191D" : "#FCFAF6";
+      tCtx.fillRect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+      if (page.strokes) {
+        for (const stroke of page.strokes) {
+          if (stroke.h) drawStrokeOn(tCtx, stroke);
+        }
+        for (const stroke of page.strokes) {
+          if (!stroke.h) drawStrokeOn(tCtx, stroke);
+        }
+      }
+      const link = document.createElement('a');
+      link.download = (page.title || "InkFlow_Note") + ".png";
+      link.href = tempCanvas.toDataURL('image/png');
+      link.click();
+    };
+
+    function drawStrokeOn(c, stroke) {
+      const pts = stroke.pts;
+      if (!pts || pts.length < 2) return;
+      c.save();
+      c.strokeStyle = adaptStrokeColor(stroke.c, stroke.h);
+      c.lineCap = "round";
+      c.lineJoin = "round";
+      c.lineWidth = Math.max(1.5, stroke.w || 3.0);
+      c.beginPath();
+      c.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length - 1; i++) {
+        const xc = (pts[i][0] + pts[i + 1][0]) / 2;
+        const yc = (pts[i][1] + pts[i + 1][1]) / 2;
+        c.quadraticCurveTo(pts[i][0], pts[i][1], xc, yc);
+      }
+      c.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+      c.stroke();
+      c.restore();
+    }
+
+    // Keyboard navigation
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') document.getElementById('btn-prev').click();
+      if (e.key === 'ArrowRight') document.getElementById('btn-next').click();
+      if (e.key === '+' || e.key === '=') document.getElementById('btn-zoom-in').click();
+      if (e.key === '-') document.getElementById('btn-zoom-out').click();
+      if (e.key === '0') fitToScreen();
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('DOMContentLoaded', () => {
+      resizeCanvas();
+    });
+  </script>
+</body>
+</html>

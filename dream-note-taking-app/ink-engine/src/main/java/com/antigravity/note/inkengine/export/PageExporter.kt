@@ -172,7 +172,25 @@ object PageExporter {
     }
 
     /**
+     * Export notes to a self-contained interactive offline HTML file.
+     * Can be opened in any web browser on desktop, mobile, tablet with zero apps installed.
+     */
+    fun exportToInteractiveHtml(
+        notebookTitle: String,
+        pages: List<DocumentPage>,
+        outputStream: OutputStream,
+        initialDarkMode: Boolean = false
+    ) {
+        HtmlNoteExporter.exportToHtml(notebookTitle, pages, outputStream, initialDarkMode)
+    }
+
+    /**
      * Export an entire notebook as a lossless .inkflow ZIP bundle.
+     * Embeds:
+     * 1. manifest.json (metadata)
+     * 2. pages directory containing page-id.inkpage (lossless raw vector binary)
+     * 3. index.html (self-contained offline web viewer for instant viewing on PC/Mac)
+     * 4. media directory containing audio recordings
      */
     fun exportToInkflow(
         manifest: InkflowManifest,
@@ -190,7 +208,17 @@ object PageExporter {
             zipOut.write(manifestBytes)
             zipOut.closeEntry()
 
-            // 2. Write each page binary file
+            // 2. Write self-contained index.html web viewer into the bundle
+            try {
+                val htmlEntry = ZipEntry("index.html")
+                zipOut.putNextEntry(htmlEntry)
+                HtmlNoteExporter.exportToHtml(manifest.notebookTitle, pages, zipOut)
+                zipOut.closeEntry()
+            } catch (e: Exception) {
+                android.util.Log.w("PageExporter", "Failed to embed index.html in .inkflow", e)
+            }
+
+            // 3. Write each page binary file
             for (page in pages) {
                 val pageEntry = ZipEntry("pages/${page.metadata.pageId}.inkpage")
                 zipOut.putNextEntry(pageEntry)
@@ -199,7 +227,7 @@ object PageExporter {
                 zipOut.closeEntry()
             }
 
-            // 3. Write media files (audio recordings, etc.)
+            // 4. Write media files (audio recordings, etc.)
             for ((fileName, file) in mediaFiles) {
                 if (file.exists() && file.isFile) {
                     val mediaEntry = ZipEntry("media/$fileName")

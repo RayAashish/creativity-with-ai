@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -48,6 +49,7 @@ fun ExportDialog(
     onDismiss: () -> Unit,
     onExportPdf: () -> Unit,
     onExportPng: () -> Unit,
+    onExportHtml: () -> Unit = {},
     onExportInkflow: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -145,10 +147,19 @@ fun ExportDialog(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         ExportOptionCard(
+                            icon = Icons.Default.Language,
+                            iconColor = Color(0xFF6750A4),
+                            title = "Interactive Web Note (.html)",
+                            subtitle = "Zero-dependency web document with vector rendering, zoom/pan & dark mode. Opens in any browser on PC, Mac, iOS, Android!",
+                            badge = "Universal Web",
+                            onClick = onExportHtml
+                        )
+
+                        ExportOptionCard(
                             icon = Icons.Default.Archive,
                             iconColor = Color(0xFF1565C0),
                             title = "Lossless .inkflow Archive",
-                            subtitle = "Full lossless bundle with manifest, raw vector strokes, templates & synced audio",
+                            subtitle = "Full lossless bundle with raw vector strokes, templates & embedded offline web viewer",
                             badge = "Recommended",
                             onClick = onExportInkflow
                         )

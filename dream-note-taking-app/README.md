@@ -37,48 +37,78 @@ InkFlow is living proof of a new paradigm: **AI-assisted engineering makes build
 * **Predictive Extrapolation:** Uses `MotionEventPredictor` and `requestUnbufferedDispatch` to track the stylus tip in real-time, eliminating trailing lag.
 * **Zero GC Pressure:** Zero per-frame object allocations during active strokes to guarantee zero dropped frames ($6.94\text{ ms}$ budget).
 
-### 📑 2. Floating DSA Problem Window (Built for Tech Prep)
-* **Draggable & Resizable HUD:** Overlay algorithm problem statements (LeetCode, Codeforces, GeeksforGeeks) directly on your canvas.
+### 🧹 2. Precision Partial Eraser (Stroke Splitting) & Gesture Erase
+* **Targeted Partial Erasure:** Touch only the section of a stroke or circle you want to erase. InkFlow calculates the geometric segment intersection and dynamically splits the stroke into clean, independent sub-strokes instead of deleting the whole drawing.
+* **Spatial Grid Acceleration (144 Hz):** High-speed 64-pixel spatial hashing index identifies stroke candidates in under $0.2\text{ ms}$, preserving the 144 Hz frame rate even with thousands of strokes on the canvas.
+* **Gesture-Scoped Atomic Undo/Redo:** Erasing across multiple strokes in a single continuous swipe produces a single undoable record—undo restores all split pieces seamlessly in one step.
+* **Eraser Mode Switcher:** Switch between **Partial / Segment Eraser** (precision editing) and **Whole Stroke Eraser** (rapid cleanup) via the bottom bar dropdown.
+* **Finger as Eraser:** Write with your stylus and wipe away mistakes instantly with your fingertip without manual tool toggling.
+* **Stationary Hold-to-Erase (800 ms):** Hold the stylus stationary for 800 ms to instantly toggle eraser mode (NoteWise style).
+* **Robust Palm Rejection:** Multi-layer rejection combining contact area geometry (`TOUCH_MAJOR`), edge-zone filters, and a 350 ms post-lift hysteresis grace window.
+
+### 📑 3. Floating DSA Problem Window & Multi-Source Description Fetcher
+* **Draggable & Resizable HUD:** Overlay algorithm problem statements directly on your canvas.
+* **Multi-Source Fetcher Architecture:** Automatically fetches clean, structured problem descriptions, constraints, and test cases from:
+  * 💻 **LeetCode**
+  * 🥷 **Code360 by Coding Ninjas**
+  * 🟢 **GeeksforGeeks (GFG)**
+  * ⚔️ **Codeforces**
+  * 🎯 **HackerRank**
+  * 📖 **Wikipedia & General Web**
 * **Dual-Theme Contrast:** Dedicated Dark / Light mode toggle switch with custom high-contrast typography, ensuring problem statements and code snippets are always crisp and legible.
 * **Live Test Case Tracker:** Interactive test cases with pass/fail checkboxes.
 * **Modify & Delete Test Cases:** Click any test case chip or the `+` button to edit the title, input, and expected output, or delete unwanted cases.
 * **Ghost Transparency Mode:** Adjust window opacity ($20\% - 100\%$) to sketch diagrams or trace pointers directly over the problem text.
 * **Trace Table Stamp:** Instant one-tap insertion of 5-cell dynamic memory/array trace grids onto your canvas.
 
-### 🖐️ 3. Natural Stylus & Touch Gestures
-* **Pen + Gestures:** Stylus draws with precision pressure sensitivity; two fingers seamlessly pan, pinch, and zoom.
-* **Finger as Eraser:** Write with your stylus and wipe away mistakes instantly with your fingertip without triggering the pen tool.
-* **Stationary Hold-to-Erase (800 ms):** Hold the stylus stationary for 800 ms to instantly toggle eraser mode (NoteWise style).
-* **Robust Palm Rejection:** Multi-layer rejection combining contact area geometry (`TOUCH_MAJOR`), edge-zone filters, and a 350 ms post-lift hysteresis grace window.
+### 📐 4. Smart Shape Recognition & Draggable Lasso
+* **Hold-to-Snap Vectors:** Draw rough shapes—circles, ellipses, rectangles, straight lines, or arrows—and hold the stylus tip for a brief moment to automatically transform them into geometrically crisp vector shapes.
+* **Floating & Draggable Lasso Toolbar:** When selecting handwritten notes with the lasso tool, the action toolbar automatically opens *beside* the selected strokes (rather than fixed at the screen bottom). It features an integrated drag handle, allowing you to freely drag the toolbar anywhere across the canvas. Includes Copy, Paste, Duplicate, On-Device ML Kit Handwriting-to-Text transcription, Quick Recolor, and Delete.
 
-### 📐 4. Smart Shape Recognition
-* Draw rough shapes—circles, ellipses, rectangles, straight lines, or arrows—and hold the stylus tip for a brief moment to automatically transform them into geometrically crisp vector shapes.
+### 🔒 5. Read-Only Lock Mode (Safe Study & Reading)
+* **Single-Tap Protection:** Tap the lock icon in the top toolbar to seal the note in read-only mode.
+* **Zero Write Vulnerability:** All inking, stylus writing, precision erasing, finger erasing, and page additions/deletions are locked down.
+* **Smooth Navigation:** Single-finger and stylus panning and pinch-to-zoom remain fluid so you can read, review, and navigate large documents without accidental marks.
+* **Persistent Status Pill:** A prominent `🔒 READ ONLY` pill appears in the top bar; tap it anytime to instantly unlock editing.
 
-### 🏷️ 5. CS & Engineering Hierarchical Organization
-* **Smart Brand Detection:** Folders and notebooks automatically detect subject keywords and display dedicated Material icons and badge tags:
-  * 🍃 **Spring Boot:** Green leaf badge
-  * 💻 **DSA / Algo / LeetCode / DP:** Cyan terminal badge
-  * 🌐 **System Design / Architecture:** Electric purple hub badge
-  * 🗄️ **Database / SQL / Redis:** Amber cylinder badge
-  * 🌍 **Computer Networks (CN):** Teal globe badge
-  * 🧠 **Operating Systems (OS):** Crimson processor badge
-  * 🔗 **Web / Frontend:** Sky blue language badge
-* **Full Hierarchy:** `Subject (Folder) -> Topic (Notebook) -> Subtopic -> Pages`.
-* **Safe Deletion & 30-Day Trash:** Delete folders and notebooks directly from their 3-dots menu or use **Multi-Select Mode** to batch-move items to the 30-day Trash with automatic page cascade.
-
-### 🌓 6. Dark Mode & Infinite Canvas
-* **Sleek Charcoal Canvas:** Toggle dark mode from the top toolbar or overflow menu. Paper background shifts to deep `#18191D`, grid/ruled lines soften, and black ink strokes dynamically render as crisp off-white (`#F0F0F0`) with 0 GC overhead.
-* **Expanded Palette & Custom Colors:** 24 high-visibility swatches + an interactive RGB hex color picker.
+### 🌓 6. Smart Dynamic Contrast Engine & Dark Mode
+* **Bidirectional Contrast Correction:** Notes written in light mode with black ink dynamically adapt to crisp off-white (`#F5F5F5`) on dark charcoal paper (`#18191D`), while notes written in dark mode with white ink render as deep near-black (`#111318`) on light paper (`#FCFAF6`). Zero ink invisibility bugs.
+* **Hue Preservation:** Chromatic inks (blue, red, green, purple, yellow highlighters) strictly preserve their vibrant colors without monochrome flattening.
+* **Adaptive Active Pen:** Toggling the app theme automatically flips the default monochrome pen color so newly written strokes match the paper canvas with perfect contrast.
+* **Expanded Palette & Custom Colors:** 24 high-visibility swatches + an interactive RGB hex color mixer.
 * **Paper Templates:** Blank, Ruled / Lined, Math Grid, Cornell, Dot Grid, and Infinite Canvas.
 
-### 🎙️ 7. Lecture Audio Sync
+### 🏷️ 7. CS & Engineering Hierarchical Organization & Custom Icon Picker
+* **Custom Logo / Icon Picker:** Customize subjects, topics, and subtopics with bundled icons or create custom badge tags. Includes 25+ curated engineering logos:
+  * ☕ **Java:** Duke coffee cup badge
+  * 🍃 **Spring Boot:** Spring leaf badge
+  * 💻 **DSA / Algo / LeetCode / DP:** Terminal & tree badges
+  * 🌐 **System Design & Distributed Systems:** Architecture hub badge
+  * 🗄️ **Databases & Cache:** Cylinder database badge
+  * 🌍 **Computer Networks (CN):** Global network badge
+  * 🧠 **Operating Systems (OS):** Microprocessor badge
+  * 🦀 **Rust, 📱 Android / Kotlin, 🐍 Python, and more.**
+* **Full Hierarchy:** `Subject (Folder) -> Topic (Notebook) -> Subtopic -> Pages`.
+* **Safe Deletion & 30-Day Trash:** Delete folders and notebooks directly from their 3-dots menu or use **Multi-Select Mode** to batch-move items to the 30-day Trash with automatic page cascade and 1-tap restore.
+
+### 💾 8. Persistent Local Backup & Lightweight GitHub Sync
+* **Local-First Persistent Backup:** Automatically synchronizes and mirrors all notebooks to public user storage at `/storage/emulated/0/Documents/InkFlow/` every second. Survives app uninstalls and updates completely. Includes Storage Access Framework (SAF) folder picker and instant 1-tap restore.
+* **Lightweight GitHub Sync:** Directly backup your notes to your own private GitHub repository.
+  * **Custom Repository Naming:** Choose any repository name you wish (defaulting to a clean suggestion `inkflow-notes-backup`).
+  * **Lightweight Previews:** Replaces heavy uncompressed SVGs with compressed, ultra-fast WebP vector renders alongside raw binary `.inkpage` files, drastically cutting repository size and sync times.
+  * **Zero Lock-In:** Browse and inspect notes directly on GitHub from any laptop or desktop.
+
+### 🌐 9. Universal Note Sharing & Web Viewer Ecosystem
+Never get locked into proprietary file formats. InkFlow provides a complete cross-platform ecosystem:
+* **Interactive Web Notes (`.html`):** Export notes to a single, self-contained offline HTML file. Features vector canvas rendering, pan & zoom, dark/light theme toggle, and PDF/PNG export. Opens in **any** browser on Windows, macOS, Linux, iPhone, iPad, and Android with **zero software installation**.
+* **Standalone Web Viewer (`web-viewer/index.html`):** Official open-source web application where users can drag-and-drop `.inkflow` archives or `.inkpage` files to view them with full vector fidelity.
+* **Embedded Viewer in `.inkflow` Bundles:** Every exported `.inkflow` ZIP archive bundles an `index.html` viewer at its root. Simply double-click on any PC or Mac to view your notes offline.
+* **OS File Associations:** Native Android `intent-filter` registers InkFlow for `*.inkflow` files, allowing one-tap note opening directly from file managers, Gmail, WhatsApp, and Google Drive.
+
+### 🎙️ 10. Lecture Audio Sync
 * Record lecture audio timestamped against your ink strokes for synchronized audio-visual playback during revision.
 
-### 🔒 8. True Data Ownership & GitHub Sync
-* **Local-First Architecture:** All notes, vector stroke logs, and database records reside privately on your device.
-* **GitHub Backup & Sync:** Directly commit and push your notebooks to your own private GitHub repository with automated version history. No vendor lock-in.
-
-### 🔬 9. Hardware & Digitizer Diagnostics Probe Screen
+### 🔬 11. Hardware & Digitizer Diagnostics Probe Screen
 * Built-in diagnostic suite probing real-time display refresh rate, hardware axes (pressure, tilt, orientation, hover distance), and digitizer sampling rate.
 
 ---
@@ -176,12 +206,19 @@ adb shell monkey -p com.antigravity.note -c android.intent.category.LAUNCHER 1
 
 * [x] Ultra low-latency Google Ink engine (144 Hz / ~1 ms latency).
 * [x] Floating resizable DSA problem description window with test cases checklist.
+* [x] Problem description fetcher across Code360, LeetCode, GFG, Codeforces, HackerRank & Wikipedia.
+* [x] Precision partial eraser (stroke splitting at 144 Hz with gesture-scoped undo/redo).
+* [x] Read-Only Lock Mode (single-tap protection against accidental marks).
+* [x] Floating & draggable lasso toolbar opening beside selected strokes.
+* [x] Smart dynamic contrast engine (bidirectional contrast for dark & light paper).
 * [x] Dark Mode for notes (white ink on dark charcoal paper) and entire UI.
 * [x] Finger-as-eraser and stationary hold-to-erase (800 ms).
-* [x] Custom subject logos & badges (Spring Boot, DSA, System Design, DB, CN, OS).
+* [x] Custom subject logos & badges (Java, Spring Boot, DSA, System Design, DB, CN, OS).
 * [x] Folder & notebook single/batch deletion with 30-day Trash recovery.
-* [x] GitHub automated repository backup & sync.
-* [ ] Additional backup targets (WebDAV, Google Drive, Local Folder / SD Card).
+* [x] Persistent local backup to `Documents/InkFlow` (survives app reinstall) + SAF folder picker.
+* [x] Lightweight GitHub backup with custom repository naming & WebP previews.
+* [x] Universal note sharing (.html self-contained interactive notes, .inkflow bundles & standalone web viewer).
+* [ ] Additional cloud backup targets (Google Drive, WebDAV).
 * [ ] Google Play Store release (once developer funds are available).
 * [ ] PDF annotation and export with vector ink fidelity.
 

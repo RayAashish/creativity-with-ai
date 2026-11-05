@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -27,6 +28,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
+import android.net.Uri
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
+import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
@@ -165,7 +175,8 @@ import java.io.File
 fun InkCanvasScreen(
     isDarkMode: Boolean = false,
     onToggleDarkMode: ((Boolean) -> Unit)? = null,
-    onNavigateToProbe: () -> Unit = {}
+    onNavigateToProbe: () -> Unit = {},
+    incomingFileUri: Uri? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -339,6 +350,61 @@ fun InkCanvasScreen(
     var showClearCanvasDialog by remember { mutableStateOf(false) }
     var showAddPageMenu by remember { mutableStateOf(false) }
     var isInfiniteCanvas by remember { mutableStateOf(appSettings.isInfiniteCanvas) }
+
+    // Read-Only Lock & Draggable Lasso State
+    var isNoteLocked by remember { mutableStateOf(false) }
+    var lassoToolbarOffset by remember { mutableStateOf<Offset?>(null) }
+
+    LaunchedEffect(incomingFileUri) {
+        val uri = incomingFileUri ?: return@LaunchedEffect
+        try {
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                val (manifest, importedPages) = PageExporter.importFromInkflow(stream)
+                if (importedPages.isNotEmpty()) {
+                    val activeNbId = docManager.getActiveNotebookId()
+                    for (p in importedPages) {
+                        pageRepo.savePageAtomic(p)
+                    }
+                    val first = importedPages.first()
+                    docManager.switchToNotebookAndPage(activeNbId, first.metadata.pageId) { p ->
+                        canvasView.loadPage(p, docManager.lastOpenLatencyMs.value)
+                    }
+                    Toast.makeText(context, "Opened ${importedPages.size} page(s) from .inkflow", Toast.LENGTH_LONG).show()
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("InkCanvasScreen", "Failed to open .inkflow file", e)
+            Toast.makeText(context, "Failed to open note: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    LaunchedEffect(hasLassoSelection) {
+        if (hasLassoSelection) {
+            val screenBounds = canvasView.getLassoScreenBounds()
+            val screenW = context.resources.displayMetrics.widthPixels.toFloat()
+            val screenH = context.resources.displayMetrics.heightPixels.toFloat()
+            val toolbarWidthEst = 460f
+            val toolbarHeightEst = 60f
+
+            if (screenBounds != null) {
+                // Place beside selection: prefer right side, fallback to left
+                val posX = if (screenBounds.right + toolbarWidthEst + 30f < screenW) {
+                    screenBounds.right + 20f
+                } else if (screenBounds.left - toolbarWidthEst - 30f > 0f) {
+                    screenBounds.left - toolbarWidthEst - 20f
+                } else {
+                    (screenW - toolbarWidthEst) / 2f
+                }.coerceIn(20f, (screenW - toolbarWidthEst - 20f).coerceAtLeast(20f))
+
+                val posY = screenBounds.top.coerceIn(90f, (screenH - toolbarHeightEst - 120f).coerceAtLeast(90f))
+                lassoToolbarOffset = Offset(posX, posY)
+            } else {
+                lassoToolbarOffset = Offset((screenW - toolbarWidthEst) / 2f, screenH - 180f)
+            }
+        } else {
+            lassoToolbarOffset = null
+        }
+    }
 
     LaunchedEffect(Unit) {
         canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
@@ -658,7 +724,8 @@ fun InkCanvasScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 7.dp),
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 6.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // --- 1. Left: Navigation & Document Utilities ---
@@ -702,6 +769,38 @@ fun InkCanvasScreen(
                             status = backupSyncStatus,
                             onClick = { isBackupDialogOpen = true }
                         )
+                        if (isNoteLocked) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .padding(start = 4.dp)
+                                    .clickable {
+                                        isNoteLocked = false
+                                        canvasView.isReadOnly = false
+                                        Toast.makeText(context, "🔓 Note Unlocked (Editing Enabled)", Toast.LENGTH_SHORT).show()
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Lock,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Text(
+                                        "READ ONLY",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.width(4.dp))
@@ -1335,21 +1434,77 @@ fun InkCanvasScreen(
                             )
                         }
 
+                        // Helper for Dark / Light Mode Toggle with Smart Dynamic Contrast
+                        val toggleDarkModeSmart: () -> Unit = {
+                            val next = !currentDarkMode
+                            currentDarkMode = next
+                            appSettings.isDarkMode = next
+                            canvasView.setDarkMode(next)
+                            if (next) {
+                                // Switching to Dark Mode: adapt near-black monochrome pen to off-white
+                                val r = penColor.red
+                                val g = penColor.green
+                                val b = penColor.blue
+                                val sat = maxOf(r, maxOf(g, b)) - minOf(r, minOf(g, b))
+                                val lum = 0.299f * r + 0.587f * g + 0.114f * b
+                                if (sat <= 0.15f && lum < 0.35f) {
+                                    val lightColor = Color(0xFFF5F5F5)
+                                    penColor = lightColor
+                                    appSettings.penColorArgb = 0xFFF5F5F5.toInt()
+                                    if (selectedTool == CanvasTool.PRESSURE_PEN) {
+                                        canvasView.setInkColor(0xFFF5F5F5.toInt())
+                                    }
+                                }
+                            } else {
+                                // Switching to Light Mode: adapt light monochrome pen to near-black
+                                val r = penColor.red
+                                val g = penColor.green
+                                val b = penColor.blue
+                                val sat = maxOf(r, maxOf(g, b)) - minOf(r, minOf(g, b))
+                                val lum = 0.299f * r + 0.587f * g + 0.114f * b
+                                if (sat <= 0.15f && lum > 0.65f) {
+                                    val darkColor = Color(0xFF111318)
+                                    penColor = darkColor
+                                    appSettings.penColorArgb = 0xFF111318.toInt()
+                                    if (selectedTool == CanvasTool.PRESSURE_PEN) {
+                                        canvasView.setInkColor(0xFF111318.toInt())
+                                    }
+                                }
+                            }
+                            onToggleDarkMode?.invoke(next)
+                        }
+
                         // Dark / Light Mode Toggle
                         IconButton(
-                            onClick = {
-                                val next = !currentDarkMode
-                                currentDarkMode = next
-                                appSettings.isDarkMode = next
-                                canvasView.setDarkMode(next)
-                                onToggleDarkMode?.invoke(next)
-                            },
+                            onClick = toggleDarkModeSmart,
                             modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
                                 imageVector = if (currentDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
                                 contentDescription = if (currentDarkMode) "Switch to Light Mode" else "Switch to Dark Mode",
                                 tint = if (currentDarkMode) Color(0xFFFFD54F) else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+
+                        // Read-Only / Lock Note Toggle
+                        IconButton(
+                            onClick = {
+                                val nextLock = !isNoteLocked
+                                isNoteLocked = nextLock
+                                canvasView.isReadOnly = nextLock
+                                Toast.makeText(
+                                    context,
+                                    if (nextLock) "🔒 Note Locked (Read-Only Mode)" else "🔓 Note Unlocked (Editing Enabled)",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            },
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isNoteLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                                contentDescription = if (isNoteLocked) "Unlock Note" else "Lock Note (Read-Only)",
+                                tint = if (isNoteLocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
@@ -1384,11 +1539,29 @@ fun InkCanvasScreen(
                                     },
                                     onClick = {
                                         showMoreActionsMenu = false
-                                        val next = !currentDarkMode
-                                        currentDarkMode = next
-                                        appSettings.isDarkMode = next
-                                        canvasView.setDarkMode(next)
-                                        onToggleDarkMode?.invoke(next)
+                                        toggleDarkModeSmart()
+                                    }
+                                )
+                                // Lock / Read-Only Toggle
+                                DropdownMenuItem(
+                                    text = { Text(if (isNoteLocked) "Unlock Note (Enable Editing)" else "Lock Note (Read-Only)") },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = if (isNoteLocked) Icons.Default.LockOpen else Icons.Default.Lock,
+                                            contentDescription = null,
+                                            tint = if (isNoteLocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                        )
+                                    },
+                                    onClick = {
+                                        showMoreActionsMenu = false
+                                        val nextLock = !isNoteLocked
+                                        isNoteLocked = nextLock
+                                        canvasView.isReadOnly = nextLock
+                                        Toast.makeText(
+                                            context,
+                                            if (nextLock) "🔒 Note Locked (Read-Only Mode)" else "🔓 Note Unlocked (Editing Enabled)",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
                                 )
                                 // Audio Sync
@@ -1741,8 +1914,12 @@ fun InkCanvasScreen(
                         Box {
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.primary,
+                                color = if (isNoteLocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.clickable {
+                                    if (isNoteLocked) {
+                                        Toast.makeText(context, "Note is locked (Read-Only Mode)", Toast.LENGTH_SHORT).show()
+                                        return@clickable
+                                    }
                                     val currentTpl = currentPage?.metadata?.template ?: PaperTemplate.RULED
                                     val activeNbId = docManager.getActiveNotebookId()
                                     scope.launch {
@@ -1772,7 +1949,13 @@ fun InkCanvasScreen(
                                         color = MaterialTheme.colorScheme.onPrimary
                                     )
                                     IconButton(
-                                        onClick = { showAddPageMenu = true },
+                                        onClick = {
+                                            if (isNoteLocked) {
+                                                Toast.makeText(context, "Note is locked (Read-Only Mode)", Toast.LENGTH_SHORT).show()
+                                                return@IconButton
+                                            }
+                                            showAddPageMenu = true
+                                        },
                                         modifier = Modifier.size(20.dp)
                                     ) {
                                         Icon(
@@ -1825,8 +2008,14 @@ fun InkCanvasScreen(
                         // Delete Page Button
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f),
-                            modifier = Modifier.clickable { showDeletePageDialog = true }
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = if (isNoteLocked) 0.3f else 0.8f),
+                            modifier = Modifier.clickable {
+                                if (isNoteLocked) {
+                                    Toast.makeText(context, "Note is locked (Read-Only Mode)", Toast.LENGTH_SHORT).show()
+                                    return@clickable
+                                }
+                                showDeletePageDialog = true
+                            }
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
@@ -2305,21 +2494,40 @@ fun InkCanvasScreen(
             )
         }
 
-        // Floating Lasso Action Bar (When strokes are selected)
+        // Floating Lasso Action Bar (When strokes are selected: Draggable & Auto-Positioned beside selection)
         if (hasLassoSelection) {
+            val currentOffset = lassoToolbarOffset ?: Offset(60f, 180f)
             Card(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 80.dp),
+                    .offset { IntOffset(currentOffset.x.roundToInt(), currentOffset.y.roundToInt()) }
+                    .pointerInput(Unit) {
+                        detectDragGestures { change, dragAmount ->
+                            change.consume()
+                            val cur = lassoToolbarOffset ?: Offset(60f, 180f)
+                            val screenW = context.resources.displayMetrics.widthPixels.toFloat()
+                            val screenH = context.resources.displayMetrics.heightPixels.toFloat()
+                            val newX = (cur.x + dragAmount.x).coerceIn(10f, (screenW - 120f).coerceAtLeast(10f))
+                            val newY = (cur.y + dragAmount.y).coerceIn(60f, (screenH - 80f).coerceAtLeast(60f))
+                            lassoToolbarOffset = Offset(newX, newY)
+                        }
+                    },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 shape = RoundedCornerShape(18.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
+                    // Draggable Grip Handle
+                    Icon(
+                        imageVector = Icons.Default.DragHandle,
+                        contentDescription = "Drag to Reposition Toolbar",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.size(20.dp)
+                    )
+
                     Text(
                         text = "Lasso (${canvasView.lassoTool.selectedStrokes.size})",
                         fontWeight = FontWeight.Bold,
@@ -2592,6 +2800,28 @@ fun InkCanvasScreen(
                 isExporting = isExporting,
                 exportSuccessMessage = exportSuccessMessage,
                 onDismiss = { isExportDialogOpen = false },
+                onExportHtml = {
+                    scope.launch(Dispatchers.IO) {
+                        isExporting = true
+                        val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
+                        val safeTitle = (nBook?.title ?: page?.metadata?.title ?: "Note").replace(Regex("[^a-zA-Z0-9_-]"), "_")
+                        val htmlFile = File(exportDir, "${safeTitle}_${System.currentTimeMillis()}.html")
+                        val pageList = if (page != null) listOf(page) else emptyList()
+                        htmlFile.outputStream().use { out ->
+                            PageExporter.exportToInteractiveHtml(
+                                notebookTitle = nBook?.title ?: "DSA Notebook",
+                                pages = pageList,
+                                outputStream = out,
+                                initialDarkMode = isDarkMode
+                            )
+                        }
+                        withContext(Dispatchers.Main) {
+                            isExporting = false
+                            exportSuccessMessage = "Universal Web Note Exported (${htmlFile.length() / 1024} KB)"
+                            shareExportFile(htmlFile, "text/html", "Share Universal Web Note (.html)")
+                        }
+                    }
+                },
                 onExportPdf = {
                     scope.launch(Dispatchers.IO) {
                         isExporting = true
@@ -2990,20 +3220,20 @@ private fun ToolIconButton(
         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = if (isSelected) 9.dp else 7.dp, vertical = 7.dp),
+            modifier = Modifier.padding(horizontal = if (isSelected) 7.dp else 5.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(3.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,
                 tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(20.dp)
             )
             if (isSelected) {
                 Text(
                     text = label,
-                    fontSize = 13.5.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )

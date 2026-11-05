@@ -201,6 +201,40 @@ class InkCanvasView @JvmOverloads constructor(
     var onLassoSelectionChanged: ((hasSelection: Boolean) -> Unit)? = null
     private var isTransformingSelection = false
 
+    var isReadOnly: Boolean = false
+        set(value) {
+            field = value
+            if (value) {
+                inProgressStrokesView.cancelUnfinishedStrokes()
+                activeEraseGesture = null
+                isTransformingSelection = false
+                lassoTool.clearSelection()
+                dryInkView.invalidate()
+            }
+        }
+
+    private var isReadOnlyPanDragging = false
+    private var lastReadOnlyPanX = 0f
+    private var lastReadOnlyPanY = 0f
+
+    fun getLassoScreenBounds(): RectF? {
+        if (lassoTool.selectedStrokes.isEmpty() || lassoTool.selectionBounds.isEmpty) return null
+        val b = lassoTool.selectionBounds
+        val tl = PointF()
+        val br = PointF()
+        dryInkView.transform.worldToScreen(b.left, b.top, tl)
+        dryInkView.transform.worldToScreen(b.right, b.bottom, br)
+        val left = minOf(tl.x, br.x)
+        val right = maxOf(tl.x, br.x)
+        val top = minOf(tl.y, br.y)
+        val bottom = maxOf(tl.y, br.y)
+        return RectF(left, top, right, bottom)
+    }
+
+    fun setAdaptiveContrast(enabled: Boolean) {
+        dryInkView.isAdaptiveContrastEnabled = enabled
+    }
+
     // Precision & Stroke Eraser Settings and Scoped Gesture Session
     var eraserMode: EraserMode = EraserMode.PRECISION
 
@@ -526,6 +560,32 @@ class InkCanvasView @JvmOverloads constructor(
         val screenX = event.getX(pointerIndex)
         val screenY = event.getY(pointerIndex)
 
+        if (isReadOnly) {
+            // Read-Only Lock Mode: all write/erase actions are blocked.
+            // Support single pointer scrolling/panning to read comfortably.
+            when (action) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                    isReadOnlyPanDragging = true
+                    lastReadOnlyPanX = screenX
+                    lastReadOnlyPanY = screenY
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (isReadOnlyPanDragging) {
+                        val dx = screenX - lastReadOnlyPanX
+                        val dy = screenY - lastReadOnlyPanY
+                        dryInkView.transform.postTranslate(dx, dy)
+                        lastReadOnlyPanX = screenX
+                        lastReadOnlyPanY = screenY
+                        dryInkView.invalidate()
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
+                    isReadOnlyPanDragging = false
+                }
+            }
+            return
+        }
+
         if (isEraser) {
             dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
             val worldX = tempPoint.x
@@ -792,6 +852,32 @@ class InkCanvasView @JvmOverloads constructor(
         val screenX = event.getX(pointerIndex)
         val screenY = event.getY(pointerIndex)
 
+        if (isReadOnly) {
+            // Read-Only Lock Mode: all write/erase actions are blocked.
+            // Support single pointer scrolling/panning to read comfortably.
+            when (action) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                    isReadOnlyPanDragging = true
+                    lastReadOnlyPanX = screenX
+                    lastReadOnlyPanY = screenY
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (isReadOnlyPanDragging) {
+                        val dx = screenX - lastReadOnlyPanX
+                        val dy = screenY - lastReadOnlyPanY
+                        dryInkView.transform.postTranslate(dx, dy)
+                        lastReadOnlyPanX = screenX
+                        lastReadOnlyPanY = screenY
+                        dryInkView.invalidate()
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
+                    isReadOnlyPanDragging = false
+                }
+            }
+            return
+        }
+
         dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
         val worldX = tempPoint.x
         val worldY = tempPoint.y
@@ -893,7 +979,7 @@ class InkCanvasView @JvmOverloads constructor(
     }
 
     fun undo() {
-        if (undoStack.isEmpty()) return
+        if (isReadOnly || undoStack.isEmpty()) return
         val action = undoStack.removeAt(undoStack.lastIndex)
         if (action.addedStrokes.isNotEmpty() && action.removedStrokes.isNotEmpty()) {
             dryInkView.replaceStrokes(action.addedStrokes, action.removedStrokes)
@@ -920,7 +1006,7 @@ class InkCanvasView @JvmOverloads constructor(
     }
 
     fun redo() {
-        if (redoStack.isEmpty()) return
+        if (isReadOnly || redoStack.isEmpty()) return
         val action = redoStack.removeAt(redoStack.lastIndex)
         if (action.addedStrokes.isNotEmpty() && action.removedStrokes.isNotEmpty()) {
             dryInkView.replaceStrokes(action.removedStrokes, action.addedStrokes)
@@ -967,6 +1053,7 @@ class InkCanvasView @JvmOverloads constructor(
 
     // Phase 4 Lasso Operations
     fun duplicateLassoSelection(): List<Stroke> {
+        if (isReadOnly) return emptyList()
         val duplicated = lassoTool.duplicateSelected()
         if (duplicated.isNotEmpty()) {
             dryInkView.addStrokes(duplicated)
@@ -984,6 +1071,7 @@ class InkCanvasView @JvmOverloads constructor(
     fun copyLassoSelection(): Int = lassoTool.copySelected()
 
     fun pasteLassoClipboard(): List<Stroke> {
+        if (isReadOnly) return emptyList()
         val pasted = lassoTool.pasteClipboard()
         if (pasted.isNotEmpty()) {
             dryInkView.addStrokes(pasted)
@@ -1007,6 +1095,7 @@ class InkCanvasView @JvmOverloads constructor(
     }
 
     fun insertShape(shape: RecognizedShape) {
+        if (isReadOnly) return
         android.util.Log.d("ANTIGRAVITY_INK", "insertShape: $shape, activeBrushSize=${activeBrush.size}")
         val strokes = shapeRecognizer.createStrokesForShape(shape, activeBrush)
         android.util.Log.d("ANTIGRAVITY_INK", "insertShape generated ${strokes.size} strokes")
@@ -1023,6 +1112,7 @@ class InkCanvasView @JvmOverloads constructor(
     }
 
     fun changeLassoSelectionColor(color: Int) {
+        if (isReadOnly) return
         val result = lassoTool.changeColorSelected(color)
         if (result.newStrokes.isNotEmpty()) {
             dryInkView.removeStrokes(result.oldStrokes)
@@ -1036,6 +1126,7 @@ class InkCanvasView @JvmOverloads constructor(
     }
 
     fun deleteLassoSelection() {
+        if (isReadOnly) return
         val toDelete = lassoTool.selectedStrokes.toList()
         if (toDelete.isNotEmpty()) {
             dryInkView.removeStrokes(toDelete)

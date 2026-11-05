@@ -136,4 +136,75 @@ class ExportAndAudioTest {
         val at6000 = timings.filter { it.startOffsetMs <= 6000L }.map { it.strokeIndex }.toSet()
         assertEquals(setOf(0, 1, 2, 3), at6000)
     }
+
+    @Test
+    fun testInteractiveHtmlExportGeneratesValidWebDocument() {
+        val page = DocumentPage(
+            metadata = PageMetadata(
+                pageId = "p_web_test",
+                notebookId = "nb_web",
+                pageIndex = 0,
+                title = "Binary Tree Inorder Traversal",
+                template = PaperTemplate.CORNELL,
+                createdAt = 1000L,
+                modifiedAt = 2000L
+            )
+        )
+
+        val baos = ByteArrayOutputStream()
+        PageExporter.exportToInteractiveHtml(
+            notebookTitle = "Data Structures & Algorithms",
+            pages = listOf(page),
+            outputStream = baos,
+            initialDarkMode = false
+        )
+
+        val html = baos.toString("UTF-8")
+        assertTrue("HTML should have <!DOCTYPE html>", html.contains("<!DOCTYPE html>"))
+        assertTrue("HTML should contain notebook title", html.contains("Data Structures &amp; Algorithms") || html.contains("Data Structures & Algorithms"))
+        assertTrue("HTML should contain page title", html.contains("Binary Tree Inorder Traversal"))
+        assertTrue("HTML should have canvas element", html.contains("<canvas id=\"noteCanvas\">"))
+        assertTrue("HTML should contain CORNELL template", html.contains("CORNELL"))
+        assertTrue("HTML should contain offline export button", html.contains("btn-export-png") && html.contains("PNG"))
+    }
+
+    @Test
+    fun testInkflowZipEmbedsIndexHtmlForUniversalViewing() {
+        val page = DocumentPage(
+            metadata = PageMetadata(
+                pageId = "p_zip_web",
+                notebookId = "nb_zip",
+                pageIndex = 0,
+                title = "Graph BFS",
+                template = PaperTemplate.GRID,
+                createdAt = 1000L,
+                modifiedAt = 2000L
+            )
+        )
+
+        val manifest = InkflowManifest(
+            notebookId = "nb_zip",
+            notebookTitle = "Graph Algorithms",
+            createdAt = 1000L,
+            exportedAt = System.currentTimeMillis(),
+            pageCount = 1,
+            pages = listOf(InkflowPageEntry("p_zip_web", "Graph BFS", 0, "GRID", 0))
+        )
+
+        val zipBaos = ByteArrayOutputStream()
+        PageExporter.exportToInkflow(manifest, listOf(page), outputStream = zipBaos)
+
+        val zipIn = java.util.zip.ZipInputStream(ByteArrayInputStream(zipBaos.toByteArray()))
+        val entries = mutableListOf<String>()
+        var entry = zipIn.nextEntry
+        while (entry != null) {
+            entries.add(entry.name)
+            zipIn.closeEntry()
+            entry = zipIn.nextEntry
+        }
+
+        assertTrue("ZIP must include manifest.json", entries.contains("manifest.json"))
+        assertTrue("ZIP must include index.html for direct PC/Mac double-click viewing", entries.contains("index.html"))
+        assertTrue("ZIP must include page binary", entries.contains("pages/p_zip_web.inkpage"))
+    }
 }
