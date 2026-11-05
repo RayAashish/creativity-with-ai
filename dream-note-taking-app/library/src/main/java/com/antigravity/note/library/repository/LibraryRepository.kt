@@ -64,21 +64,23 @@ class LibraryRepository(
         pageDao.updatePage(page)
     }
 
-    suspend fun createFolder(name: String, parentFolderId: String? = null): FolderEntity = withContext(ioDispatcher) {
+    suspend fun createFolder(name: String, parentFolderId: String? = null, iconKey: String? = null): FolderEntity = withContext(ioDispatcher) {
         val folder = FolderEntity(
             folderId = UUID.randomUUID().toString(),
             parentFolderId = parentFolderId,
-            name = name
+            name = name,
+            iconKey = iconKey
         )
         folderDao.insertFolder(folder)
         folder
     }
 
-    suspend fun createNotebook(title: String, folderId: String? = null): NotebookEntity = withContext(ioDispatcher) {
+    suspend fun createNotebook(title: String, folderId: String? = null, iconKey: String? = null): NotebookEntity = withContext(ioDispatcher) {
         val notebook = NotebookEntity(
             notebookId = UUID.randomUUID().toString(),
             folderId = folderId,
-            title = title
+            title = title,
+            iconKey = iconKey
         )
         notebookDao.insertNotebook(notebook)
 
@@ -189,6 +191,14 @@ class LibraryRepository(
 
     suspend fun renameFolder(folderId: String, newName: String) = withContext(ioDispatcher) {
         folderDao.updateFolderName(folderId, newName)
+    }
+
+    suspend fun updateFolderIcon(folderId: String, iconKey: String?) = withContext(ioDispatcher) {
+        folderDao.updateFolderIcon(folderId, iconKey)
+    }
+
+    suspend fun updateNotebookIcon(notebookId: String, iconKey: String?) = withContext(ioDispatcher) {
+        notebookDao.updateNotebookIcon(notebookId, iconKey)
     }
 
     suspend fun deleteNotebook(notebookId: String) = withContext(ioDispatcher) {

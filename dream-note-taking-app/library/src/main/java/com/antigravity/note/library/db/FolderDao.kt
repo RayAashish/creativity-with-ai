@@ -31,6 +31,9 @@ interface FolderDao {
     @Query("UPDATE folders SET name = :newName WHERE folderId = :folderId")
     suspend fun updateFolderName(folderId: String, newName: String)
 
+    @Query("UPDATE folders SET iconKey = :iconKey WHERE folderId = :folderId")
+    suspend fun updateFolderIcon(folderId: String, iconKey: String?)
+
     @Query("DELETE FROM folders WHERE folderId = :folderId")
     suspend fun deleteFolder(folderId: String)
 }

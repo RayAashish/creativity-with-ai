@@ -268,10 +268,10 @@ class LocalBackupManager(
                 val libraryBackup = LibraryHierarchyBackup(
                     exportedAt = System.currentTimeMillis(),
                     folders = folders.map {
-                        FolderBackupItem(it.folderId, it.parentFolderId, it.name, it.colorHex, it.isPinned, it.createdAt, it.modifiedAt)
+                        FolderBackupItem(it.folderId, it.parentFolderId, it.name, it.colorHex, it.isPinned, it.createdAt, it.modifiedAt, it.iconKey)
                     },
                     notebooks = notebooks.map {
-                        NotebookBackupItem(it.notebookId, it.folderId, it.title, it.pageCount, it.isStarred, it.createdAt, it.modifiedAt)
+                        NotebookBackupItem(it.notebookId, it.folderId, it.title, it.pageCount, it.isStarred, it.createdAt, it.modifiedAt, it.iconKey)
                     },
                     pages = allPages.map {
                         PageBackupItem(
@@ -415,12 +415,12 @@ class LocalBackupManager(
                     val lib = json.decodeFromString<LibraryHierarchyBackup>(libFile.readText())
                     for (f in lib.folders) {
                         database.folderDao().insertFolder(
-                            FolderEntity(f.folderId, f.parentFolderId, f.name, f.colorHex, f.isPinned, f.createdAt, f.modifiedAt)
+                            FolderEntity(f.folderId, f.parentFolderId, f.name, f.colorHex, f.isPinned, f.createdAt, f.modifiedAt, f.iconKey)
                         )
                     }
                     for (nb in lib.notebooks) {
                         database.notebookDao().insertNotebook(
-                            NotebookEntity(nb.notebookId, nb.folderId, nb.title, nb.pageCount, nb.isStarred, nb.createdAt, nb.modifiedAt)
+                            NotebookEntity(nb.notebookId, nb.folderId, nb.title, nb.pageCount, nb.isStarred, nb.createdAt, nb.modifiedAt, nb.iconKey)
                         )
                         restoredNotebooks++
                     }
@@ -475,12 +475,12 @@ class LocalBackupManager(
                     val lib = json.decodeFromString<LibraryHierarchyBackup>(content)
                     for (f in lib.folders) {
                         database.folderDao().insertFolder(
-                            FolderEntity(f.folderId, f.parentFolderId, f.name, f.colorHex, f.isPinned, f.createdAt, f.modifiedAt)
+                            FolderEntity(f.folderId, f.parentFolderId, f.name, f.colorHex, f.isPinned, f.createdAt, f.modifiedAt, f.iconKey)
                         )
                     }
                     for (nb in lib.notebooks) {
                         database.notebookDao().insertNotebook(
-                            NotebookEntity(nb.notebookId, nb.folderId, nb.title, nb.pageCount, nb.isStarred, nb.createdAt, nb.modifiedAt)
+                            NotebookEntity(nb.notebookId, nb.folderId, nb.title, nb.pageCount, nb.isStarred, nb.createdAt, nb.modifiedAt, nb.iconKey)
                         )
                         restoredNotebooks++
                     }

@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.antigravity.note.library.backup.manifest.BackupManifestDao
 import com.antigravity.note.library.backup.manifest.BackupManifestEntity
 
@@ -14,7 +16,7 @@ import com.antigravity.note.library.backup.manifest.BackupManifestEntity
         PageEntity::class,
         BackupManifestEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class NoteDatabase : RoomDatabase() {
@@ -25,6 +27,13 @@ abstract class NoteDatabase : RoomDatabase() {
     abstract fun backupManifestDao(): BackupManifestDao
 
     companion object {
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE folders ADD COLUMN iconKey TEXT DEFAULT NULL")
+                db.execSQL("ALTER TABLE notebooks ADD COLUMN iconKey TEXT DEFAULT NULL")
+            }
+        }
+
         @Volatile
         private var INSTANCE: NoteDatabase? = null
 
@@ -34,7 +43,10 @@ abstract class NoteDatabase : RoomDatabase() {
                     context.applicationContext,
                     NoteDatabase::class.java,
                     "inkflow_library.db"
-                ).fallbackToDestructiveMigration().build()
+                )
+                    .addMigrations(MIGRATION_5_6)
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

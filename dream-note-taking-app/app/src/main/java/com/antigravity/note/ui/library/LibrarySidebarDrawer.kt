@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
@@ -48,6 +49,8 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.antigravity.note.ui.icon.IconCatalog
+import com.antigravity.note.ui.icon.IconPickerDialog
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -88,100 +91,66 @@ data class BrandTag(
     val badgeLabel: String,
     val badgeBg: Color,
     val badgeText: Color,
-    val iconTint: Color
+    val iconTint: Color,
+    val emoji: String? = null
 )
 
-fun resolveBrandTag(name: String, isFolder: Boolean, isSubject: Boolean): BrandTag {
-    val lower = name.lowercase().trim()
-    return when {
-        lower.contains("spring") -> BrandTag(
-            icon = Icons.Default.Spa,
-            badgeLabel = "SPRING",
-            badgeBg = Color(0xFFE8F5E9),
-            badgeText = Color(0xFF2E7D32),
-            iconTint = Color(0xFF43A047)
-        )
-        lower.contains("dsa") || lower.contains("algo") || lower.contains("leetcode") ||
-        lower.contains("array") || lower.contains("pointer") || lower.contains("tree") ||
-        lower.contains("graph") || lower.contains("dp") || lower.contains("recursion") ||
-        lower.contains("sort") || lower.contains("search") || lower.contains("hashing") -> BrandTag(
-            icon = Icons.Default.Terminal,
-            badgeLabel = "DSA",
-            badgeBg = Color(0xFFE1F5FE),
-            badgeText = Color(0xFF0277BD),
-            iconTint = Color(0xFF0288D1)
-        )
-        lower.contains("system design") || lower.contains("architect") || lower.contains("distributed") ||
-        lower.contains("scal") || lower.contains("load balanc") || lower.contains("cluster") ||
-        lower.contains("microservice") || lower.contains("shard") || lower.contains("replica") -> BrandTag(
-            icon = Icons.Default.Hub,
-            badgeLabel = "SYS DESIGN",
-            badgeBg = Color(0xFFEDE7F6),
-            badgeText = Color(0xFF512DA8),
-            iconTint = Color(0xFF7C4DFF)
-        )
-        lower.contains("db") || lower.contains("database") || lower.contains("sql") ||
-        lower.contains("redis") || lower.contains("cache") || lower.contains("caching") ||
-        lower.contains("mongo") || lower.contains("postgres") || lower.contains("storage") -> BrandTag(
-            icon = Icons.Default.Storage,
-            badgeLabel = "DATABASE",
-            badgeBg = Color(0xFFFFF3E0),
-            badgeText = Color(0xFFE65100),
-            iconTint = Color(0xFFF57C00)
-        )
-        lower.contains("cn") || lower.contains("network") || lower.contains("tcp") ||
-        lower.contains("http") || lower.contains("socket") || lower.contains("ip") ||
-        lower.contains("dns") || lower.contains("protocol") -> BrandTag(
-            icon = Icons.Default.Public,
-            badgeLabel = "NETWORK",
-            badgeBg = Color(0xFFE0F2F1),
-            badgeText = Color(0xFF00695C),
-            iconTint = Color(0xFF00897B)
-        )
-        lower.contains("os") || lower.contains("operating system") || lower.contains("linux") ||
-        lower.contains("kernel") || lower.contains("thread") || lower.contains("concurren") ||
-        lower.contains("memory") || lower.contains("process") -> BrandTag(
-            icon = Icons.Default.Memory,
-            badgeLabel = "OS",
-            badgeBg = Color(0xFFFFEBEE),
-            badgeText = Color(0xFFC62828),
-            iconTint = Color(0xFFE53935)
-        )
-        lower.contains("web") || lower.contains("frontend") || lower.contains("react") ||
-        lower.contains("javascript") || lower.contains("html") || lower.contains("css") ||
-        lower.contains("ui") -> BrandTag(
-            icon = Icons.Default.Language,
-            badgeLabel = "WEB",
-            badgeBg = Color(0xFFE0F7FA),
-            badgeText = Color(0xFF00838F),
-            iconTint = Color(0xFF00ACC1)
-        )
-        else -> if (isSubject) {
-            BrandTag(
-                icon = Icons.Default.Folder,
-                badgeLabel = "Subject",
-                badgeBg = Color(0xFFD8E2FF),
-                badgeText = Color(0xFF001A41),
-                iconTint = Color(0xFF005AC1)
-            )
-        } else if (isFolder) {
-            BrandTag(
-                icon = Icons.Default.Folder,
-                badgeLabel = "Topic",
-                badgeBg = Color(0xFFFFE0B2),
-                badgeText = Color(0xFFE65100),
-                iconTint = Color(0xFFFB8C00)
-            )
-        } else {
-            BrandTag(
+fun resolveBrandTag(
+    name: String,
+    iconKey: String? = null,
+    isFolder: Boolean = true,
+    isSubject: Boolean = true
+): BrandTag {
+    if (!iconKey.isNullOrBlank()) {
+        if (iconKey.startsWith("emoji:")) {
+            val emojiStr = iconKey.removePrefix("emoji:")
+            return BrandTag(
                 icon = Icons.Default.MenuBook,
-                badgeLabel = "Subtopic",
-                badgeBg = Color(0xFFE1BEE7),
-                badgeText = Color(0xFF6A1B9A),
-                iconTint = Color(0xFF8E24AA)
+                badgeLabel = "EMOJI",
+                badgeBg = Color(0xFFF5F5F5),
+                badgeText = Color(0xFF333333),
+                iconTint = Color(0xFF333333),
+                emoji = emojiStr
+            )
+        }
+        if (iconKey.startsWith("badge:")) {
+            val parts = iconKey.split(":")
+            val label = parts.getOrNull(1) ?: "TAG"
+            val colorHex = parts.getOrNull(2) ?: "#005AC1"
+            val parsedColor = try {
+                Color(android.graphics.Color.parseColor(colorHex))
+            } catch (e: Exception) {
+                Color(0xFF005AC1)
+            }
+            return BrandTag(
+                icon = Icons.Default.Folder,
+                badgeLabel = label.take(6).uppercase(),
+                badgeBg = parsedColor.copy(alpha = 0.15f),
+                badgeText = parsedColor,
+                iconTint = parsedColor
+            )
+        }
+        val item = IconCatalog.getIcon(iconKey)
+        if (item != null) {
+            return BrandTag(
+                icon = item.iconVector,
+                badgeLabel = item.badgeLabel,
+                badgeBg = Color(item.containerColor),
+                badgeText = Color(item.primaryColor),
+                iconTint = Color(item.primaryColor)
             )
         }
     }
+
+    // Fallback: smart auto-suggestion by name & hierarchy level
+    val suggested = IconCatalog.suggestIcon(name, isFolder = isFolder, isSubject = isSubject)
+    return BrandTag(
+        icon = suggested.iconVector,
+        badgeLabel = suggested.badgeLabel,
+        badgeBg = Color(suggested.containerColor),
+        badgeText = Color(suggested.primaryColor),
+        iconTint = Color(suggested.primaryColor)
+    )
 }
 
 @Composable
@@ -196,8 +165,8 @@ fun LibrarySidebarDrawer(
     onOpenQuickSwitcher: () -> Unit,
     onCloseSidebar: () -> Unit,
     onOpenReviewToday: () -> Unit = {},
-    onCreateFolder: (name: String, parentFolderId: String?) -> Unit = { _, _ -> },
-    onCreateNotebook: (title: String, folderId: String?) -> Unit = { _, _ -> },
+    onCreateFolder: (name: String, parentFolderId: String?, iconKey: String?) -> Unit = { _, _, _ -> },
+    onCreateNotebook: (title: String, folderId: String?, iconKey: String?) -> Unit = { _, _, _ -> },
     onCreateGeneralPage: (notebookId: String, title: String, template: PaperTemplate) -> Unit = { _, _, _ -> },
     onCreateProblemPage: (notebookId: String, title: String, url: String, diff: String, tags: String) -> Unit = { _, _, _, _, _ -> },
     onOpenBackupSettings: () -> Unit = {},
@@ -205,6 +174,8 @@ fun LibrarySidebarDrawer(
     onRenamePage: (pageId: String, newTitle: String) -> Unit = { _, _ -> },
     onRenameNotebook: (notebookId: String, newTitle: String) -> Unit = { _, _ -> },
     onRenameFolder: (folderId: String, newName: String) -> Unit = { _, _ -> },
+    onChangeFolderIcon: (folderId: String, iconKey: String?) -> Unit = { _, _ -> },
+    onChangeNotebookIcon: (notebookId: String, iconKey: String?) -> Unit = { _, _ -> },
     onDeleteFolder: (folderId: String) -> Unit = {},
     onDeleteNotebook: (notebookId: String) -> Unit = {},
     onMovePagesToTrash: (pageIds: List<String>) -> Unit = {},
@@ -233,6 +204,7 @@ fun LibrarySidebarDrawer(
     // Direct single delete state
     var folderToDelete by remember { mutableStateOf<FolderEntity?>(null) }
     var notebookToDelete by remember { mutableStateOf<NotebookEntity?>(null) }
+    var itemForIconPicker by remember { mutableStateOf<Any?>(null) }
 
     // Dialog state
     var showCreateSubjectDialog by remember { mutableStateOf(false) }
@@ -581,11 +553,13 @@ fun LibrarySidebarDrawer(
                                 if (selectedFolderIds.contains(it)) selectedFolderIds.remove(it) else selectedFolderIds.add(it)
                             },
                             onDeleteFolderClick = { folderToDelete = it },
+                            onChangeFolderIconClick = { itemForIconPicker = it },
                             isNotebookSelected = { selectedNotebookIds.contains(it) },
                             onToggleNotebookSelection = {
                                 if (selectedNotebookIds.contains(it)) selectedNotebookIds.remove(it) else selectedNotebookIds.add(it)
                             },
                             onDeleteNotebookClick = { notebookToDelete = it },
+                            onChangeNotebookIconClick = { itemForIconPicker = it },
                             onPageSelected = onPageSelected,
                             onAddSubtopic = { parentFolderForNewSubtopic = it },
                             onAddNotebook = { folderForNewNotebook = it },
@@ -616,6 +590,7 @@ fun LibrarySidebarDrawer(
                                 if (selectedNotebookIds.contains(it)) selectedNotebookIds.remove(it) else selectedNotebookIds.add(it)
                             },
                             onDeleteNotebookClick = { notebookToDelete = it },
+                            onChangeNotebookIconClick = { itemForIconPicker = it },
                             onPageSelected = onPageSelected,
                             onAddPage = { targetNotebookForNewPage = it },
                             onRenameNotebook = { notebookToRename = it },
@@ -632,24 +607,68 @@ fun LibrarySidebarDrawer(
     // Dialog: Create Root Subject (Folder)
     if (showCreateSubjectDialog) {
         var subjectName by remember { mutableStateOf("") }
+        var chosenIconKey by remember { mutableStateOf<String?>(null) }
+        var showPickerForNewSubject by remember { mutableStateOf(false) }
+
+        val activeTag = remember(subjectName, chosenIconKey) {
+            resolveBrandTag(subjectName.ifBlank { "Subject" }, chosenIconKey, isFolder = true, isSubject = true)
+        }
+
         AlertDialog(
             onDismissRequest = { showCreateSubjectDialog = false },
             title = { Text("New Subject / Root Folder") },
             text = {
-                OutlinedTextField(
-                    value = subjectName,
-                    onValueChange = { subjectName = it },
-                    label = { Text("Subject Name (e.g. System Design, DSA, OS)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = subjectName,
+                        onValueChange = { subjectName = it },
+                        label = { Text("Subject Name (e.g. Java, System Design, DSA)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = activeTag.badgeBg,
+                            modifier = Modifier.padding(end = 4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                if (activeTag.emoji != null) {
+                                    Text(activeTag.emoji, fontSize = 14.sp)
+                                } else {
+                                    Icon(activeTag.icon, contentDescription = null, tint = activeTag.iconTint, modifier = Modifier.size(16.dp))
+                                }
+                                Text(activeTag.badgeLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = activeTag.badgeText)
+                            }
+                        }
+
+                        OutlinedButton(
+                            onClick = { showPickerForNewSubject = true },
+                            modifier = Modifier.height(36.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp)
+                        ) {
+                            Icon(Icons.Default.Palette, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Choose Logo", fontSize = 12.sp)
+                        }
+                    }
+                }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         val name = subjectName.trim()
                         if (name.isNotEmpty()) {
-                            onCreateFolder(name, null)
+                            onCreateFolder(name, null, chosenIconKey)
                             showCreateSubjectDialog = false
                         }
                     }
@@ -663,29 +682,85 @@ fun LibrarySidebarDrawer(
                 }
             }
         )
+
+        if (showPickerForNewSubject) {
+            IconPickerDialog(
+                initialIconKey = chosenIconKey,
+                targetName = subjectName.ifBlank { "Subject" },
+                onIconSelected = { key ->
+                    chosenIconKey = key
+                    showPickerForNewSubject = false
+                },
+                onDismissRequest = { showPickerForNewSubject = false }
+            )
+        }
     }
 
     // Dialog: Create Subtopic (Folder under Subject)
     parentFolderForNewSubtopic?.let { parentId ->
         var subtopicName by remember { mutableStateOf("") }
+        var chosenIconKey by remember { mutableStateOf<String?>(null) }
+        var showPickerForNewSubtopic by remember { mutableStateOf(false) }
+
+        val activeTag = remember(subtopicName, chosenIconKey) {
+            resolveBrandTag(subtopicName.ifBlank { "Topic" }, chosenIconKey, isFolder = true, isSubject = false)
+        }
+
         AlertDialog(
             onDismissRequest = { parentFolderForNewSubtopic = null },
-            title = { Text("New Subtopic / Folder") },
+            title = { Text("New Topic / Folder") },
             text = {
-                OutlinedTextField(
-                    value = subtopicName,
-                    onValueChange = { subtopicName = it },
-                    label = { Text("Subtopic Name (e.g. Load Balancers, Arrays)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = subtopicName,
+                        onValueChange = { subtopicName = it },
+                        label = { Text("Topic Name (e.g. DP, Trees, Load Balancers)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = activeTag.badgeBg,
+                            modifier = Modifier.padding(end = 4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                if (activeTag.emoji != null) {
+                                    Text(activeTag.emoji, fontSize = 14.sp)
+                                } else {
+                                    Icon(activeTag.icon, contentDescription = null, tint = activeTag.iconTint, modifier = Modifier.size(16.dp))
+                                }
+                                Text(activeTag.badgeLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = activeTag.badgeText)
+                            }
+                        }
+
+                        OutlinedButton(
+                            onClick = { showPickerForNewSubtopic = true },
+                            modifier = Modifier.height(36.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp)
+                        ) {
+                            Icon(Icons.Default.Palette, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Choose Logo", fontSize = 12.sp)
+                        }
+                    }
+                }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         val name = subtopicName.trim()
                         if (name.isNotEmpty()) {
-                            onCreateFolder(name, parentId)
+                            onCreateFolder(name, parentId, chosenIconKey)
                             parentFolderForNewSubtopic = null
                         }
                     }
@@ -699,29 +774,85 @@ fun LibrarySidebarDrawer(
                 }
             }
         )
+
+        if (showPickerForNewSubtopic) {
+            IconPickerDialog(
+                initialIconKey = chosenIconKey,
+                targetName = subtopicName.ifBlank { "Topic" },
+                onIconSelected = { key ->
+                    chosenIconKey = key
+                    showPickerForNewSubtopic = false
+                },
+                onDismissRequest = { showPickerForNewSubtopic = false }
+            )
+        }
     }
 
     // Dialog: Create Notebook under Folder
     folderForNewNotebook?.let { fId ->
         var notebookTitle by remember { mutableStateOf("") }
+        var chosenIconKey by remember { mutableStateOf<String?>(null) }
+        var showPickerForNewNotebook by remember { mutableStateOf(false) }
+
+        val activeTag = remember(notebookTitle, chosenIconKey) {
+            resolveBrandTag(notebookTitle.ifBlank { "Notebook" }, chosenIconKey, isFolder = false, isSubject = false)
+        }
+
         AlertDialog(
             onDismissRequest = { folderForNewNotebook = null },
             title = { Text("New Topic Notebook") },
             text = {
-                OutlinedTextField(
-                    value = notebookTitle,
-                    onValueChange = { notebookTitle = it },
-                    label = { Text("Notebook Title (e.g. Consistent Hashing, Two Pointers)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = notebookTitle,
+                        onValueChange = { notebookTitle = it },
+                        label = { Text("Notebook Title (e.g. Consistent Hashing, Two Pointers)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = activeTag.badgeBg,
+                            modifier = Modifier.padding(end = 4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                if (activeTag.emoji != null) {
+                                    Text(activeTag.emoji, fontSize = 14.sp)
+                                } else {
+                                    Icon(activeTag.icon, contentDescription = null, tint = activeTag.iconTint, modifier = Modifier.size(16.dp))
+                                }
+                                Text(activeTag.badgeLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = activeTag.badgeText)
+                            }
+                        }
+
+                        OutlinedButton(
+                            onClick = { showPickerForNewNotebook = true },
+                            modifier = Modifier.height(36.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp)
+                        ) {
+                            Icon(Icons.Default.Palette, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Choose Logo", fontSize = 12.sp)
+                        }
+                    }
+                }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         val title = notebookTitle.trim()
                         if (title.isNotEmpty()) {
-                            onCreateNotebook(title, fId)
+                            onCreateNotebook(title, fId, chosenIconKey)
                             folderForNewNotebook = null
                         }
                     }
@@ -735,6 +866,18 @@ fun LibrarySidebarDrawer(
                 }
             }
         )
+
+        if (showPickerForNewNotebook) {
+            IconPickerDialog(
+                initialIconKey = chosenIconKey,
+                targetName = notebookTitle.ifBlank { "Notebook" },
+                onIconSelected = { key ->
+                    chosenIconKey = key
+                    showPickerForNewNotebook = false
+                },
+                onDismissRequest = { showPickerForNewNotebook = false }
+            )
+        }
     }
 
     // Dialog: Create Page under Notebook
@@ -1187,6 +1330,32 @@ fun LibrarySidebarDrawer(
             }
         )
     }
+
+    // Icon Picker Dialog for Subject / Topic / Notebook
+    when (val target = itemForIconPicker) {
+        is FolderEntity -> {
+            IconPickerDialog(
+                initialIconKey = target.iconKey,
+                targetName = target.name,
+                onIconSelected = { key ->
+                    onChangeFolderIcon(target.folderId, key)
+                    itemForIconPicker = null
+                },
+                onDismissRequest = { itemForIconPicker = null }
+            )
+        }
+        is NotebookEntity -> {
+            IconPickerDialog(
+                initialIconKey = target.iconKey,
+                targetName = target.title,
+                onIconSelected = { key ->
+                    onChangeNotebookIcon(target.notebookId, key)
+                    itemForIconPicker = null
+                },
+                onDismissRequest = { itemForIconPicker = null }
+            )
+        }
+    }
 }
 
 @Composable
@@ -1204,9 +1373,11 @@ private fun FolderTreeItem(
     isFolderSelected: (String) -> Boolean = { false },
     onToggleFolderSelection: (String) -> Unit = {},
     onDeleteFolderClick: (FolderEntity) -> Unit = {},
+    onChangeFolderIconClick: (FolderEntity) -> Unit = {},
     isNotebookSelected: (String) -> Boolean = { false },
     onToggleNotebookSelection: (String) -> Unit = {},
     onDeleteNotebookClick: (NotebookEntity) -> Unit = {},
+    onChangeNotebookIconClick: (NotebookEntity) -> Unit = {},
     onPageSelected: (notebookId: String, pageId: String) -> Unit,
     onAddSubtopic: (parentFolderId: String) -> Unit,
     onAddNotebook: (folderId: String) -> Unit,
@@ -1220,7 +1391,7 @@ private fun FolderTreeItem(
     val isExpanded = expandedFolders[folder.folderId] == true
     val subFolders = allFolders.filter { it.parentFolderId == folder.folderId }
     val childNotebooks = allNotebooks.filter { it.folderId == folder.folderId }
-    val brandTag = resolveBrandTag(folder.name, isFolder = true, isSubject = indentLevel == 0)
+    val brandTag = resolveBrandTag(folder.name, folder.iconKey, isFolder = true, isSubject = indentLevel == 0)
     var isMenuOpen by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -1248,12 +1419,20 @@ private fun FolderTreeItem(
                 modifier = Modifier.size(18.dp),
                 tint = Color.Gray
             )
-            Icon(
-                imageVector = brandTag.icon,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = brandTag.iconTint
-            )
+            if (brandTag.emoji != null) {
+                Text(
+                    text = brandTag.emoji,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(horizontal = 2.dp)
+                )
+            } else {
+                Icon(
+                    imageVector = brandTag.icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = brandTag.iconTint
+                )
+            }
             Surface(
                 shape = RoundedCornerShape(4.dp),
                 color = brandTag.badgeBg
@@ -1313,6 +1492,18 @@ private fun FolderTreeItem(
                             onRenameFolder(folder)
                         }
                     )
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                Text("🎨 Change Logo / Icon")
+                            }
+                        },
+                        onClick = {
+                            isMenuOpen = false
+                            onChangeFolderIconClick(folder)
+                        }
+                    )
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                     DropdownMenuItem(
                         text = {
@@ -1348,9 +1539,11 @@ private fun FolderTreeItem(
                         isFolderSelected = isFolderSelected,
                         onToggleFolderSelection = onToggleFolderSelection,
                         onDeleteFolderClick = onDeleteFolderClick,
+                        onChangeFolderIconClick = onChangeFolderIconClick,
                         isNotebookSelected = isNotebookSelected,
                         onToggleNotebookSelection = onToggleNotebookSelection,
                         onDeleteNotebookClick = onDeleteNotebookClick,
+                        onChangeNotebookIconClick = onChangeNotebookIconClick,
                         onPageSelected = onPageSelected,
                         onAddSubtopic = onAddSubtopic,
                         onAddNotebook = onAddNotebook,
@@ -1375,6 +1568,7 @@ private fun FolderTreeItem(
                         isNotebookSelected = isNotebookSelected,
                         onToggleNotebookSelection = onToggleNotebookSelection,
                         onDeleteNotebookClick = onDeleteNotebookClick,
+                        onChangeNotebookIconClick = onChangeNotebookIconClick,
                         onPageSelected = onPageSelected,
                         onAddPage = onAddPage,
                         onRenameNotebook = onRenameNotebook,
@@ -1400,6 +1594,7 @@ private fun NotebookTreeItem(
     isNotebookSelected: (String) -> Boolean = { false },
     onToggleNotebookSelection: (String) -> Unit = {},
     onDeleteNotebookClick: (NotebookEntity) -> Unit = {},
+    onChangeNotebookIconClick: (NotebookEntity) -> Unit = {},
     onPageSelected: (notebookId: String, pageId: String) -> Unit,
     onAddPage: (NotebookEntity) -> Unit,
     onRenameNotebook: (NotebookEntity) -> Unit,
@@ -1409,7 +1604,7 @@ private fun NotebookTreeItem(
 ) {
     val isExpanded = expandedNotebooks[notebook.notebookId] == true
     val childPages = allPages.filter { it.notebookId == notebook.notebookId }.sortedBy { it.pageIndex }
-    val brandTag = resolveBrandTag(notebook.title, isFolder = false, isSubject = false)
+    val brandTag = resolveBrandTag(notebook.title, notebook.iconKey, isFolder = false, isSubject = false)
     var isMenuOpen by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -1437,12 +1632,20 @@ private fun NotebookTreeItem(
                 modifier = Modifier.size(16.dp),
                 tint = Color.Gray
             )
-            Icon(
-                imageVector = brandTag.icon,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-                tint = brandTag.iconTint
-            )
+            if (brandTag.emoji != null) {
+                Text(
+                    text = brandTag.emoji,
+                    fontSize = 15.sp,
+                    modifier = Modifier.padding(horizontal = 2.dp)
+                )
+            } else {
+                Icon(
+                    imageVector = brandTag.icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = brandTag.iconTint
+                )
+            }
             Surface(
                 shape = RoundedCornerShape(4.dp),
                 color = brandTag.badgeBg
@@ -1501,6 +1704,18 @@ private fun NotebookTreeItem(
                         onClick = {
                             isMenuOpen = false
                             onRenameNotebook(notebook)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                Text("🎨 Change Logo / Icon")
+                            }
+                        },
+                        onClick = {
+                            isMenuOpen = false
+                            onChangeNotebookIconClick(notebook)
                         }
                     )
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))

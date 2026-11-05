@@ -2165,15 +2165,15 @@ fun InkCanvasScreen(
                 onOpenLocalBackupSettings = {
                     isLocalBackupDialogOpen = true
                 },
-                onCreateFolder = { name, parentId ->
+                onCreateFolder = { name, parentId, iconKey ->
                     scope.launch {
-                        libraryRepo.createFolder(name, parentId)
+                        libraryRepo.createFolder(name, parentId, iconKey)
                         Toast.makeText(context, "Created folder: $name", Toast.LENGTH_SHORT).show()
                     }
                 },
-                onCreateNotebook = { title, fId ->
+                onCreateNotebook = { title, fId, iconKey ->
                     scope.launch {
-                        val nb = libraryRepo.createNotebook(title, fId)
+                        val nb = libraryRepo.createNotebook(title, fId, iconKey)
                         docManager.initialize(nb.notebookId) {
                             val p = docManager.currentPage.value
                             if (p != null) canvasView.loadPage(p, docManager.lastOpenLatencyMs.value)
@@ -2220,6 +2220,16 @@ fun InkCanvasScreen(
                     scope.launch {
                         libraryRepo.renameFolder(folderId, newName)
                         Toast.makeText(context, "Folder renamed to: $newName", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onChangeFolderIcon = { folderId, iconKey ->
+                    scope.launch {
+                        libraryRepo.updateFolderIcon(folderId, iconKey)
+                    }
+                },
+                onChangeNotebookIcon = { notebookId, iconKey ->
+                    scope.launch {
+                        libraryRepo.updateNotebookIcon(notebookId, iconKey)
                     }
                 },
                 onDeleteFolder = { folderId ->

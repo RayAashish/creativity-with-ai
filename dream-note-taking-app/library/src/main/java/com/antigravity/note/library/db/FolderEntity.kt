@@ -12,5 +12,6 @@ data class FolderEntity(
     val colorHex: String? = null,
     val isPinned: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
-    val modifiedAt: Long = System.currentTimeMillis()
+    val modifiedAt: Long = System.currentTimeMillis(),
+    val iconKey: String? = null
 )

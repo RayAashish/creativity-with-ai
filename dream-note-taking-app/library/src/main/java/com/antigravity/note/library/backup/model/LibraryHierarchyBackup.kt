@@ -20,7 +20,8 @@ data class FolderBackupItem(
     val colorHex: String? = null,
     val isPinned: Boolean = false,
     val createdAt: Long,
-    val modifiedAt: Long
+    val modifiedAt: Long,
+    val iconKey: String? = null
 )
 
 @Serializable
@@ -31,7 +32,8 @@ data class NotebookBackupItem(
     val pageCount: Int,
     val isStarred: Boolean = false,
     val createdAt: Long,
-    val modifiedAt: Long
+    val modifiedAt: Long,
+    val iconKey: String? = null
 )
 
 @Serializable

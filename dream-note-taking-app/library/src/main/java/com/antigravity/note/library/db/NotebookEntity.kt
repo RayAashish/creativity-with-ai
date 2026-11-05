@@ -25,5 +25,6 @@ data class NotebookEntity(
     val pageCount: Int = 1,
     val isStarred: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
-    val modifiedAt: Long = System.currentTimeMillis()
+    val modifiedAt: Long = System.currentTimeMillis(),
+    val iconKey: String? = null
 )
