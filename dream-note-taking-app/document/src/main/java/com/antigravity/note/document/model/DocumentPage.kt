@@ -70,4 +70,19 @@ data class DocumentPage(
             addStroke(stroke, id)
         }
     }
+
+    fun computeContentBounds(): FloatArray? {
+        var minX = Float.MAX_VALUE
+        var minY = Float.MAX_VALUE
+        var maxX = -Float.MAX_VALUE
+        var maxY = -Float.MAX_VALUE
+        for (stroke in strokes) {
+            val box = stroke.shape.computeBoundingBox() ?: continue
+            if (box.xMin < minX) minX = box.xMin
+            if (box.yMin < minY) minY = box.yMin
+            if (box.xMax > maxX) maxX = box.xMax
+            if (box.yMax > maxY) maxY = box.yMax
+        }
+        return if (minX <= maxX && minY <= maxY) floatArrayOf(minX, minY, maxX, maxY) else null
+    }
 }

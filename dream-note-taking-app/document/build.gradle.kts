@@ -36,9 +36,9 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.ink.strokes)
-    implementation(libs.androidx.ink.brush)
-    implementation(libs.androidx.ink.geometry)
+    api(libs.androidx.ink.strokes)
+    api(libs.androidx.ink.brush)
+    api(libs.androidx.ink.geometry)
     implementation(libs.androidx.ink.storage)
     implementation(libs.kotlinx.coroutines.android)
 
