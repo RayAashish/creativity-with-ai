@@ -821,7 +821,7 @@ fun LibrarySidebarDrawer(
                         OutlinedTextField(
                             value = sourceUrl,
                             onValueChange = { sourceUrl = it },
-                            label = { Text("LeetCode / Source URL (optional)") },
+                            label = { Text("Problem URL (Code360, LeetCode, GFG, Codeforces, Wikipedia)") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )

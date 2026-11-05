@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,7 +16,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
@@ -30,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +45,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.antigravity.note.library.db.PageEntity
+import com.antigravity.note.ui.dsa.DsaProblemDetails
+import com.antigravity.note.ui.dsa.DsaProblemFetcher
+import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 @Composable
 fun EditProblemDialog(
@@ -59,6 +68,11 @@ fun EditProblemDialog(
     var codeLanguage by remember { mutableStateOf(page.codeLanguage) }
     var isLangDropdownOpen by remember { mutableStateOf(false) }
     var isProblemPage by remember { mutableStateOf(page.isProblemPage) }
+
+    val coroutineScope = rememberCoroutineScope()
+    var isFetchingDetails by remember { mutableStateOf(false) }
+    var fetchMessage by remember { mutableStateOf<String?>(null) }
+    var fetchedDetails by remember { mutableStateOf<DsaProblemDetails?>(null) }
 
     Dialog(onDismissRequest = onDismissRequest) {
         Surface(
@@ -143,15 +157,74 @@ fun EditProblemDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Source Link URL
-                OutlinedTextField(
-                    value = sourceUrl,
-                    onValueChange = { sourceUrl = it },
-                    label = { Text("Problem Link (LeetCode, GFG, System Design URL)") },
-                    singleLine = true,
-                    placeholder = { Text("https://leetcode.com/problems/...") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                // Source Link URL with Auto-Fetch
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = sourceUrl,
+                        onValueChange = {
+                            sourceUrl = it
+                            fetchMessage = null
+                        },
+                        label = { Text("Problem Link (Code360, LeetCode, GFG, Codeforces, Wikipedia)") },
+                        singleLine = true,
+                        placeholder = { Text("https://www.naukri.com/code360/problems/...") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Button(
+                        onClick = {
+                            val trimmedUrl = sourceUrl.trim()
+                            if (trimmedUrl.isNotBlank()) {
+                                isFetchingDetails = true
+                                fetchMessage = null
+                                coroutineScope.launch {
+                                    val result = DsaProblemFetcher.fetchProblem(trimmedUrl)
+                                    result.onSuccess { details ->
+                                        fetchedDetails = details
+                                        if (title.isBlank() || title == page.title) {
+                                            title = details.title
+                                        }
+                                        if (!details.difficulty.isNullOrBlank()) {
+                                            difficulty = details.difficulty
+                                        }
+                                        if (details.tags.isNotEmpty() && tags.isBlank()) {
+                                            tags = details.tags.joinToString(", ")
+                                        }
+                                        fetchMessage = "✓ Fetched from ${details.platform}"
+                                    }.onFailure { err ->
+                                        fetchMessage = "⚠️ ${err.message ?: "Fetch failed"}"
+                                    }
+                                    isFetchingDetails = false
+                                }
+                            }
+                        },
+                        enabled = sourceUrl.isNotBlank() && !isFetchingDetails,
+                        modifier = Modifier.height(56.dp)
+                    ) {
+                        if (isFetchingDetails) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Icon(Icons.Default.Refresh, contentDescription = "Fetch details", modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Fetch")
+                        }
+                    }
+                }
+                fetchMessage?.let { msg ->
+                    Text(
+                        text = msg,
+                        fontSize = 12.sp,
+                        color = if (msg.startsWith("✓")) Color(0xFF146C2E) else MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
@@ -317,9 +390,9 @@ fun EditProblemDialog(
                                 codeSnippet = codeSnippet,
                                 codeLanguage = codeLanguage,
                                 nextReviewTimestamp = if (nextReview > 0L) nextReview else page.nextReviewTimestamp,
-                                problemDescriptionHtml = if (urlChanged) null else page.problemDescriptionHtml,
-                                testCasesJson = if (urlChanged) null else page.testCasesJson,
-                                isDescriptionWindowVisible = if (urlChanged) true else page.isDescriptionWindowVisible,
+                                problemDescriptionHtml = fetchedDetails?.descriptionHtml ?: if (urlChanged) null else page.problemDescriptionHtml,
+                                testCasesJson = fetchedDetails?.let { Json.encodeToString(it.testCases) } ?: if (urlChanged) null else page.testCasesJson,
+                                isDescriptionWindowVisible = if (urlChanged || fetchedDetails != null) true else page.isDescriptionWindowVisible,
                                 modifiedAt = System.currentTimeMillis()
                             )
                             onSave(updated)

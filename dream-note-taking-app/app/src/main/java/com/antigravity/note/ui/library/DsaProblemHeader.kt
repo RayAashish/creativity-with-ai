@@ -2,6 +2,7 @@ package com.antigravity.note.ui.library
 
 import android.content.Intent
 import android.net.Uri
+import com.antigravity.note.ui.dsa.fetcher.ProblemSource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -201,12 +202,14 @@ fun DsaProblemHeader(
                         }
                     }
 
-                    // Source Link (LeetCode/GFG/Codeforces)
+                    // Source Link (LeetCode/Code360/GFG/Codeforces/Wikipedia/Web)
                     problemPage.sourceUrl?.let { url ->
+                        val problemSource = ProblemSource.fromUrl(url)
+                        val sourceColor = Color(problemSource.badgeColor)
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+                                .background(sourceColor.copy(alpha = 0.16f))
                                 .clickable {
                                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                                     context.startActivity(intent)
@@ -218,13 +221,13 @@ fun DsaProblemHeader(
                             Icon(
                                 imageVector = Icons.Default.Link,
                                 contentDescription = "Open Source Link",
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = sourceColor,
                                 modifier = Modifier.size(14.dp)
                             )
                             Text(
-                                text = if (url.contains("leetcode")) "LeetCode" else "Problem Link",
+                                text = problemSource.displayName,
                                 fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = sourceColor,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }

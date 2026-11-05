@@ -1,5 +1,7 @@
 package com.antigravity.note.ui.dsa
 
+import android.content.Intent
+import android.net.Uri
 import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -38,11 +40,13 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Opacity
+import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material3.AlertDialog
@@ -79,13 +83,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.antigravity.note.library.db.PageEntity
 import com.antigravity.note.library.model.TestCaseItem
+import com.antigravity.note.ui.dsa.fetcher.ProblemSource
 import com.antigravity.note.ui.settings.AppSettings
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -153,6 +160,8 @@ fun FloatingDsaProblemWindow(
     var descriptionHtml by remember(page.pageId) { mutableStateOf(page.problemDescriptionHtml.orEmpty()) }
     var isFetching by remember { mutableStateOf(false) }
     var fetchError by remember { mutableStateOf<String?>(null) }
+    var fetchJob by remember { mutableStateOf<Job?>(null) }
+    var showManualEditDialog by remember { mutableStateOf(false) }
 
     // Minimal Test Cases (Checklist ribbon only for user reference)
     val testCases = remember(page.pageId) {
@@ -172,53 +181,21 @@ fun FloatingDsaProblemWindow(
         }
     }
 
-    // Auto-fetch if sourceUrl is present and description is empty
-    LaunchedEffect(page.pageId, page.sourceUrl) {
-        val sUrl = page.sourceUrl
-        if (descriptionHtml.isBlank() && !sUrl.isNullOrBlank()) {
-            isFetching = true
-            fetchError = null
-            coroutineScope.launch {
-                val res = DsaProblemFetcher.fetchProblem(sUrl)
-                res.onSuccess { details ->
-                    descriptionHtml = details.descriptionHtml
-                    testCases.clear()
-                    if (details.testCases.isNotEmpty()) {
-                        testCases.addAll(details.testCases)
-                    } else {
-                        testCases.add(TestCaseItem(1, "Case 1", "", "", false))
-                        testCases.add(TestCaseItem(2, "Case 2", "", "", false))
-                        testCases.add(TestCaseItem(3, "Case 3", "", "", false))
-                    }
-                    if (details.hints.isNotEmpty()) {
-                        hintsList.clear()
-                        hintsList.addAll(details.hints)
-                    }
-                    val jsonStr = Json.encodeToString(testCases.toList())
-                    val hintsJsonStr = Json.encodeToString(hintsList.toList())
-                    onUpdatePage(
-                        page.copy(
-                            problemDescriptionHtml = details.descriptionHtml,
-                            testCasesJson = jsonStr,
-                            hintsJson = hintsJsonStr,
-                            difficulty = details.difficulty ?: page.difficulty
-                        )
-                    )
-                }.onFailure { err ->
-                    fetchError = err.message ?: "Failed to load problem statement"
-                }
-                isFetching = false
-            }
-        }
+    fun cancelFetch() {
+        fetchJob?.cancel()
+        fetchJob = null
+        isFetching = false
+        fetchError = "Fetch cancelled"
     }
 
-    // Manual Re-fetch Live
-    fun reloadFromSource() {
-        val url = page.sourceUrl ?: return
+    fun fetchProblemDetails(url: String) {
+        val trimmed = url.trim()
+        if (trimmed.isBlank()) return
+        fetchJob?.cancel()
         isFetching = true
         fetchError = null
-        coroutineScope.launch {
-            val res = DsaProblemFetcher.fetchProblem(url)
+        fetchJob = coroutineScope.launch {
+            val res = DsaProblemFetcher.fetchProblem(trimmed)
             res.onSuccess { details ->
                 descriptionHtml = details.descriptionHtml
                 testCases.clear()
@@ -244,10 +221,25 @@ fun FloatingDsaProblemWindow(
                     )
                 )
             }.onFailure { err ->
-                fetchError = err.message ?: "Failed to load"
+                val host = try { java.net.URI(trimmed).host } catch (_: Exception) { null } ?: "remote host"
+                fetchError = "Couldn't fetch from $host: ${err.message ?: "Failed to parse problem statement"}"
             }
             isFetching = false
         }
+    }
+
+    // Auto-fetch if sourceUrl is present and description is empty
+    LaunchedEffect(page.pageId, page.sourceUrl) {
+        val sUrl = page.sourceUrl
+        if (descriptionHtml.isBlank() && !sUrl.isNullOrBlank()) {
+            fetchProblemDetails(sUrl)
+        }
+    }
+
+    // Manual Re-fetch Live
+    fun reloadFromSource() {
+        val url = page.sourceUrl ?: return
+        fetchProblemDetails(url)
     }
 
     var testCaseToEdit by remember { mutableStateOf<TestCaseItem?>(null) }
@@ -469,6 +461,19 @@ fun FloatingDsaProblemWindow(
                                 color = headerTextColor,
                                 maxLines = 1
                             )
+                            val problemSource = ProblemSource.fromUrl(page.sourceUrl)
+                            Surface(
+                                shape = RoundedCornerShape(5.dp),
+                                color = Color(problemSource.badgeColor).copy(alpha = 0.16f)
+                            ) {
+                                Text(
+                                    text = problemSource.displayName,
+                                    color = Color(problemSource.badgeColor),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                )
+                            }
                             page.difficulty?.let { diff ->
                                 Surface(
                                     shape = RoundedCornerShape(5.dp),
@@ -656,32 +661,45 @@ fun FloatingDsaProblemWindow(
 
                     HorizontalDivider(thickness = 0.6.dp, color = MaterialTheme.colorScheme.outlineVariant)
 
-                    // Error Banner if needed
-                    if (fetchError != null && descriptionHtml.isBlank()) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.errorContainer,
-                            modifier = Modifier.fillMaxWidth().padding(8.dp)
-                        ) {
-                            Text(
-                                text = "⚠️ $fetchError",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.padding(8.dp)
-                            )
-                        }
-                    }
-
                     // Problem Statement Body: Direct Native WebView Momentum Scrolling (WEIGHT 1f)
-                    // Zero nested-scroll conflicts! Smooth, continuous flick scrolling through full statement,
-                    // code blocks, examples, and images!
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
                             .background(Color.Transparent)
                     ) {
-                        if (descriptionHtml.isNotBlank()) {
+                        if (isFetching) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(24.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(36.dp),
+                                        strokeWidth = 3.dp,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    val platformName = ProblemSource.fromUrl(page.sourceUrl).displayName
+                                    Text(
+                                        text = "Fetching problem statement from $platformName...",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    OutlinedButton(
+                                        onClick = { cancelFetch() },
+                                        modifier = Modifier.height(34.dp)
+                                    ) {
+                                        Text("Cancel", fontSize = 12.sp)
+                                    }
+                                }
+                            }
+                        } else if (descriptionHtml.isNotBlank()) {
                             AndroidView(
                                 factory = { ctx ->
                                     WebView(ctx).apply {
@@ -772,17 +790,102 @@ fun FloatingDsaProblemWindow(
                                 },
                                 modifier = Modifier.fillMaxSize()
                             )
-                        } else if (!isFetching) {
+                        } else if (fetchError != null) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ErrorOutline,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(36.dp)
+                                    )
+                                    Text(
+                                        text = fetchError.orEmpty(),
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.error,
+                                        textAlign = TextAlign.Center,
+                                        lineHeight = 16.sp
+                                    )
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Button(
+                                            onClick = { reloadFromSource() },
+                                            modifier = Modifier.height(34.dp)
+                                        ) {
+                                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("Retry", fontSize = 11.sp)
+                                        }
+                                        page.sourceUrl?.let { sUrl ->
+                                            OutlinedButton(
+                                                onClick = {
+                                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(sUrl))
+                                                    context.startActivity(intent)
+                                                },
+                                                modifier = Modifier.height(34.dp)
+                                            ) {
+                                                Icon(Icons.Default.OpenInBrowser, contentDescription = null, modifier = Modifier.size(14.dp))
+                                                Spacer(Modifier.width(4.dp))
+                                                Text("Open Browser", fontSize = 11.sp)
+                                            }
+                                        }
+                                        OutlinedButton(
+                                            onClick = { showManualEditDialog = true },
+                                            modifier = Modifier.height(34.dp)
+                                        ) {
+                                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("Paste Manually", fontSize = 11.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
                             Box(
                                 modifier = Modifier.fillMaxSize().padding(16.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = "No description loaded yet.\nTap 🔄 to fetch from URL or paste problem link in Problem Details.",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    lineHeight = 16.sp
-                                )
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Text(
+                                        text = "No description loaded yet.",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        if (!page.sourceUrl.isNullOrBlank()) {
+                                            Button(
+                                                onClick = { reloadFromSource() },
+                                                modifier = Modifier.height(34.dp)
+                                            ) {
+                                                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
+                                                Spacer(Modifier.width(4.dp))
+                                                Text("Fetch from Source", fontSize = 11.sp)
+                                            }
+                                        }
+                                        OutlinedButton(
+                                            onClick = { showManualEditDialog = true },
+                                            modifier = Modifier.height(34.dp)
+                                        ) {
+                                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("Paste Manually", fontSize = 11.sp)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -1090,6 +1193,53 @@ fun FloatingDsaProblemWindow(
                     OutlinedButton(onClick = { testCaseToEdit = null }) {
                         Text("Cancel")
                     }
+                }
+            }
+        )
+    }
+
+    // Dialog: Manually Paste or Edit Problem Statement
+    if (showManualEditDialog) {
+        var rawText by remember(descriptionHtml) { mutableStateOf(descriptionHtml) }
+        AlertDialog(
+            onDismissRequest = { showManualEditDialog = false },
+            icon = { Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            title = { Text("Edit Problem Description") },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Paste or edit the problem description (HTML or text):",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = rawText,
+                        onValueChange = { rawText = it },
+                        minLines = 6,
+                        maxLines = 14,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val finalHtml = rawText.trim()
+                        descriptionHtml = finalHtml
+                        onUpdatePage(page.copy(problemDescriptionHtml = finalHtml))
+                        fetchError = null
+                        showManualEditDialog = false
+                    }
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showManualEditDialog = false }) {
+                    Text("Cancel")
                 }
             }
         )
