@@ -1,0 +1,33 @@
+<variant
+    name="noInternetDebug"
+    useSupportLibraryVectorDrawables="true"
+    package="com.cliplocker.app"
+    minSdkVersion="26"
+    targetSdkVersion="35"
+    debuggable="true"
+    mergedManifest="build/intermediates/merged_manifest/noInternetDebug/processNoInternetDebugMainManifest/AndroidManifest.xml"
+    proguardFiles="build/intermediates/default_proguard_files/global/proguard-android.txt-8.8.2"
+    partialResultsDir="build/intermediates/lint_partial_results/noInternetDebug/lintAnalyzeNoInternetDebug/out"
+    desugaredMethodsFiles="/Users/aashishkumarray/.gradle/caches/8.13/transforms/37518ae4ce977db35ac1b4ef53725fa7/transformed/D8BackportedDesugaredMethods.txt">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+    <sourceProvider
+        manifests="src/main/AndroidManifest.xml"
+        javaDirectories="src/main/java:src/noInternet/java:src/debug/java:src/noInternetDebug/java:src/main/kotlin:src/noInternet/kotlin:src/debug/kotlin:src/noInternetDebug/kotlin"
+        resDirectories="src/main/res:src/noInternet/res:src/debug/res:src/noInternetDebug/res"
+        assetsDirectories="src/main/assets:src/noInternet/assets:src/debug/assets:src/noInternetDebug/assets"/>
+  </sourceProviders>
+  <testSourceProviders>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <artifact
+      classOutputs="build/intermediates/javac/noInternetDebug/compileNoInternetDebugJavaWithJavac/classes:build/tmp/kotlin-classes/noInternetDebug:build/intermediates/hilt/component_classes/noInternetDebug:build/generated/ksp/noInternetDebug/resources:build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/noInternetDebug/processNoInternetDebugResources/R.jar"
+      type="MAIN"
+      applicationId="com.cliplocker.app.nointernet.debug"
+      generatedSourceFolders="build/generated/ksp/noInternetDebug/java:build/generated/ksp/noInternetDebug/kotlin:build/generated/ap_generated_sources/noInternetDebug/out:build/generated/source/buildConfig/noInternet/debug"
+      generatedResourceFolders="build/generated/res/resValues/noInternet/debug"
+      desugaredMethodsFiles="/Users/aashishkumarray/.gradle/caches/8.13/transforms/37518ae4ce977db35ac1b4ef53725fa7/transformed/D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>

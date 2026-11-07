@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cliplocker</string>
+    <string name="widget_description">Cliplocker Quick History &amp; Search</string>
+    <string name="accessibility_service_description">Enables Cliplocker to capture copied text offline across apps without needing foreground focus.</string>
+</resources>

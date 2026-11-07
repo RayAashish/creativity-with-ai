@@ -1,0 +1,26 @@
+R_DEF: Internal format may change without notice
+local
+drawable avatar_alchemist
+drawable avatar_architect
+drawable avatar_chrono
+drawable avatar_matrix
+drawable avatar_synapse
+drawable avatar_vanguard
+drawable ic_launcher_background
+drawable ic_launcher_foreground
+mipmap ic_launcher
+mipmap ic_launcher_round
+string app_name
+string app_tagline
+string category_focus
+string category_language
+string category_logic
+string category_math
+string category_memory
+string nav_achievements
+string nav_home
+string nav_settings
+string nav_stats
+style Theme.MindForge
+xml backup_rules
+xml data_extraction_rules

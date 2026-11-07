@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.raysi.launcher.data.search.SearchEngineBenchmarkTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-07T16:38:41.862Z" hostname="Aashishs-MacBook-Air.local" time="0.551">
+  <properties/>
+  <testcase name="benchmarkSearchEngines_2000Apps" classname="com.raysi.launcher.data.search.SearchEngineBenchmarkTest" time="0.46"/>
+  <testcase name="benchmarkSearchEngines_500Apps" classname="com.raysi.launcher.data.search.SearchEngineBenchmarkTest" time="0.091"/>
+  <system-out><![CDATA[
+================================================================================
+  SEARCH ENGINE BENCHMARK (2,000 APPS) - 2,000 MEASURED QUERIES
+================================================================================
+Engine             | Mean (µs)  | P50 (µs)   | P95 (µs)   | P99 (µs)   | Max (µs)  
+--------------------------------------------------------------------------------
+Kotlin Engine      |      62.98 |      54.75 |      81.46 |     131.79 |    4578.88
+Rust (JNI) Engine  |      79.47 |      77.63 |      93.75 |     122.79 |     201.92
+================================================================================
+
+
+================================================================================
+  SEARCH ENGINE BENCHMARK (500 APPS) - 2,000 MEASURED QUERIES
+================================================================================
+Engine             | Mean (µs)  | P50 (µs)   | P95 (µs)   | P99 (µs)   | Max (µs)  
+--------------------------------------------------------------------------------
+Kotlin Engine      |       9.64 |       9.04 |      15.75 |      18.21 |      75.38
+Rust (JNI) Engine  |      19.01 |      18.33 |      23.42 |      30.92 |      76.42
+================================================================================
+
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <path
+        android:fillColor="#1E293B"
+        android:pathData="M0,0h96v96h-96z" />
+    <!-- Matrix Interlock Grid -->
+    <path
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M24,24 L72,24 L72,72 L24,72 Z" />
+    <path
+        android:strokeColor="#818CF8"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M36,36 L60,36 L60,60 L36,60 Z" />
+    <path
+        android:fillColor="#F43F5E"
+        android:pathData="M48,48m-4,0a4,4 0,1,1 8,0a4,4 0,1,1 -8,0" />
+</vector>

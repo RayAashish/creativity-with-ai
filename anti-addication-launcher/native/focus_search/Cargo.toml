@@ -1,0 +1,11 @@
+# native/focus_search/Cargo.toml
+[package]
+name = "focus_search"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+jni = "0.21"

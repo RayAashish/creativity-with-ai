@@ -1,0 +1,119 @@
+unstable class KotlinSearchEngine {
+  unstable var indexedApps: Array<IndexedEntry>
+  unstable var allAppsCached: List<AppInfo>
+  unstable val matrix: IntArray
+  unstable val queryCharBuffer: CharArray
+  <runtime stability> = Unstable
+}
+unstable class RustSearchEngine {
+  stable var nativePtr: Long
+  unstable var cachedApps: List<AppInfo>
+  <runtime stability> = Unstable
+}
+stable class None {
+  <runtime stability> = Stable
+}
+runtime class AppOptions {
+  runtime val app: AppInfo
+  stable val isPinned: Boolean
+  stable val canPin: Boolean
+  <runtime stability> = Runtime(AppInfo)
+}
+unstable class DrawerViewModel {
+  runtime val appInventoryRepository: AppInventoryRepository
+  runtime val searchEngine: SearchEngine
+  runtime val settingsRepository: SettingsRepository
+  runtime val dispatchers: FocusDispatchers
+  unstable val _isDrawerOpen: MutableStateFlow<Boolean>
+  unstable val isDrawerOpen: StateFlow<Boolean>
+  unstable val _query: MutableStateFlow<String>
+  unstable val query: StateFlow<String>
+  unstable val _searchResults: MutableStateFlow<List<AppInfo>>
+  unstable val searchResults: StateFlow<List<AppInfo>>
+  unstable val _dialogState: MutableStateFlow<DrawerDialogState>
+  unstable val dialogState: StateFlow<DrawerDialogState>
+  unstable var allAppsCached: List<AppInfo>
+  unstable val pinnedKeys: StateFlow<Set<String>>
+  unstable val canPinMore: StateFlow<Boolean>
+  <runtime stability> = Unstable
+}
+stable class Idle {
+  <runtime stability> = Stable
+}
+runtime class Countdown {
+  runtime val app: AppInfo
+  stable val totalSeconds: Int
+  stable val remainingSeconds: Int
+  <runtime stability> = Runtime(AppInfo)
+}
+runtime class DurationSelection {
+  runtime val app: AppInfo
+  stable val defaultDurationMinutes: Int
+  <runtime stability> = Runtime(AppInfo)
+}
+unstable class GateViewModel {
+  unstable val savedStateHandle: SavedStateHandle
+  runtime val settingsRepository: SettingsRepository
+  runtime val appInventoryRepository: AppInventoryRepository
+  runtime val dispatchers: FocusDispatchers
+  stable val timeProvider: Function0<Long>
+  unstable val _gateState: MutableStateFlow<GateState>
+  unstable val gateState: StateFlow<GateState>
+  unstable var countdownJob: Job?
+  <runtime stability> = Unstable
+}
+stable class None {
+  <runtime stability> = Stable
+}
+runtime class Options {
+  runtime val pin: PinnedAppUiModel
+  stable val canMoveUp: Boolean
+  stable val canMoveDown: Boolean
+  <runtime stability> = Runtime(PinnedAppUiModel)
+}
+runtime class Rename {
+  runtime val pin: PinnedAppUiModel
+  stable val currentText: String
+  stable val error: String?
+  <runtime stability> = Runtime(PinnedAppUiModel)
+}
+unstable class HomeViewModel {
+  runtime val appInventoryRepository: AppInventoryRepository
+  runtime val settingsRepository: SettingsRepository
+  runtime val usageRepository: UsageRepository
+  runtime val quarantineRepository: QuarantineRepository?
+  unstable val scope: CoroutineScope
+  unstable val _dialogState: MutableStateFlow<HomeDialogState>
+  unstable val dialogState: StateFlow<HomeDialogState>
+  unstable val quarantinedCount: StateFlow<Int>
+  unstable val _isDefaultLauncher: MutableStateFlow<Boolean>
+  unstable val isDefaultLauncher: StateFlow<Boolean>
+  unstable val hudState: StateFlow<HudState>
+  unstable val pinnedApps: StateFlow<List<PinnedAppUiModel>>
+  <runtime stability> = Unstable
+}
+stable class QuarantineItemUi {
+  stable val id: Long
+  stable val packageName: String
+  stable val appLabel: String
+  stable val title: String
+  stable val text: String
+  stable val timestamp: Long
+  stable val timeLabel: String
+  <runtime stability> = Stable
+}
+unstable class QuarantineUiState {
+  unstable val items: List<QuarantineItemUi>
+  stable val isListenerEnabled: Boolean
+  stable val isLoading: Boolean
+  <runtime stability> = Unstable
+}
+unstable class QuarantineViewModel {
+  runtime val quarantineRepository: QuarantineRepository
+  runtime val appInventoryRepository: AppInventoryRepository
+  runtime val dispatchers: FocusDispatchers
+  unstable val _isListenerEnabled: MutableStateFlow<Boolean>
+  unstable val timeFormat: SimpleDateFormat
+  unstable val uiState: StateFlow<QuarantineUiState>
+  <runtime stability> = Unstable
+}

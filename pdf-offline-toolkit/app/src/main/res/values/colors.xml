@@ -1,0 +1,12 @@
+<resources>
+    <!-- Paper Light Palette -->
+    <color name="ledger_paper_bg">#F5F2EB</color>
+    <color name="ledger_paper_surface">#EDE8DF</color>
+    <color name="ledger_ink_text">#171717</color>
+    <color name="ledger_oxblood">#9B3A2E</color>
+
+    <!-- Charcoal Dark Palette -->
+    <color name="ledger_charcoal_bg">#141414</color>
+    <color name="ledger_charcoal_surface">#1F1E1D</color>
+    <color name="ledger_charcoal_text">#EBE8E1</color>
+</resources>

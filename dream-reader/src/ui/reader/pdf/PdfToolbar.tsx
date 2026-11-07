@@ -88,9 +88,9 @@ export const PdfToolbar: React.FC<Props> = ({
   };
 
   return (
-    <div className="h-12 border-b border-gray-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm px-4 flex items-center justify-between z-30 select-none">
+    <div className="h-12 border-b border-gray-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm px-2 sm:px-4 flex items-center justify-between z-30 select-none overflow-x-auto no-scrollbar gap-2">
       {/* Left: Sidebar Tabs */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 shrink-0">
         <button
           onClick={toggleSidebar}
           title="Toggle Navigation Sidebar (b)"
@@ -115,7 +115,7 @@ export const PdfToolbar: React.FC<Props> = ({
           }`}
         >
           <List className="w-4 h-4" />
-          <span className="hidden sm:inline">TOC</span>
+          <span className="hidden xl:inline">TOC</span>
         </button>
 
         <button
@@ -128,7 +128,7 @@ export const PdfToolbar: React.FC<Props> = ({
           }`}
         >
           <LayoutGrid className="w-4 h-4" />
-          <span className="hidden sm:inline">Thumbnails</span>
+          <span className="hidden xl:inline">Thumbnails</span>
         </button>
 
         <button
@@ -141,7 +141,7 @@ export const PdfToolbar: React.FC<Props> = ({
           }`}
         >
           <Search className="w-4 h-4" />
-          <span className="hidden sm:inline">Search</span>
+          <span className="hidden xl:inline">Search</span>
         </button>
 
         <button
@@ -154,7 +154,7 @@ export const PdfToolbar: React.FC<Props> = ({
           }`}
         >
           <Bookmark className="w-4 h-4" />
-          <span className="hidden sm:inline">Notes</span>
+          <span className="hidden xl:inline">Notes</span>
           {annotations.length > 0 && (
             <span className="text-[10px] px-1 rounded-full bg-amber-500 text-white font-bold">
               {annotations.length}
@@ -188,7 +188,7 @@ export const PdfToolbar: React.FC<Props> = ({
           }`}
         >
           <Volume2 className="w-4 h-4" />
-          <span className="hidden md:inline">Listen</span>
+          <span className="hidden lg:inline">Listen</span>
         </button>
 
         {/* Bilingual Parallel Reader Toggle */}
@@ -202,12 +202,12 @@ export const PdfToolbar: React.FC<Props> = ({
           }`}
         >
           <Languages className="w-4 h-4" />
-          <span className="hidden md:inline">Bilingual</span>
+          <span className="hidden lg:inline">Bilingual</span>
         </button>
       </div>
 
       {/* Center: Page Jump */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 shrink-0">
         <button
           onClick={handlePrevPage}
           disabled={currentPage <= 1}
@@ -240,7 +240,7 @@ export const PdfToolbar: React.FC<Props> = ({
       </div>
 
       {/* Right: Zoom & Layout */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 shrink-0">
         <button
           onClick={() => setZoomLevel(zoomLevel - 0.15)}
           disabled={zoomLevel <= 0.5}
@@ -253,7 +253,7 @@ export const PdfToolbar: React.FC<Props> = ({
         <button
           onClick={() => setZoomLevel(1.0)}
           title="Reset Zoom to 100% (0)"
-          className="px-2 py-0.5 text-xs font-mono font-medium text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded"
+          className="px-1.5 sm:px-2 py-0.5 text-xs font-mono font-medium text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded"
         >
           {Math.round(zoomLevel * 100)}%
         </button>
@@ -267,35 +267,35 @@ export const PdfToolbar: React.FC<Props> = ({
           <ZoomIn className="w-4 h-4" />
         </button>
 
-        <div className="h-4 w-px bg-gray-200 dark:border-zinc-800 mx-1 hidden sm:block" />
+        <div className="h-4 w-px bg-gray-200 dark:border-zinc-800 mx-0.5 sm:mx-1" />
 
         <button
           onClick={() => setFitMode(fitMode === 'fit-width' ? 'custom' : 'fit-width')}
           title="Fit Width"
-          className={`p-1.5 rounded-lg text-xs hidden sm:flex items-center gap-1 transition-colors ${
+          className={`p-1.5 rounded-lg text-xs flex items-center gap-1 transition-colors ${
             fitMode === 'fit-width'
               ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-semibold'
               : 'text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
           }`}
         >
           <Maximize2 className="w-3.5 h-3.5" />
-          <span>Fit Width</span>
+          <span className="hidden sm:inline">Fit Width</span>
         </button>
 
         <button
           onClick={() => setFitMode(fitMode === 'fit-page' ? 'custom' : 'fit-page')}
           title="Fit Page"
-          className={`p-1.5 rounded-lg text-xs hidden md:flex items-center gap-1 transition-colors ${
+          className={`p-1.5 rounded-lg text-xs flex items-center gap-1 transition-colors ${
             fitMode === 'fit-page'
               ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-semibold'
               : 'text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
           }`}
         >
           <Minimize2 className="w-3.5 h-3.5" />
-          <span>Fit Page</span>
+          <span className="hidden sm:inline">Fit Page</span>
         </button>
 
-        <div className="h-4 w-px bg-gray-200 dark:border-zinc-800 mx-1" />
+        <div className="h-4 w-px bg-gray-200 dark:border-zinc-800 mx-0.5 sm:mx-1" />
 
         {/* Zen / Fullscreen Study Mode (Perfect for Tablets) */}
         <button
@@ -308,7 +308,7 @@ export const PdfToolbar: React.FC<Props> = ({
           }`}
         >
           {isZenMode ? <Shrink className="w-3.5 h-3.5" /> : <Expand className="w-3.5 h-3.5" />}
-          <span className="hidden lg:inline">{isZenMode ? 'Exit Zen' : 'Zen View'}</span>
+          <span className="hidden md:inline">{isZenMode ? 'Exit Zen' : 'Zen View'}</span>
         </button>
       </div>
     </div>

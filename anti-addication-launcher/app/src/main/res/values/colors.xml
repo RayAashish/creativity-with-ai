@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- app/src/main/res/values/colors.xml -->
+<resources>
+    <color name="oled_black">#000000</color>
+    <color name="pure_white">#FFFFFF</color>
+    <color name="dim_gray">#888888</color>
+</resources>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 8.8.2" type="partial_results">
+    <map id="NotificationPermission">
+        <entry
+            name="source"
+            boolean="true"/>
+    </map>
+    <map id="UnsafeImplicitIntentLaunch">
+            <map id="actionsSent">
+                    <map id="android.intent.action.VIEW (used to start an activity)">
+                        <location id="0"
+                            file="${:app*noInternetDebug*MAIN*sourceProvider*0*javaDir*4}/com/cliplocker/app/ui/settings/SettingsScreen.kt"
+                            line="400"
+                            column="49"
+                            startOffset="19263"
+                            endLine="400"
+                            endColumn="125"
+                            endOffset="19339"/>
+                    </map>
+            </map>
+    </map>
+    <map id="UnsafeIntentLaunch">
+            <map id="unprotected">
+                <entry
+                    name="com.cliplocker.app.ui.MainActivity"
+                    boolean="true"/>
+                <entry
+                    name="com.cliplocker.app.widget.CliplockerWidgetProvider"
+                    boolean="true"/>
+            </map>
+    </map>
+    <map id="UnusedResources">
+        <location id="R.color.burnt_orange"
+            file="${:app*noInternetDebug*MAIN*sourceProvider*0*resDir*0}/values/colors.xml"
+            line="8"
+            column="12"
+            startOffset="302"
+            endLine="8"
+            endColumn="31"
+            endOffset="321"/>
+        <location id="R.color.burnt_orange_subtle"
+            file="${:app*noInternetDebug*MAIN*sourceProvider*0*resDir*0}/values/colors.xml"
+            line="9"
+            column="12"
+            startOffset="349"
+            endLine="9"
+            endColumn="38"
+            endOffset="375"/>
+        <location id="R.color.charcoal_background"
+            file="${:app*noInternetDebug*MAIN*sourceProvider*0*resDir*0}/values/colors.xml"
+            line="11"
+            column="12"
+            startOffset="404"
+            endLine="11"
+            endColumn="38"
+            endOffset="430"/>
+        <location id="R.color.charcoal_border"
+            file="${:app*noInternetDebug*MAIN*sourceProvider*0*resDir*0}/values/colors.xml"
+            line="13"
+            column="12"
+            startOffset="509"
+            endLine="13"
+            endColumn="34"
+            endOffset="531"/>
+        <location id="R.color.charcoal_surface"
+            file="${:app*noInternetDebug*MAIN*sourceProvider*0*resDir*0}/values/colors.xml"
+            line="12"
+            column="12"
+            startOffset="458"
+            endLine="12"
+            endColumn="35"
+            endOffset="481"/>
+        <location id="R.color.ink_light_primary"
+            file="${:app*noInternetDebug*MAIN*sourceProvider*0*resDir*0}/values/colors.xml"
+            line="14"
+            column="12"
+            startOffset="559"
+            endLine="14"
+            endColumn="36"
+            endOffset="583"/>
+        <location id="R.color.ink_light_secondary"
+            file="${:app*noInternetDebug*MAIN*sourceProvider*0*resDir*0}/values/colors.xml"
+            line="15"
+            column="12"
+            startOffset="611"
+            endLine="15"
+            endColumn="38"
+            endOffset="637"/>
+        <location id="R.layout.widget_clip_item"
+            file="${:app*noInternetDebug*MAIN*sourceProvider*0*resDir*0}/layout/widget_clip_item.xml"
+            line="2"
+            column="1"
+            startOffset="39"
+            endLine="33"
+            endColumn="16"
+            endOffset="1103"/>
+        <location id="R.string.app_name"
+            file="${:app*noInternetDebug*MAIN*sourceProvider*0*resDir*0}/values/strings.xml"
+            line="3"
+            column="13"
+            startOffset="63"
+            endLine="3"
+            endColumn="28"
+            endOffset="78"/>
+        <entry
+            name="model"
+            string="color[paper_border(U),ink_secondary(U),ink_primary(U),paper_surface(U),paper_background(U),burnt_orange(D),burnt_orange_subtle(D),charcoal_background(D),charcoal_surface(D),charcoal_border(D),ink_light_primary(D),ink_light_secondary(D)],id[widget_item_row(D),widget_item_badge(D),widget_item_text(D),widget_container(U),btn_widget_search(U),widget_list(D),widget_empty(D)],layout[widget_clip_item(D),widget_cliplocker(U)],string[app_name(D),widget_description(U),accessibility_service_description(U)],style[Theme_Cliplocker(U)],xml[accessibility_service_config(U),widget_info(U),file_paths(U)];13^0^1^2,14^3^2^0^1,18^4,19^17,1a^16^14;;;"/>
+    </map>
+
+</incidents>

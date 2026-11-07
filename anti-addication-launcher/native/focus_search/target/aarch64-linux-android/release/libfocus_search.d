@@ -1,0 +1,1 @@
+/Users/aashishkumarray/Desktop/creativity-with-ai/anti-addication-launcher/native/focus_search/target/aarch64-linux-android/release/libfocus_search.so: /Users/aashishkumarray/Desktop/creativity-with-ai/anti-addication-launcher/native/focus_search/src/lib.rs

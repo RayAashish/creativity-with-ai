@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.cliplocker.app.ExpiryLogicTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-06T18:13:54.904Z" hostname="Aashishs-MacBook-Air.local" time="0.019">
+  <properties/>
+  <testcase name="testSecretClipBeforeExpiryTime" classname="com.cliplocker.app.ExpiryLogicTest" time="0.012"/>
+  <testcase name="testPurgeFilterSelection" classname="com.cliplocker.app.ExpiryLogicTest" time="0.005"/>
+  <testcase name="testNonSecretClipNeverExpires" classname="com.cliplocker.app.ExpiryLogicTest" time="0.001"/>
+  <testcase name="testSecretClipAfterExpiryTime" classname="com.cliplocker.app.ExpiryLogicTest" time="0.0"/>
+  <testcase name="testSecretTtlDurations" classname="com.cliplocker.app.ExpiryLogicTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

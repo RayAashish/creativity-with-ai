@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.raysi.launcher.ui.home.HomeViewModelTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-07T16:38:42.557Z" hostname="Aashishs-MacBook-Air.local" time="0.061">
+  <properties/>
+  <testcase name="pinnedApps_displaysUsageDurationWhenGranted_andHidesWhenDenied" classname="com.raysi.launcher.ui.home.HomeViewModelTest" time="0.024"/>
+  <testcase name="uninstalledPinnedApp_doesNotCrash_markedAsNotInstalled" classname="com.raysi.launcher.ui.home.HomeViewModelTest" time="0.007"/>
+  <testcase name="unpin_removesAppFromSettings" classname="com.raysi.launcher.ui.home.HomeViewModelTest" time="0.011"/>
+  <testcase name="pinnedApps_capsAtFive_andRespectsDisplayOrder" classname="com.raysi.launcher.ui.home.HomeViewModelTest" time="0.006"/>
+  <testcase name="pinnedApps_emptyInitially" classname="com.raysi.launcher.ui.home.HomeViewModelTest" time="0.001"/>
+  <testcase name="renamePin_validatesLength_between1And24Chars" classname="com.raysi.launcher.ui.home.HomeViewModelTest" time="0.004"/>
+  <testcase name="moveUpAndDown_updatesOrderProperly" classname="com.raysi.launcher.ui.home.HomeViewModelTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

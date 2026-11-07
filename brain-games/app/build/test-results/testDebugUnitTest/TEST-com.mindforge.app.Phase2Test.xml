@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.mindforge.app.Phase2Test" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-07T14:20:45" hostname="Aashishs-MacBook-Air.local" time="0.135">
+  <properties/>
+  <testcase name="testQuickCalcEngine_generatesValidQuestionsAcrossAll50Levels" classname="com.mindforge.app.Phase2Test" time="0.095"/>
+  <testcase name="testMissingOperatorEngine_validQuestionsAndOptionsAcross50Levels" classname="com.mindforge.app.Phase2Test" time="0.023"/>
+  <testcase name="testSpeedChainEngine_validAccumulatorAndOptionsAcross50Levels" classname="com.mindforge.app.Phase2Test" time="0.016"/>
+  <testcase name="testPrefixGuardAndAutoSubmitLogic" classname="com.mindforge.app.Phase2Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <path
+        android:fillColor="#881337"
+        android:pathData="M0,0h96v96h-96z" />
+    <!-- Vanguard Crest / Chevron Shield -->
+    <path
+        android:fillColor="#FB7185"
+        android:pathData="M48,20 L76,32 L76,56 C76,70 64,80 48,84 C32,80 20,70 20,56 L20,32 Z" />
+    <path
+        android:fillColor="#F43F5E"
+        android:pathData="M48,28 L68,38 L68,56 C68,66 58,74 48,77 C38,74 28,66 28,56 L28,38 Z" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M48,42 L48,62 M40,50 L48,42 L56,50" />
+</vector>

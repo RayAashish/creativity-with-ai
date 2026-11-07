@@ -1,0 +1,27 @@
+<variant
+    name="noInternetDebug"
+    useSupportLibraryVectorDrawables="true"
+    package="com.cliplocker.app"
+    minSdkVersion="26"
+    targetSdkVersion="35"
+    debuggable="true"
+    mergedManifest="build/intermediates/merged_manifest/noInternetDebug/processNoInternetDebugMainManifest/AndroidManifest.xml"
+    partialResultsDir="build/intermediates/unit_test_lint_partial_results/noInternetDebug/lintAnalyzeNoInternetDebugUnitTest/out"
+    desugaredMethodsFiles="/Users/aashishkumarray/.gradle/caches/8.13/transforms/37518ae4ce977db35ac1b4ef53725fa7/transformed/D8BackportedDesugaredMethods.txt">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+  </sourceProviders>
+  <testSourceProviders>
+    <sourceProvider
+        manifests="src/test/AndroidManifest.xml"
+        javaDirectories="src/test/java:src/testNoInternet/java:src/testDebug/java:src/testNoInternetDebug/java:src/test/kotlin:src/testNoInternet/kotlin:src/testDebug/kotlin:src/testNoInternetDebug/kotlin"
+        assetsDirectories="src/test/assets:src/testNoInternet/assets:src/testDebug/assets:src/testNoInternetDebug/assets"
+        unitTest="true"/>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <artifact
+      type="UNIT_TEST">
+  </artifact>
+</variant>

@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.Ledger" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@color/ledger_paper_bg</item>
+        <item name="android:navigationBarColor">@color/ledger_paper_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowBackground">@color/ledger_paper_bg</item>
+    </style>
+</resources>

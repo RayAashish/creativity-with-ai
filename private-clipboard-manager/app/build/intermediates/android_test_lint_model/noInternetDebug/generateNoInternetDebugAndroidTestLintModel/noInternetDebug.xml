@@ -1,0 +1,31 @@
+<variant
+    name="noInternetDebug"
+    useSupportLibraryVectorDrawables="true"
+    package="com.cliplocker.app"
+    minSdkVersion="26"
+    targetSdkVersion="35"
+    debuggable="true"
+    mergedManifest="build/intermediates/merged_manifest/noInternetDebug/processNoInternetDebugMainManifest/AndroidManifest.xml"
+    manifestMergeReport="build/outputs/logs/manifest-merger-noInternet-debug-report.txt"
+    partialResultsDir="build/intermediates/android_test_lint_partial_results/noInternetDebug/lintAnalyzeNoInternetDebugAndroidTest/out">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+  </sourceProviders>
+  <testSourceProviders>
+    <sourceProvider
+        manifests="src/androidTest/AndroidManifest.xml"
+        javaDirectories="src/androidTest/java:src/androidTestNoInternet/java:src/androidTestDebug/java:src/androidTestNoInternetDebug/java:src/androidTest/kotlin:src/androidTestNoInternet/kotlin:src/androidTestDebug/kotlin:src/androidTestNoInternetDebug/kotlin"
+        resDirectories="src/androidTest/res:src/androidTestNoInternet/res:src/androidTestDebug/res:src/androidTestNoInternetDebug/res"
+        assetsDirectories="src/androidTest/assets:src/androidTestNoInternet/assets:src/androidTestDebug/assets:src/androidTestNoInternetDebug/assets"
+        androidTest="true"/>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <artifact
+      type="INSTRUMENTATION_TEST"
+      applicationId="com.cliplocker.app.nointernet.debug.test"
+      generatedResourceFolders="build/generated/res/resValues/androidTest/noInternet/debug"
+      desugaredMethodsFiles="/Users/aashishkumarray/.gradle/caches/8.13/transforms/37518ae4ce977db35ac1b4ef53725fa7/transformed/D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>

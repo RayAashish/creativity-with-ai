@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.mindforge.app.GameNavigationAndFlowTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-07T14:20:44" hostname="Aashishs-MacBook-Air.local" time="0.285">
+  <properties/>
+  <testcase name="testGameInstructionsViewModel_synchronousResolutionNeverReturnsNull" classname="com.mindforge.app.GameNavigationAndFlowTest" time="0.263"/>
+  <testcase name="testAll25Engines_RegisteredAndQueryable" classname="com.mindforge.app.GameNavigationAndFlowTest" time="0.005"/>
+  <testcase name="testScreenRoutes_GamePlayCarriesPracticeFlag" classname="com.mindforge.app.GameNavigationAndFlowTest" time="0.012"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

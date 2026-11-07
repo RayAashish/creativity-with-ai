@@ -39,11 +39,17 @@ export const FloatingLookupPopover: React.FC = () => {
   const [copied, setCopied] = React.useState(false);
   const [showExplainModal, setShowExplainModal] = React.useState(false);
 
-  // Close on outside click
+  // Close on outside click with mobile touch / tablet selection grace period
   useEffect(() => {
     if (!isOpen) return;
 
+    let isReady = false;
+    const readyTimer = setTimeout(() => {
+      isReady = true;
+    }, 350);
+
     const handleClickOutside = (e: MouseEvent | TouchEvent | PointerEvent) => {
+      if (!isReady) return;
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         closeLookup();
       }
@@ -58,6 +64,7 @@ export const FloatingLookupPopover: React.FC = () => {
     document.addEventListener('pointerdown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
     return () => {
+      clearTimeout(readyTimer);
       document.removeEventListener('pointerdown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };

@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Ledger</string>
+    <string name="tagline">Air-gapped, zero-knowledge PDF toolkit</string>
+    <string name="channel_ocr_name">OCR Processing</string>
+    <string name="channel_ocr_desc">Progress notifications for local OCR jobs</string>
+    <string name="channel_batch_name">Batch Pipeline</string>
+    <string name="channel_batch_desc">Progress notifications for batch PDF processing</string>
+</resources>

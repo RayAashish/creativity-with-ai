@@ -1,0 +1,1417 @@
+androidx.lifecycle.LegacySavedStateHandleController$OnRecreation
+com.raysi.launcher.service.notification.FocusNotificationService
+com.raysi.launcher.data.proto.ActiveSessionProto$1
+androidx.compose.foundation.layout.IntrinsicWidthElement
+androidx.compose.foundation.lazy.layout.LazyLayoutSemanticsModifier
+androidx.work.impl.workers.DiagnosticsWorker
+androidx.compose.ui.input.key.KeyInputElement
+androidx.core.app.CoreComponentFactory
+androidx.work.OverwritingInputMerger
+androidx.compose.ui.input.pointer.SuspendPointerInputElement
+androidx.compose.ui.focus.FocusPropertiesElement
+androidx.compose.material3.MinimumInteractiveModifier
+androidx.compose.ui.platform.AndroidCompositionLocals_androidKt
+androidx.work.impl.model.WorkName
+androidx.compose.ui.draw.DrawWithCacheElement
+androidx.lifecycle.LifecycleDispatcher$DispatcherActivityCallback
+com.raysi.launcher.service.FocusAccessibilityService
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder
+androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver
+androidx.compose.ui.platform.DragAndDropModifierOnDragListener$modifier$1
+androidx.core.app.RemoteActionCompatParcelizer
+androidx.lifecycle.ReportFragment
+androidx.core.graphics.drawable.IconCompatParcelizer
+com.raysi.launcher.service.notification.NotificationDigestWorker
+androidx.versionedparcelable.ParcelImpl
+androidx.compose.ui.layout.OnSizeChangedModifier
+androidx.compose.foundation.layout.UnspecifiedConstraintsElement
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage
+androidx.compose.foundation.BorderModifierNodeElement
+androidx.compose.foundation.layout.LayoutWeightElement
+androidx.work.CoroutineWorker
+androidx.annotation.Keep
+androidx.compose.foundation.ClickableElement
+androidx.compose.foundation.gestures.ScrollableElement
+androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy
+androidx.compose.foundation.layout.HorizontalAlignElement
+com.raysi.launcher.FocusApplication
+com.raysi.launcher.data.quarantine.QuarantineDatabase
+androidx.work.impl.workers.CombineContinuationsWorker
+com.raysi.launcher.data.proto.LauncherSettingsProto$1
+androidx.work.impl.diagnostics.DiagnosticsReceiver
+kotlinx.coroutines.android.AndroidDispatcherFactory
+androidx.compose.foundation.FocusableKt$FocusableInNonTouchModeElement$1
+androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver
+androidx.compose.foundation.BackgroundElement
+androidx.work.impl.workers.ConstraintTrackingWorker
+androidx.compose.ui.draw.DrawBehindElement
+androidx.compose.foundation.lazy.layout.LazyLayoutItemAnimator$DisplayingDisappearingItemsElement
+androidx.compose.ui.focus.FocusChangedElement
+androidx.compose.ui.input.rotary.RotaryInputElement
+androidx.compose.foundation.ScrollSemanticsElement
+androidx.compose.ui.draw.ShadowGraphicsLayerElement
+androidx.compose.foundation.IndicationModifierElement
+com.raysi.launcher.ui.MainActivity
+androidx.lifecycle.ProcessLifecycleInitializer
+androidx.work.Worker
+androidx.lifecycle.SavedStateHandlesVM
+androidx.work.impl.model.SystemIdInfo
+androidx.compose.foundation.layout.SizeElement
+kotlin.coroutines.jvm.internal.BaseContinuationImpl
+com.raysi.launcher.data.proto.PinnedAppProto$1
+androidx.work.impl.model.Dependency
+androidx.lifecycle.ReportFragment$LifecycleCallbacks
+androidx.work.impl.model.Preference
+android.support.v4.graphics.drawable.IconCompatParcelizer
+com.raysi.launcher.data.proto.LauncherSettingsSerializer
+androidx.work.impl.background.systemalarm.RescheduleReceiver
+androidx.compose.foundation.layout.WrapContentElement
+androidx.core.app.RemoteActionCompat
+androidx.compose.ui.semantics.EmptySemanticsElement
+androidx.work.impl.foreground.SystemForegroundService
+androidx.work.impl.background.systemjob.SystemJobService
+android.support.v4.app.RemoteActionCompatParcelizer
+androidx.work.impl.model.WorkProgress
+com.raysi.launcher.data.quarantine.QuarantineNotificationEntity
+com.raysi.launcher.data.quarantine.QuarantineDatabase_Impl
+androidx.compose.foundation.MagnifierElement
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder
+androidx.work.impl.model.WorkSpec
+androidx.core.graphics.drawable.IconCompat
+androidx.room.MultiInstanceInvalidationService
+androidx.work.impl.background.systemalarm.ConstraintProxy$NetworkStateProxy
+com.raysi.launcher.data.proto.PinnedAppProtoOrBuilder
+com.raysi.launcher.data.proto.ActiveSessionProtoOrBuilder
+androidx.profileinstaller.ProfileInstallReceiver
+androidx.compose.ui.graphics.GraphicsLayerElement
+androidx.compose.foundation.text.input.internal.LegacyAdaptingPlatformTextInputModifier
+androidx.compose.ui.focus.FocusOwnerImpl$modifier$2
+androidx.work.WorkManagerInitializer
+com.raysi.launcher.data.proto.PinnedAppProto$Builder
+androidx.compose.ui.semantics.AppendedSemanticsElement
+com.raysi.launcher.data.search.RustSearchEngine
+androidx.compose.foundation.text.modifiers.TextAnnotatedStringElement
+androidx.compose.foundation.lazy.layout.TraversablePrefetchStateModifierElement
+androidx.compose.foundation.FocusableElement
+androidx.compose.ui.draw.DrawWithContentElement
+androidx.compose.foundation.relocation.BringIntoViewRequesterElement
+androidx.compose.ui.layout.LayoutElement
+com.raysi.launcher.data.proto.LauncherSettings
+androidx.compose.ui.input.pointer.PointerHoverIconModifierElement
+androidx.graphics.path.ConicConverter
+androidx.profileinstaller.ProfileInstallerInitializer
+androidx.lifecycle.ProcessLifecycleOwner$attach$1
+androidx.emoji2.text.EmojiCompatInitializer
+kotlinx.coroutines.internal.StackTraceRecoveryKt
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder
+androidx.work.impl.WorkDatabase
+androidx.compose.foundation.layout.PaddingValuesElement
+androidx.work.impl.background.systemalarm.SystemAlarmService
+androidx.startup.InitializationProvider
+androidx.compose.foundation.text.handwriting.StylusHandwritingElementWithNegativePadding
+androidx.compose.foundation.layout.PaddingElement
+androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy
+com.raysi.launcher.data.proto.LauncherSettingsProto
+androidx.compose.foundation.text.modifiers.TextStringSimpleElement
+androidx.work.WorkerParameters
+com.raysi.launcher.data.proto.PinnedAppProto
+androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy
+androidx.compose.foundation.text.modifiers.SelectableTextAnnotatedStringElement
+androidx.graphics.path.PathIteratorPreApi34Impl
+androidx.versionedparcelable.CustomVersionedParcelable
+androidx.work.impl.model.WorkTag
+androidx.compose.foundation.ScrollingLayoutElement
+androidx.compose.ui.layout.OnGloballyPositionedElement
+androidx.compose.foundation.layout.FillElement
+androidx.work.impl.WorkDatabase_Impl
+androidx.lifecycle.ProcessLifecycleOwner$attach$1$onActivityPreCreated$1
+com.raysi.launcher.data.proto.ActiveSessionProto
+androidx.compose.ui.focus.FocusRequesterElement
+com.raysi.launcher.data.proto.LauncherSettingsProto: int GATE_DELAY_SECONDS_FIELD_NUMBER
+com.raysi.launcher.data.proto.LauncherSettingsProto: boolean screenTimeIncludesLauncher_
+com.raysi.launcher.data.proto.LauncherSettingsProto: int SCREEN_TIME_INCLUDES_LAUNCHER_FIELD_NUMBER
+kotlinx.coroutines.android.HandlerDispatcherKt: android.view.Choreographer choreographer
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: androidx.lifecycle.ReportFragment$LifecycleCallbacks$Companion Companion
+kotlinx.coroutines.sync.SemaphoreAndMutexImpl: int _availablePermits$volatile
+androidx.lifecycle.Lifecycle$Event: androidx.lifecycle.Lifecycle$Event ON_PAUSE
+androidx.concurrent.futures.AbstractResolvableFuture: java.lang.Object value
+androidx.lifecycle.Lifecycle$Event: androidx.lifecycle.Lifecycle$Event ON_RESUME
+androidx.versionedparcelable.ParcelImpl: android.os.Parcelable$Creator CREATOR
+kotlinx.coroutines.scheduling.WorkQueue: int blockingTasksInBuffer$volatile
+kotlinx.coroutines.EventLoopImplBase: int _isCompleted$volatile
+kotlinx.coroutines.scheduling.CoroutineScheduler: long controlState$volatile
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: com.google.protobuf.FieldSet extensions
+kotlinx.coroutines.channels.BufferedChannel: java.lang.Object closeHandler$volatile
+kotlinx.coroutines.internal.DispatchedContinuation: java.lang.Object _reusableCancellableContinuation$volatile
+com.raysi.launcher.data.proto.PinnedAppProto$1: int[] $SwitchMap$com$google$protobuf$GeneratedMessageLite$MethodToInvoke
+com.raysi.launcher.data.search.RustSearchEngine: java.util.concurrent.atomic.AtomicBoolean isLoaded
+kotlinx.coroutines.android.AndroidExceptionPreHandler: java.lang.Object _preHandler
+com.raysi.launcher.data.proto.LauncherSettingsProto: int digestHoursMemoizedSerializedSize
+kotlinx.coroutines.scheduling.WorkQueue: int consumerIndex$volatile
+kotlinx.coroutines.JobSupport$Finishing: java.lang.Object _rootCause$volatile
+com.raysi.launcher.data.proto.LauncherSettingsProto: int DIGEST_HOURS_FIELD_NUMBER
+kotlinx.coroutines.scheduling.WorkQueue: int producerIndex$volatile
+kotlinx.coroutines.channels.BufferedChannel: java.lang.Object sendSegment$volatile
+kotlinx.coroutines.sync.SemaphoreAndMutexImpl: java.lang.Object tail$volatile
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto DEFAULT_INSTANCE
+androidx.lifecycle.Lifecycle$Event: androidx.lifecycle.Lifecycle$Event ON_DESTROY
+kotlinx.coroutines.scheduling.CoroutineScheduler: long parkedWorkersStack$volatile
+com.raysi.launcher.data.proto.ActiveSessionProto: int PACKAGE_NAME_FIELD_NUMBER
+kotlinx.coroutines.internal.ConcurrentLinkedListNode: java.lang.Object _next$volatile
+androidx.compose.runtime.ParcelableSnapshotMutableFloatState: android.os.Parcelable$Creator CREATOR
+androidx.activity.result.IntentSenderRequest: android.os.Parcelable$Creator CREATOR
+kotlinx.coroutines.CancellableContinuationImpl: java.lang.Object _state$volatile
+kotlinx.coroutines.CompletedExceptionally: int _handled$volatile
+com.raysi.launcher.data.proto.LauncherSettingsProto: int ALWAYS_ALLOW_PACKAGES_FIELD_NUMBER
+com.raysi.launcher.data.proto.PinnedAppProto: long userSerialNumber_
+kotlinx.coroutines.internal.LockFreeLinkedListNode: java.lang.Object _prev$volatile
+kotlinx.coroutines.internal.LockFreeLinkedListNode: java.lang.Object _next$volatile
+kotlinx.coroutines.internal.LimitedDispatcher: int runningWorkers$volatile
+kotlinx.coroutines.CancellableContinuationImpl: int _decisionAndIndex$volatile
+kotlinx.coroutines.channels.BufferedChannel: java.lang.Object bufferEndSegment$volatile
+kotlinx.coroutines.DefaultExecutor: java.lang.Thread _thread
+com.raysi.launcher.data.proto.LauncherSettingsSerializer: com.raysi.launcher.data.proto.LauncherSettingsSerializer INSTANCE
+androidx.activity.result.ActivityResult: android.os.Parcelable$Creator CREATOR
+kotlinx.coroutines.channels.BufferedChannel: java.lang.Object receiveSegment$volatile
+androidx.lifecycle.ProcessLifecycleOwner$attach$1$onActivityPreCreated$1: androidx.lifecycle.ProcessLifecycleOwner this$0
+kotlinx.coroutines.scheduling.WorkQueue: java.lang.Object lastScheduledTask$volatile
+kotlin.SafePublicationLazyImpl: java.lang.Object _value
+com.raysi.launcher.data.proto.LauncherSettingsSerializer: com.raysi.launcher.data.proto.LauncherSettingsProto defaultValue
+com.raysi.launcher.data.proto.LauncherSettingsProto: int maxExtensionsAllowed_
+kotlinx.coroutines.EventLoopImplBase: java.lang.Object _queue$volatile
+com.raysi.launcher.data.search.RustSearchEngine: java.util.List cachedApps
+com.raysi.launcher.data.proto.PinnedAppProto: com.google.protobuf.Parser PARSER
+androidx.lifecycle.ProcessLifecycleOwner$attach$1: androidx.lifecycle.ProcessLifecycleOwner this$0
+com.raysi.launcher.data.proto.ActiveSessionProto$1: int[] $SwitchMap$com$google$protobuf$GeneratedMessageLite$MethodToInvoke
+kotlinx.coroutines.UndispatchedCoroutine: boolean threadLocalIsSet
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.google.protobuf.Internal$ProtobufList activeSessions_
+kotlinx.coroutines.flow.StateFlowImpl: java.lang.Object _state$volatile
+com.raysi.launcher.data.proto.PinnedAppProto: int DISPLAY_ORDER_FIELD_NUMBER
+androidx.lifecycle.Lifecycle$Event: androidx.lifecycle.Lifecycle$Event ON_START
+kotlinx.coroutines.channels.BufferedChannel: long bufferEnd$volatile
+com.google.protobuf.GeneratedMessageLite: java.util.Map defaultInstanceMap
+kotlinx.coroutines.JobSupport$Finishing: int _isCompleting$volatile
+kotlinx.coroutines.internal.LockFreeTaskQueueCore: long _state$volatile
+kotlinx.coroutines.channels.BufferedChannel: long sendersAndCloseStatus$volatile
+kotlinx.coroutines.channels.BufferedChannel: long receivers$volatile
+com.raysi.launcher.data.search.RustSearchEngine: java.lang.String TAG
+androidx.lifecycle.Lifecycle$Event: androidx.lifecycle.Lifecycle$Event ON_CREATE
+androidx.concurrent.futures.AbstractResolvableFuture$Waiter: androidx.concurrent.futures.AbstractResolvableFuture$Waiter next
+com.raysi.launcher.data.proto.LauncherSettingsProto: int SESSION_DURATION_MINUTES_FIELD_NUMBER
+com.raysi.launcher.data.proto.LauncherSettingsProto: int sessionDurationMinutes_
+com.raysi.launcher.data.proto.PinnedAppProto: int displayOrder_
+com.raysi.launcher.data.proto.LauncherSettingsProto: int NEVER_BLOCK_PACKAGES_FIELD_NUMBER
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto DEFAULT_INSTANCE
+com.raysi.launcher.data.proto.PinnedAppProto: java.lang.String componentName_
+com.google.protobuf.GeneratedMessageLite: int UNINITIALIZED_HASH_CODE
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.google.protobuf.Internal$ProtobufList alwaysAllowPackages_
+kotlinx.coroutines.EventLoopImplBase: java.lang.Object _delayed$volatile
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.google.protobuf.Parser PARSER
+com.raysi.launcher.data.proto.LauncherSettingsProto$1: int[] $SwitchMap$com$google$protobuf$GeneratedMessageLite$MethodToInvoke
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.GeneratedMessageLite defaultInstance
+kotlinx.coroutines.scheduling.CoroutineScheduler: int _isTerminated$volatile
+com.raysi.launcher.data.proto.PinnedAppProto: java.lang.String customLabel_
+com.raysi.launcher.data.proto.LauncherSettingsProto: int ACTIVE_SESSIONS_FIELD_NUMBER
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.UnknownFieldSetLite unknownFields
+com.raysi.launcher.data.proto.ActiveSessionProto: long endWallClockMs_
+kotlinx.coroutines.JobSupport: java.lang.Object _parentHandle$volatile
+kotlinx.coroutines.JobSupport: java.lang.Object _state$volatile
+kotlinx.coroutines.internal.LockFreeTaskQueue: java.lang.Object _cur$volatile
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.google.protobuf.Internal$ProtobufList neverBlockPackages_
+androidx.concurrent.futures.AbstractResolvableFuture$Waiter: java.lang.Thread thread
+androidx.concurrent.futures.AbstractResolvableFuture: androidx.concurrent.futures.AbstractResolvableFuture$Waiter waiters
+androidx.compose.runtime.ParcelableSnapshotMutableState: android.os.Parcelable$Creator CREATOR
+kotlinx.coroutines.internal.ConcurrentLinkedListNode: java.lang.Object _prev$volatile
+com.raysi.launcher.data.proto.ActiveSessionProto: int extensionCount_
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto DEFAULT_INSTANCE
+androidx.lifecycle.Lifecycle$Event: androidx.lifecycle.Lifecycle$Event[] $VALUES
+androidx.lifecycle.Lifecycle$Event: androidx.lifecycle.Lifecycle$Event$Companion Companion
+com.google.protobuf.GeneratedMessageLite: int MUTABLE_FLAG_MASK
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.GeneratedMessageLite instance
+com.raysi.launcher.data.proto.PinnedAppProto: int USER_SERIAL_NUMBER_FIELD_NUMBER
+com.raysi.launcher.data.proto.ActiveSessionProto: int END_ELAPSED_REALTIME_FIELD_NUMBER
+kotlinx.coroutines.JobSupport$Finishing: java.lang.Object _exceptionsHolder$volatile
+com.google.protobuf.GeneratedMessageLite: int UNINITIALIZED_SERIALIZED_SIZE
+com.raysi.launcher.data.proto.LauncherSettingsProto: int PINNED_APPS_FIELD_NUMBER
+kotlinx.coroutines.channels.BufferedChannel: long completedExpandBuffersAndPauseFlag$volatile
+kotlinx.coroutines.scheduling.CoroutineScheduler$Worker: int workerCtl$volatile
+com.raysi.launcher.data.proto.PinnedAppProto: int CUSTOM_LABEL_FIELD_NUMBER
+kotlinx.coroutines.internal.Segment: int cleanedAndPointers$volatile
+kotlinx.coroutines.scheduling.CoroutineScheduler$Worker: int indexInArray
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.google.protobuf.Internal$IntList digestHours_
+androidx.lifecycle.Lifecycle$Event: androidx.lifecycle.Lifecycle$Event ON_STOP
+com.raysi.launcher.data.proto.LauncherSettingsProto: int MAX_EXTENSIONS_ALLOWED_FIELD_NUMBER
+com.raysi.launcher.data.search.RustSearchEngine: long nativePtr
+com.raysi.launcher.data.proto.ActiveSessionProto: int END_WALL_CLOCK_MS_FIELD_NUMBER
+com.raysi.launcher.data.proto.ActiveSessionProto: long startElapsedRealtime_
+androidx.lifecycle.Lifecycle$Event: androidx.lifecycle.Lifecycle$Event ON_ANY
+kotlinx.coroutines.DispatchedCoroutine: int _decision$volatile
+com.raysi.launcher.data.proto.LauncherSettingsSerializer: int $stable
+kotlinx.coroutines.sync.SemaphoreAndMutexImpl: long deqIdx$volatile
+androidx.concurrent.futures.AbstractResolvableFuture: androidx.concurrent.futures.AbstractResolvableFuture$Listener listeners
+com.raysi.launcher.data.proto.ActiveSessionProto: com.google.protobuf.Parser PARSER
+com.raysi.launcher.data.proto.LauncherSettingsProto: int gateDelaySeconds_
+kotlinx.coroutines.DefaultExecutor: int debugStatus
+com.google.protobuf.GeneratedMessageLite: int MEMOIZED_SERIALIZED_SIZE_MASK
+kotlinx.coroutines.scheduling.CoroutineScheduler$Worker: java.lang.Object nextParkedWorker
+kotlinx.coroutines.EventLoopImplBase$DelayedTask: java.lang.Object _heap
+kotlinx.coroutines.internal.LockFreeLinkedListNode: java.lang.Object _removedRef$volatile
+kotlinx.coroutines.CancelledContinuation: int _resumed$volatile
+kotlinx.coroutines.sync.SemaphoreAndMutexImpl: java.lang.Object head$volatile
+kotlinx.coroutines.InvokeOnCancelling: int _invoked$volatile
+kotlin.coroutines.SafeContinuation: java.lang.Object result
+com.raysi.launcher.data.proto.ActiveSessionProto: int START_ELAPSED_REALTIME_FIELD_NUMBER
+com.raysi.launcher.data.proto.ActiveSessionProto: java.lang.String packageName_
+kotlinx.coroutines.channels.BufferedChannel: java.lang.Object _closeCause$volatile
+com.raysi.launcher.data.proto.ActiveSessionProto: long endElapsedRealtime_
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.google.protobuf.Internal$ProtobufList pinnedApps_
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.google.protobuf.Internal$ProtobufList distractingPackages_
+kotlinx.coroutines.sync.MutexImpl: java.lang.Object owner$volatile
+androidx.compose.runtime.ParcelableSnapshotMutableIntState: android.os.Parcelable$Creator CREATOR
+com.raysi.launcher.data.proto.ActiveSessionProto: int EXTENSION_COUNT_FIELD_NUMBER
+com.raysi.launcher.data.search.RustSearchEngine: int $stable
+com.google.protobuf.GeneratedMessageLite: int memoizedSerializedSize
+kotlinx.coroutines.internal.ResizableAtomicArray: java.util.concurrent.atomic.AtomicReferenceArray array
+androidx.compose.foundation.lazy.layout.DefaultLazyKey: android.os.Parcelable$Creator CREATOR
+com.google.protobuf.AbstractMessageLite: int memoizedHashCode
+com.raysi.launcher.data.search.RustSearchEngine: com.raysi.launcher.data.search.RustSearchEngine$Companion Companion
+kotlinx.coroutines.internal.LockFreeTaskQueueCore: java.lang.Object _next$volatile
+kotlinx.coroutines.internal.ThreadSafeHeap: int _size$volatile
+com.raysi.launcher.data.proto.PinnedAppProto: int COMPONENT_NAME_FIELD_NUMBER
+kotlinx.coroutines.CancellableContinuationImpl: java.lang.Object _parentHandle$volatile
+com.raysi.launcher.data.proto.LauncherSettingsProto: int DISTRACTING_PACKAGES_FIELD_NUMBER
+kotlinx.coroutines.sync.SemaphoreAndMutexImpl: long enqIdx$volatile
+androidx.core.view.WindowInsetsCompat$BuilderImpl30: WindowInsetsCompat$BuilderImpl30(androidx.core.view.WindowInsetsCompat)
+androidx.compose.foundation.MutatePriority: androidx.compose.foundation.MutatePriority[] values()
+com.google.protobuf.GeneratedMessageLite: java.lang.Object dynamicMethod(com.google.protobuf.GeneratedMessageLite$MethodToInvoke)
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto parseFrom(com.google.protobuf.CodedInputStream)
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: ActiveSessionProto$Builder()
+androidx.compose.ui.platform.AndroidComposeView: kotlin.coroutines.CoroutineContext getCoroutineContext()
+androidx.compose.ui.window.PopupLayout: androidx.compose.ui.window.PopupPositionProvider getPositionProvider()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void ensureDigestHoursIsMutable()
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.AbstractMessageLite$Builder mergeFrom(com.google.protobuf.CodedInputStream,com.google.protobuf.ExtensionRegistryLite)
+androidx.activity.EdgeToEdgeApi26: void setUp(androidx.activity.SystemBarStyle,androidx.activity.SystemBarStyle,android.view.Window,android.view.View,boolean,boolean)
+androidx.core.view.ViewCompat$Api21Impl$1: ViewCompat$Api21Impl$1(android.view.View,androidx.core.view.OnApplyWindowInsetsListener)
+androidx.activity.EdgeToEdgeApi30: void adjustLayoutInDisplayCutoutMode(android.view.Window)
+androidx.lifecycle.LegacySavedStateHandleController$OnRecreation: LegacySavedStateHandleController$OnRecreation()
+androidx.core.view.WindowInsetsCompat$Impl21: void setStableInsets(androidx.core.graphics.Insets)
+androidx.compose.foundation.text.input.internal.undo.TextEditType: androidx.compose.foundation.text.input.internal.undo.TextEditType[] values()
+com.raysi.launcher.data.search.RustSearchEngine: RustSearchEngine()
+com.raysi.launcher.data.proto.PinnedAppProtoOrBuilder: boolean isInitialized()
+androidx.compose.ui.platform.AndroidViewsHandler: java.util.HashMap getHolderToLayoutNode()
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder newBuilder(com.raysi.launcher.data.proto.LauncherSettingsProto)
+androidx.core.view.WindowInsetsCompat$BuilderImpl20: WindowInsetsCompat$BuilderImpl20(androidx.core.view.WindowInsetsCompat)
+com.raysi.launcher.data.proto.ActiveSessionProtoOrBuilder: long getStartElapsedRealtime()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: java.util.List getDistractingPackagesList()
+androidx.graphics.path.PathIteratorPreApi34Impl: int internalPathIteratorPeek(long)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: void performSelectionOnLegacyTextField-8ffj60Q(long,androidx.compose.foundation.text.selection.TextFieldSelectionManager,kotlin.jvm.functions.Function1)
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto parseFrom(com.google.protobuf.ByteString,com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: java.lang.String getCustomLabel()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.google.protobuf.ByteString getAlwaysAllowPackagesBytes(int)
+com.raysi.launcher.data.proto.ActiveSessionProto: void clearPackageName()
+androidx.lifecycle.ProcessLifecycleOwner$Api29Impl: void registerActivityLifecycleCallbacks(android.app.Activity,android.app.Application$ActivityLifecycleCallbacks)
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: java.lang.String getComponentName()
+com.raysi.launcher.data.proto.PinnedAppProto: void setDisplayOrder(int)
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.GeneratedMessageLite$Builder mergeFrom(com.google.protobuf.GeneratedMessageLite)
+com.raysi.launcher.data.proto.ActiveSessionProto: void clearEndWallClockMs()
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: com.google.protobuf.FieldSet ensureExtensionsAreMutable()
+com.google.protobuf.JavaType: com.google.protobuf.JavaType[] values()
+androidx.compose.ui.platform.coreshims.ViewStructureCompat$Api23Impl: android.os.Bundle getExtras(android.view.ViewStructure)
+androidx.compose.ui.text.android.selection.Api34SegmentFinder: android.text.SegmentFinder toAndroidSegmentFinder$ui_text_release(androidx.compose.ui.text.android.selection.SegmentFinder)
+androidx.work.impl.diagnostics.DiagnosticsReceiver: DiagnosticsReceiver()
+androidx.core.view.WindowInsetsCompat$Impl20: void copyWindowDataInto(androidx.core.view.WindowInsetsCompat)
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: java.util.List getDigestHoursList()
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: com.google.protobuf.ByteString getPackageNameBytes()
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: boolean isInitialized()
+com.raysi.launcher.data.proto.LauncherSettingsProto: java.util.List getDistractingPackagesList()
+com.raysi.launcher.data.search.RustSearchEngine: int[] nativeSearch(long,java.lang.String,int)
+androidx.room.RoomDatabase$JournalMode: androidx.room.RoomDatabase$JournalMode[] values()
+androidx.compose.ui.unit.LayoutDirection: androidx.compose.ui.unit.LayoutDirection valueOf(java.lang.String)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addAllAlwaysAllowPackages(java.lang.Iterable)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: java.util.List getPinnedAppsList()
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: boolean extensionsAreInitialized()
+androidx.compose.ui.graphics.Path$Direction: androidx.compose.ui.graphics.Path$Direction valueOf(java.lang.String)
+com.google.protobuf.GeneratedMessageLite: int getMemoizedSerializedSize()
+androidx.activity.EdgeToEdgeApi21: void setUp(androidx.activity.SystemBarStyle,androidx.activity.SystemBarStyle,android.view.Window,android.view.View,boolean,boolean)
+kotlinx.coroutines.scheduling.CoroutineScheduler$WorkerState: kotlinx.coroutines.scheduling.CoroutineScheduler$WorkerState[] values()
+androidx.compose.ui.text.style.ResolvedTextDirection: androidx.compose.ui.text.style.ResolvedTextDirection[] values()
+androidx.core.app.RemoteActionCompatParcelizer: void write(androidx.core.app.RemoteActionCompat,androidx.versionedparcelable.VersionedParcel)
+androidx.lifecycle.ProcessLifecycleOwner$attach$1: void onActivityPreCreated(android.app.Activity,android.os.Bundle)
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.MessageLite build()
+androidx.compose.ui.text.android.CanvasCompatS: void drawGlyphs(android.graphics.Canvas,int[],int,float[],int,int,android.graphics.fonts.Font,android.graphics.Paint)
+com.google.protobuf.GeneratedMessageLite: int computeHashCode()
+androidx.core.app.NotificationCompat$BubbleMetadata$Api29Impl: android.app.Notification$BubbleMetadata toPlatform(androidx.core.app.NotificationCompat$BubbleMetadata)
+androidx.compose.ui.platform.AbstractComposeView: void setParentCompositionContext(androidx.compose.runtime.CompositionContext)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addAllDigestHours(java.lang.Iterable)
+androidx.core.view.ViewCompat$Api28Impl: boolean isAccessibilityHeading(android.view.View)
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto parseFrom(java.nio.ByteBuffer)
+com.google.protobuf.GeneratedMessageLite$MethodToInvoke: com.google.protobuf.GeneratedMessageLite$MethodToInvoke[] values()
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: boolean parseUnknownFieldAsMessageSet(com.google.protobuf.MessageLite,com.google.protobuf.CodedInputStream,com.google.protobuf.ExtensionRegistryLite,int)
+androidx.compose.ui.platform.AndroidComposeView: boolean getShowLayoutBounds()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addActiveSessions(com.raysi.launcher.data.proto.ActiveSessionProto)
+android.support.v4.graphics.drawable.IconCompatParcelizer: androidx.core.graphics.drawable.IconCompat read(androidx.versionedparcelable.VersionedParcel)
+androidx.compose.ui.text.android.Paint29: void getTextBounds(android.graphics.Paint,java.lang.CharSequence,int,int,android.graphics.Rect)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performDeleteRangeGesture(androidx.compose.foundation.text.LegacyTextFieldState,android.view.inputmethod.DeleteRangeGesture,androidx.compose.ui.text.AnnotatedString,kotlin.jvm.functions.Function1)
+androidx.compose.ui.platform.coreshims.ViewCompatShims$Api26Impl: android.view.autofill.AutofillId getAutofillId(android.view.View)
+com.google.protobuf.WireFormat$JavaType: com.google.protobuf.WireFormat$JavaType valueOf(java.lang.String)
+androidx.compose.ui.graphics.layer.RenderNodeVerificationHelper: void setRenderEffect(android.graphics.RenderNode,androidx.compose.ui.graphics.RenderEffect)
+androidx.core.view.WindowInsetsCompat$BuilderImpl: WindowInsetsCompat$BuilderImpl()
+androidx.core.view.WindowInsetsCompat$BuilderImpl20: androidx.core.view.WindowInsetsCompat build()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.ActiveSessionProto getActiveSessions(int)
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto parseFrom(java.io.InputStream,com.google.protobuf.ExtensionRegistryLite)
+androidx.compose.ui.text.android.CanvasCompatQ: void drawColor(android.graphics.Canvas,long,android.graphics.BlendMode)
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: void onActivityStarted(android.app.Activity)
+com.raysi.launcher.data.proto.LauncherSettingsProto: java.lang.String getAlwaysAllowPackages(int)
+androidx.graphics.path.PathIteratorPreApi34Impl: boolean internalPathIteratorHasNext(long)
+com.google.protobuf.AbstractMessageLite: void checkByteStringIsUtf8(com.google.protobuf.ByteString)
+com.raysi.launcher.data.proto.ActiveSessionProto: void clearEndElapsedRealtime()
+com.google.protobuf.GeneratedMessageLite$Builder: void copyOnWrite()
+androidx.lifecycle.ProcessLifecycleInitializer: ProcessLifecycleInitializer()
+androidx.work.OutOfQuotaPolicy: androidx.work.OutOfQuotaPolicy valueOf(java.lang.String)
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.AbstractMessageLite$Builder clone()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.graphics.GraphicsContext getGraphicsContext()
+androidx.compose.ui.graphics.CanvasZHelper: void enableZ(android.graphics.Canvas,boolean)
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.platform.AndroidAccessibilityManager getAccessibilityManager()
+androidx.compose.ui.state.ToggleableState: androidx.compose.ui.state.ToggleableState[] values()
+androidx.core.view.WindowInsetsCompat$Impl28: WindowInsetsCompat$Impl28(androidx.core.view.WindowInsetsCompat,android.view.WindowInsets)
+androidx.compose.material.ripple.RippleHostView: void setRippleState(boolean)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performSelectRangeGesture(androidx.compose.foundation.text.input.internal.TransformedTextFieldState,android.view.inputmethod.SelectRangeGesture,androidx.compose.foundation.text.input.internal.TextLayoutState)
+kotlin.collections.AbstractMutableList: AbstractMutableList()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addAllActiveSessions(java.lang.Iterable)
+androidx.compose.ui.platform.ViewLayer: long getLayerId()
+androidx.activity.ComponentActivity: void setContentView(android.view.View)
+com.raysi.launcher.data.proto.ActiveSessionProto: void setEndElapsedRealtime(long)
+com.raysi.launcher.data.quarantine.QuarantineDatabase_Impl: QuarantineDatabase_Impl()
+com.raysi.launcher.data.proto.PinnedAppProto: void clearCustomLabel()
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.google.protobuf.ByteString getDistractingPackagesBytes(int)
+androidx.compose.ui.contentcapture.AndroidContentCaptureManager$TranslateStatus: androidx.compose.ui.contentcapture.AndroidContentCaptureManager$TranslateStatus[] values()
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto parseDelimitedFrom(java.io.InputStream)
+androidx.work.impl.WorkDatabase_Impl: WorkDatabase_Impl()
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.google.protobuf.ByteString getAlwaysAllowPackagesBytes(int)
+androidx.compose.ui.platform.WrapperRenderNodeLayerHelperMethods: void onDescendantInvalidated(androidx.compose.ui.platform.AndroidComposeView)
+androidx.compose.ui.graphics.layer.RenderNodeVerificationHelper28: int getSpotShadowColor(android.view.RenderNode)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto parseFrom(com.google.protobuf.CodedInputStream,com.google.protobuf.ExtensionRegistryLite)
+androidx.core.view.ViewCompat$Api21Impl$1: android.view.WindowInsets onApplyWindowInsets(android.view.View,android.view.WindowInsets)
+androidx.core.view.WindowInsetsCompat$Impl: void setStableInsets(androidx.core.graphics.Insets)
+androidx.compose.ui.platform.coreshims.ViewStructureCompat$Api23Impl: void setDimens(android.view.ViewStructure,int,int,int,int,int,int)
+androidx.compose.ui.platform.AndroidCompositionLocals_androidKt: androidx.compose.runtime.ProvidableCompositionLocal getLocalLifecycleOwner()
+androidx.core.app.NotificationCompat$BubbleMetadata$Api30Impl: android.app.Notification$BubbleMetadata toPlatform(androidx.core.app.NotificationCompat$BubbleMetadata)
+androidx.core.view.WindowInsetsCompat$Impl: int hashCode()
+com.raysi.launcher.data.proto.PinnedAppProto: void clearComponentName()
+androidx.compose.foundation.Api31Impl: float onPullDistance(android.widget.EdgeEffect,float,float)
+androidx.compose.material3.tokens.ColorSchemeKeyTokens: androidx.compose.material3.tokens.ColorSchemeKeyTokens valueOf(java.lang.String)
+androidx.compose.ui.input.pointer.MotionEventHelper: long toRawOffset-dBAh8RU(android.view.MotionEvent,int)
+androidx.compose.ui.platform.AbstractComposeView: void setTransitionGroup(boolean)
+androidx.activity.EdgeToEdgeApi28: void adjustLayoutInDisplayCutoutMode(android.view.Window)
+androidx.core.view.WindowInsetsCompat$Impl30: void copyRootViewBounds(android.view.View)
+androidx.compose.ui.platform.AndroidComposeView: boolean getScrollCaptureInProgress$ui_release()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.platform.AndroidComposeView$ViewTreeOwners get_viewTreeOwners()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.MessageLite getDefaultInstanceForType()
+androidx.startup.InitializationProvider: InitializationProvider()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.input.pointer.PointerIconService getPointerIconService()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: java.util.List getActiveSessionsList()
+androidx.compose.ui.window.PopupLayout: android.view.WindowManager$LayoutParams getParams$ui_release()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void clearDistractingPackages()
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: com.google.protobuf.ByteString getNeverBlockPackagesBytes(int)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: void performDeletionOnLegacyTextField-vJH6DeI(long,androidx.compose.ui.text.AnnotatedString,boolean,kotlin.jvm.functions.Function1)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: int getDistractingPackagesCount()
+androidx.compose.ui.autofill.AutofillApi26Helper: boolean isToggle(android.view.autofill.AutofillValue)
+androidx.compose.ui.text.font.FontWeightAdjustmentHelperApi31: int fontWeightAdjustment(android.content.Context)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.google.protobuf.ByteString getNeverBlockPackagesBytes(int)
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.MessageLite$Builder mergeFrom(byte[])
+androidx.core.app.RemoteActionCompatParcelizer: androidx.core.app.RemoteActionCompat read(androidx.versionedparcelable.VersionedParcel)
+androidx.lifecycle.Lifecycle$Event: androidx.lifecycle.Lifecycle$Event[] values()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.Internal$ProtobufList mutableCopy(com.google.protobuf.Internal$ProtobufList)
+androidx.compose.ui.autofill.AutofillApi26Helper: boolean isList(android.view.autofill.AutofillValue)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.Internal$BooleanList emptyBooleanList()
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: com.raysi.launcher.data.proto.ActiveSessionProto$Builder setEndWallClockMs(long)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder setScreenTimeIncludesLauncher(boolean)
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto parseDelimitedFrom(java.io.InputStream,com.google.protobuf.ExtensionRegistryLite)
+androidx.compose.ui.platform.AndroidComposeView: android.view.View getView()
+androidx.work.impl.workers.ConstraintTrackingWorker: ConstraintTrackingWorker(android.content.Context,androidx.work.WorkerParameters)
+kotlin.coroutines.intrinsics.CoroutineSingletons: kotlin.coroutines.intrinsics.CoroutineSingletons valueOf(java.lang.String)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.Parser getParserForType()
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: void onActivityPaused(android.app.Activity)
+com.google.protobuf.GeneratedMessageLite: java.lang.String toString()
+com.raysi.launcher.data.proto.LauncherSettingsSerializer: java.lang.Object getDefaultValue()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addActiveSessions(com.raysi.launcher.data.proto.ActiveSessionProto$Builder)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void removeActiveSessions(int)
+androidx.compose.ui.platform.TextToolbarHelperMethods: void invalidateContentRect(android.view.ActionMode)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.Internal$LongList emptyLongList()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addAllAlwaysAllowPackages(java.lang.Iterable)
+androidx.lifecycle.Lifecycle$State: androidx.lifecycle.Lifecycle$State valueOf(java.lang.String)
+androidx.compose.ui.autofill.AutofillApi23Helper: void setId(android.view.ViewStructure,int,java.lang.String,java.lang.String,java.lang.String)
+com.raysi.launcher.data.proto.PinnedAppProto: void clearUserSerialNumber()
+androidx.core.view.WindowInsetsCompat$BuilderImpl: void setStableInsets(androidx.core.graphics.Insets)
+androidx.core.view.WindowInsetsCompat$BuilderImpl: void setSystemGestureInsets(androidx.core.graphics.Insets)
+androidx.compose.ui.text.input.CursorAnchorInfoApi34Helper: android.view.inputmethod.CursorAnchorInfo$Builder addVisibleLineBounds(android.view.inputmethod.CursorAnchorInfo$Builder,androidx.compose.ui.text.TextLayoutResult,androidx.compose.ui.geometry.Rect)
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: void onActivityPostStarted(android.app.Activity)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addNeverBlockPackagesBytes(com.google.protobuf.ByteString)
+androidx.work.WorkInfo$State: androidx.work.WorkInfo$State valueOf(java.lang.String)
+androidx.core.view.WindowInsetsCompat$Impl20: WindowInsetsCompat$Impl20(androidx.core.view.WindowInsetsCompat,androidx.core.view.WindowInsetsCompat$Impl20)
+androidx.core.view.WindowInsetsCompat$Impl: androidx.core.view.WindowInsetsCompat consumeSystemWindowInsets()
+androidx.compose.ui.text.android.CanvasCompatR: boolean quickReject(android.graphics.Canvas,android.graphics.RectF)
+com.google.protobuf.ProtoSyntax: com.google.protobuf.ProtoSyntax valueOf(java.lang.String)
+androidx.compose.material3.tokens.ShapeKeyTokens: androidx.compose.material3.tokens.ShapeKeyTokens[] values()
+androidx.compose.material3.tokens.TypographyKeyTokens: androidx.compose.material3.tokens.TypographyKeyTokens valueOf(java.lang.String)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void clearDigestHours()
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.GeneratedMessageLite$Builder clear()
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.AbstractMessageLite$Builder mergeFrom(byte[],com.google.protobuf.ExtensionRegistryLite)
+androidx.compose.ui.text.android.CanvasCompatQ: void drawColor(android.graphics.Canvas,long)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addPinnedApps(int,com.raysi.launcher.data.proto.PinnedAppProto$Builder)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void clearAlwaysAllowPackages()
+androidx.core.view.WindowInsetsCompat$Impl: androidx.core.graphics.Insets getInsetsIgnoringVisibility(int)
+com.google.protobuf.GeneratedMessageLite: int getSerializedSize()
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto parseFrom(com.google.protobuf.CodedInputStream,com.google.protobuf.ExtensionRegistryLite)
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.MessageLite$Builder mergeFrom(com.google.protobuf.ByteString)
+androidx.compose.ui.window.PopupLayout: void setContent(kotlin.jvm.functions.Function2)
+androidx.compose.ui.window.PopupLayout: int getDisplayHeight()
+androidx.compose.ui.platform.actionmodecallback.MenuItemOption: androidx.compose.ui.platform.actionmodecallback.MenuItemOption[] values()
+com.raysi.launcher.data.search.RustSearchEngine: void updateIndex(java.util.List)
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.MessageLite$Builder mergeFrom(com.google.protobuf.CodedInputStream,com.google.protobuf.ExtensionRegistryLite)
+androidx.lifecycle.ProcessLifecycleOwner$attach$1: void onActivityStopped(android.app.Activity)
+androidx.compose.ui.autofill.AutofillApi23Helper: android.view.ViewStructure newChild(android.view.ViewStructure,int)
+androidx.core.view.ViewCompat$Api29Impl: android.view.View$AccessibilityDelegate getAccessibilityDelegate(android.view.View)
+androidx.core.view.WindowInsetsCompat$BuilderImpl: androidx.core.view.WindowInsetsCompat build()
+androidx.core.view.WindowInsetsCompat$Impl20: boolean isVisible(int)
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto parseFrom(java.nio.ByteBuffer)
+com.google.protobuf.AbstractMessageLite$Builder: void addAll(java.lang.Iterable,java.util.Collection)
+androidx.compose.runtime.Recomposer$State: androidx.compose.runtime.Recomposer$State valueOf(java.lang.String)
+kotlin.time.DurationUnit: kotlin.time.DurationUnit valueOf(java.lang.String)
+kotlin.LazyThreadSafetyMode: kotlin.LazyThreadSafetyMode[] values()
+androidx.compose.ui.platform.AndroidComposeView: long getMeasureIteration()
+androidx.work.NetworkType: androidx.work.NetworkType[] values()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.node.LayoutNode getRoot()
+androidx.compose.ui.platform.coreshims.ViewStructureCompat$Api23Impl: void setTextStyle(android.view.ViewStructure,float,int,int,int)
+androidx.compose.ui.window.PopupLayout: void setParentLayoutCoordinates(androidx.compose.ui.layout.LayoutCoordinates)
+com.google.protobuf.Writer$FieldOrder: com.google.protobuf.Writer$FieldOrder[] values()
+androidx.core.view.WindowInsetsCompat$Impl21: androidx.core.graphics.Insets getStableInsets()
+androidx.core.view.WindowInsetsCompat$BuilderImpl20: void setSystemWindowInsets(androidx.core.graphics.Insets)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite parsePartialFrom(com.google.protobuf.GeneratedMessageLite,com.google.protobuf.CodedInputStream)
+androidx.lifecycle.ProcessLifecycleOwner$attach$1: void onActivityPaused(android.app.Activity)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addPinnedApps(com.raysi.launcher.data.proto.PinnedAppProto$Builder)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.Internal$DoubleList emptyDoubleList()
+androidx.compose.foundation.text.selection.CrossStatus: androidx.compose.foundation.text.selection.CrossStatus valueOf(java.lang.String)
+androidx.graphics.path.PathIteratorPreApi34Impl: void destroyInternalPathIterator(long)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void setGateDelaySeconds(int)
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.MessageLite$Builder mergeFrom(byte[],int,int,com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void setAlwaysAllowPackages(int,java.lang.String)
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.autofill.Autofill getAutofill()
+androidx.compose.foundation.Api31Impl: float getDistance(android.widget.EdgeEffect)
+com.raysi.launcher.data.proto.ActiveSessionProtoOrBuilder: int getExtensionCount()
+androidx.compose.ui.platform.AndroidComposeView: void setConfigurationChangeObserver(kotlin.jvm.functions.Function1)
+com.google.protobuf.FieldType$Collection: com.google.protobuf.FieldType$Collection[] values()
+androidx.compose.animation.core.AnimationEndReason: androidx.compose.animation.core.AnimationEndReason valueOf(java.lang.String)
+com.raysi.launcher.data.proto.ActiveSessionProto: void clearStartElapsedRealtime()
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: com.google.protobuf.MessageLite getDefaultInstanceForType()
+androidx.compose.ui.platform.AndroidComposeViewVerificationHelperMethodsN: void setPointerIcon(android.view.View,androidx.compose.ui.input.pointer.PointerIcon)
+androidx.compose.ui.layout.MeasuringIntrinsics$IntrinsicMinMax: androidx.compose.ui.layout.MeasuringIntrinsics$IntrinsicMinMax[] values()
+androidx.compose.foundation.text.input.internal.EditorInfoApi34: void setHandwritingGestures(android.view.inputmethod.EditorInfo)
+androidx.core.view.WindowInsetsCompat$Impl30: WindowInsetsCompat$Impl30(androidx.core.view.WindowInsetsCompat,androidx.core.view.WindowInsetsCompat$Impl30)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performInsertGesture(androidx.compose.foundation.text.input.internal.TransformedTextFieldState,android.view.inputmethod.InsertGesture,androidx.compose.foundation.text.input.internal.TextLayoutState,androidx.compose.ui.platform.ViewConfiguration)
+androidx.compose.ui.platform.coreshims.ContentCaptureSessionCompat$Api29Impl: android.view.autofill.AutofillId newAutofillId(android.view.contentcapture.ContentCaptureSession,android.view.autofill.AutofillId,long)
+androidx.core.view.WindowInsetsCompat$Impl: void setRootViewData(androidx.core.graphics.Insets)
+androidx.work.OutOfQuotaPolicy: androidx.work.OutOfQuotaPolicy[] values()
+kotlin.collections.AbstractList: AbstractList()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: java.lang.String getDistractingPackages(int)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder setActiveSessions(int,com.raysi.launcher.data.proto.ActiveSessionProto$Builder)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.ActiveSessionProto getActiveSessions(int)
+androidx.room.MultiInstanceInvalidationService: MultiInstanceInvalidationService()
+androidx.work.NetworkType: androidx.work.NetworkType valueOf(java.lang.String)
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.layout.Placeable$PlacementScope getPlacementScope()
+com.google.protobuf.WireFormat$JavaType: com.google.protobuf.WireFormat$JavaType[] values()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addPinnedApps(com.raysi.launcher.data.proto.PinnedAppProto)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.ActiveSessionProtoOrBuilder getActiveSessionsOrBuilder(int)
+androidx.compose.ui.platform.coreshims.ContentCaptureSessionCompat$Api29Impl: android.view.ViewStructure newViewStructure(android.view.contentcapture.ContentCaptureSession,android.view.View)
+androidx.compose.ui.platform.AndroidComposeView: void setFontFamilyResolver(androidx.compose.ui.text.font.FontFamily$Resolver)
+androidx.work.ExistingWorkPolicy: androidx.work.ExistingWorkPolicy valueOf(java.lang.String)
+androidx.compose.ui.graphics.ColorSpaceVerificationHelper: androidx.compose.ui.graphics.colorspace.ColorSpace composeColorSpace(android.graphics.ColorSpace)
+androidx.core.view.WindowInsetsCompat$Impl30: boolean isVisible(int)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void clearScreenTimeIncludesLauncher()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.text.font.Font$ResourceLoader getFontLoader()
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.AbstractMessageLite$Builder mergeFrom(java.io.InputStream,com.google.protobuf.ExtensionRegistryLite)
+androidx.compose.ui.graphics.layer.ViewLayer: boolean getCanUseCompositingLayer$ui_graphics_release()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder clearDistractingPackages()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.google.protobuf.ByteString getDistractingPackagesBytes(int)
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: ReportFragment$LifecycleCallbacks()
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: com.raysi.launcher.data.proto.PinnedAppProto$Builder setUserSerialNumber(long)
+androidx.compose.ui.graphics.Api26Bitmap: android.graphics.Bitmap createBitmap-x__-hDU$ui_graphics_release(int,int,int,boolean,androidx.compose.ui.graphics.colorspace.ColorSpace)
+androidx.compose.ui.platform.AndroidComposeView: void setLayoutDirection(androidx.compose.ui.unit.LayoutDirection)
+androidx.compose.foundation.text.selection.SelectionHandleAnchor: androidx.compose.foundation.text.selection.SelectionHandleAnchor[] values()
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: void mergeMessageSetExtensionFromCodedStream(com.google.protobuf.MessageLite,com.google.protobuf.CodedInputStream,com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: com.google.protobuf.ByteString getComponentNameBytes()
+androidx.compose.ui.window.Api33Impl: void maybeUnregisterBackCallback(android.view.View,java.lang.Object)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto parseFrom(java.io.InputStream)
+com.google.protobuf.GeneratedMessageLite: int getMemoizedHashCode()
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.MessageLite$Builder mergeFrom(com.google.protobuf.CodedInputStream)
+androidx.compose.material3.MinimumInteractiveModifier: MinimumInteractiveModifier()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.Internal$IntList emptyIntList()
+androidx.compose.foundation.text.KeyCommand: androidx.compose.foundation.text.KeyCommand[] values()
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto getDefaultInstance()
+androidx.compose.animation.core.MutatePriority: androidx.compose.animation.core.MutatePriority[] values()
+androidx.compose.ui.text.AnnotationType: androidx.compose.ui.text.AnnotationType valueOf(java.lang.String)
+kotlin.random.Random: Random()
+com.google.protobuf.GeneratedMessageLite: void mergeLengthDelimitedField(int,com.google.protobuf.ByteString)
+com.raysi.launcher.data.proto.LauncherSettingsProto: LauncherSettingsProto()
+androidx.compose.ui.window.PopupLayout: kotlin.jvm.functions.Function2 getContent()
+com.raysi.launcher.data.proto.ActiveSessionProtoOrBuilder: long getEndElapsedRealtime()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.platform.SoftwareKeyboardController getSoftwareKeyboardController()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder setMaxExtensionsAllowed(int)
+androidx.compose.ui.platform.RenderNodeVerificationHelper28: int getSpotShadowColor(android.view.RenderNode)
+com.raysi.launcher.data.proto.ActiveSessionProto: void setPackageName(java.lang.String)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performSelectGesture(androidx.compose.foundation.text.input.internal.TransformedTextFieldState,android.view.inputmethod.SelectGesture,androidx.compose.foundation.text.input.internal.TextLayoutState)
+androidx.concurrent.futures.DirectExecutor: androidx.concurrent.futures.DirectExecutor valueOf(java.lang.String)
+androidx.compose.ui.layout.IntrinsicMinMax: androidx.compose.ui.layout.IntrinsicMinMax valueOf(java.lang.String)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void removePinnedApps(int)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: int getActiveSessionsCount()
+androidx.compose.foundation.Api31Impl: android.widget.EdgeEffect create(android.content.Context,android.util.AttributeSet)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addDistractingPackagesBytes(com.google.protobuf.ByteString)
+com.google.protobuf.JavaType: com.google.protobuf.JavaType valueOf(java.lang.String)
+androidx.emoji2.text.ConcurrencyHelpers$Handler28Impl: android.os.Handler createAsync(android.os.Looper)
+androidx.compose.ui.input.pointer.PointerEventPass: androidx.compose.ui.input.pointer.PointerEventPass valueOf(java.lang.String)
+androidx.compose.ui.graphics.layer.view.DrawChildContainer: int getChildCount()
+com.raysi.launcher.data.search.RustSearchEngine: void nativeUpdateIndex(long,java.lang.String[])
+androidx.compose.ui.window.PopupLayout: void setPositionProvider(androidx.compose.ui.window.PopupPositionProvider)
+androidx.compose.ui.window.PopupLayout: void setPopupContentSize-fhxjrPA(androidx.compose.ui.unit.IntSize)
+kotlinx.coroutines.android.AndroidDispatcherFactory: AndroidDispatcherFactory()
+com.google.protobuf.AbstractMessageLite: void addAll(java.lang.Iterable,java.util.List)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.MessageLite$Builder newBuilderForType()
+androidx.core.view.WindowInsetsCompat$Impl: androidx.core.graphics.Insets getSystemWindowInsets()
+com.raysi.launcher.data.proto.LauncherSettingsProto: java.util.List getAlwaysAllowPackagesList()
+androidx.core.view.ViewCompat$Api21Impl: androidx.core.view.WindowInsetsCompat getRootWindowInsets(android.view.View)
+com.raysi.launcher.data.proto.PinnedAppProtoOrBuilder: long getUserSerialNumber()
+androidx.compose.ui.text.android.CanvasCompatR: boolean quickReject(android.graphics.Canvas,android.graphics.Path)
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: long getStartElapsedRealtime()
+com.google.protobuf.GeneratedMessageLite: void setMemoizedSerializedSize(int)
+androidx.compose.ui.input.pointer.util.VelocityTracker1D$Strategy: androidx.compose.ui.input.pointer.util.VelocityTracker1D$Strategy valueOf(java.lang.String)
+androidx.compose.ui.node.NodeMeasuringIntrinsics$IntrinsicWidthHeight: androidx.compose.ui.node.NodeMeasuringIntrinsics$IntrinsicWidthHeight valueOf(java.lang.String)
+androidx.compose.ui.autofill.AutofillApi26Helper: java.lang.CharSequence textValue(android.view.autofill.AutofillValue)
+androidx.compose.ui.focus.CustomDestinationResult: androidx.compose.ui.focus.CustomDestinationResult[] values()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite$Builder createBuilder()
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: int getExtensionCount(com.google.protobuf.ExtensionLite)
+com.raysi.launcher.data.proto.LauncherSettingsProto: int getMaxExtensionsAllowed()
+com.google.protobuf.ProtoSyntax: com.google.protobuf.ProtoSyntax[] values()
+androidx.core.view.WindowInsetsCompat$Impl20: boolean equals(java.lang.Object)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite parseFrom(com.google.protobuf.GeneratedMessageLite,java.nio.ByteBuffer,com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.service.FocusAccessibilityService: FocusAccessibilityService()
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto parseFrom(byte[])
+kotlinx.coroutines.flow.SharingCommand: kotlinx.coroutines.flow.SharingCommand[] values()
+com.raysi.launcher.data.search.RustSearchEngine: java.util.concurrent.atomic.AtomicBoolean access$isLoaded$cp()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.platform.AndroidComposeView$ViewTreeOwners getViewTreeOwners()
+androidx.compose.ui.platform.ViewLayer: void setInvalidated(boolean)
+androidx.core.view.WindowInsetsCompat$Impl: void setRootWindowInsets(androidx.core.view.WindowInsetsCompat)
+androidx.core.view.WindowInsetsCompat$Impl: androidx.core.graphics.Insets getStableInsets()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.focus.FocusOwner getFocusOwner()
+androidx.profileinstaller.FileSectionType: androidx.profileinstaller.FileSectionType[] values()
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto parseFrom(com.google.protobuf.CodedInputStream,com.google.protobuf.ExtensionRegistryLite)
+androidx.core.view.WindowInsetsCompat$BuilderImpl29: androidx.core.view.WindowInsetsCompat build()
+androidx.core.view.WindowInsetsCompat$BuilderImpl: void setMandatorySystemGestureInsets(androidx.core.graphics.Insets)
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.MessageLite$Builder mergeFrom(java.io.InputStream,com.google.protobuf.ExtensionRegistryLite)
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: boolean parseExtension(com.google.protobuf.CodedInputStream,com.google.protobuf.ExtensionRegistryLite,com.google.protobuf.GeneratedMessageLite$GeneratedExtension,int,int)
+androidx.compose.ui.graphics.layer.RenderNodeVerificationHelper28: void setSpotShadowColor(android.view.RenderNode,int)
+androidx.compose.ui.text.android.CanvasCompatQ: void drawRenderNode(android.graphics.Canvas,android.graphics.RenderNode)
+com.raysi.launcher.data.proto.LauncherSettingsProto: int getNeverBlockPackagesCount()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addAllNeverBlockPackages(java.lang.Iterable)
+com.raysi.launcher.data.proto.LauncherSettingsProto: java.util.List getActiveSessionsOrBuilderList()
+androidx.compose.ui.platform.ViewLayer: androidx.compose.ui.platform.AndroidComposeView getOwnerView()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: int getDigestHoursCount()
+kotlinx.coroutines.selects.TrySelectDetailedResult: kotlinx.coroutines.selects.TrySelectDetailedResult valueOf(java.lang.String)
+androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy: ConstraintProxy$StorageNotLowProxy()
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: int getSessionDurationMinutes()
+androidx.compose.ui.contentcapture.AndroidContentCaptureManager$TranslateStatus: androidx.compose.ui.contentcapture.AndroidContentCaptureManager$TranslateStatus valueOf(java.lang.String)
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.GeneratedMessageLite$Builder mergeFrom(byte[],int,int,com.google.protobuf.ExtensionRegistryLite)
+androidx.core.view.WindowInsetsCompat$Impl: androidx.core.view.WindowInsetsCompat consumeDisplayCutout()
+com.raysi.launcher.data.proto.PinnedAppProtoOrBuilder: java.lang.String getComponentName()
+androidx.compose.ui.window.PopupLayout: boolean getShouldCreateCompositionOnAttachedToWindow()
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.AbstractMessageLite$Builder mergeFrom(java.io.InputStream)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: LauncherSettingsProto$Builder()
+com.raysi.launcher.data.proto.PinnedAppProto: com.google.protobuf.ByteString getComponentNameBytes()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite access$200(com.google.protobuf.GeneratedMessageLite,byte[],int,int,com.google.protobuf.ExtensionRegistryLite)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite parseFrom(com.google.protobuf.GeneratedMessageLite,byte[])
+androidx.lifecycle.EmptyActivityLifecycleCallbacks: void onActivitySaveInstanceState(android.app.Activity,android.os.Bundle)
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: com.google.protobuf.MessageLite getDefaultInstanceForType()
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: void previewDeleteRangeGesture(androidx.compose.foundation.text.input.internal.TransformedTextFieldState,android.view.inputmethod.DeleteRangeGesture,androidx.compose.foundation.text.input.internal.TextLayoutState)
+androidx.compose.ui.platform.RenderNodeVerificationHelper28: void setSpotShadowColor(android.view.RenderNode,int)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto parseFrom(java.io.InputStream,com.google.protobuf.ExtensionRegistryLite)
+androidx.core.view.WindowInsetsCompat$Impl20: void copyRootViewBounds(android.view.View)
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: int getDigestHours(int)
+androidx.versionedparcelable.CustomVersionedParcelable: CustomVersionedParcelable()
+androidx.compose.ui.text.platform.Api28Impl: android.text.style.TypefaceSpan createTypefaceSpan(android.graphics.Typeface)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: boolean getScreenTimeIncludesLauncher()
+androidx.profileinstaller.ProfileInstallReceiver: ProfileInstallReceiver()
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: int getAlwaysAllowPackagesCount()
+androidx.emoji2.text.EmojiCompatInitializer: EmojiCompatInitializer()
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: java.util.List getDistractingPackagesList()
+androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver: ForceStopRunnable$BroadcastReceiver()
+android.support.v4.app.RemoteActionCompatParcelizer: RemoteActionCompatParcelizer()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addAlwaysAllowPackages(java.lang.String)
+androidx.compose.ui.platform.ComposeView: boolean getShouldCreateCompositionOnAttachedToWindow()
+androidx.compose.foundation.text.HandleState: androidx.compose.foundation.text.HandleState valueOf(java.lang.String)
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: com.raysi.launcher.data.proto.ActiveSessionProto getActiveSessions(int)
+androidx.core.view.WindowInsetsCompat$Impl21: WindowInsetsCompat$Impl21(androidx.core.view.WindowInsetsCompat,android.view.WindowInsets)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite$Builder newBuilderForType()
+androidx.compose.ui.window.Api33Impl: android.window.OnBackInvokedCallback createBackCallback(kotlin.jvm.functions.Function0)
+android.support.v4.app.RemoteActionCompatParcelizer: void write(androidx.core.app.RemoteActionCompat,androidx.versionedparcelable.VersionedParcel)
+com.google.protobuf.AbstractMessageLite$Builder: boolean mergeDelimitedFrom(java.io.InputStream,com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.data.proto.LauncherSettingsSerializer: com.raysi.launcher.data.proto.LauncherSettingsProto getDefaultValue()
+androidx.compose.ui.graphics.Api26Bitmap: androidx.compose.ui.graphics.colorspace.ColorSpace composeColorSpace$ui_graphics_release(android.graphics.Bitmap)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto parseFrom(java.nio.ByteBuffer)
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.MessageLite$Builder mergeFrom(java.io.InputStream)
+androidx.compose.ui.text.android.CanvasCompatM: void drawTextRun(android.graphics.Canvas,java.lang.CharSequence,int,int,int,int,float,float,boolean,android.graphics.Paint)
+androidx.sqlite.db.framework.FrameworkSQLiteOpenHelper$OpenHelper$CallbackName: androidx.sqlite.db.framework.FrameworkSQLiteOpenHelper$OpenHelper$CallbackName[] values()
+androidx.compose.ui.text.android.StaticLayoutFactory28: void setUseLineSpacingFromFallbacks(android.text.StaticLayout$Builder,boolean)
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto parseFrom(com.google.protobuf.CodedInputStream)
+androidx.compose.ui.platform.coreshims.ViewStructureCompat$Api23Impl: void setContentDescription(android.view.ViewStructure,java.lang.CharSequence)
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: void onActivityPreDestroyed(android.app.Activity)
+androidx.work.ExistingWorkPolicy: androidx.work.ExistingWorkPolicy[] values()
+androidx.compose.ui.window.PopupLayout: void setLayoutDirection(int)
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: void onActivityPrePaused(android.app.Activity)
+androidx.graphics.path.ConicConverter: int internalConicToQuadratics(float[],int,float[],float,float)
+com.google.protobuf.GeneratedMessageLite$MethodToInvoke: com.google.protobuf.GeneratedMessageLite$MethodToInvoke valueOf(java.lang.String)
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.unit.Density getDensity()
+androidx.compose.ui.window.SecureFlagPolicy: androidx.compose.ui.window.SecureFlagPolicy valueOf(java.lang.String)
+com.raysi.launcher.data.proto.LauncherSettingsProto: java.util.List getNeverBlockPackagesList()
+androidx.compose.ui.window.PopupLayout: void setParentLayoutDirection(androidx.compose.ui.unit.LayoutDirection)
+androidx.compose.ui.text.android.CanvasCompatQ: void disableZ(android.graphics.Canvas)
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: com.google.protobuf.MessageLite$Builder newBuilderForType()
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: void onActivityCreated(android.app.Activity,android.os.Bundle)
+androidx.compose.foundation.gestures.Orientation: androidx.compose.foundation.gestures.Orientation[] values()
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: boolean previewHandwritingGesture$foundation_release(androidx.compose.foundation.text.LegacyTextFieldState,android.view.inputmethod.PreviewableHandwritingGesture,androidx.compose.foundation.text.selection.TextFieldSelectionManager,android.os.CancellationSignal)
+com.raysi.launcher.data.proto.PinnedAppProto: int getDisplayOrder()
+androidx.compose.ui.platform.ComposeView: void getShouldCreateCompositionOnAttachedToWindow$annotations()
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int fallbackOnLegacyTextField(android.view.inputmethod.HandwritingGesture,kotlin.jvm.functions.Function1)
+com.google.protobuf.GeneratedMessageLite: int getSerializedSize(com.google.protobuf.Schema)
+androidx.compose.ui.window.PopupLayout: androidx.compose.ui.unit.LayoutDirection getParentLayoutDirection()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void setDigestHours(int,int)
+androidx.compose.ui.layout.MeasuringIntrinsics$IntrinsicWidthHeight: androidx.compose.ui.layout.MeasuringIntrinsics$IntrinsicWidthHeight[] values()
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.GeneratedMessageLite$Builder mergeFrom(com.google.protobuf.CodedInputStream,com.google.protobuf.ExtensionRegistryLite)
+androidx.compose.ui.scrollcapture.ScrollCapture: void onScrollCaptureSearch(android.view.View,androidx.compose.ui.semantics.SemanticsOwner,kotlin.coroutines.CoroutineContext,java.util.function.Consumer)
+androidx.lifecycle.ProcessLifecycleOwner$attach$1: ProcessLifecycleOwner$attach$1(androidx.lifecycle.ProcessLifecycleOwner)
+androidx.compose.ui.text.android.StaticLayoutFactoryDefault: android.text.StaticLayout create(androidx.compose.ui.text.android.StaticLayoutParams)
+com.google.protobuf.AbstractMessageLite: com.google.protobuf.ByteString toByteString()
+com.raysi.launcher.data.proto.ActiveSessionProto: long getStartElapsedRealtime()
+androidx.work.impl.workers.CombineContinuationsWorker: CombineContinuationsWorker(android.content.Context,androidx.work.WorkerParameters)
+androidx.core.view.WindowInsetsCompat$Impl29: androidx.core.graphics.Insets getSystemGestureInsets()
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.MessageLite$Builder mergeFrom(byte[],int,int)
+com.raysi.launcher.FocusApplication: FocusApplication()
+androidx.compose.ui.platform.ViewLayer$UniqueDrawingIdApi29: long getUniqueDrawingId(android.view.View)
+androidx.compose.ui.text.android.CanvasCompatO: boolean clipOutRect(android.graphics.Canvas,float,float,float,float)
+androidx.compose.ui.graphics.layer.RenderNodeVerificationHelper28: int getAmbientShadowColor(android.view.RenderNode)
+androidx.core.graphics.drawable.IconCompatParcelizer: void write(androidx.core.graphics.drawable.IconCompat,androidx.versionedparcelable.VersionedParcel)
+com.raysi.launcher.data.proto.PinnedAppProto: com.google.protobuf.Parser parser()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.draganddrop.DragAndDropManager getDragAndDropManager()
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto parseDelimitedFrom(java.io.InputStream,com.google.protobuf.ExtensionRegistryLite)
+com.google.protobuf.GeneratedMessageLite: boolean parseUnknownField(int,com.google.protobuf.CodedInputStream)
+com.google.protobuf.GeneratedMessageLite$Builder: java.lang.Object clone()
+androidx.compose.foundation.text.KeyCommand: androidx.compose.foundation.text.KeyCommand valueOf(java.lang.String)
+androidx.core.view.WindowInsetsCompat$Impl: androidx.core.graphics.Insets getInsets(int)
+androidx.compose.ui.contentcapture.AndroidContentCaptureManager$ViewTranslationHelperMethods: void onCreateVirtualViewTranslationRequests(androidx.compose.ui.contentcapture.AndroidContentCaptureManager,long[],int[],java.util.function.Consumer)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addNeverBlockPackages(java.lang.String)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.Internal$FloatList emptyFloatList()
+androidx.compose.animation.core.RepeatMode: androidx.compose.animation.core.RepeatMode[] values()
+androidx.compose.ui.platform.AndroidComposeView: void getShowLayoutBounds$annotations()
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: int getExtensionCount()
+androidx.compose.ui.autofill.AutofillCallback: void register(androidx.compose.ui.autofill.AndroidAutofill)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite parseDelimitedFrom(com.google.protobuf.GeneratedMessageLite,java.io.InputStream)
+androidx.compose.ui.platform.ComposeView: java.lang.CharSequence getAccessibilityClassName()
+androidx.lifecycle.EmptyActivityLifecycleCallbacks: void onActivityStarted(android.app.Activity)
+androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy: ConstraintProxy$BatteryChargingProxy()
+androidx.compose.ui.text.android.BoringLayoutFactory33: boolean isFallbackLineSpacingEnabled(android.text.BoringLayout)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: void performInsertionOnLegacyTextField(int,java.lang.String,kotlin.jvm.functions.Function1)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.PinnedAppProto getPinnedApps(int)
+androidx.compose.ui.window.PopupLayout: android.view.View getViewRoot()
+androidx.compose.ui.text.android.CanvasCompatM: void drawTextRun(android.graphics.Canvas,char[],int,int,int,int,float,float,boolean,android.graphics.Paint)
+androidx.work.WorkManagerInitializer: WorkManagerInitializer()
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: void previewSelectGesture(androidx.compose.foundation.text.LegacyTextFieldState,android.view.inputmethod.SelectGesture,androidx.compose.foundation.text.selection.TextFieldSelectionManager)
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.text.font.FontFamily$Resolver getFontFamilyResolver()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: int getMaxExtensionsAllowed()
+androidx.core.view.WindowInsetsCompat$Impl30: androidx.core.graphics.Insets getInsets(int)
+androidx.core.view.WindowInsetsCompat$BuilderImpl20: android.view.WindowInsets createWindowInsetsInstance()
+androidx.compose.ui.window.Api33Impl: void maybeRegisterBackCallback(android.view.View,java.lang.Object)
+com.google.protobuf.FieldType: com.google.protobuf.FieldType[] values()
+androidx.profileinstaller.FileSectionType: androidx.profileinstaller.FileSectionType valueOf(java.lang.String)
+androidx.compose.ui.window.PopupLayout: androidx.compose.ui.platform.AbstractComposeView getSubCompositionView()
+androidx.compose.ui.text.input.TextInputServiceAndroid$TextInputCommand: androidx.compose.ui.text.input.TextInputServiceAndroid$TextInputCommand valueOf(java.lang.String)
+androidx.compose.ui.node.NodeMeasuringIntrinsics$IntrinsicMinMax: androidx.compose.ui.node.NodeMeasuringIntrinsics$IntrinsicMinMax[] values()
+androidx.compose.ui.unit.LayoutDirection: androidx.compose.ui.unit.LayoutDirection[] values()
+com.raysi.launcher.data.proto.PinnedAppProtoOrBuilder: com.google.protobuf.MessageLite getDefaultInstanceForType()
+androidx.compose.ui.platform.AndroidComposeViewAssistHelperMethodsO: void setClassName(android.view.ViewStructure,android.view.View)
+com.raysi.launcher.data.proto.PinnedAppProto: void clearDisplayOrder()
+androidx.compose.ui.focus.FocusStateImpl: androidx.compose.ui.focus.FocusStateImpl[] values()
+kotlin.collections.AbstractMutableSet: AbstractMutableSet()
+androidx.compose.ui.platform.coreshims.ContentCaptureSessionCompat$Api29Impl: void notifyViewTextChanged(android.view.contentcapture.ContentCaptureSession,android.view.autofill.AutofillId,java.lang.CharSequence)
+androidx.compose.ui.platform.AndroidViewConfigurationApi34: float getScaledHandwritingGestureLineMargin(android.view.ViewConfiguration)
+androidx.core.view.WindowInsetsCompat$TypeImpl30: int toPlatformType(int)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addAllDistractingPackages(java.lang.Iterable)
+com.google.protobuf.GeneratedMessageLite: void mergeUnknownFields(com.google.protobuf.UnknownFieldSetLite)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void setMaxExtensionsAllowed(int)
+androidx.core.view.WindowInsetsCompat$BuilderImpl: void applyInsetTypes()
+com.raysi.launcher.data.proto.PinnedAppProto: void setUserSerialNumber(long)
+androidx.compose.ui.platform.ViewLayerVerificationHelper28: void setOutlineAmbientShadowColor(android.view.View,int)
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto$Builder newBuilder(com.raysi.launcher.data.proto.PinnedAppProto)
+androidx.compose.ui.autofill.AutofillType: androidx.compose.ui.autofill.AutofillType valueOf(java.lang.String)
+androidx.core.view.WindowInsetsCompat$Impl: boolean isVisible(int)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: int getGateDelaySeconds()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addNeverBlockPackagesBytes(com.google.protobuf.ByteString)
+androidx.compose.ui.platform.TextToolbarStatus: androidx.compose.ui.platform.TextToolbarStatus[] values()
+androidx.compose.ui.platform.AbstractComposeView: boolean getHasComposition()
+androidx.compose.ui.platform.TextToolbarHelperMethods: android.view.ActionMode startActionMode(android.view.View,android.view.ActionMode$Callback,int)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite parseFrom(com.google.protobuf.GeneratedMessageLite,byte[],com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void clearGateDelaySeconds()
+androidx.compose.ui.node.LayoutNode$LayoutState: androidx.compose.ui.node.LayoutNode$LayoutState[] values()
+com.raysi.launcher.data.proto.ActiveSessionProto: void setPackageNameBytes(com.google.protobuf.ByteString)
+com.google.protobuf.AbstractMessageLite: com.google.protobuf.UninitializedMessageException newUninitializedMessageException()
+androidx.core.view.WindowInsetsCompat$Impl20: androidx.core.graphics.Insets getRootStableInsets()
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: com.raysi.launcher.data.proto.PinnedAppProto getPinnedApps(int)
+androidx.work.impl.background.systemalarm.RescheduleReceiver: RescheduleReceiver()
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: void onActivitySaveInstanceState(android.app.Activity,android.os.Bundle)
+com.raysi.launcher.data.proto.ActiveSessionProto: java.lang.String getPackageName()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.Internal$IntList mutableCopy(com.google.protobuf.Internal$IntList)
+androidx.compose.ui.platform.AbstractComposeView: boolean getShowLayoutBounds()
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: com.raysi.launcher.data.proto.ActiveSessionProto$Builder clearEndElapsedRealtime()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: java.lang.String getAlwaysAllowPackages(int)
+androidx.compose.ui.platform.AndroidComposeView: android.view.View findViewByAccessibilityIdTraversal(int)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: void previewDeleteRangeGesture(androidx.compose.foundation.text.LegacyTextFieldState,android.view.inputmethod.DeleteRangeGesture,androidx.compose.foundation.text.selection.TextFieldSelectionManager)
+androidx.compose.ui.text.android.StaticLayoutFactory33: void setLineBreakConfig(android.text.StaticLayout$Builder,int,int)
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: java.lang.String getNeverBlockPackages(int)
+com.google.protobuf.WireFormat$FieldType: com.google.protobuf.WireFormat$FieldType[] values()
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: int getPinnedAppsCount()
+androidx.compose.ui.window.PopupLayout: void setTestTag(java.lang.String)
+androidx.lifecycle.Lifecycle$Event: androidx.lifecycle.Lifecycle$Event valueOf(java.lang.String)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite$GeneratedExtension newRepeatedGeneratedExtension(com.google.protobuf.MessageLite,com.google.protobuf.MessageLite,com.google.protobuf.Internal$EnumLiteMap,int,com.google.protobuf.WireFormat$FieldType,boolean,java.lang.Class)
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.node.OwnerSnapshotObserver getSnapshotObserver()
+com.raysi.launcher.data.search.RustSearchEngine: RustSearchEngine(java.lang.String,int,kotlin.jvm.internal.DefaultConstructorMarker)
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: int getMaxExtensionsAllowed()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.PinnedAppProto getPinnedApps(int)
+com.raysi.launcher.data.proto.PinnedAppProto: PinnedAppProto()
+androidx.room.Index$Order: androidx.room.Index$Order valueOf(java.lang.String)
+androidx.core.view.WindowInsetsCompat$BuilderImpl29: void setTappableElementInsets(androidx.core.graphics.Insets)
+androidx.compose.ui.platform.coreshims.ContentCaptureSessionCompat$Api29Impl: void notifyViewsDisappeared(android.view.contentcapture.ContentCaptureSession,android.view.autofill.AutofillId,long[])
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.unit.LayoutDirection getLayoutDirection()
+androidx.compose.ui.text.android.StaticLayoutFactory26: void setJustificationMode(android.text.StaticLayout$Builder,int)
+com.raysi.launcher.data.proto.PinnedAppProto: java.lang.Object dynamicMethod(com.google.protobuf.GeneratedMessageLite$MethodToInvoke,java.lang.Object,java.lang.Object)
+androidx.compose.ui.text.android.CanvasCompatQ: void enableZ(android.graphics.Canvas)
+com.raysi.launcher.data.proto.LauncherSettingsProto: int getDistractingPackagesCount()
+androidx.compose.ui.platform.RenderNodeVerificationHelper23: void destroyDisplayListData(android.view.RenderNode)
+android.support.v4.graphics.drawable.IconCompatParcelizer: IconCompatParcelizer()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.platform.ViewConfiguration getViewConfiguration()
+androidx.compose.ui.layout.MeasuringIntrinsics$IntrinsicWidthHeight: androidx.compose.ui.layout.MeasuringIntrinsics$IntrinsicWidthHeight valueOf(java.lang.String)
+androidx.compose.ui.platform.AndroidComposeView: void setCoroutineContext(kotlin.coroutines.CoroutineContext)
+androidx.compose.ui.input.pointer.util.VelocityTracker1D$Strategy: androidx.compose.ui.input.pointer.util.VelocityTracker1D$Strategy[] values()
+com.google.protobuf.GeneratedMessageLite: java.lang.Object dynamicMethod(com.google.protobuf.GeneratedMessageLite$MethodToInvoke,java.lang.Object,java.lang.Object)
+androidx.core.view.WindowInsetsCompat$BuilderImpl30: void setInsets(int,androidx.core.graphics.Insets)
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: java.util.List getNeverBlockPackagesList()
+com.raysi.launcher.data.proto.LauncherSettingsProto: int getPinnedAppsCount()
+com.raysi.launcher.data.proto.LauncherSettingsProto: int getGateDelaySeconds()
+androidx.compose.foundation.text.input.internal.undo.TextFieldEditUndoBehavior: androidx.compose.foundation.text.input.internal.undo.TextFieldEditUndoBehavior valueOf(java.lang.String)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder setActiveSessions(int,com.raysi.launcher.data.proto.ActiveSessionProto)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder setDigestHours(int,int)
+com.raysi.launcher.data.proto.LauncherSettingsProto: java.util.List getPinnedAppsList()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.MessageLite$Builder toBuilder()
+androidx.compose.ui.platform.MotionEventVerifierApi29: boolean isValidMotionEvent(android.view.MotionEvent,int)
+androidx.compose.ui.autofill.AutofillApi26Helper: void setAutofillId(android.view.ViewStructure,android.view.autofill.AutofillId,int)
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: int extensionsSerializedSize()
+com.raysi.launcher.data.proto.LauncherSettings: LauncherSettings()
+androidx.compose.ui.text.android.CanvasCompatS: void drawPatch(android.graphics.Canvas,android.graphics.NinePatch,android.graphics.Rect,android.graphics.Paint)
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: void onActivityPostResumed(android.app.Activity)
+androidx.lifecycle.EmptyActivityLifecycleCallbacks: void onActivityDestroyed(android.app.Activity)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder newBuilder()
+androidx.compose.ui.focus.CustomDestinationResult: androidx.compose.ui.focus.CustomDestinationResult valueOf(java.lang.String)
+com.google.protobuf.GeneratedMessageLite: java.lang.Object buildMessageInfo()
+com.raysi.launcher.data.proto.LauncherSettingsProto: boolean getScreenTimeIncludesLauncher()
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: boolean hasExtension(com.google.protobuf.ExtensionLite)
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: boolean getScreenTimeIncludesLauncher()
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.UninitializedMessageException newUninitializedMessageException(com.google.protobuf.MessageLite)
+androidx.core.view.WindowInsetsCompat$BuilderImpl30: WindowInsetsCompat$BuilderImpl30()
+androidx.compose.ui.graphics.layer.ViewLayer: android.view.View getOwnerView()
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.MessageLite getDefaultInstanceForType()
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: com.raysi.launcher.data.proto.ActiveSessionProto$Builder clearStartElapsedRealtime()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.hapticfeedback.HapticFeedback getHapticFeedBack()
+kotlinx.coroutines.android.AndroidExceptionPreHandler: AndroidExceptionPreHandler()
+androidx.compose.ui.window.SecureFlagPolicy: androidx.compose.ui.window.SecureFlagPolicy[] values()
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: com.raysi.launcher.data.proto.PinnedAppProto$Builder clearDisplayOrder()
+androidx.core.view.WindowInsetsCompat$Impl20: void loadReflectionField()
+androidx.core.view.WindowInsetsCompat$Impl: androidx.core.graphics.Insets getTappableElementInsets()
+androidx.core.view.WindowInsetsCompat$Impl21: WindowInsetsCompat$Impl21(androidx.core.view.WindowInsetsCompat,androidx.core.view.WindowInsetsCompat$Impl21)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addActiveSessions(int,com.raysi.launcher.data.proto.ActiveSessionProto)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: int getPinnedAppsCount()
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.google.protobuf.Parser parser()
+androidx.compose.ui.graphics.layer.RenderNodeVerificationHelper28: void setAmbientShadowColor(android.view.RenderNode,int)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: void previewSelectGesture(androidx.compose.foundation.text.input.internal.TransformedTextFieldState,android.view.inputmethod.SelectGesture,androidx.compose.foundation.text.input.internal.TextLayoutState)
+androidx.compose.runtime.Recomposer$State: androidx.compose.runtime.Recomposer$State[] values()
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: long getEndWallClockMs()
+androidx.work.DirectExecutor: androidx.work.DirectExecutor valueOf(java.lang.String)
+com.raysi.launcher.service.notification.FocusNotificationService: FocusNotificationService()
+androidx.core.view.ViewCompat$Api30Impl: java.lang.CharSequence getStateDescription(android.view.View)
+androidx.core.view.ViewCompat$Api23Impl: androidx.core.view.WindowInsetsCompat getRootWindowInsets(android.view.View)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite parseFrom(com.google.protobuf.GeneratedMessageLite,com.google.protobuf.ByteString,com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder setSessionDurationMinutes(int)
+androidx.core.view.WindowInsetsCompat$BuilderImpl20: void setStableInsets(androidx.core.graphics.Insets)
+com.raysi.launcher.data.proto.LauncherSettingsSerializer: java.lang.Object writeTo(com.raysi.launcher.data.proto.LauncherSettingsProto,java.io.OutputStream,kotlin.coroutines.Continuation)
+androidx.compose.ui.platform.coreshims.ViewStructureCompat$Api23Impl: void setText(android.view.ViewStructure,java.lang.CharSequence)
+androidx.compose.ui.graphics.BlendModeColorFilterHelper: androidx.compose.ui.graphics.BlendModeColorFilter createBlendModeColorFilter(android.graphics.BlendModeColorFilter)
+androidx.compose.material3.tokens.ColorSchemeKeyTokens: androidx.compose.material3.tokens.ColorSchemeKeyTokens[] values()
+com.google.protobuf.WireFormat$Utf8Validation: com.google.protobuf.WireFormat$Utf8Validation valueOf(java.lang.String)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite$GeneratedExtension access$000(com.google.protobuf.ExtensionLite)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void clearMaxExtensionsAllowed()
+androidx.work.CoroutineWorker: CoroutineWorker(android.content.Context,androidx.work.WorkerParameters)
+com.google.protobuf.WireFormat$FieldType: com.google.protobuf.WireFormat$FieldType valueOf(java.lang.String)
+androidx.compose.ui.platform.ViewLayerContainer: void dispatchGetDisplayList()
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto parseFrom(java.nio.ByteBuffer,com.google.protobuf.ExtensionRegistryLite)
+com.google.protobuf.GeneratedMessageLite: void registerDefaultInstance(java.lang.Class,com.google.protobuf.GeneratedMessageLite)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void clearNeverBlockPackages()
+androidx.compose.ui.layout.IntrinsicWidthHeight: androidx.compose.ui.layout.IntrinsicWidthHeight valueOf(java.lang.String)
+androidx.compose.ui.text.input.CursorAnchorInfoApi33Helper: android.view.inputmethod.CursorAnchorInfo$Builder setEditorBoundsInfo(android.view.inputmethod.CursorAnchorInfo$Builder,androidx.compose.ui.geometry.Rect)
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: void onActivityStopped(android.app.Activity)
+androidx.compose.ui.layout.IntrinsicMinMax: androidx.compose.ui.layout.IntrinsicMinMax[] values()
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: void previewSelectRangeGesture(androidx.compose.foundation.text.LegacyTextFieldState,android.view.inputmethod.SelectRangeGesture,androidx.compose.foundation.text.selection.TextFieldSelectionManager)
+androidx.work.impl.background.systemalarm.SystemAlarmService: SystemAlarmService()
+com.google.protobuf.AbstractMessageLite: void writeDelimitedTo(java.io.OutputStream)
+androidx.compose.ui.platform.AbstractComposeView: void getShowLayoutBounds$annotations()
+com.google.protobuf.FieldType: com.google.protobuf.FieldType valueOf(java.lang.String)
+androidx.core.view.WindowInsetsCompat$Impl: void copyRootViewBounds(android.view.View)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto parseFrom(com.google.protobuf.ByteString,com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addPinnedApps(int,com.raysi.launcher.data.proto.PinnedAppProto)
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: java.lang.Object getExtension(com.google.protobuf.ExtensionLite,int)
+kotlin.coroutines.intrinsics.CoroutineSingletons: kotlin.coroutines.intrinsics.CoroutineSingletons[] values()
+androidx.compose.ui.graphics.WrapperVerificationHelperMethods: void setBlendMode-GB0RdKg(android.graphics.Paint,int)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto parseDelimitedFrom(java.io.InputStream)
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.contentcapture.AndroidContentCaptureManager getContentCaptureManager$ui_release()
+androidx.lifecycle.SavedStateHandlesVM: SavedStateHandlesVM()
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: void mergeExtensionFields(com.google.protobuf.GeneratedMessageLite$ExtendableMessage)
+androidx.lifecycle.EmptyActivityLifecycleCallbacks: void onActivityPaused(android.app.Activity)
+androidx.lifecycle.ProcessLifecycleOwner$attach$1$onActivityPreCreated$1: void onActivityPostResumed(android.app.Activity)
+com.raysi.launcher.data.proto.PinnedAppProto: long getUserSerialNumber()
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: com.google.protobuf.ByteString getAlwaysAllowPackagesBytes(int)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: java.util.List getNeverBlockPackagesList()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void ensureActiveSessionsIsMutable()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addAlwaysAllowPackages(java.lang.String)
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: com.raysi.launcher.data.proto.ActiveSessionProto$Builder clearPackageName()
+kotlinx.coroutines.channels.BufferOverflow: kotlinx.coroutines.channels.BufferOverflow[] values()
+androidx.graphics.path.PathIteratorPreApi34Impl: int internalPathIteratorRawSize(long)
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: com.raysi.launcher.data.proto.PinnedAppProto$Builder setComponentNameBytes(com.google.protobuf.ByteString)
+androidx.room.RoomDatabase$JournalMode: androidx.room.RoomDatabase$JournalMode valueOf(java.lang.String)
+androidx.lifecycle.Lifecycle$State: androidx.lifecycle.Lifecycle$State[] values()
+androidx.compose.foundation.text.TextContextMenuItems: androidx.compose.foundation.text.TextContextMenuItems valueOf(java.lang.String)
+com.google.protobuf.Writer$FieldOrder: com.google.protobuf.Writer$FieldOrder valueOf(java.lang.String)
+androidx.compose.ui.platform.coreshims.ViewStructureCompat$Api23Impl: void setClassName(android.view.ViewStructure,java.lang.String)
+com.raysi.launcher.data.proto.LauncherSettingsProto: java.util.List getDigestHoursList()
+androidx.core.view.WindowInsetsCompat$Impl: boolean isRound()
+androidx.compose.ui.platform.AbstractComposeView: void setShowLayoutBounds(boolean)
+androidx.compose.ui.platform.AndroidComposeViewForceDarkModeQ: void disallowForceDark(android.view.View)
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: com.raysi.launcher.data.proto.PinnedAppProto$Builder clearUserSerialNumber()
+androidx.core.view.WindowInsetsCompat$Impl20: androidx.core.graphics.Insets getSystemWindowInsets()
+androidx.compose.ui.text.android.CanvasCompatQ: void drawDoubleRoundRect(android.graphics.Canvas,android.graphics.RectF,float[],android.graphics.RectF,float[],android.graphics.Paint)
+androidx.compose.material3.tokens.ShapeKeyTokens: androidx.compose.material3.tokens.ShapeKeyTokens valueOf(java.lang.String)
+com.raysi.launcher.ui.settings.AppPickerType: com.raysi.launcher.ui.settings.AppPickerType[] values()
+androidx.compose.ui.graphics.layer.ViewLayer: void setInvalidated(boolean)
+androidx.compose.foundation.text.Handle: androidx.compose.foundation.text.Handle valueOf(java.lang.String)
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto parseFrom(com.google.protobuf.ByteString)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void setScreenTimeIncludesLauncher(boolean)
+androidx.activity.EdgeToEdgeApi23: void setUp(androidx.activity.SystemBarStyle,androidx.activity.SystemBarStyle,android.view.Window,android.view.View,boolean,boolean)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder clearGateDelaySeconds()
+androidx.work.impl.background.systemjob.SystemJobService: SystemJobService()
+androidx.compose.ui.platform.RenderNodeVerificationHelper28: void setAmbientShadowColor(android.view.RenderNode,int)
+androidx.compose.ui.window.PopupLayout: void getParams$ui_release$annotations()
+androidx.compose.ui.text.android.BoringLayoutFactoryDefault: android.text.BoringLayout create(java.lang.CharSequence,android.text.TextPaint,int,android.text.Layout$Alignment,float,float,android.text.BoringLayout$Metrics,boolean,android.text.TextUtils$TruncateAt,int)
+androidx.core.view.WindowInsetsCompat$Impl29: androidx.core.graphics.Insets getMandatorySystemGestureInsets()
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.MessageLite$Builder mergeFrom(com.google.protobuf.MessageLite)
+androidx.work.BackoffPolicy: androidx.work.BackoffPolicy valueOf(java.lang.String)
+androidx.compose.ui.platform.ViewLayer: long getOwnerViewId()
+androidx.work.WorkInfo$State: androidx.work.WorkInfo$State[] values()
+androidx.compose.ui.text.platform.extensions.LocaleListHelperMethods: void setTextLocales(androidx.compose.ui.text.platform.AndroidTextPaint,androidx.compose.ui.text.intl.LocaleList)
+androidx.core.view.WindowInsetsCompat$Impl20: androidx.core.graphics.Insets getVisibleInsets(android.view.View)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder clearMaxExtensionsAllowed()
+androidx.compose.ui.graphics.layer.RenderNodeVerificationHelper24: void discardDisplayList(android.view.RenderNode)
+androidx.core.view.WindowInsetsCompat$Impl: androidx.core.view.WindowInsetsCompat consumeStableInsets()
+androidx.compose.ui.layout.IntrinsicWidthHeight: androidx.compose.ui.layout.IntrinsicWidthHeight[] values()
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: com.raysi.launcher.data.proto.ActiveSessionProto$Builder clearEndWallClockMs()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.autofill.AutofillTree getAutofillTree()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addPinnedApps(int,com.raysi.launcher.data.proto.PinnedAppProto)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto parseFrom(byte[],com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto parseFrom(java.nio.ByteBuffer,com.google.protobuf.ExtensionRegistryLite)
+androidx.compose.foundation.text.selection.SelectionHandleAnchor: androidx.compose.foundation.text.selection.SelectionHandleAnchor valueOf(java.lang.String)
+com.raysi.launcher.data.proto.ActiveSessionProto: com.google.protobuf.ByteString getPackageNameBytes()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addAllPinnedApps(java.lang.Iterable)
+androidx.graphics.path.PathIteratorPreApi34Impl: int internalPathIteratorNext(long,float[],int)
+androidx.core.view.WindowInsetsCompat$Impl20: androidx.core.graphics.Insets getInsets(int)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performSelectGesture(androidx.compose.foundation.text.LegacyTextFieldState,android.view.inputmethod.SelectGesture,androidx.compose.foundation.text.selection.TextFieldSelectionManager,kotlin.jvm.functions.Function1)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addAlwaysAllowPackagesBytes(com.google.protobuf.ByteString)
+androidx.core.view.WindowInsetsCompat$Impl: androidx.core.graphics.Insets getSystemGestureInsets()
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: long getUserSerialNumber()
+com.raysi.launcher.data.proto.PinnedAppProtoOrBuilder: java.lang.String getCustomLabel()
+androidx.compose.ui.window.PopupLayout: androidx.compose.ui.unit.IntSize getPopupContentSize-bOM6tXw()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.platform.TextToolbar getTextToolbar()
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: com.google.protobuf.MessageLite$Builder toBuilder()
+androidx.compose.ui.text.android.CanvasCompatQ: void drawColor(android.graphics.Canvas,int,android.graphics.BlendMode)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder setPinnedApps(int,com.raysi.launcher.data.proto.PinnedAppProto$Builder)
+androidx.core.view.WindowInsetsCompat$Impl20: void setRootViewData(androidx.core.graphics.Insets)
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.platform.ClipboardManager getClipboardManager()
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: GeneratedMessageLite$ExtendableMessage()
+com.google.protobuf.AbstractMessageLite: void writeTo(java.io.OutputStream)
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: void onActivityPostCreated(android.app.Activity,android.os.Bundle)
+androidx.compose.ui.platform.RenderNodeApi29VerificationHelper: void setRenderEffect(android.graphics.RenderNode,androidx.compose.ui.graphics.RenderEffect)
+androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver: ConstraintProxyUpdateReceiver()
+androidx.core.view.WindowInsetsCompat$BuilderImpl29: void setSystemGestureInsets(androidx.core.graphics.Insets)
+com.google.protobuf.GeneratedMessageLite$Builder: void copyOnWriteInternal()
+androidx.lifecycle.ReportFragment: ReportFragment()
+androidx.core.view.WindowInsetsCompat$Impl: boolean equals(java.lang.Object)
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.GeneratedMessageLite$Builder internalMergeFrom(com.google.protobuf.GeneratedMessageLite)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void ensurePinnedAppsIsMutable()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addDigestHours(int)
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: void registerIn(android.app.Activity)
+androidx.core.view.WindowInsetsCompat$Impl29: WindowInsetsCompat$Impl29(androidx.core.view.WindowInsetsCompat,androidx.core.view.WindowInsetsCompat$Impl29)
+androidx.graphics.path.PathIteratorPreApi34Impl: int internalPathIteratorSize(long)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addActiveSessions(com.raysi.launcher.data.proto.ActiveSessionProto)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performSelectRangeGesture(androidx.compose.foundation.text.LegacyTextFieldState,android.view.inputmethod.SelectRangeGesture,androidx.compose.foundation.text.selection.TextFieldSelectionManager,kotlin.jvm.functions.Function1)
+androidx.compose.foundation.layout.IntrinsicSize: androidx.compose.foundation.layout.IntrinsicSize valueOf(java.lang.String)
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: com.raysi.launcher.data.proto.PinnedAppProto$Builder clearCustomLabel()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder setPinnedApps(int,com.raysi.launcher.data.proto.PinnedAppProto)
+androidx.compose.ui.node.LayoutNode$UsageByParent: androidx.compose.ui.node.LayoutNode$UsageByParent valueOf(java.lang.String)
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto$Builder newBuilder(com.raysi.launcher.data.proto.ActiveSessionProto)
+com.google.protobuf.GeneratedMessageLite: void markImmutable()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addDistractingPackages(java.lang.String)
+androidx.work.impl.workers.DiagnosticsWorker: DiagnosticsWorker(android.content.Context,androidx.work.WorkerParameters)
+kotlinx.coroutines.channels.BufferOverflow: kotlinx.coroutines.channels.BufferOverflow valueOf(java.lang.String)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite parsePartialFrom(com.google.protobuf.GeneratedMessageLite,com.google.protobuf.CodedInputStream,com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto parseFrom(java.nio.ByteBuffer,com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void clearPinnedApps()
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: void previewDeleteGesture(androidx.compose.foundation.text.input.internal.TransformedTextFieldState,android.view.inputmethod.DeleteGesture,androidx.compose.foundation.text.input.internal.TextLayoutState)
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.modifier.ModifierLocalManager getModifierLocalManager()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void ensureAlwaysAllowPackagesIsMutable()
+com.raysi.launcher.data.proto.LauncherSettingsProto: java.lang.String getNeverBlockPackages(int)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addAllPinnedApps(java.lang.Iterable)
+androidx.core.view.WindowInsetsCompat$BuilderImpl29: void setMandatorySystemGestureInsets(androidx.core.graphics.Insets)
+com.raysi.launcher.ui.MainActivity: MainActivity()
+androidx.compose.ui.window.PopupLayout: int getDisplayWidth()
+com.raysi.launcher.data.proto.ActiveSessionProto: int getExtensionCount()
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: com.google.protobuf.GeneratedMessageLite$ExtendableMessage$ExtensionWriter newExtensionWriter()
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.PinnedAppProtoOrBuilder getPinnedAppsOrBuilder(int)
+androidx.compose.ui.state.ToggleableState: androidx.compose.ui.state.ToggleableState valueOf(java.lang.String)
+androidx.compose.foundation.layout.Direction: androidx.compose.foundation.layout.Direction[] values()
+androidx.compose.foundation.text.input.internal.Api34LegacyPerformHandwritingGestureImpl: boolean previewHandwritingGesture(androidx.compose.foundation.text.LegacyTextFieldState,androidx.compose.foundation.text.selection.TextFieldSelectionManager,android.view.inputmethod.PreviewableHandwritingGesture,android.os.CancellationSignal)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto parseFrom(com.google.protobuf.ByteString)
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.AbstractMessageLite$Builder internalMergeFrom(com.google.protobuf.AbstractMessageLite)
+com.raysi.launcher.data.proto.ActiveSessionProto: void clearExtensionCount()
+com.google.protobuf.GeneratedMessageLite: void writeTo(com.google.protobuf.CodedOutputStream)
+androidx.core.view.WindowInsetsCompat$Impl21: androidx.core.view.WindowInsetsCompat consumeSystemWindowInsets()
+com.raysi.launcher.data.proto.ActiveSessionProtoOrBuilder: boolean isInitialized()
+androidx.core.view.WindowInsetsCompat$Impl29: androidx.core.graphics.Insets getTappableElementInsets()
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: com.raysi.launcher.data.proto.ActiveSessionProto$Builder clearExtensionCount()
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: com.google.protobuf.GeneratedMessageLite$ExtendableMessage$ExtensionWriter newMessageSetExtensionWriter()
+com.raysi.launcher.data.quarantine.QuarantineDatabase: QuarantineDatabase()
+com.raysi.launcher.data.proto.ActiveSessionProto: long getEndElapsedRealtime()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite parseFrom(com.google.protobuf.GeneratedMessageLite,com.google.protobuf.ByteString)
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.GeneratedMessageLite$Builder mergeFrom(byte[],int,int)
+androidx.compose.ui.autofill.AutofillApi26Helper: boolean isText(android.view.autofill.AutofillValue)
+kotlinx.coroutines.flow.SharingCommand: kotlinx.coroutines.flow.SharingCommand valueOf(java.lang.String)
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: int getDisplayOrder()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder clearNeverBlockPackages()
+androidx.compose.ui.platform.AndroidComposeViewVerificationHelperMethodsO: void focusable(android.view.View,int,boolean)
+com.raysi.launcher.data.proto.LauncherSettings: void registerAllExtensions(com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: com.google.protobuf.ByteString getCustomLabelBytes()
+androidx.compose.ui.platform.AbstractComposeView: boolean getShouldCreateCompositionOnAttachedToWindow()
+com.google.protobuf.GeneratedMessageLite: void clearMemoizedHashCode()
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto parseFrom(byte[])
+androidx.compose.ui.platform.AndroidComposeView: void getFontLoader$annotations()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addDistractingPackagesBytes(com.google.protobuf.ByteString)
+com.google.protobuf.GeneratedMessageLite: java.lang.reflect.Method getMethodOrDie(java.lang.Class,java.lang.String,java.lang.Class[])
+androidx.compose.ui.graphics.BlendModeColorFilterHelper: android.graphics.BlendModeColorFilter BlendModeColorFilter-xETnrds(long,int)
+androidx.compose.ui.platform.coreshims.ViewCompatShims$Api30Impl: void setImportantForContentCapture(android.view.View,int)
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.MessageLite$Builder clear()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void setDistractingPackages(int,java.lang.String)
+androidx.core.view.ViewCompat$Api28Impl: java.lang.CharSequence getAccessibilityPaneTitle(android.view.View)
+com.raysi.launcher.data.proto.LauncherSettingsSerializer: java.lang.Object readFrom(java.io.InputStream,kotlin.coroutines.Continuation)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto parseFrom(com.google.protobuf.CodedInputStream)
+androidx.core.view.WindowInsetsCompat$Impl29: WindowInsetsCompat$Impl29(androidx.core.view.WindowInsetsCompat,android.view.WindowInsets)
+androidx.core.view.WindowInsetsCompat$Impl: WindowInsetsCompat$Impl(androidx.core.view.WindowInsetsCompat)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder clearSessionDurationMinutes()
+androidx.core.view.WindowInsetsCompat$Impl21: androidx.core.view.WindowInsetsCompat consumeStableInsets()
+com.raysi.launcher.data.proto.ActiveSessionProto: long getEndWallClockMs()
+androidx.compose.ui.platform.AndroidComposeView: void setContentCaptureManager$ui_release(androidx.compose.ui.contentcapture.AndroidContentCaptureManager)
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: void mergeMessageSetExtensionFromBytes(com.google.protobuf.ByteString,com.google.protobuf.ExtensionRegistryLite,com.google.protobuf.GeneratedMessageLite$GeneratedExtension)
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto$Builder newBuilder()
+androidx.compose.ui.platform.AndroidComposeView: void setAccessibilityEventBatchIntervalMillis(long)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder setNeverBlockPackages(int,java.lang.String)
+androidx.compose.ui.platform.CalculateMatrixToWindowApi29: void calculateMatrixToWindow-EL8BTi8(android.view.View,float[])
+androidx.compose.ui.graphics.layer.ViewLayer: androidx.compose.ui.graphics.CanvasHolder getCanvasHolder()
+androidx.core.view.WindowInsetsCompat$Impl: androidx.core.graphics.Insets getMandatorySystemGestureInsets()
+com.raysi.launcher.data.search.RustSearchEngine: java.util.List search(java.lang.String,int)
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.AbstractMessageLite$Builder mergeFrom(byte[])
+com.raysi.launcher.data.proto.LauncherSettingsSerializer: java.lang.Object writeTo(java.lang.Object,java.io.OutputStream,kotlin.coroutines.Continuation)
+androidx.compose.ui.graphics.ColorSpaceVerificationHelper: android.graphics.ColorSpace androidColorSpace(androidx.compose.ui.graphics.colorspace.ColorSpace)
+androidx.compose.ui.text.AnnotationType: androidx.compose.ui.text.AnnotationType[] values()
+com.raysi.launcher.data.proto.PinnedAppProto: void setCustomLabel(java.lang.String)
+androidx.compose.ui.platform.AndroidComposeView: void getLastMatrixRecalculationAnimationTime$ui_release$annotations()
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: boolean previewHandwritingGesture$foundation_release(androidx.compose.foundation.text.input.internal.TransformedTextFieldState,android.view.inputmethod.PreviewableHandwritingGesture,androidx.compose.foundation.text.input.internal.TextLayoutState,android.os.CancellationSignal)
+androidx.compose.material.ripple.UnprojectedRipple$MRadiusHelper: void setRadius(android.graphics.drawable.RippleDrawable,int)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performHandwritingGesture$foundation_release(androidx.compose.foundation.text.LegacyTextFieldState,android.view.inputmethod.HandwritingGesture,androidx.compose.foundation.text.selection.TextFieldSelectionManager,androidx.compose.ui.platform.ViewConfiguration,kotlin.jvm.functions.Function1)
+androidx.core.view.WindowInsetsCompat$Impl20: boolean isTypeVisible(int)
+com.raysi.launcher.data.proto.LauncherSettingsProto: int getAlwaysAllowPackagesCount()
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: java.util.List getActiveSessionsList()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.node.RootForTest getRootForTest()
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: com.raysi.launcher.data.proto.PinnedAppProto$Builder setCustomLabelBytes(com.google.protobuf.ByteString)
+com.raysi.launcher.data.search.RustSearchEngine: void finalize()
+androidx.core.view.WindowInsetsCompat$Impl: void setOverriddenInsets(androidx.core.graphics.Insets[])
+androidx.compose.ui.text.android.CanvasCompatS: void drawPatch(android.graphics.Canvas,android.graphics.NinePatch,android.graphics.RectF,android.graphics.Paint)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addAlwaysAllowPackagesBytes(com.google.protobuf.ByteString)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void setSessionDurationMinutes(int)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite parseFrom(com.google.protobuf.GeneratedMessageLite,java.io.InputStream)
+androidx.compose.foundation.text.input.internal.CursorAnchorInfoApi34Helper: android.view.inputmethod.CursorAnchorInfo$Builder addVisibleLineBounds(android.view.inputmethod.CursorAnchorInfo$Builder,androidx.compose.ui.text.TextLayoutResult,androidx.compose.ui.geometry.Rect)
+androidx.compose.ui.graphics.layer.RenderNodeVerificationHelper23: void destroyDisplayListData(android.view.RenderNode)
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: int getActiveSessionsCount()
+androidx.compose.foundation.text.selection.CrossStatus: androidx.compose.foundation.text.selection.CrossStatus[] values()
+androidx.work.impl.WorkDatabase: WorkDatabase()
+androidx.compose.ui.platform.RenderNodeVerificationHelper24: void discardDisplayList(android.view.RenderNode)
+androidx.compose.ui.text.android.BoringLayoutFactoryDefault: android.text.BoringLayout$Metrics isBoring(java.lang.CharSequence,android.text.TextPaint,android.text.TextDirectionHeuristic)
+androidx.lifecycle.LifecycleDispatcher$DispatcherActivityCallback: LifecycleDispatcher$DispatcherActivityCallback()
+androidx.compose.ui.window.PopupLayout: androidx.compose.ui.layout.LayoutCoordinates getParentLayoutCoordinates()
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performHandwritingGesture$foundation_release(androidx.compose.foundation.text.input.internal.TransformedTextFieldState,android.view.inputmethod.HandwritingGesture,androidx.compose.foundation.text.input.internal.TextLayoutState,androidx.compose.ui.platform.ViewConfiguration)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.Internal$FloatList mutableCopy(com.google.protobuf.Internal$FloatList)
+androidx.compose.ui.node.NodeMeasuringIntrinsics$IntrinsicWidthHeight: androidx.compose.ui.node.NodeMeasuringIntrinsics$IntrinsicWidthHeight[] values()
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.AbstractMessageLite$Builder mergeFrom(byte[],int,int,com.google.protobuf.ExtensionRegistryLite)
+com.google.protobuf.AbstractMessageLite$Builder: void addAll(java.lang.Iterable,java.util.List)
+com.google.protobuf.GeneratedMessageLite: java.lang.Object dynamicMethod(com.google.protobuf.GeneratedMessageLite$MethodToInvoke,java.lang.Object)
+com.raysi.launcher.data.proto.LauncherSettingsSerializer: LauncherSettingsSerializer()
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto$Builder newBuilder()
+com.raysi.launcher.data.proto.ActiveSessionProto: java.lang.Object dynamicMethod(com.google.protobuf.GeneratedMessageLite$MethodToInvoke,java.lang.Object,java.lang.Object)
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto parseFrom(byte[],com.google.protobuf.ExtensionRegistryLite)
+com.google.protobuf.AbstractMessageLite: byte[] toByteArray()
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: com.google.protobuf.ByteString getDistractingPackagesBytes(int)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder removeActiveSessions(int)
+androidx.compose.foundation.layout.IntrinsicSize: androidx.compose.foundation.layout.IntrinsicSize[] values()
+androidx.compose.ui.graphics.layer.ViewLayer: void setCanUseCompositingLayer$ui_graphics_release(boolean)
+androidx.core.view.ViewCompat$Api21Impl: void callCompatInsetAnimationCallback(android.view.WindowInsets,android.view.View)
+androidx.compose.ui.text.android.StaticLayoutFactoryImpl: android.text.StaticLayout create(androidx.compose.ui.text.android.StaticLayoutParams)
+androidx.emoji2.text.EmojiExclusions$EmojiExclusions_Api34: java.util.Set getExclusions()
+androidx.compose.ui.platform.TextToolbarStatus: androidx.compose.ui.platform.TextToolbarStatus valueOf(java.lang.String)
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.MessageLite buildPartial()
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: com.raysi.launcher.data.proto.PinnedAppProto$Builder clearComponentName()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: int getAlwaysAllowPackagesCount()
+com.google.protobuf.GeneratedMessageLite: boolean isInitialized()
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: void previewSelectRangeGesture(androidx.compose.foundation.text.input.internal.TransformedTextFieldState,android.view.inputmethod.SelectRangeGesture,androidx.compose.foundation.text.input.internal.TextLayoutState)
+androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy: ConstraintProxy$BatteryNotLowProxy()
+androidx.compose.ui.graphics.layer.OutlineVerificationHelper: void setPath(android.graphics.Outline,androidx.compose.ui.graphics.Path)
+com.google.protobuf.GeneratedMessageLite: java.lang.Object invokeOrDie(java.lang.reflect.Method,java.lang.Object,java.lang.Object[])
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.AbstractMessageLite$Builder mergeFrom(com.google.protobuf.MessageLite)
+androidx.compose.runtime.InvalidationResult: androidx.compose.runtime.InvalidationResult[] values()
+androidx.lifecycle.EmptyActivityLifecycleCallbacks: void onActivityStopped(android.app.Activity)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performRemoveSpaceGesture(androidx.compose.foundation.text.input.internal.TransformedTextFieldState,android.view.inputmethod.RemoveSpaceGesture,androidx.compose.foundation.text.input.internal.TextLayoutState,androidx.compose.ui.platform.ViewConfiguration)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder clearDigestHours()
+androidx.compose.ui.platform.AndroidComposeView: boolean getHasPendingMeasureOrLayout()
+androidx.compose.ui.platform.AndroidComposeView: void setOnViewTreeOwnersAvailable(kotlin.jvm.functions.Function1)
+androidx.activity.EdgeToEdgeApi29: void setUp(androidx.activity.SystemBarStyle,androidx.activity.SystemBarStyle,android.view.Window,android.view.View,boolean,boolean)
+kotlin.LazyThreadSafetyMode: kotlin.LazyThreadSafetyMode valueOf(java.lang.String)
+androidx.core.view.ViewCompat$Api21Impl: void setOnApplyWindowInsetsListener(android.view.View,androidx.core.view.OnApplyWindowInsetsListener)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder setGateDelaySeconds(int)
+com.raysi.launcher.data.proto.ActiveSessionProtoOrBuilder: com.google.protobuf.ByteString getPackageNameBytes()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addAllNeverBlockPackages(java.lang.Iterable)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performDeleteGesture(androidx.compose.foundation.text.input.internal.TransformedTextFieldState,android.view.inputmethod.DeleteGesture,androidx.compose.foundation.text.input.internal.TextLayoutState)
+androidx.work.BackoffPolicy: androidx.work.BackoffPolicy[] values()
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: void onActivityResumed(android.app.Activity)
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: com.raysi.launcher.data.proto.ActiveSessionProto$Builder setExtensionCount(int)
+androidx.core.view.WindowInsetsCompat$BuilderImpl: WindowInsetsCompat$BuilderImpl(androidx.core.view.WindowInsetsCompat)
+androidx.core.view.WindowInsetsCompat$Impl20: androidx.core.graphics.Insets getInsetsIgnoringVisibility(int)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite$Builder createBuilder(com.google.protobuf.GeneratedMessageLite)
+androidx.compose.ui.platform.AndroidComposeViewStartDragAndDropN: boolean startDragAndDrop(android.view.View,androidx.compose.ui.draganddrop.DragAndDropTransferData,androidx.compose.ui.draganddrop.ComposeDragShadowBuilder)
+androidx.compose.ui.text.android.CanvasCompatR: boolean quickReject(android.graphics.Canvas,float,float,float,float)
+androidx.compose.foundation.text.input.internal.LocaleListHelper: void setHintLocales(android.view.inputmethod.EditorInfo,androidx.compose.ui.text.intl.LocaleList)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performJoinOrSplitGesture(androidx.compose.foundation.text.input.internal.TransformedTextFieldState,android.view.inputmethod.JoinOrSplitGesture,androidx.compose.foundation.text.input.internal.TextLayoutState,androidx.compose.ui.platform.ViewConfiguration)
+androidx.compose.runtime.InvalidationResult: androidx.compose.runtime.InvalidationResult valueOf(java.lang.String)
+androidx.compose.ui.node.LayoutNode$UsageByParent: androidx.compose.ui.node.LayoutNode$UsageByParent[] values()
+androidx.compose.ui.platform.AndroidComposeView: long getLastMatrixRecalculationAnimationTime$ui_release()
+androidx.compose.ui.layout.MeasuringIntrinsics$IntrinsicMinMax: androidx.compose.ui.layout.MeasuringIntrinsics$IntrinsicMinMax valueOf(java.lang.String)
+com.raysi.launcher.data.proto.ActiveSessionProtoOrBuilder: java.lang.String getPackageName()
+com.raysi.launcher.data.proto.PinnedAppProto: java.lang.String getComponentName()
+com.raysi.launcher.data.proto.ActiveSessionProto: com.google.protobuf.Parser parser()
+androidx.core.view.WindowInsetsCompat$Impl20: void setOverriddenInsets(androidx.core.graphics.Insets[])
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.platform.WindowInfo getWindowInfo()
+androidx.compose.ui.window.PopupLayout: java.lang.String getTestTag()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite parseFrom(com.google.protobuf.GeneratedMessageLite,com.google.protobuf.CodedInputStream)
+com.raysi.launcher.data.proto.LauncherSettingsProto: java.util.List getPinnedAppsOrBuilderList()
+androidx.core.view.WindowInsetsCompat$Impl28: androidx.core.view.WindowInsetsCompat consumeDisplayCutout()
+androidx.compose.ui.platform.AndroidViewsHandler: java.util.HashMap getLayoutNodeToHolder()
+androidx.compose.ui.platform.AbstractComposeView: void setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy)
+androidx.compose.foundation.gestures.Orientation: androidx.compose.foundation.gestures.Orientation valueOf(java.lang.String)
+androidx.core.view.WindowInsetsCompat$Impl30: androidx.core.graphics.Insets getInsetsIgnoringVisibility(int)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite$GeneratedExtension newSingularGeneratedExtension(com.google.protobuf.MessageLite,java.lang.Object,com.google.protobuf.MessageLite,com.google.protobuf.Internal$EnumLiteMap,int,com.google.protobuf.WireFormat$FieldType,java.lang.Class)
+androidx.lifecycle.ProcessLifecycleOwner$attach$1$onActivityPreCreated$1: ProcessLifecycleOwner$attach$1$onActivityPreCreated$1(androidx.lifecycle.ProcessLifecycleOwner)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.Internal$LongList mutableCopy(com.google.protobuf.Internal$LongList)
+androidx.core.app.RemoteActionCompat: RemoteActionCompat()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder clearScreenTimeIncludesLauncher()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.semantics.SemanticsOwner getSemanticsOwner()
+androidx.compose.foundation.FocusableKt$FocusableInNonTouchModeElement$1: FocusableKt$FocusableInNonTouchModeElement$1()
+androidx.core.view.WindowInsetsCompat$Impl20: androidx.core.graphics.Insets getInsets(int,boolean)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addAllActiveSessions(java.lang.Iterable)
+com.raysi.launcher.data.proto.ActiveSessionProto: void setEndWallClockMs(long)
+kotlinx.coroutines.CoroutineStart: kotlinx.coroutines.CoroutineStart valueOf(java.lang.String)
+androidx.compose.ui.graphics.Path$Direction: androidx.compose.ui.graphics.Path$Direction[] values()
+androidx.compose.animation.core.RepeatMode: androidx.compose.animation.core.RepeatMode valueOf(java.lang.String)
+androidx.compose.ui.text.android.CanvasCompatO: boolean clipOutRect(android.graphics.Canvas,int,int,int,int)
+kotlinx.coroutines.selects.TrySelectDetailedResult: kotlinx.coroutines.selects.TrySelectDetailedResult[] values()
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: int extensionsSerializedSizeAsMessageSet()
+com.google.protobuf.FieldType$Collection: com.google.protobuf.FieldType$Collection valueOf(java.lang.String)
+com.google.protobuf.GeneratedMessageLite: boolean equals(java.lang.Object)
+androidx.compose.ui.window.PopupLayout: boolean getCanCalculatePosition()
+androidx.core.view.WindowInsetsCompat$Impl: boolean isConsumed()
+androidx.compose.ui.text.android.CanvasCompatO: boolean clipOutPath(android.graphics.Canvas,android.graphics.Path)
+androidx.compose.ui.autofill.AutofillApi23Helper: int addChildCount(android.view.ViewStructure,int)
+androidx.graphics.path.PathIteratorPreApi34Impl: long createInternalPathIterator(android.graphics.Path,int,float)
+androidx.compose.foundation.text.input.internal.undo.TextEditType: androidx.compose.foundation.text.input.internal.undo.TextEditType valueOf(java.lang.String)
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.MessageLite$Builder mergeFrom(com.google.protobuf.ByteString,com.google.protobuf.ExtensionRegistryLite)
+androidx.core.graphics.drawable.IconCompatParcelizer: androidx.core.graphics.drawable.IconCompat read(androidx.versionedparcelable.VersionedParcel)
+androidx.compose.material.ripple.RippleHostView: void setRippleState$lambda$2(androidx.compose.material.ripple.RippleHostView)
+androidx.compose.ui.text.android.AndroidLayoutApi34: int[] getRangeForRect$ui_text_release(androidx.compose.ui.text.android.TextLayout,android.graphics.RectF,int,kotlin.jvm.functions.Function2)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performJoinOrSplitGesture(androidx.compose.foundation.text.LegacyTextFieldState,android.view.inputmethod.JoinOrSplitGesture,androidx.compose.ui.text.AnnotatedString,androidx.compose.ui.platform.ViewConfiguration,kotlin.jvm.functions.Function1)
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: int getDigestHoursCount()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: java.util.List getAlwaysAllowPackagesList()
+androidx.compose.ui.platform.AndroidComposeView: void setShowLayoutBounds(boolean)
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: com.raysi.launcher.data.proto.ActiveSessionProto$Builder setPackageName(java.lang.String)
+androidx.compose.ui.node.NodeMeasuringIntrinsics$IntrinsicMinMax: androidx.compose.ui.node.NodeMeasuringIntrinsics$IntrinsicMinMax valueOf(java.lang.String)
+androidx.compose.ui.platform.coreshims.ContentCaptureSessionCompat$Api34Impl: void notifyViewsAppeared(android.view.contentcapture.ContentCaptureSession,java.util.List)
+androidx.lifecycle.LifecycleDispatcher$DispatcherActivityCallback: void onActivityCreated(android.app.Activity,android.os.Bundle)
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.AbstractMessageLite$Builder mergeFrom(com.google.protobuf.CodedInputStream)
+androidx.compose.foundation.text.Handle: androidx.compose.foundation.text.Handle[] values()
+androidx.lifecycle.EmptyActivityLifecycleCallbacks: void onActivityResumed(android.app.Activity)
+androidx.compose.foundation.MutatePriority: androidx.compose.foundation.MutatePriority valueOf(java.lang.String)
+androidx.compose.animation.core.MutatePriority: androidx.compose.animation.core.MutatePriority valueOf(java.lang.String)
+com.google.protobuf.GeneratedMessageLite: boolean isInitialized(com.google.protobuf.GeneratedMessageLite,boolean)
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto parseDelimitedFrom(java.io.InputStream)
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.MessageLite$Builder mergeFrom(byte[],com.google.protobuf.ExtensionRegistryLite)
+androidx.compose.ui.platform.AndroidComposeView: void set_viewTreeOwners(androidx.compose.ui.platform.AndroidComposeView$ViewTreeOwners)
+androidx.core.view.WindowInsetsCompat$Impl28: WindowInsetsCompat$Impl28(androidx.core.view.WindowInsetsCompat,androidx.core.view.WindowInsetsCompat$Impl28)
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: com.raysi.launcher.data.proto.PinnedAppProto$Builder setDisplayOrder(int)
+androidx.compose.ui.text.android.CanvasCompatO: boolean clipOutRect(android.graphics.Canvas,android.graphics.RectF)
+androidx.compose.foundation.text.input.internal.Api34LegacyPerformHandwritingGestureImpl: void performHandwritingGesture(androidx.compose.foundation.text.LegacyTextFieldState,androidx.compose.foundation.text.selection.TextFieldSelectionManager,android.view.inputmethod.HandwritingGesture,androidx.compose.ui.platform.ViewConfiguration,java.util.concurrent.Executor,java.util.function.IntConsumer,kotlin.jvm.functions.Function1)
+androidx.room.Index$Order: androidx.room.Index$Order[] values()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void clearActiveSessions()
+androidx.compose.ui.text.android.BoringLayoutFactory33: android.text.BoringLayout create(java.lang.CharSequence,android.text.TextPaint,int,android.text.Layout$Alignment,float,float,android.text.BoringLayout$Metrics,boolean,boolean,android.text.TextUtils$TruncateAt,int)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: java.lang.String getNeverBlockPackages(int)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite parseFrom(com.google.protobuf.GeneratedMessageLite,java.io.InputStream,com.google.protobuf.ExtensionRegistryLite)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int fallback(androidx.compose.foundation.text.input.internal.TransformedTextFieldState,android.view.inputmethod.HandwritingGesture)
+com.google.protobuf.GeneratedMessageLite: boolean isMutable()
+androidx.compose.ui.autofill.AutofillApi26Helper: boolean isDate(android.view.autofill.AutofillValue)
+androidx.work.DirectExecutor: androidx.work.DirectExecutor[] values()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder clearActiveSessions()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite getDefaultInstance(java.lang.Class)
+androidx.lifecycle.ProcessLifecycleOwner$attach$1$onActivityPreCreated$1: void onActivityPostStarted(android.app.Activity)
+androidx.core.view.WindowInsetsCompat$Impl21: boolean isConsumed()
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto parseDelimitedFrom(java.io.InputStream,com.google.protobuf.ExtensionRegistryLite)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performDeleteGesture(androidx.compose.foundation.text.LegacyTextFieldState,android.view.inputmethod.DeleteGesture,androidx.compose.ui.text.AnnotatedString,kotlin.jvm.functions.Function1)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void clearSessionDurationMinutes()
+com.google.protobuf.WireFormat$Utf8Validation: com.google.protobuf.WireFormat$Utf8Validation[] values()
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto parseFrom(com.google.protobuf.ByteString,com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.service.notification.NotificationDigestWorker: NotificationDigestWorker(android.content.Context,androidx.work.WorkerParameters)
+androidx.core.app.RemoteActionCompatParcelizer: RemoteActionCompatParcelizer()
+com.raysi.launcher.data.proto.LauncherSettingsProto: int getActiveSessionsCount()
+androidx.lifecycle.EmptyActivityLifecycleCallbacks: void onActivityCreated(android.app.Activity,android.os.Bundle)
+kotlin.DeprecationLevel: kotlin.DeprecationLevel[] values()
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.GeneratedMessageLite$Builder clone()
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.MessageLite$Builder clone()
+androidx.compose.ui.text.android.BoringLayoutFactory33: android.text.BoringLayout$Metrics isBoring(java.lang.CharSequence,android.text.TextPaint,android.text.TextDirectionHeuristic)
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.AbstractMessageLite$Builder mergeFrom(com.google.protobuf.ByteString)
+com.google.protobuf.AbstractMessageLite$Builder: boolean mergeDelimitedFrom(java.io.InputStream)
+androidx.work.OverwritingInputMerger: OverwritingInputMerger()
+androidx.core.view.WindowInsetsCompat$Impl29: void setStableInsets(androidx.core.graphics.Insets)
+androidx.lifecycle.ProcessLifecycleOwner$attach$1: void onActivityCreated(android.app.Activity,android.os.Bundle)
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.node.LayoutNodeDrawScope getSharedDrawScope()
+androidx.core.view.WindowInsetsCompat$BuilderImpl20: WindowInsetsCompat$BuilderImpl20()
+androidx.profileinstaller.ProfileInstallerInitializer: ProfileInstallerInitializer()
+kotlin.time.DurationUnit: kotlin.time.DurationUnit[] values()
+androidx.core.view.ViewCompat$Api20Impl: void requestApplyInsets(android.view.View)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite parseDelimitedFrom(com.google.protobuf.GeneratedMessageLite,java.io.InputStream,com.google.protobuf.ExtensionRegistryLite)
+com.google.protobuf.GeneratedMessageLite: void mergeVarintField(int,int)
+com.raysi.launcher.data.proto.PinnedAppProtoOrBuilder: com.google.protobuf.ByteString getComponentNameBytes()
+androidx.compose.ui.contentcapture.AndroidContentCaptureManager$ViewTranslationHelperMethods: void onVirtualViewTranslationResponses(androidx.compose.ui.contentcapture.AndroidContentCaptureManager,android.util.LongSparseArray)
+androidx.core.view.WindowInsetsCompat$Impl: void copyWindowDataInto(androidx.core.view.WindowInsetsCompat)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addActiveSessions(int,com.raysi.launcher.data.proto.ActiveSessionProto)
+androidx.compose.ui.text.android.StaticLayoutFactory33: boolean isFallbackLineSpacingEnabled(android.text.StaticLayout)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addActiveSessions(int,com.raysi.launcher.data.proto.ActiveSessionProto$Builder)
+com.google.protobuf.GeneratedMessageLite$Builder: boolean isInitialized()
+androidx.compose.ui.text.android.CanvasCompatO: boolean clipOutRect(android.graphics.Canvas,android.graphics.Rect)
+com.google.protobuf.GeneratedMessageLite: boolean hashCodeIsNotMemoized()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder setDistractingPackages(int,java.lang.String)
+androidx.core.view.WindowInsetsCompat$BuilderImpl: void setInsets(int,androidx.core.graphics.Insets)
+androidx.compose.material3.tokens.TypographyKeyTokens: androidx.compose.material3.tokens.TypographyKeyTokens[] values()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.Internal$ProtobufList emptyProtobufList()
+com.raysi.launcher.ui.settings.AppPickerType: com.raysi.launcher.ui.settings.AppPickerType valueOf(java.lang.String)
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto parseFrom(byte[])
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: int getGateDelaySeconds()
+androidx.compose.ui.platform.AbstractComposeView: void setParentContext(androidx.compose.runtime.CompositionContext)
+androidx.compose.foundation.text.input.internal.Api34StartStylusHandwriting: void startStylusHandwriting(android.view.inputmethod.InputMethodManager,android.view.View)
+com.google.protobuf.GeneratedMessageLite: void makeImmutable()
+androidx.compose.ui.autofill.AutofillApi26Helper: android.view.autofill.AutofillId getAutofillId(android.view.ViewStructure)
+androidx.compose.ui.autofill.AutofillApi23Helper: void setDimens(android.view.ViewStructure,int,int,int,int,int,int)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addAllDigestHours(java.lang.Iterable)
+com.raysi.launcher.data.proto.PinnedAppProto: com.google.protobuf.ByteString getCustomLabelBytes()
+kotlin.DeprecationLevel: kotlin.DeprecationLevel valueOf(java.lang.String)
+com.raysi.launcher.data.proto.ActiveSessionProtoOrBuilder: long getEndWallClockMs()
+androidx.compose.ui.platform.ViewLayer: float getCameraDistancePx()
+androidx.core.view.WindowInsetsCompat$BuilderImpl29: void setSystemWindowInsets(androidx.core.graphics.Insets)
+androidx.compose.ui.platform.coreshims.ViewCompatShims$Api29Impl: android.view.contentcapture.ContentCaptureSession getContentCaptureSession(android.view.View)
+androidx.compose.foundation.text.TextContextMenuItems: androidx.compose.foundation.text.TextContextMenuItems[] values()
+com.google.protobuf.GeneratedMessageLite: java.lang.Object newMessageInfo(com.google.protobuf.MessageLite,java.lang.String,java.lang.Object[])
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: java.util.List getAlwaysAllowPackagesList()
+androidx.compose.ui.platform.AndroidComposeView: void setLastMatrixRecalculationAnimationTime$ui_release(long)
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: long getEndElapsedRealtime()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: int getSessionDurationMinutes()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addDigestHours(int)
+androidx.compose.ui.platform.ViewLayerVerificationHelper31: void setRenderEffect(android.view.View,androidx.compose.ui.graphics.RenderEffect)
+kotlinx.coroutines.CoroutineStart: kotlinx.coroutines.CoroutineStart[] values()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void setNeverBlockPackages(int,java.lang.String)
+androidx.core.view.WindowInsetsCompat$Impl30: WindowInsetsCompat$Impl30(androidx.core.view.WindowInsetsCompat,android.view.WindowInsets)
+com.raysi.launcher.data.proto.LauncherSettingsProto: int getDigestHoursCount()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void ensureDistractingPackagesIsMutable()
+androidx.core.view.WindowInsetsCompat$Impl20: androidx.core.graphics.Insets getInsetsForType(int,boolean)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder clearAlwaysAllowPackages()
+androidx.tracing.TraceApi29Impl: boolean isEnabled()
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: int getDistractingPackagesCount()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void setActiveSessions(int,com.raysi.launcher.data.proto.ActiveSessionProto)
+androidx.compose.ui.node.LayoutNode$LayoutState: androidx.compose.ui.node.LayoutNode$LayoutState valueOf(java.lang.String)
+androidx.compose.ui.platform.ComposeView: void setContent(kotlin.jvm.functions.Function2)
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: boolean parseUnknownField(com.google.protobuf.MessageLite,com.google.protobuf.CodedInputStream,com.google.protobuf.ExtensionRegistryLite,int)
+androidx.compose.ui.platform.ViewLayer: androidx.compose.ui.graphics.Path getManualClipPath()
+androidx.compose.ui.platform.RenderNodeVerificationHelper28: int getAmbientShadowColor(android.view.RenderNode)
+com.raysi.launcher.data.proto.PinnedAppProto: java.lang.String getCustomLabel()
+androidx.core.view.WindowInsetsCompat$Impl20: void setRootWindowInsets(androidx.core.view.WindowInsetsCompat)
+androidx.core.view.ViewCompat$Api28Impl: boolean isScreenReaderFocusable(android.view.View)
+androidx.compose.ui.platform.coreshims.ContentCaptureSessionCompat$Api29Impl: void notifyViewAppeared(android.view.contentcapture.ContentCaptureSession,android.view.ViewStructure)
+androidx.core.view.WindowInsetsCompat$BuilderImpl: void setTappableElementInsets(androidx.core.graphics.Insets)
+com.raysi.launcher.data.proto.PinnedAppProto: void setComponentName(java.lang.String)
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.GeneratedMessageLite buildPartial()
+android.support.v4.app.RemoteActionCompatParcelizer: androidx.core.app.RemoteActionCompat read(androidx.versionedparcelable.VersionedParcel)
+com.raysi.launcher.data.search.RustSearchEngine: void nativeDestroy(long)
+com.raysi.launcher.data.proto.PinnedAppProtoOrBuilder: com.google.protobuf.ByteString getCustomLabelBytes()
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: void onActivityPreStopped(android.app.Activity)
+com.google.protobuf.AbstractMessageLite$Builder: com.google.protobuf.AbstractMessageLite$Builder mergeFrom(com.google.protobuf.ByteString,com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.data.proto.ActiveSessionProto: void setStartElapsedRealtime(long)
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.text.input.TextInputService getTextInputService()
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int toTextGranularity-NUwxegE(int)
+androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompat$Api29Impl: void addPageActions(androidx.core.view.accessibility.AccessibilityNodeInfoCompat,androidx.compose.ui.semantics.SemanticsNode)
+androidx.compose.ui.platform.AndroidViewConfigurationApi34: float getScaledHandwritingSlop(android.view.ViewConfiguration)
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto parseFrom(java.io.InputStream,com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: java.util.List getDigestHoursList()
+com.raysi.launcher.data.proto.LauncherSettingsProto: int getDigestHours(int)
+androidx.core.graphics.drawable.IconCompat: IconCompat()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite parseFrom(com.google.protobuf.GeneratedMessageLite,java.nio.ByteBuffer)
+com.raysi.launcher.data.proto.LauncherSettingsProto: com.raysi.launcher.data.proto.LauncherSettingsProto getDefaultInstance()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite getDefaultInstanceForType()
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto parseFrom(com.google.protobuf.ByteString)
+com.raysi.launcher.data.proto.PinnedAppProto: void setCustomLabelBytes(com.google.protobuf.ByteString)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder setAlwaysAllowPackages(int,java.lang.String)
+com.raysi.launcher.data.proto.LauncherSettingsProto: java.lang.String getDistractingPackages(int)
+androidx.compose.ui.platform.AndroidComposeViewTranslationCallbackS: void setViewTranslationCallback(android.view.View)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performRemoveSpaceGesture(androidx.compose.foundation.text.LegacyTextFieldState,android.view.inputmethod.RemoveSpaceGesture,androidx.compose.ui.text.AnnotatedString,androidx.compose.ui.platform.ViewConfiguration,kotlin.jvm.functions.Function1)
+androidx.concurrent.futures.DirectExecutor: androidx.concurrent.futures.DirectExecutor[] values()
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: java.lang.String getAlwaysAllowPackages(int)
+kotlinx.coroutines.scheduling.CoroutineScheduler$WorkerState: kotlinx.coroutines.scheduling.CoroutineScheduler$WorkerState valueOf(java.lang.String)
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.platform.AndroidClipboardManager getClipboardManager()
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performDeleteRangeGesture(androidx.compose.foundation.text.input.internal.TransformedTextFieldState,android.view.inputmethod.DeleteRangeGesture,androidx.compose.foundation.text.input.internal.TextLayoutState)
+androidx.core.view.WindowInsetsCompat$BuilderImpl29: WindowInsetsCompat$BuilderImpl29()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite$Builder toBuilder()
+androidx.compose.ui.platform.AbstractComposeView: void getDisposeViewCompositionStrategy$annotations()
+androidx.sqlite.db.framework.FrameworkSQLiteOpenHelper$OpenHelper$CallbackName: androidx.sqlite.db.framework.FrameworkSQLiteOpenHelper$OpenHelper$CallbackName valueOf(java.lang.String)
+androidx.core.view.WindowInsetsCompat$Impl28: boolean equals(java.lang.Object)
+androidx.compose.ui.autofill.AutofillApi26Helper: void setAutofillType(android.view.ViewStructure,int)
+androidx.compose.ui.text.android.CanvasCompatQ: void drawTextRun(android.graphics.Canvas,android.graphics.text.MeasuredText,int,int,int,int,float,float,boolean,android.graphics.Paint)
+androidx.compose.ui.platform.ViewLayer: androidx.compose.ui.platform.DrawChildContainer getContainer()
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: void performDeletion-Sb-Bc2M(androidx.compose.foundation.text.input.internal.TransformedTextFieldState,long,boolean)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.google.protobuf.ByteString getNeverBlockPackagesBytes(int)
+androidx.compose.ui.platform.actionmodecallback.MenuItemOption: androidx.compose.ui.platform.actionmodecallback.MenuItemOption valueOf(java.lang.String)
+androidx.core.app.CoreComponentFactory: CoreComponentFactory()
+androidx.compose.ui.platform.coreshims.ContentCaptureSessionCompat$Api29Impl: android.view.ViewStructure newVirtualViewStructure(android.view.contentcapture.ContentCaptureSession,android.view.autofill.AutofillId,long)
+com.raysi.launcher.data.proto.PinnedAppProto: void setComponentNameBytes(com.google.protobuf.ByteString)
+androidx.compose.foundation.text.input.internal.undo.TextFieldEditUndoBehavior: androidx.compose.foundation.text.input.internal.undo.TextFieldEditUndoBehavior[] values()
+com.raysi.launcher.data.search.RustSearchEngine: RustSearchEngine(java.lang.String)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addAllDistractingPackages(java.lang.Iterable)
+androidx.compose.ui.node.TraversableNode$Companion$TraverseDescendantsAction: androidx.compose.ui.node.TraversableNode$Companion$TraverseDescendantsAction[] values()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite newMutableInstance()
+androidx.compose.ui.platform.AndroidComposeView: void setDensity(androidx.compose.ui.unit.Density)
+android.support.v4.graphics.drawable.IconCompatParcelizer: void write(androidx.core.graphics.drawable.IconCompat,androidx.versionedparcelable.VersionedParcel)
+androidx.work.Worker: Worker(android.content.Context,androidx.work.WorkerParameters)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: int getDigestHours(int)
+androidx.compose.ui.platform.DrawChildContainer: int getChildCount()
+com.raysi.launcher.data.proto.LauncherSettingsProto: java.util.List getActiveSessionsList()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: int getNeverBlockPackagesCount()
+com.raysi.launcher.data.search.RustSearchEngine: void close()
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.AbstractMessageLite$Builder mergeFrom(byte[],int,int)
+com.raysi.launcher.data.proto.ActiveSessionProtoOrBuilder: com.google.protobuf.MessageLite getDefaultInstanceForType()
+androidx.core.view.WindowInsetsCompat$Impl: androidx.core.view.DisplayCutoutCompat getDisplayCutout()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.GeneratedMessageLite parseFrom(com.google.protobuf.GeneratedMessageLite,com.google.protobuf.CodedInputStream,com.google.protobuf.ExtensionRegistryLite)
+androidx.compose.ui.focus.FocusStateImpl: androidx.compose.ui.focus.FocusStateImpl valueOf(java.lang.String)
+androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompat$Api24Impl: void addSetProgressAction(androidx.core.view.accessibility.AccessibilityNodeInfoCompat,androidx.compose.ui.semantics.SemanticsNode)
+com.google.protobuf.GeneratedMessageLite: int hashCode()
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder clearPinnedApps()
+com.raysi.launcher.data.search.RustSearchEngine: long nativeCreate()
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: java.lang.String getDistractingPackages(int)
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: int performInsertGesture(androidx.compose.foundation.text.LegacyTextFieldState,android.view.inputmethod.InsertGesture,androidx.compose.ui.platform.ViewConfiguration,kotlin.jvm.functions.Function1)
+androidx.lifecycle.ReportFragment$LifecycleCallbacks: void onActivityDestroyed(android.app.Activity)
+com.raysi.launcher.data.proto.ActiveSessionProto: void setExtensionCount(int)
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.input.InputModeManager getInputModeManager()
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: com.raysi.launcher.data.proto.ActiveSessionProto$Builder setStartElapsedRealtime(long)
+com.raysi.launcher.data.proto.LauncherSettingsProto: java.lang.Object dynamicMethod(com.google.protobuf.GeneratedMessageLite$MethodToInvoke,java.lang.Object,java.lang.Object)
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.platform.AndroidViewsHandler getAndroidViewsHandler$ui_release()
+androidx.compose.ui.text.android.StaticLayoutFactory23: android.text.StaticLayout create(androidx.compose.ui.text.android.StaticLayoutParams)
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.Internal$BooleanList mutableCopy(com.google.protobuf.Internal$BooleanList)
+androidx.compose.ui.autofill.AutofillCallback: void unregister(androidx.compose.ui.autofill.AndroidAutofill)
+androidx.compose.ui.platform.ViewLayer: void setCameraDistancePx(float)
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.GeneratedMessageLite build()
+androidx.compose.ui.text.font.TypefaceHelperMethodsApi28: android.graphics.Typeface create(android.graphics.Typeface,int,boolean)
+androidx.compose.foundation.layout.Direction: androidx.compose.foundation.layout.Direction valueOf(java.lang.String)
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto parseFrom(java.io.InputStream)
+androidx.compose.ui.platform.coreshims.ContentCaptureSessionCompat$Api23Impl: android.os.Bundle getExtras(android.view.ViewStructure)
+androidx.core.view.WindowInsetsCompat$Impl28: androidx.core.view.DisplayCutoutCompat getDisplayCutout()
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto parseFrom(java.io.InputStream)
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: com.raysi.launcher.data.proto.ActiveSessionProto$Builder setEndElapsedRealtime(long)
+com.raysi.launcher.data.proto.LauncherSettingsProto: int getSessionDurationMinutes()
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: java.lang.String getPackageName()
+androidx.work.impl.background.systemalarm.ConstraintProxy$NetworkStateProxy: ConstraintProxy$NetworkStateProxy()
+androidx.compose.ui.graphics.AndroidGraphicsContext$UniqueDrawingIdApi29: long getUniqueDrawingId(android.view.View)
+androidx.compose.ui.node.TraversableNode$Companion$TraverseDescendantsAction: androidx.compose.ui.node.TraversableNode$Companion$TraverseDescendantsAction valueOf(java.lang.String)
+androidx.compose.ui.text.android.CanvasCompatQ: void drawDoubleRoundRect(android.graphics.Canvas,android.graphics.RectF,float,float,android.graphics.RectF,float,float,android.graphics.Paint)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void ensureNeverBlockPackagesIsMutable()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addDistractingPackages(java.lang.String)
+com.raysi.launcher.data.proto.ActiveSessionProto: com.raysi.launcher.data.proto.ActiveSessionProto parseFrom(byte[],com.google.protobuf.ExtensionRegistryLite)
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: int getNeverBlockPackagesCount()
+com.google.protobuf.GeneratedMessageLite: void clearMemoizedSerializedSize()
+com.raysi.launcher.data.proto.LauncherSettingsProto: void setPinnedApps(int,com.raysi.launcher.data.proto.PinnedAppProto)
+androidx.compose.ui.platform.AndroidComposeView: kotlin.jvm.functions.Function1 getConfigurationChangeObserver()
+androidx.compose.ui.autofill.AutofillType: androidx.compose.ui.autofill.AutofillType[] values()
+androidx.compose.ui.autofill.AutofillApi26Helper: void setAutofillHints(android.view.ViewStructure,java.lang.String[])
+androidx.core.graphics.drawable.IconCompatParcelizer: IconCompatParcelizer()
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: PinnedAppProto$Builder()
+androidx.compose.foundation.text.HandleState: androidx.compose.foundation.text.HandleState[] values()
+com.raysi.launcher.data.proto.PinnedAppProtoOrBuilder: int getDisplayOrder()
+com.google.protobuf.GeneratedMessageLite: com.google.protobuf.Internal$DoubleList mutableCopy(com.google.protobuf.Internal$DoubleList)
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: com.raysi.launcher.data.proto.PinnedAppProto$Builder setComponentName(java.lang.String)
+androidx.compose.ui.text.style.ResolvedTextDirection: androidx.compose.ui.text.style.ResolvedTextDirection valueOf(java.lang.String)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder addPinnedApps(com.raysi.launcher.data.proto.PinnedAppProto)
+androidx.core.view.WindowInsetsCompat$Impl20: boolean isRound()
+androidx.compose.ui.platform.AndroidComposeViewTranslationCallbackS: void clearViewTranslationCallback(android.view.View)
+com.raysi.launcher.data.proto.LauncherSettingsProto$Builder: com.raysi.launcher.data.proto.LauncherSettingsProto$Builder removePinnedApps(int)
+com.raysi.launcher.data.proto.PinnedAppProto$Builder: com.raysi.launcher.data.proto.PinnedAppProto$Builder setCustomLabel(java.lang.String)
+com.google.protobuf.GeneratedMessageLite: void setMemoizedHashCode(int)
+com.raysi.launcher.data.proto.ActiveSessionProto$Builder: com.raysi.launcher.data.proto.ActiveSessionProto$Builder setPackageNameBytes(com.google.protobuf.ByteString)
+com.raysi.launcher.data.proto.ActiveSessionProto: ActiveSessionProto()
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: void eagerlyMergeMessageSetExtension(com.google.protobuf.CodedInputStream,com.google.protobuf.GeneratedMessageLite$GeneratedExtension,com.google.protobuf.ExtensionRegistryLite,int)
+androidx.compose.ui.text.platform.extensions.LocaleListHelperMethods: java.lang.Object localeSpan(androidx.compose.ui.text.intl.LocaleList)
+androidx.core.view.WindowInsetsCompat$Impl28: int hashCode()
+androidx.core.view.WindowInsetsCompat$BuilderImpl29: WindowInsetsCompat$BuilderImpl29(androidx.core.view.WindowInsetsCompat)
+androidx.core.view.WindowInsetsCompat$Impl20: WindowInsetsCompat$Impl20(androidx.core.view.WindowInsetsCompat,android.view.WindowInsets)
+androidx.compose.ui.platform.AbstractComposeView: void setPreviousAttachedWindowToken(android.os.IBinder)
+androidx.compose.ui.text.input.TextInputServiceAndroid$TextInputCommand: androidx.compose.ui.text.input.TextInputServiceAndroid$TextInputCommand[] values()
+com.raysi.launcher.data.proto.PinnedAppProto: com.raysi.launcher.data.proto.PinnedAppProto getDefaultInstance()
+androidx.compose.ui.platform.ViewLayerVerificationHelper28: void setOutlineSpotShadowColor(android.view.View,int)
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: void verifyExtensionContainingType(com.google.protobuf.GeneratedMessageLite$GeneratedExtension)
+androidx.compose.animation.core.AnimationEndReason: androidx.compose.animation.core.AnimationEndReason[] values()
+com.google.protobuf.GeneratedMessageLite$Builder: com.google.protobuf.GeneratedMessageLite getDefaultInstanceForType()
+androidx.compose.foundation.text.input.internal.HandwritingGestureApi34: void previewDeleteGesture(androidx.compose.foundation.text.LegacyTextFieldState,android.view.inputmethod.DeleteGesture,androidx.compose.foundation.text.selection.TextFieldSelectionManager)
+androidx.work.impl.foreground.SystemForegroundService: SystemForegroundService()
+androidx.compose.ui.platform.AndroidComposeView: androidx.compose.ui.platform.AccessibilityManager getAccessibilityManager()
+androidx.compose.ui.input.pointer.PointerEventPass: androidx.compose.ui.input.pointer.PointerEventPass[] values()
+androidx.compose.foundation.text.input.internal.CursorAnchorInfoApi33Helper: android.view.inputmethod.CursorAnchorInfo$Builder setEditorBoundsInfo(android.view.inputmethod.CursorAnchorInfo$Builder,androidx.compose.ui.geometry.Rect)
+androidx.core.view.WindowInsetsCompat$BuilderImpl: void setSystemWindowInsets(androidx.core.graphics.Insets)
+androidx.core.view.WindowInsetsCompat$BuilderImpl29: void setStableInsets(androidx.core.graphics.Insets)
+com.raysi.launcher.data.proto.LauncherSettingsProto: void addNeverBlockPackages(java.lang.String)
+com.raysi.launcher.data.proto.LauncherSettingsProtoOrBuilder: java.util.List getPinnedAppsList()
+com.google.protobuf.GeneratedMessageLite$ExtendableMessage: java.lang.Object getExtension(com.google.protobuf.ExtensionLite)

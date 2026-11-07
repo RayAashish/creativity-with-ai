@@ -16,10 +16,12 @@ import {
   Sigma,
   GitBranch,
   ListCheck,
-  Trash2
+  Trash2,
+  FolderTree
 } from 'lucide-react';
 import { InputMode } from '../types';
 import { POPULAR_GITHUB_LINKS } from '../utils/githubUrlHelper';
+import { GitHubExplorer } from './GitHubExplorer';
 
 interface InputPanelProps {
   mode: InputMode;
@@ -30,6 +32,7 @@ interface InputPanelProps {
   isFetchingUrl: boolean;
   fileName: string;
   onFileUpload: (file: File) => void;
+  onSelectNote: (content: string, fileName: string, title: string, sourceUrl?: string) => void;
 }
 
 export const InputPanel: React.FC<InputPanelProps> = ({
@@ -40,7 +43,8 @@ export const InputPanel: React.FC<InputPanelProps> = ({
   onUrlFetch,
   isFetchingUrl,
   fileName,
-  onFileUpload
+  onFileUpload,
+  onSelectNote
 }) => {
   const [urlInput, setUrlInput] = useState('');
   const [urlError, setUrlError] = useState<string | null>(null);
@@ -142,6 +146,19 @@ export const InputPanel: React.FC<InputPanelProps> = ({
         </button>
 
         <button
+          onClick={() => onModeChange('github')}
+          className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-xl transition shrink-0 ${
+            mode === 'github'
+              ? 'bg-[var(--accent)] text-[var(--accent-contrast)] shadow-sm font-semibold'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)]'
+          }`}
+          title="Browse GitHub Profile, Repositories & Folders"
+        >
+          <FolderTree className="w-3.5 h-3.5 text-sky-400" />
+          <span>GitHub Explorer</span>
+        </button>
+
+        <button
           onClick={() => onModeChange('url')}
           className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-xl transition shrink-0 ${
             mode === 'url'
@@ -150,7 +167,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
           }`}
         >
           <Link2 className="w-3.5 h-3.5" />
-          <span>GitHub / URL</span>
+          <span>URL</span>
         </button>
 
         <button
@@ -162,9 +179,16 @@ export const InputPanel: React.FC<InputPanelProps> = ({
           }`}
         >
           <Upload className="w-3.5 h-3.5" />
-          <span>Upload File</span>
+          <span>Upload</span>
         </button>
       </div>
+
+      {/* Tab: GitHub Explorer Mode */}
+      {mode === 'github' && (
+        <div className="flex-1 min-h-0 flex flex-col">
+          <GitHubExplorer onSelectNote={onSelectNote} activeFileName={fileName} />
+        </div>
+      )}
 
       {/* Tab 1: Upload File Mode */}
       {mode === 'upload' && (

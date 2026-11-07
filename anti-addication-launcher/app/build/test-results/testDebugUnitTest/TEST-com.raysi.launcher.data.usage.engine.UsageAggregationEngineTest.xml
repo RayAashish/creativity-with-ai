@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.raysi.launcher.data.usage.engine.UsageAggregationEngineTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-07T16:38:42.414Z" hostname="Aashishs-MacBook-Air.local" time="0.007">
+  <properties/>
+  <testcase name="missingPauseEvents_closesOnNextPackageResume" classname="com.raysi.launcher.data.usage.engine.UsageAggregationEngineTest" time="0.006"/>
+  <testcase name="totalScreenTime_includesLauncher_perAppExcludesLauncher" classname="com.raysi.launcher.data.usage.engine.UsageAggregationEngineTest" time="0.0"/>
+  <testcase name="missingPauseEvents_closesOnScreenNonInteractive" classname="com.raysi.launcher.data.usage.engine.UsageAggregationEngineTest" time="0.0"/>
+  <testcase name="sessionOpenAtStartOfDay_midnightRollover_computesTodayPortion" classname="com.raysi.launcher.data.usage.engine.UsageAggregationEngineTest" time="0.0"/>
+  <testcase name="unlocksCount_tracksKeyguardHidden" classname="com.raysi.launcher.data.usage.engine.UsageAggregationEngineTest" time="0.0"/>
+  <testcase name="pairingByPackageAndClass_computesExactDuration" classname="com.raysi.launcher.data.usage.engine.UsageAggregationEngineTest" time="0.0"/>
+  <testcase name="activityToActivityTransition_insideSamePackage_doesNotDoubleCount" classname="com.raysi.launcher.data.usage.engine.UsageAggregationEngineTest" time="0.0"/>
+  <testcase name="openSessionStillRunningNow_countedUpToNow" classname="com.raysi.launcher.data.usage.engine.UsageAggregationEngineTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

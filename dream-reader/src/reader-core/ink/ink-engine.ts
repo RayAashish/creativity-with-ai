@@ -66,10 +66,59 @@ export function renderStrokeToSvgPath(
 }
 
 /**
+ * Renders an InkStroke onto an HTML5 2D Canvas context.
+ * High-performance, direct GPU rasterization without DOM overhead.
+ */
+export function renderStrokeToCanvas(
+  ctx: CanvasRenderingContext2D,
+  stroke: InkStroke,
+  pageWidth: number,
+  pageHeight: number,
+  options?: Partial<StrokeOptions>
+): void {
+  if (!stroke.points || stroke.points.length === 0) return;
+
+  const rawPoints = stroke.points.map((p) => [
+    p.x * pageWidth,
+    p.y * pageHeight,
+    p.pressure ?? 0.5,
+  ]);
+
+  const outline = getStroke(rawPoints, {
+    size: stroke.size || 3,
+    thinning: stroke.isHighlighter ? 0 : 0.5,
+    smoothing: 0.5,
+    streamline: 0.5,
+    simulatePressure: true,
+    ...options,
+  });
+
+  if (outline.length < 2) return;
+
+  ctx.save();
+  if (stroke.isHighlighter) {
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillStyle = stroke.color;
+  } else {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = stroke.color;
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(outline[0][0], outline[0][1]);
+  for (let i = 1; i < outline.length; i++) {
+    ctx.lineTo(outline[i][0], outline[i][1]);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/**
  * Normalizes client coordinates from a PointerEvent to (0-1) coordinates relative to page dimensions.
  */
 export function normalizePointerPoint(
-  e: React.PointerEvent<HTMLCanvasElement | SVGSVGElement>,
+  e: React.PointerEvent<HTMLElement | SVGSVGElement | HTMLCanvasElement> | PointerEvent,
   bounds: DOMRect
 ): InkPoint {
   const x = Math.max(0, Math.min(1, (e.clientX - bounds.left) / bounds.width));

@@ -1,0 +1,33 @@
+// app/src/main/proto/launcher_settings.proto
+syntax = "proto3";
+
+option java_package = "com.raysi.launcher.data.proto";
+option java_multiple_files = true;
+
+message PinnedAppProto {
+  string component_name = 1;
+  int64 user_serial_number = 2;
+  string custom_label = 3;
+  int32 display_order = 4;
+}
+
+message ActiveSessionProto {
+  string package_name = 1;
+  int64 start_elapsed_realtime = 2;
+  int64 end_wall_clock_ms = 3;
+  int64 end_elapsed_realtime = 4;
+  int32 extension_count = 5;
+}
+
+message LauncherSettingsProto {
+  int32 gate_delay_seconds = 1;
+  int32 session_duration_minutes = 2;
+  int32 max_extensions_allowed = 3;
+  bool screen_time_includes_launcher = 4;
+  repeated int32 digest_hours = 5;
+  repeated string distracting_packages = 6;
+  repeated string never_block_packages = 7;
+  repeated string always_allow_packages = 8;
+  repeated PinnedAppProto pinned_apps = 9;
+  repeated ActiveSessionProto active_sessions = 10;
+}

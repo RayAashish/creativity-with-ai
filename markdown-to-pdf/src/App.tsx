@@ -16,6 +16,7 @@ const STORAGE_KEYS = {
   TITLE: 'markpdf_saved_title',
   FILENAME: 'markpdf_saved_filename',
   URL: 'markpdf_saved_url',
+  MODE: 'markpdf_saved_input_mode',
   THEME: 'markpdf_theme',
   SIDEBAR_WIDTH: 'markpdf_sidebar_width'
 };
@@ -45,7 +46,13 @@ export const App: React.FC = () => {
     }
     return 'showcase.md';
   });
-  const [mode, setMode] = useState<InputMode>('editor');
+  const [mode, setMode] = useState<InputMode>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(STORAGE_KEYS.MODE) as InputMode;
+      if (saved && ['editor', 'github', 'url', 'upload'].includes(saved)) return saved;
+    }
+    return 'github';
+  });
   const [activeLeftTab, setActiveLeftTab] = useState<'input' | 'settings'>('input');
   const [mobileTab, setMobileTab] = useState<'editor' | 'settings' | 'preview'>('editor');
   const [viewMode, setViewMode] = useState<TabletViewMode>('split');
@@ -113,6 +120,13 @@ export const App: React.FC = () => {
       console.warn('LocalStorage save failed:', e);
     }
   }, [markdown, documentTitle, fileName]);
+
+  // Persist input mode
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.MODE, mode);
+    } catch (_) {}
+  }, [mode]);
 
   // Pointer event handlers for draggable resizer (Touch & Mouse unified via Pointer Events API)
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -234,6 +248,23 @@ export const App: React.FC = () => {
       }
     };
     reader.readAsText(file);
+  };
+
+  // GitHub Explorer Note Selection Handler
+  const handleSelectNote = (content: string, name: string, title: string, sourceUrl?: string) => {
+    setMarkdown(content);
+    setFileName(name);
+    setDocumentTitle(title);
+    setSettings((prev) => ({ ...prev, headerTitle: title }));
+
+    try {
+      localStorage.setItem(STORAGE_KEYS.MARKDOWN, content);
+      localStorage.setItem(STORAGE_KEYS.TITLE, title);
+      localStorage.setItem(STORAGE_KEYS.FILENAME, name);
+      if (sourceUrl) localStorage.setItem(STORAGE_KEYS.URL, sourceUrl);
+    } catch (_) {}
+
+    showToast(`Loaded note: ${name}`);
   };
 
   // URL Fetch Handler
@@ -461,6 +492,7 @@ export const App: React.FC = () => {
                   isFetchingUrl={isFetchingUrl}
                   fileName={fileName}
                   onFileUpload={handleFileUpload}
+                  onSelectNote={handleSelectNote}
                 />
               ) : (
                 <SettingsPanel

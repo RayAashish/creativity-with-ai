@@ -1,0 +1,64 @@
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun DrawerScreen(
+  unstable viewModel: DrawerViewModel
+  stable modifier: Modifier? = @static Companion
+  stable onCloseDrawer: Function0<Unit>? = @static $composer.startReplaceGroup(944347765)
+val tmp0_group = $composer.cache(false) {
+  {
+
+  }
+
+}
+
+$composer.endReplaceGroup()
+tmp0_group@com.raysi.launcher.ui.drawer.DrawerScreen
+  stable onLaunchApp: Function1<AppInfo, Unit>? = @dynamic $composer.startReplaceGroup(944349102)
+val tmp1_group = $composer.cache($composer.changedInstance(viewModel)) {
+  {     it  :   AppInfo   ->
+    viewModel    .    launchApp    (    it    )
+  }
+
+}
+
+$composer.endReplaceGroup()
+tmp1_group@com.raysi.launcher.ui.drawer.DrawerScreen
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun DrawerAppRow(
+  app: AppInfo
+  stable onClick: Function0<Unit>
+  stable onLongClick: Function0<Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun AppOptionsDialog(
+  state: AppOptions
+  stable onPin: Function0<Unit>
+  stable onUnpin: Function0<Unit>
+  stable onDismiss: Function0<Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun GateScreen(
+  unstable viewModel: GateViewModel
+  stable modifier: Modifier? = @static Companion
+  stable onCancel: Function0<Unit>? = @static $composer.startReplaceGroup(-375172875)
+val tmp0_group = $composer.cache(false) {
+  {
+
+  }
+
+}
+
+$composer.endReplaceGroup()
+tmp0_group@com.raysi.launcher.ui.gate.GateScreen
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun BreathingCountdownView(
+  stable appLabel: String
+  stable totalSeconds: Int
+  stable remainingSeconds: Int
+  stable onCancel: Function0<Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun DurationSelectionView(
+  stable appLabel: String
+  stable onSelectDuration: Function1<Int, Unit>
+  stable onCancel: Function0<Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun DurationPill(
+  stable label: String
+  stable onClick: Function0<Unit>
+)

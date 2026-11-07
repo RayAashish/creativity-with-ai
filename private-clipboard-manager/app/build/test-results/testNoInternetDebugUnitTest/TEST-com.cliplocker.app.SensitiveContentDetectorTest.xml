@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.cliplocker.app.SensitiveContentDetectorTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-06T18:13:40.379Z" hostname="Aashishs-MacBook-Air.local" time="0.029">
+  <properties/>
+  <testcase name="testDetectSlackToken" classname="com.cliplocker.app.SensitiveContentDetectorTest" time="0.006"/>
+  <testcase name="testDetectHighEntropyPassword" classname="com.cliplocker.app.SensitiveContentDetectorTest" time="0.013"/>
+  <testcase name="testDetectCreditCard" classname="com.cliplocker.app.SensitiveContentDetectorTest" time="0.002"/>
+  <testcase name="testDetectPasswordInKeyValue" classname="com.cliplocker.app.SensitiveContentDetectorTest" time="0.0"/>
+  <testcase name="testDetectGoogleApiKey" classname="com.cliplocker.app.SensitiveContentDetectorTest" time="0.001"/>
+  <testcase name="testDetectGitHubPat" classname="com.cliplocker.app.SensitiveContentDetectorTest" time="0.0"/>
+  <testcase name="testDetectStripeKey" classname="com.cliplocker.app.SensitiveContentDetectorTest" time="0.0"/>
+  <testcase name="testDetectAwsAccessKey" classname="com.cliplocker.app.SensitiveContentDetectorTest" time="0.0"/>
+  <testcase name="testDetectJwtToken" classname="com.cliplocker.app.SensitiveContentDetectorTest" time="0.001"/>
+  <testcase name="testDetectLink" classname="com.cliplocker.app.SensitiveContentDetectorTest" time="0.001"/>
+  <testcase name="testDetectNormalText" classname="com.cliplocker.app.SensitiveContentDetectorTest" time="0.0"/>
+  <testcase name="testDetectPrivateKeyPem" classname="com.cliplocker.app.SensitiveContentDetectorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,10 @@
+/Users/aashishkumarray/Desktop/creativity-with-ai/anti-addication-launcher/native/focus_search/target/aarch64-linux-android/release/deps/log-ae9f68eae8946990.d: /Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/lib.rs /Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/macros.rs /Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/serde.rs /Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/__private_api.rs
+
+/Users/aashishkumarray/Desktop/creativity-with-ai/anti-addication-launcher/native/focus_search/target/aarch64-linux-android/release/deps/liblog-ae9f68eae8946990.rlib: /Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/lib.rs /Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/macros.rs /Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/serde.rs /Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/__private_api.rs
+
+/Users/aashishkumarray/Desktop/creativity-with-ai/anti-addication-launcher/native/focus_search/target/aarch64-linux-android/release/deps/liblog-ae9f68eae8946990.rmeta: /Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/lib.rs /Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/macros.rs /Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/serde.rs /Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/__private_api.rs
+
+/Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/lib.rs:
+/Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/macros.rs:
+/Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/serde.rs:
+/Users/aashishkumarray/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.35/src/__private_api.rs:

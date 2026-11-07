@@ -1,0 +1,8 @@
+unstable class SettingsViewModelTest {
+  unstable val testDispatcher: TestDispatcher
+  unstable var fakeSettings: FakeSettingsRepo
+  unstable var fakeInventory: FakeAppInventoryRepo
+  unstable var fakeUsage: FakeUsageRepo
+  runtime var viewModel: SettingsViewModel
+  <runtime stability> = Unstable
+}

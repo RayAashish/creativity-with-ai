@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.raysi.launcher.data.search.KotlinSearchEngineTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-07T16:38:41.838Z" hostname="Aashishs-MacBook-Air.local" time="0.008">
+  <properties/>
+  <testcase name="singleCharSubstitutionTypo_matchesDamerauLevenshtein" classname="com.raysi.launcher.data.search.KotlinSearchEngineTest" time="0.001"/>
+  <testcase name="caseInsensitive_matchesCorrectly" classname="com.raysi.launcher.data.search.KotlinSearchEngineTest" time="0.001"/>
+  <testcase name="exactPrefix_ranksHighest" classname="com.raysi.launcher.data.search.KotlinSearchEngineTest" time="0.0"/>
+  <testcase name="excessiveDistance_doesNotMatch" classname="com.raysi.launcher.data.search.KotlinSearchEngineTest" time="0.0"/>
+  <testcase name="wordBoundaryPrefix_matchesSecondWord" classname="com.raysi.launcher.data.search.KotlinSearchEngineTest" time="0.0"/>
+  <testcase name="singleCharInsertionTypo_matchesDamerauLevenshtein" classname="com.raysi.launcher.data.search.KotlinSearchEngineTest" time="0.001"/>
+  <testcase name="subsequenceMatching_findsInitials" classname="com.raysi.launcher.data.search.KotlinSearchEngineTest" time="0.0"/>
+  <testcase name="emptyQuery_returnsAllApps" classname="com.raysi.launcher.data.search.KotlinSearchEngineTest" time="0.0"/>
+  <testcase name="transpositionTypo_matchesDamerauLevenshtein" classname="com.raysi.launcher.data.search.KotlinSearchEngineTest" time="0.005"/>
+  <testcase name="maxResults_limitsOutput" classname="com.raysi.launcher.data.search.KotlinSearchEngineTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

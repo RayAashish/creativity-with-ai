@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MindForge</string>
+    <string name="app_tagline">Sharpen your mental speed, memory and focus</string>
+
+    <!-- General Navigation -->
+    <string name="nav_home">Train</string>
+    <string name="nav_stats">Stats</string>
+    <string name="nav_achievements">Badges</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Categories -->
+    <string name="category_math">Mental Math</string>
+    <string name="category_memory">Memory</string>
+    <string name="category_focus">Focus &amp; Speed</string>
+    <string name="category_logic">Logic &amp; Puzzles</string>
+    <string name="category_language">Language</string>
+</resources>

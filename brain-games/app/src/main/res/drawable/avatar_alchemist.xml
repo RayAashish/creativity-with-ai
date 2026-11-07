@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <path
+        android:fillColor="#4C1D95"
+        android:pathData="M0,0h96v96h-96z" />
+    <!-- Alchemist Crucible Diamond -->
+    <path
+        android:fillColor="#A78BFA"
+        android:pathData="M48,18 L76,48 L48,78 L20,48 Z" />
+    <path
+        android:fillColor="#8B5CF6"
+        android:pathData="M48,30 L66,48 L48,66 L30,48 Z" />
+    <path
+        android:fillColor="#DDD6FE"
+        android:pathData="M48,38 L58,48 L48,58 L38,48 Z" />
+</vector>

@@ -1,0 +1,3 @@
+LEDGER_OFFLINE_OCR_TESSDATA_PLACEHOLDER_ENG
+This asset directory holds offline traineddata models for air-gapped OCR.
+Users can drop or bundle full models here without external downloads.

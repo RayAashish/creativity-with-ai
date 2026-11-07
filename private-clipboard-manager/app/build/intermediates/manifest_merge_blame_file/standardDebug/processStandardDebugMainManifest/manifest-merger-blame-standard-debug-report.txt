@@ -1,0 +1,559 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.cliplocker.app.debug"
+4    android:versionCode="1"
+5    android:versionName="1.0.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="26"
+9        android:targetSdkVersion="35" />
+10
+11    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+11-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:8:5-81
+11-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:8:22-78
+12    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+12-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:9:5-77
+12-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:9:22-74
+13    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+13-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:10:5-89
+13-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:10:22-86
+14    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+14-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:11:5-77
+14-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:11:22-74
+15    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+15-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:12:5-72
+15-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:12:22-69
+16    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+16-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:13:5-78
+16-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:13:22-75
+17
+18    <!-- suppress DeprecatedClassUsageInspection -->
+19    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+19-->[androidx.biometric:biometric:1.2.0-alpha05] /Users/aashishkumarray/.gradle/caches/8.13/transforms/e68c10acb6359879d3dc118af4313db9/transformed/biometric-1.2.0-alpha05/AndroidManifest.xml:25:5-74
+19-->[androidx.biometric:biometric:1.2.0-alpha05] /Users/aashishkumarray/.gradle/caches/8.13/transforms/e68c10acb6359879d3dc118af4313db9/transformed/biometric-1.2.0-alpha05/AndroidManifest.xml:25:22-71
+20    <uses-permission android:name="android.permission.WAKE_LOCK" />
+20-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:23:5-68
+20-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:23:22-65
+21
+22    <permission
+22-->[androidx.core:core:1.15.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/c6dfb0e7dd2c3afe66b806dc2d5aa6e8/transformed/core-1.15.0/AndroidManifest.xml:22:5-24:47
+23        android:name="com.cliplocker.app.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+23-->[androidx.core:core:1.15.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/c6dfb0e7dd2c3afe66b806dc2d5aa6e8/transformed/core-1.15.0/AndroidManifest.xml:23:9-81
+24        android:protectionLevel="signature" />
+24-->[androidx.core:core:1.15.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/c6dfb0e7dd2c3afe66b806dc2d5aa6e8/transformed/core-1.15.0/AndroidManifest.xml:24:9-44
+25
+26    <uses-permission android:name="com.cliplocker.app.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+26-->[androidx.core:core:1.15.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/c6dfb0e7dd2c3afe66b806dc2d5aa6e8/transformed/core-1.15.0/AndroidManifest.xml:26:5-97
+26-->[androidx.core:core:1.15.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/c6dfb0e7dd2c3afe66b806dc2d5aa6e8/transformed/core-1.15.0/AndroidManifest.xml:26:22-94
+27
+28    <application
+28-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:15:5-157:19
+29        android:name="com.cliplocker.app.CliplockerApp"
+29-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:16:9-38
+30        android:allowBackup="false"
+30-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:17:9-36
+31        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+31-->[androidx.core:core:1.15.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/c6dfb0e7dd2c3afe66b806dc2d5aa6e8/transformed/core-1.15.0/AndroidManifest.xml:28:18-86
+32        android:debuggable="true"
+33        android:extractNativeLibs="true"
+34        android:icon="@android:drawable/ic_menu_agenda"
+34-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:18:9-56
+35        android:label="Cliplocker"
+35-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:19:9-35
+36        android:roundIcon="@android:drawable/ic_menu_agenda"
+36-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:20:9-61
+37        android:supportsRtl="true"
+37-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:21:9-35
+38        android:theme="@style/Theme.Cliplocker" >
+38-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:22:9-48
+39
+40        <!-- Single-Activity Architecture -->
+41        <activity
+41-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:26:9-50:20
+42            android:name="com.cliplocker.app.ui.MainActivity"
+42-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:27:13-44
+43            android:exported="true"
+43-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:28:13-36
+44            android:windowSoftInputMode="adjustResize" >
+44-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:29:13-55
+45            <intent-filter>
+45-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:30:13-33:29
+46                <action android:name="android.intent.action.MAIN" />
+46-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:31:17-69
+46-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:31:25-66
+47
+48                <category android:name="android.intent.category.LAUNCHER" />
+48-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:32:17-77
+48-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:32:27-74
+49            </intent-filter>
+50            <intent-filter>
+50-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:34:13-37:29
+51                <action android:name="com.cliplocker.action.OPEN_SEARCH" />
+51-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:35:17-76
+51-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:35:25-73
+52
+53                <category android:name="android.intent.category.DEFAULT" />
+53-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:36:17-76
+53-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:36:27-73
+54            </intent-filter>
+55            <intent-filter>
+55-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:38:13-41:29
+56                <action android:name="com.cliplocker.action.SETTINGS" />
+56-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:39:17-73
+56-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:39:25-70
+57
+58                <category android:name="android.intent.category.DEFAULT" />
+58-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:36:17-76
+58-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:36:27-73
+59            </intent-filter>
+60            <!-- Share sheet support to save clips from any app -->
+61            <intent-filter>
+61-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:43:13-49:29
+62                <action android:name="android.intent.action.SEND" />
+62-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:44:17-69
+62-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:44:25-66
+63
+64                <category android:name="android.intent.category.DEFAULT" />
+64-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:36:17-76
+64-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:36:27-73
+65
+66                <data android:mimeType="text/plain" />
+66-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:46:17-55
+66-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:46:23-52
+67                <data android:mimeType="text/*" />
+67-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:46:17-55
+67-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:46:23-52
+68                <data android:mimeType="image/*" />
+68-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:46:17-55
+68-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:46:23-52
+69            </intent-filter>
+70        </activity>
+71
+72        <!-- Transparent Immediate Capture Trampoline Activity -->
+73        <activity
+73-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:53:9-61:20
+74            android:name="com.cliplocker.app.service.CaptureActivity"
+74-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:54:13-52
+75            android:exported="true"
+75-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:56:13-36
+76            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
+76-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:55:13-72
+77            <intent-filter>
+77-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:57:13-60:29
+78                <action android:name="com.cliplocker.action.CAPTURE_NOW" />
+78-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:58:17-76
+78-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:58:25-73
+79
+80                <category android:name="android.intent.category.DEFAULT" />
+80-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:36:17-76
+80-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:36:27-73
+81            </intent-filter>
+82        </activity>
+83
+84        <!-- Foreground Clipboard Capture Service -->
+85        <service
+85-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:64:9-71:19
+86            android:name="com.cliplocker.app.service.ClipboardCaptureService"
+86-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:65:13-60
+87            android:exported="false"
+87-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:66:13-37
+88            android:foregroundServiceType="specialUse" >
+88-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:67:13-55
+89            <property
+89-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:68:13-70:77
+90                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+90-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:69:17-76
+91                android:value="Offline local encrypted clipboard capture" />
+91-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:70:17-74
+92        </service>
+93
+94        <!-- Quick Settings Tile -->
+95        <service
+95-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:74:9-83:19
+96            android:name="com.cliplocker.app.service.CliplockerTileService"
+96-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:75:13-58
+97            android:exported="true"
+97-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:79:13-36
+98            android:icon="@android:drawable/ic_menu_agenda"
+98-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:76:13-60
+99            android:label="Cliplocker"
+99-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:77:13-39
+100            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE" >
+100-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:78:13-77
+101            <intent-filter>
+101-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:80:13-82:29
+102                <action android:name="android.service.quicksettings.action.QS_TILE" />
+102-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:81:17-87
+102-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:81:25-84
+103            </intent-filter>
+104        </service>
+105
+106        <!-- Floating Bubble Overlay Service -->
+107        <service
+107-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:86:9-88:40
+108            android:name="com.cliplocker.app.service.ClipboardBubbleService"
+108-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:87:13-59
+109            android:exported="false" />
+109-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:88:13-37
+110
+111        <!-- Optional Accessibility Service for Android 10+ Passive Background Capture -->
+112        <service
+112-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:91:9-101:19
+113            android:name="com.cliplocker.app.service.ClipboardAccessibilityService"
+113-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:92:13-66
+114            android:exported="true"
+114-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:94:13-36
+115            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
+115-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:93:13-79
+116            <intent-filter>
+116-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:95:13-97:29
+117                <action android:name="android.accessibilityservice.AccessibilityService" />
+117-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:96:17-92
+117-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:96:25-89
+118            </intent-filter>
+119
+120            <meta-data
+120-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:98:13-100:72
+121                android:name="android.accessibilityservice"
+121-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:99:17-60
+122                android:resource="@xml/accessibility_service_config" />
+122-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:100:17-69
+123        </service>
+124
+125        <!-- Boot & App Update Receiver -->
+126        <receiver
+126-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:104:9-111:20
+127            android:name="com.cliplocker.app.service.BootReceiver"
+127-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:105:13-49
+128            android:exported="false" >
+128-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:106:13-37
+129            <intent-filter>
+129-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:107:13-110:29
+130                <action android:name="android.intent.action.BOOT_COMPLETED" />
+130-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:108:17-79
+130-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:108:25-76
+131                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+131-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:109:17-84
+131-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:109:25-81
+132            </intent-filter>
+133        </receiver>
+134
+135        <!-- Screen State (Wipe on screen off) Receiver -->
+136        <receiver
+136-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:114:9-120:20
+137            android:name="com.cliplocker.app.service.ScreenStateReceiver"
+137-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:115:13-56
+138            android:exported="false" >
+138-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:116:13-37
+139            <intent-filter>
+139-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:117:13-119:29
+140                <action android:name="android.intent.action.SCREEN_OFF" />
+140-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:118:17-75
+140-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:118:25-72
+141            </intent-filter>
+142        </receiver>
+143
+144        <!-- Home Screen Widget Provider -->
+145        <receiver
+145-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:123:9-132:20
+146            android:name="com.cliplocker.app.widget.CliplockerWidgetProvider"
+146-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:124:13-60
+147            android:exported="true" >
+147-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:125:13-36
+148            <intent-filter>
+148-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:126:13-128:29
+149                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+149-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:127:17-84
+149-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:127:25-81
+150            </intent-filter>
+151
+152            <meta-data
+152-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:129:13-131:55
+153                android:name="android.appwidget.provider"
+153-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:130:17-58
+154                android:resource="@xml/widget_info" />
+154-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:131:17-52
+155        </receiver>
+156
+157        <!-- Private App Storage FileProvider -->
+158        <provider
+159            android:name="androidx.core.content.FileProvider"
+159-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:136:13-62
+160            android:authorities="com.cliplocker.app.debug.fileprovider"
+160-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:137:13-64
+161            android:exported="false"
+161-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:138:13-37
+162            android:grantUriPermissions="true" >
+162-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:139:13-47
+163            <meta-data
+163-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:140:13-142:54
+164                android:name="android.support.FILE_PROVIDER_PATHS"
+164-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:141:17-67
+165                android:resource="@xml/file_paths" />
+165-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:142:17-51
+166        </provider>
+167
+168        <!-- Disable default WorkManager Initializer for on-demand Hilt WorkManager initialization -->
+169        <provider
+170            android:name="androidx.startup.InitializationProvider"
+170-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:147:13-67
+171            android:authorities="com.cliplocker.app.debug.androidx-startup"
+171-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:148:13-68
+172            android:exported="false" >
+172-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:149:13-37
+173            <meta-data
+173-->[androidx.lifecycle:lifecycle-process:2.8.7] /Users/aashishkumarray/.gradle/caches/8.13/transforms/777bb09065c56065f60250e0db08ee9a/transformed/lifecycle-process-2.8.7/AndroidManifest.xml:29:13-31:52
+174                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+174-->[androidx.lifecycle:lifecycle-process:2.8.7] /Users/aashishkumarray/.gradle/caches/8.13/transforms/777bb09065c56065f60250e0db08ee9a/transformed/lifecycle-process-2.8.7/AndroidManifest.xml:30:17-78
+175                android:value="androidx.startup" />
+175-->[androidx.lifecycle:lifecycle-process:2.8.7] /Users/aashishkumarray/.gradle/caches/8.13/transforms/777bb09065c56065f60250e0db08ee9a/transformed/lifecycle-process-2.8.7/AndroidManifest.xml:31:17-49
+176            <meta-data
+176-->[androidx.emoji2:emoji2:1.3.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/ca5b026cecdea17a137799249adbc10f/transformed/emoji2-1.3.0/AndroidManifest.xml:29:13-31:52
+177                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+177-->[androidx.emoji2:emoji2:1.3.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/ca5b026cecdea17a137799249adbc10f/transformed/emoji2-1.3.0/AndroidManifest.xml:30:17-75
+178                android:value="androidx.startup" />
+178-->[androidx.emoji2:emoji2:1.3.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/ca5b026cecdea17a137799249adbc10f/transformed/emoji2-1.3.0/AndroidManifest.xml:31:17-49
+179            <meta-data
+179-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:29:13-31:52
+180                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+180-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:30:17-85
+181                android:value="androidx.startup" />
+181-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:31:17-49
+182        </provider>
+183
+184        <service
+184-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:39:9-45:35
+185            android:name="androidx.work.impl.background.systemalarm.SystemAlarmService"
+185-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:40:13-88
+186            android:directBootAware="false"
+186-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:41:13-44
+187            android:enabled="@bool/enable_system_alarm_service_default"
+187-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:42:13-72
+188            android:exported="false" />
+188-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:43:13-37
+189        <service
+189-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:46:9-52:35
+190            android:name="androidx.work.impl.background.systemjob.SystemJobService"
+190-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:47:13-84
+191            android:directBootAware="false"
+191-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:48:13-44
+192            android:enabled="@bool/enable_system_job_service_default"
+192-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:49:13-70
+193            android:exported="true"
+193-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:50:13-36
+194            android:permission="android.permission.BIND_JOB_SERVICE" />
+194-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:51:13-69
+195        <service
+195-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:53:9-59:35
+196            android:name="androidx.work.impl.foreground.SystemForegroundService"
+196-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:54:13-81
+197            android:directBootAware="false"
+197-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:55:13-44
+198            android:enabled="@bool/enable_system_foreground_service_default"
+198-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:56:13-77
+199            android:exported="false" />
+199-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:57:13-37
+200
+201        <receiver
+201-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:61:9-66:35
+202            android:name="androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver"
+202-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:62:13-88
+203            android:directBootAware="false"
+203-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:63:13-44
+204            android:enabled="true"
+204-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:64:13-35
+205            android:exported="false" />
+205-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:65:13-37
+206        <receiver
+206-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:67:9-77:20
+207            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy"
+207-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:68:13-106
+208            android:directBootAware="false"
+208-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:69:13-44
+209            android:enabled="false"
+209-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:70:13-36
+210            android:exported="false" >
+210-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:71:13-37
+211            <intent-filter>
+211-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:73:13-76:29
+212                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+212-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:74:17-87
+212-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:74:25-84
+213                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+213-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:75:17-90
+213-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:75:25-87
+214            </intent-filter>
+215        </receiver>
+216        <receiver
+216-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:78:9-88:20
+217            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy"
+217-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:79:13-104
+218            android:directBootAware="false"
+218-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:80:13-44
+219            android:enabled="false"
+219-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:81:13-36
+220            android:exported="false" >
+220-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:82:13-37
+221            <intent-filter>
+221-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:84:13-87:29
+222                <action android:name="android.intent.action.BATTERY_OKAY" />
+222-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:85:17-77
+222-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:85:25-74
+223                <action android:name="android.intent.action.BATTERY_LOW" />
+223-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:86:17-76
+223-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:86:25-73
+224            </intent-filter>
+225        </receiver>
+226        <receiver
+226-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:89:9-99:20
+227            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy"
+227-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:90:13-104
+228            android:directBootAware="false"
+228-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:91:13-44
+229            android:enabled="false"
+229-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:92:13-36
+230            android:exported="false" >
+230-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:93:13-37
+231            <intent-filter>
+231-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:95:13-98:29
+232                <action android:name="android.intent.action.DEVICE_STORAGE_LOW" />
+232-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:96:17-83
+232-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:96:25-80
+233                <action android:name="android.intent.action.DEVICE_STORAGE_OK" />
+233-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:97:17-82
+233-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:97:25-79
+234            </intent-filter>
+235        </receiver>
+236        <receiver
+236-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:100:9-109:20
+237            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$NetworkStateProxy"
+237-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:101:13-103
+238            android:directBootAware="false"
+238-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:102:13-44
+239            android:enabled="false"
+239-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:103:13-36
+240            android:exported="false" >
+240-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:104:13-37
+241            <intent-filter>
+241-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:106:13-108:29
+242                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+242-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:107:17-79
+242-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:107:25-76
+243            </intent-filter>
+244        </receiver>
+245        <receiver
+245-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:110:9-121:20
+246            android:name="androidx.work.impl.background.systemalarm.RescheduleReceiver"
+246-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:111:13-88
+247            android:directBootAware="false"
+247-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:112:13-44
+248            android:enabled="false"
+248-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:113:13-36
+249            android:exported="false" >
+249-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:114:13-37
+250            <intent-filter>
+250-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:116:13-120:29
+251                <action android:name="android.intent.action.BOOT_COMPLETED" />
+251-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:108:17-79
+251-->/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/src/main/AndroidManifest.xml:108:25-76
+252                <action android:name="android.intent.action.TIME_SET" />
+252-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:118:17-73
+252-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:118:25-70
+253                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+253-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:119:17-81
+253-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:119:25-78
+254            </intent-filter>
+255        </receiver>
+256        <receiver
+256-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:122:9-131:20
+257            android:name="androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver"
+257-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:123:13-99
+258            android:directBootAware="false"
+258-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:124:13-44
+259            android:enabled="@bool/enable_system_alarm_service_default"
+259-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:125:13-72
+260            android:exported="false" >
+260-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:126:13-37
+261            <intent-filter>
+261-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:128:13-130:29
+262                <action android:name="androidx.work.impl.background.systemalarm.UpdateProxies" />
+262-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:129:17-98
+262-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:129:25-95
+263            </intent-filter>
+264        </receiver>
+265        <receiver
+265-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:132:9-142:20
+266            android:name="androidx.work.impl.diagnostics.DiagnosticsReceiver"
+266-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:133:13-78
+267            android:directBootAware="false"
+267-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:134:13-44
+268            android:enabled="true"
+268-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:135:13-35
+269            android:exported="true"
+269-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:136:13-36
+270            android:permission="android.permission.DUMP" >
+270-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:137:13-57
+271            <intent-filter>
+271-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:139:13-141:29
+272                <action android:name="androidx.work.diagnostics.REQUEST_DIAGNOSTICS" />
+272-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:140:17-88
+272-->[androidx.work:work-runtime:2.10.0] /Users/aashishkumarray/.gradle/caches/8.13/transforms/b7db75acd9c5ed5e83197f11e37137dd/transformed/work-runtime-2.10.0/AndroidManifest.xml:140:25-85
+273            </intent-filter>
+274        </receiver>
+275
+276        <activity
+276-->[androidx.compose.ui:ui-tooling-android:1.7.6] /Users/aashishkumarray/.gradle/caches/8.13/transforms/c2eb97b32b3e2b75397bd5a69f335e3e/transformed/ui-tooling-release/AndroidManifest.xml:23:9-25:39
+277            android:name="androidx.compose.ui.tooling.PreviewActivity"
+277-->[androidx.compose.ui:ui-tooling-android:1.7.6] /Users/aashishkumarray/.gradle/caches/8.13/transforms/c2eb97b32b3e2b75397bd5a69f335e3e/transformed/ui-tooling-release/AndroidManifest.xml:24:13-71
+278            android:exported="true" />
+278-->[androidx.compose.ui:ui-tooling-android:1.7.6] /Users/aashishkumarray/.gradle/caches/8.13/transforms/c2eb97b32b3e2b75397bd5a69f335e3e/transformed/ui-tooling-release/AndroidManifest.xml:25:13-36
+279
+280        <service
+280-->[androidx.room:room-runtime:2.6.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/de5e064f2713607c2e93d2b987bde1c8/transformed/room-runtime-2.6.1/AndroidManifest.xml:24:9-28:63
+281            android:name="androidx.room.MultiInstanceInvalidationService"
+281-->[androidx.room:room-runtime:2.6.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/de5e064f2713607c2e93d2b987bde1c8/transformed/room-runtime-2.6.1/AndroidManifest.xml:25:13-74
+282            android:directBootAware="true"
+282-->[androidx.room:room-runtime:2.6.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/de5e064f2713607c2e93d2b987bde1c8/transformed/room-runtime-2.6.1/AndroidManifest.xml:26:13-43
+283            android:exported="false" />
+283-->[androidx.room:room-runtime:2.6.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/de5e064f2713607c2e93d2b987bde1c8/transformed/room-runtime-2.6.1/AndroidManifest.xml:27:13-37
+284
+285        <receiver
+285-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:34:9-52:20
+286            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+286-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:35:13-76
+287            android:directBootAware="false"
+287-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:36:13-44
+288            android:enabled="true"
+288-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:37:13-35
+289            android:exported="true"
+289-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:38:13-36
+290            android:permission="android.permission.DUMP" >
+290-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:39:13-57
+291            <intent-filter>
+291-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:40:13-42:29
+292                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+292-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:17-91
+292-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:25-88
+293            </intent-filter>
+294            <intent-filter>
+294-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:43:13-45:29
+295                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+295-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:17-85
+295-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:25-82
+296            </intent-filter>
+297            <intent-filter>
+297-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:46:13-48:29
+298                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+298-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:17-88
+298-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:25-85
+299            </intent-filter>
+300            <intent-filter>
+300-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:49:13-51:29
+301                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+301-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:17-95
+301-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/aashishkumarray/.gradle/caches/8.13/transforms/36a00a2259ec7e92f926f9af051ce7b1/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:25-92
+302            </intent-filter>
+303        </receiver>
+304    </application>
+305
+306</manifest>

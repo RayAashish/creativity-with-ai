@@ -1,0 +1,33 @@
+<variant
+    name="noInternetRelease"
+    useSupportLibraryVectorDrawables="true"
+    package="com.cliplocker.app"
+    minSdkVersion="26"
+    targetSdkVersion="35"
+    shrinking="true"
+    mergedManifest="build/intermediates/merged_manifest/noInternetRelease/processNoInternetReleaseMainManifest/AndroidManifest.xml"
+    manifestMergeReport="build/outputs/logs/manifest-merger-noInternet-release-report.txt"
+    proguardFiles="build/intermediates/default_proguard_files/global/proguard-android-optimize.txt-8.8.2:proguard-rules.pro"
+    partialResultsDir="build/intermediates/lint_vital_partial_results/noInternetRelease/lintVitalAnalyzeNoInternetRelease/out">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+    <sourceProvider
+        manifests="src/main/AndroidManifest.xml"
+        javaDirectories="src/main/java:src/noInternet/java:src/release/java:src/noInternetRelease/java:src/main/kotlin:src/noInternet/kotlin:src/release/kotlin:src/noInternetRelease/kotlin"
+        resDirectories="src/main/res:src/noInternet/res:src/release/res:src/noInternetRelease/res"
+        assetsDirectories="src/main/assets:src/noInternet/assets:src/release/assets:src/noInternetRelease/assets"/>
+  </sourceProviders>
+  <testSourceProviders>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <artifact
+      classOutputs="build/intermediates/javac/noInternetRelease/compileNoInternetReleaseJavaWithJavac/classes:build/tmp/kotlin-classes/noInternetRelease:build/kotlinToolingMetadata:build/intermediates/hilt/component_classes/noInternetRelease:build/generated/ksp/noInternetRelease/resources:build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/noInternetRelease/processNoInternetReleaseResources/R.jar"
+      type="MAIN"
+      applicationId="com.cliplocker.app.nointernet"
+      generatedSourceFolders="build/generated/ksp/noInternetRelease/java:build/generated/ksp/noInternetRelease/kotlin:build/generated/ap_generated_sources/noInternetRelease/out:build/generated/source/buildConfig/noInternet/release"
+      generatedResourceFolders="build/generated/res/resValues/noInternet/release"
+      desugaredMethodsFiles="/Users/aashishkumarray/.gradle/caches/8.13/transforms/37518ae4ce977db35ac1b4ef53725fa7/transformed/D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>

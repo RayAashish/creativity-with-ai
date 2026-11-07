@@ -10,6 +10,69 @@ import { BilingualPane } from '../BilingualPane';
 import { ReadAloudBar } from '../ReadAloudBar';
 import { insightsService } from '../../../services/insights-service';
 
+const VIRTUAL_WINDOW_PAGES = 4; // currentPage +/- 4 pages (up to 9 pages rendered simultaneously)
+
+interface PlaceholderProps {
+  pageNumber: number;
+  width: number;
+  height: number;
+  onPageIntersect?: (pageNumber: number) => void;
+}
+
+const PdfPagePlaceholder: React.FC<PlaceholderProps> = ({
+  pageNumber,
+  width,
+  height,
+  onPageIntersect,
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const onIntersectRef = useRef(onPageIntersect);
+
+  useEffect(() => {
+    onIntersectRef.current = onPageIntersect;
+  }, [onPageIntersect]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry && entry.isIntersecting) {
+          onIntersectRef.current?.(pageNumber);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [pageNumber]);
+
+  return (
+    <div
+      ref={containerRef}
+      id={`pdf-page-${pageNumber}`}
+      data-page-number={pageNumber}
+      style={{
+        width: `${width}px`,
+        height: `${height}px`,
+        minWidth: `${width}px`,
+        minHeight: `${height}px`,
+      }}
+      className="pdf-page-container shrink-0 relative my-4 rounded shadow-md bg-white/80 dark:bg-zinc-900/80 border border-gray-100 dark:border-zinc-800/80 flex flex-col items-center justify-center text-gray-400 dark:text-zinc-600 select-none"
+    >
+      <div className="flex flex-col items-center gap-1.5 opacity-60">
+        <div className="w-6 h-8 border border-dashed border-gray-300 dark:border-zinc-700 rounded-sm flex items-center justify-center text-[10px] font-mono">
+          {pageNumber}
+        </div>
+        <span className="text-xs font-medium">Page {pageNumber}</span>
+      </div>
+    </div>
+  );
+};
+
 export const PdfViewer: React.FC = () => {
   const {
     pdfDocProxy,
@@ -185,21 +248,40 @@ export const PdfViewer: React.FC = () => {
         {/* Scrollable Document Container */}
         <div
           ref={scrollContainerRef}
+          id="pdf-scroll-container"
           onMouseUp={handleSelectionCheck}
           onPointerUp={handleSelectionCheck}
           onTouchEnd={handleSelectionCheck}
-          className="flex-1 overflow-y-auto px-4 py-8 flex flex-col items-center select-text"
+          className="pdf-viewer-scroll-container flex-1 overflow-y-auto px-4 py-8 flex flex-col items-center select-text"
         >
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-            <PdfPage
-              key={pageNum}
-              pdfDoc={pdfDocProxy}
-              pageNumber={pageNum}
-              scale={computedScale}
-              defaultDimensions={defaultDimensions}
-              onPageIntersect={handlePageIntersect}
-            />
-          ))}
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+            const isWithinWindow = Math.abs(pageNum - currentPage) <= VIRTUAL_WINDOW_PAGES;
+            const targetWidth = (defaultDimensions?.width || 612) * computedScale;
+            const targetHeight = (defaultDimensions?.height || 792) * computedScale;
+
+            if (isWithinWindow) {
+              return (
+                <PdfPage
+                  key={pageNum}
+                  pdfDoc={pdfDocProxy}
+                  pageNumber={pageNum}
+                  scale={computedScale}
+                  defaultDimensions={defaultDimensions}
+                  onPageIntersect={handlePageIntersect}
+                />
+              );
+            }
+
+            return (
+              <PdfPagePlaceholder
+                key={pageNum}
+                pageNumber={pageNum}
+                width={targetWidth}
+                height={targetHeight}
+                onPageIntersect={handlePageIntersect}
+              />
+            );
+          })}
         </div>
 
         {/* Parallel Bilingual Pane */}

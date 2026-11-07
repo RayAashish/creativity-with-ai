@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Outer Hexagonal Synaptic Crucible -->
+    <path
+        android:strokeColor="#F59E0B"
+        android:strokeWidth="3.2"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:pathData="M54,20 L84,37 L84,71 L54,88 L24,71 L24,37 Z" />
+        
+    <!-- Inner Neural Brain Forge Lattice -->
+    <!-- Left lobe / anvil facet -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M54,26 L78,40 L54,54 L30,40 Z" />
+
+    <!-- Center Crucible Core / Spark Prism -->
+    <path
+        android:fillColor="#06B6D4"
+        android:pathData="M38,48 L54,38 L70,48 L54,74 Z" />
+
+    <!-- Lightning / Synapse Spark -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,34 L48,50 L56,50 L52,66" />
+
+    <!-- Crucible Base Nodes -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M54,20m-3.5,0a3.5,3.5 0,1,1 7,0a3.5,3.5 0,1,1 -7,0" />
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M84,37m-3.5,0a3.5,3.5 0,1,1 7,0a3.5,3.5 0,1,1 -7,0" />
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M84,71m-3.5,0a3.5,3.5 0,1,1 7,0a3.5,3.5 0,1,1 -7,0" />
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M54,88m-3.5,0a3.5,3.5 0,1,1 7,0a3.5,3.5 0,1,1 -7,0" />
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M24,71m-3.5,0a3.5,3.5 0,1,1 7,0a3.5,3.5 0,1,1 -7,0" />
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M24,37m-3.5,0a3.5,3.5 0,1,1 7,0a3.5,3.5 0,1,1 -7,0" />
+</vector>

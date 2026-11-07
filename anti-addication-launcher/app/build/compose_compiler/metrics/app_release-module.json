@@ -1,0 +1,31 @@
+{
+  "skippableComposables": 15,
+  "restartableComposables": 28,
+  "readonlyComposables": 0,
+  "totalComposables": 28,
+  "restartGroups": 28,
+  "totalGroups": 41,
+  "staticArguments": 52,
+  "certainArguments": 7,
+  "knownStableArguments": 493,
+  "knownUnstableArguments": 1,
+  "unknownStableArguments": 2,
+  "totalArguments": 496,
+  "markedStableClasses": 0,
+  "inferredStableClasses": 4,
+  "inferredUnstableClasses": 7,
+  "inferredUncertainClasses": 5,
+  "effectivelyStableClasses": 4,
+  "totalClasses": 16,
+  "memoizedLambdas": 31,
+  "singletonLambdas": 0,
+  "singletonComposableLambdas": 5,
+  "composableLambdas": 8,
+  "totalLambdas": 31,
+  "featureFlags": {
+    "StrongSkipping": true,
+    "IntrinsicRemember": true,
+    "OptimizeNonSkippingGroups": false,
+    "PausableComposition": false
+  }
+}

@@ -78,9 +78,29 @@ export const PdfPage: React.FC<Props> = ({
     return () => observer.disconnect();
   }, [pageNumber]);
 
-  // 3. Render canvas and text layer when in or near viewport
+  // 3. Render canvas and text layer when in or near viewport; release GPU resources when scrolled out
   useEffect(() => {
-    if (!isInViewport) return;
+    if (!isInViewport) {
+      if (currentRenderTaskRef.current) {
+        try {
+          currentRenderTaskRef.current.cancel();
+        } catch {
+          // ignore
+        }
+        currentRenderTaskRef.current = null;
+      }
+      if (isRendered && canvasRef.current) {
+        // Release hardware GPU texture back to Android OS
+        canvasRef.current.width = 1;
+        canvasRef.current.height = 1;
+        if (textLayerRef.current) {
+          textLayerRef.current.innerHTML = '';
+        }
+        setIsRendered(false);
+        lastRenderedScaleRef.current = null;
+      }
+      return;
+    }
     if (isRendered && lastRenderedScaleRef.current === scale) return;
 
     let isCancelled = false;
@@ -209,8 +229,10 @@ export const PdfPage: React.FC<Props> = ({
       {/* Annotations & Highlight Overlay */}
       <PdfHighlightOverlay pageNumber={pageNumber} width={targetWidth} height={targetHeight} />
 
-      {/* Freehand Stylus & Touch Ink Overlay */}
-      <PdfInkOverlay pageNumber={pageNumber} width={targetWidth} height={targetHeight} />
+      {/* Freehand Stylus & Touch Ink Overlay (rendered only when in viewport) */}
+      {isInViewport && (
+        <PdfInkOverlay pageNumber={pageNumber} width={targetWidth} height={targetHeight} />
+      )}
 
       {/* Loading placeholder when not yet rendered */}
       {!isRendered && (

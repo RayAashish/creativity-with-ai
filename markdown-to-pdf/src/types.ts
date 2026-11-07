@@ -35,6 +35,6 @@ export interface HeadingItem {
   text: string;
 }
 
-export type InputMode = 'upload' | 'url' | 'editor';
+export type InputMode = 'editor' | 'github' | 'url' | 'upload';
 
 export type TabletViewMode = 'split' | 'editor' | 'preview';

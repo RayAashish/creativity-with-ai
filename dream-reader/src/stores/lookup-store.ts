@@ -42,10 +42,15 @@ export const useLookupStore = create<LookupState>((set, get) => ({
 
     // Calculate smart popover positioning:
     // Try to place above selection; if too close to viewport top, place below
-    const popoverHeight = 240;
-    const placement = clientRect.top > popoverHeight + 20 ? 'above' : 'below';
-    const x = Math.max(16, Math.min(window.innerWidth - 360, clientRect.left + clientRect.width / 2 - 170));
-    const y = placement === 'above' ? clientRect.top - 8 : clientRect.bottom + 8;
+    const popoverHeight = 260;
+    const popoverWidth = Math.min(380, window.innerWidth - 32);
+    const placement = clientRect.top > popoverHeight + 70 ? 'above' : 'below';
+    const rawX = clientRect.left + clientRect.width / 2 - popoverWidth / 2;
+    const x = Math.max(16, Math.min(window.innerWidth - popoverWidth - 16, rawX));
+    const rawY = placement === 'above' ? clientRect.top - 10 : clientRect.bottom + 10;
+    const y = placement === 'above' 
+      ? Math.max(64, rawY) 
+      : Math.min(window.innerHeight - popoverHeight - 20, Math.max(64, rawY));
 
     const initialLang = useSettingsStore.getState().settings.targetLanguage;
 
