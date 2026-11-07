@@ -884,7 +884,7 @@ fun LibrarySidebarDrawer(
     targetNotebookForNewPage?.let { nb ->
         var pageTitle by remember { mutableStateOf("") }
         var isProblemType by remember { mutableStateOf(false) }
-        var selectedTemplate by remember { mutableStateOf(PaperTemplate.RULED) }
+        var selectedTemplate by remember { mutableStateOf(PaperTemplate.GRID) }
         var difficulty by remember { mutableStateOf("Medium") }
         var sourceUrl by remember { mutableStateOf("") }
         var tags by remember { mutableStateOf("") }

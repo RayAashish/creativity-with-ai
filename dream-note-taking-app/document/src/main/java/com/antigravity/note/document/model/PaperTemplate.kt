@@ -9,7 +9,7 @@ enum class PaperTemplate(val displayName: String) {
 
     companion object {
         fun fromOrdinal(ordinal: Int): PaperTemplate {
-            return entries.getOrElse(ordinal) { RULED }
+            return entries.getOrElse(ordinal) { GRID }
         }
     }
 }

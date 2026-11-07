@@ -310,4 +310,56 @@ class PalmRejectionFilterTest {
         val palmResult = filter.evaluatePointer(palm, 0, 2190f, 3504f)
         assertEquals(PalmRejectionFilter.FilteredResult.RejectedPalm, palmResult)
     }
+
+    @Test
+    fun testTwoFingerScrollAcceptedImmediatelyEvenWithinGraceWindow() {
+        // Pen lifts at t=1000ms
+        val penUp = createMockEvent(MotionEvent.ACTION_UP, MotionEvent.TOOL_TYPE_STYLUS, 200f, 300f, eventTime = 1000L)
+        filter.evaluatePointer(penUp, 0, 2190f, 3504f)
+
+        // User immediately starts 2-finger scroll at t=1100ms (100ms < 350ms grace window)
+        val twoFingerScroll = createMockEvent(
+            action = MotionEvent.ACTION_POINTER_DOWN,
+            toolType = MotionEvent.TOOL_TYPE_FINGER,
+            x = 450f,
+            y = 600f,
+            touchMajor = 15f,
+            eventTime = 1100L,
+            pointerCount = 2
+        )
+        val result = filter.evaluatePointer(twoFingerScroll, 0, 2190f, 3504f)
+        assertTrue(result is PalmRejectionFilter.FilteredResult.MultiFingerGesture)
+    }
+
+    @Test
+    fun testTwoFingerScrollAcceptedEvenWithLargeContactArea() {
+        // Flat fingers placed on screen (touchMajor = 50px > 40px palm threshold)
+        val twoFingerScroll = createMockEvent(
+            action = MotionEvent.ACTION_MOVE,
+            toolType = MotionEvent.TOOL_TYPE_FINGER,
+            x = 450f,
+            y = 600f,
+            touchMajor = 50f,
+            eventTime = 5000L,
+            pointerCount = 2
+        )
+        val result = filter.evaluatePointer(twoFingerScroll, 0, 2190f, 3504f)
+        assertTrue(result is PalmRejectionFilter.FilteredResult.MultiFingerGesture)
+    }
+
+    @Test
+    fun testTwoFingerScrollAcceptedEvenNearBezelEdge() {
+        // One finger lands at x=10px near bezel margin (< 30px margin)
+        val edgeScroll = createMockEvent(
+            action = MotionEvent.ACTION_POINTER_DOWN,
+            toolType = MotionEvent.TOOL_TYPE_FINGER,
+            x = 10f,
+            y = 600f,
+            touchMajor = 15f,
+            eventTime = 8000L,
+            pointerCount = 2
+        )
+        val result = filter.evaluatePointer(edgeScroll, 0, 2190f, 3504f)
+        assertTrue(result is PalmRejectionFilter.FilteredResult.MultiFingerGesture)
+    }
 }

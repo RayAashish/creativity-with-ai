@@ -39,7 +39,7 @@ class DocumentManagerTest {
         val current = documentManager.currentPage.value
         assertNotNull(current)
         assertEquals("Page 1", current?.metadata?.title)
-        assertEquals(PaperTemplate.RULED, current?.metadata?.template)
+        assertEquals(PaperTemplate.GRID, current?.metadata?.template)
         assertEquals(1, documentManager.pagesList.value.size)
     }
 

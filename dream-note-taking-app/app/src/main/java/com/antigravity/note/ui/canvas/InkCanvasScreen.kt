@@ -2,6 +2,10 @@ package com.antigravity.note.ui.canvas
 
 import android.graphics.Color as AndroidColor
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
@@ -37,6 +41,8 @@ import kotlin.math.roundToInt
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
@@ -442,6 +448,7 @@ fun InkCanvasScreen(
     // Page Repair State
     var isRepairDialogOpen by remember { mutableStateOf(false) }
     var repairScanResult by remember { mutableStateOf<com.antigravity.note.document.repair.PageRepairTool.RepairScanResult?>(null) }
+    var isTopToolbarMinimized by remember { mutableStateOf(false) }
 
     val tokenStorage = remember { EncryptedTokenStorage(context) }
     val backupOkHttpClient = remember {
@@ -713,14 +720,59 @@ fun InkCanvasScreen(
                 .padding(top = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Card(
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
-                    .fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                shape = RoundedCornerShape(22.dp)
+            // Sleek floating pill when toolbar is minimized
+            AnimatedVisibility(
+                visible = isTopToolbarMinimized,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
             ) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+                    shadowElevation = 5.dp,
+                    tonalElevation = 2.dp,
+                    modifier = Modifier
+                        .padding(top = 2.dp)
+                        .clickable { isTopToolbarMinimized = false }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ExpandMore,
+                            contentDescription = "Expand Toolbar",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "Show Toolbar",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = !isTopToolbarMinimized,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Card(
+                        modifier = Modifier
+                            .padding(horizontal = 12.dp)
+                            .fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                        shape = RoundedCornerShape(22.dp)
+                    ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1768,6 +1820,19 @@ fun InkCanvasScreen(
                             Icon(Icons.Default.Close, contentDescription = "Close Audio", modifier = Modifier.size(16.dp))
                         }
                     }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+                    IconButton(
+                        onClick = { isTopToolbarMinimized = true },
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ExpandLess,
+                            contentDescription = "Minimize Toolbar",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
             }
 
@@ -1797,6 +1862,8 @@ fun InkCanvasScreen(
                         isEditProblemOpen = true
                     }
                 )
+            }
+                }
             }
         }
 
@@ -1920,7 +1987,7 @@ fun InkCanvasScreen(
                                         Toast.makeText(context, "Note is locked (Read-Only Mode)", Toast.LENGTH_SHORT).show()
                                         return@clickable
                                     }
-                                    val currentTpl = currentPage?.metadata?.template ?: PaperTemplate.RULED
+                                    val currentTpl = currentPage?.metadata?.template ?: PaperTemplate.GRID
                                     val activeNbId = docManager.getActiveNotebookId()
                                     scope.launch {
                                         val p = libraryRepo.createGeneralNotePage(activeNbId, "Page ${pagesList.size + 1}", currentTpl)
@@ -1972,7 +2039,7 @@ fun InkCanvasScreen(
                                 expanded = showAddPageMenu,
                                 onDismissRequest = { showAddPageMenu = false }
                             ) {
-                                val currentTpl = currentPage?.metadata?.template ?: PaperTemplate.RULED
+                                val currentTpl = currentPage?.metadata?.template ?: PaperTemplate.GRID
                                 DropdownMenuItem(
                                     text = { Text("+ Current (${currentTpl.displayName})", fontWeight = FontWeight.Bold) },
                                     onClick = {

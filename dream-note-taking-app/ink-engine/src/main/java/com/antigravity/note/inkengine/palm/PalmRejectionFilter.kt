@@ -137,7 +137,24 @@ class PalmRejectionFilter(
             return FilteredResult.RejectedPalm
         }
 
-        // Layer 1: Hysteresis Grace Window after pen lift
+        // Clean up pointer origin tracking on lift
+        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+            pointerClassifications.remove(pointerId)
+            pointerOriginX.remove(pointerId)
+            pointerOriginY.remove(pointerId)
+        }
+
+        // PRIORITY CHECK: Multi-finger gestures (2-finger scroll, pan, pinch-zoom, 2-finger tap)
+        // If 2 or more fingers are touching the screen and stylus is not down,
+        // this is definitively a navigation gesture. It must NEVER be dropped by the
+        // single-finger grace window, contact size (touchMajor), or bezel edge zone rejection!
+        if (event.pointerCount >= 2) {
+            pointerClassifications.put(pointerId, PointerStatus.ACCEPTED_GESTURE)
+            updateDebugInfo(pointerId, toolType, x, y, touchMajor, touchMinor, PointerStatus.ACCEPTED_GESTURE, now)
+            return FilteredResult.MultiFingerGesture(event.pointerCount)
+        }
+
+        // Layer 1: Hysteresis Grace Window after pen lift (applies only to single-finger palm touches)
         val timeSinceLift = now - lastStylusLiftTimeMs
         if (timeSinceLift < config.graceWindowMs) {
             palmsRejectedCount++
@@ -172,22 +189,8 @@ class PalmRejectionFilter(
             pointerOriginY.put(pointerId, y)
         }
 
-        // Clean up on lift
-        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
-            pointerClassifications.remove(pointerId)
-            pointerOriginX.remove(pointerId)
-            pointerOriginY.remove(pointerId)
-        }
-
         // Gesture vs Drawing vs Finger Eraser Mode
         val isFingerEraserActive = config.isFingerEraserEnabled || config.inputMode == InputMode.PEN_DRAWS_FINGER_ERASES
-
-        if (event.pointerCount >= 2) {
-            // Multi-touch is always reserved for navigation gestures (pan, pinch-zoom, 2-finger tap undo)
-            pointerClassifications.put(pointerId, PointerStatus.ACCEPTED_GESTURE)
-            updateDebugInfo(pointerId, toolType, x, y, touchMajor, touchMinor, PointerStatus.ACCEPTED_GESTURE, now)
-            return FilteredResult.MultiFingerGesture(event.pointerCount)
-        }
 
         if (isFingerEraserActive) {
             // Authentic single fingertip contact for eraser (palm already rejected by size, edge, pen priority, & grace window)

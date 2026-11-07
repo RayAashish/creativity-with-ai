@@ -45,7 +45,7 @@ class DryInkCanvasView @JvmOverloads constructor(
     private val queryCandidates = ArrayList<Stroke>(32)
     private val strokeRenderer: CanvasStrokeRenderer = CanvasStrokeRenderer.create()
     val transform = CanvasTransform()
-    var currentTemplate: PaperTemplate = PaperTemplate.RULED
+    var currentTemplate: PaperTemplate = PaperTemplate.GRID
         private set
 
     // Phase 4 Tools & Background Tiling

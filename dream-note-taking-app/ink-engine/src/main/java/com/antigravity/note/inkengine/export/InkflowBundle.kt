@@ -76,7 +76,7 @@ data class InkflowManifest(
                 val pId = extractString("pageId", block) ?: continue
                 val title = extractString("title", block) ?: ""
                 val pIndex = extractLong("pageIndex", block)?.toInt() ?: 0
-                val template = extractString("template", block) ?: "RULED"
+                val template = extractString("template", block) ?: "GRID"
                 val strokeCount = extractLong("strokeCount", block)?.toInt() ?: 0
                 val audioFile = extractString("audioFile", block)
                 pagesList.add(

@@ -36,6 +36,7 @@ InkFlow is living proof of a new paradigm: **AI-assisted engineering makes build
 * **Front-Buffered SurfaceView:** Completely decouples stylus drawing from Android’s standard VSYNC and Compose recomposition loops.
 * **Predictive Extrapolation:** Uses `MotionEventPredictor` and `requestUnbufferedDispatch` to track the stylus tip in real-time, eliminating trailing lag.
 * **Zero GC Pressure:** Zero per-frame object allocations during active strokes to guarantee zero dropped frames ($6.94\text{ ms}$ budget).
+* **100% Reliable Two-Finger Scrolling:** Multi-finger gestures are prioritized before single-finger palm rejection heuristics, ensuring two-finger scroll and pinch-zoom never get dropped by post-pen lift grace windows, contact size thresholds, or bezel edge filters.
 
 ### 🧹 2. Precision Partial Eraser (Stroke Splitting) & Gesture Erase
 * **Targeted Partial Erasure:** Touch only the section of a stroke or circle you want to erase. InkFlow calculates the geometric segment intersection and dynamically splits the stroke into clean, independent sub-strokes instead of deleting the whole drawing.
@@ -46,7 +47,11 @@ InkFlow is living proof of a new paradigm: **AI-assisted engineering makes build
 * **Stationary Hold-to-Erase (800 ms):** Hold the stylus stationary for 800 ms to instantly toggle eraser mode (NoteWise style).
 * **Robust Palm Rejection:** Multi-layer rejection combining contact area geometry (`TOUCH_MAJOR`), edge-zone filters, and a 350 ms post-lift hysteresis grace window.
 
-### 📑 3. Floating DSA Problem Window & Multi-Source Description Fetcher
+### 📐 3. Math Grid Default Template & Distraction-Free Canvas Mode
+* **Engineering Math Grid by Default:** All new notebooks and pages automatically initialize with a crisp Math Grid template (`GRID`), perfect for calculations, matrices, code tracing, and architecture sketches.
+* **Collapsible Top Toolbar:** Tap the minimize button (`^`) on the right side of the toolbar to collapse both the top toolbar and DSA problem banner into an elegant, unobtrusive floating pill (`[ ▾ Show Toolbar ]`). Frees up maximum vertical writing space while studying or taking notes.
+
+### 📑 4. Floating DSA Problem Window & Multi-Source Description Fetcher
 * **Draggable & Resizable HUD:** Overlay algorithm problem statements directly on your canvas.
 * **Multi-Source Fetcher Architecture:** Automatically fetches clean, structured problem descriptions, constraints, and test cases from:
   * 💻 **LeetCode**
@@ -91,17 +96,19 @@ InkFlow is living proof of a new paradigm: **AI-assisted engineering makes build
 * **Full Hierarchy:** `Subject (Folder) -> Topic (Notebook) -> Subtopic -> Pages`.
 * **Safe Deletion & 30-Day Trash:** Delete folders and notebooks directly from their 3-dots menu or use **Multi-Select Mode** to batch-move items to the 30-day Trash with automatic page cascade and 1-tap restore.
 
-### 💾 8. Persistent Local Backup & Lightweight GitHub Sync
+### 💾 8. Persistent Local Backup & Resilient GitHub Sync
 * **Local-First Persistent Backup:** Automatically synchronizes and mirrors all notebooks to public user storage at `/storage/emulated/0/Documents/InkFlow/` every second. Survives app uninstalls and updates completely. Includes Storage Access Framework (SAF) folder picker and instant 1-tap restore.
-* **Lightweight GitHub Sync:** Directly backup your notes to your own private GitHub repository.
+* **Resilient GitHub Device Flow Sync:** Directly backup your notes to your own private GitHub repository.
+  * **Persistent Authentication:** Dual-storage security guarantees your GitHub authentication token and repository selection persist across app restarts and device reboots without repeated logins.
+  * **Authoritative Manifest Reconciliation:** Every sync reconciles all local Room database notebooks and pages, ensuring untracked and modified notes are queued and committed atomically.
   * **Custom Repository Naming:** Choose any repository name you wish (defaulting to a clean suggestion `inkflow-notes-backup`).
-  * **Lightweight Previews:** Replaces heavy uncompressed SVGs with compressed, ultra-fast WebP vector renders alongside raw binary `.inkpage` files, drastically cutting repository size and sync times.
-  * **Zero Lock-In:** Browse and inspect notes directly on GitHub from any laptop or desktop.
+  * **Lightweight `.inkflow` Architecture:** Replaces heavy uncompressed SVGs with compact, lossless `.inkflow` binary containers, cutting sync time and repository footprint by over 90%.
+  * **Zero Lock-In:** Browse, inspect, and read notes from any laptop or desktop.
 
-### 🌐 9. Universal Note Sharing & Web Viewer Ecosystem
+### 🌐 9. Universal Note Sharing & Blazing-Fast Web Reader
 Never get locked into proprietary file formats. InkFlow provides a complete cross-platform ecosystem:
+* **Live Web Reader ([inkflow-reader.vercel.app](https://inkflow-reader.vercel.app)):** Blazing-fast read-only web reader deployed on Vercel. Connects to your private GitHub backup repository, fetches `.inkflow` vector notes, and renders them at 60–144 fps with pan/zoom, dark/light paper themes, and full folder tree navigation.
 * **Interactive Web Notes (`.html`):** Export notes to a single, self-contained offline HTML file. Features vector canvas rendering, pan & zoom, dark/light theme toggle, and PDF/PNG export. Opens in **any** browser on Windows, macOS, Linux, iPhone, iPad, and Android with **zero software installation**.
-* **Standalone Web Viewer (`web-viewer/index.html`):** Official open-source web application where users can drag-and-drop `.inkflow` archives or `.inkpage` files to view them with full vector fidelity.
 * **Embedded Viewer in `.inkflow` Bundles:** Every exported `.inkflow` ZIP archive bundles an `index.html` viewer at its root. Simply double-click on any PC or Mac to view your notes offline.
 * **OS File Associations:** Native Android `intent-filter` registers InkFlow for `*.inkflow` files, allowing one-tap note opening directly from file managers, Gmail, WhatsApp, and Google Drive.
 

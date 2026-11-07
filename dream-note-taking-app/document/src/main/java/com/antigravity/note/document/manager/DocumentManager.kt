@@ -39,7 +39,7 @@ class DocumentManager(
         scope.launch {
             val pages = repository.listPages(activeNotebookId)
             if (pages.isEmpty()) {
-                val newPage = repository.createPage(activeNotebookId, 0, PaperTemplate.RULED)
+                val newPage = repository.createPage(activeNotebookId, 0, PaperTemplate.GRID)
                 repository.savePageAtomic(newPage)
                 _pagesList.value = listOf(newPage.metadata)
                 _currentPage.value = newPage
@@ -155,7 +155,7 @@ class DocumentManager(
     }
 
     fun addNewPage(
-        template: PaperTemplate = PaperTemplate.RULED,
+        template: PaperTemplate = PaperTemplate.GRID,
         title: String? = null,
         onLoaded: ((DocumentPage) -> Unit)? = null
     ) {

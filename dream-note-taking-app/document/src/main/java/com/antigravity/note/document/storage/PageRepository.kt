@@ -126,7 +126,7 @@ class PageRepository(
                             notebookId = notebookId,
                             pageIndex = 0,
                             title = "Page 1",
-                            template = PaperTemplate.RULED
+                            template = PaperTemplate.GRID
                         )
                     )
                 }
@@ -139,7 +139,7 @@ class PageRepository(
                         notebookId = notebookId,
                         pageIndex = 0,
                         title = "Page 1",
-                        template = PaperTemplate.RULED
+                        template = PaperTemplate.GRID
                     )
                 )
             }
@@ -250,7 +250,7 @@ class PageRepository(
     fun createPage(
         notebookId: String,
         pageIndex: Int,
-        template: PaperTemplate = PaperTemplate.RULED,
+        template: PaperTemplate = PaperTemplate.GRID,
         title: String? = null
     ): DocumentPage {
         val pageId = UUID.randomUUID().toString()

@@ -6,6 +6,8 @@ import com.antigravity.note.document.storage.PageSerializer
 import com.antigravity.note.library.backup.auth.TokenStorage
 import com.antigravity.note.library.backup.crypto.BackupEncryptionEngine
 import com.antigravity.note.library.backup.manifest.BackupChangeTracker
+import com.antigravity.note.library.backup.manifest.BackupManifestEntity
+import com.antigravity.note.library.backup.manifest.HashUtils
 import com.antigravity.note.library.backup.manifest.ManifestState
 import com.antigravity.note.library.backup.model.BackupMetadata
 import com.antigravity.note.library.backup.model.ContentBounds
@@ -81,6 +83,9 @@ class BackupEngine(
 
             // Step 1: Export current library hierarchy JSON to manifest
             exportLibraryIndexJson()
+
+            // Step 1b: Reconcile Room DB pages with manifest to ensure all untracked/modified notes are queued
+            reconcileManifestWithDatabase()
 
             // Step 2: Fetch dirty and deleted manifest items
             val dirtyItems = manifestDao.getDirtyOrDeleted()
@@ -170,6 +175,7 @@ class BackupEngine(
             // Also upload structured metadata files: backup-meta.json, library.json, search-index.json
             val metaEntries = exportMetadataFiles(owner, repo)
             treeEntries.addAll(metaEntries)
+            processedCleanPaths.addAll(metaEntries.map { it.path })
 
             // Auto-generate root README.md index
             val readmeEntry = generateReadmeTreeEntry(owner, repo)
@@ -225,6 +231,52 @@ class BackupEngine(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
             BackupResult.Failure("Backup error: ${e.message}", e)
+        }
+    }
+
+    private suspend fun reconcileManifestWithDatabase() {
+        val notebooks = notebookDao.getAllNotebooks().first()
+        for (nb in notebooks) {
+            val pages = pageDao.getPagesForNotebook(nb.notebookId).first()
+            for (p in pages) {
+                val path = BackupChangeTracker.makePagePath(nb.notebookId, p.pageId)
+                val existing = manifestDao.getByPath(path)
+                val pageFile = pageRepository.getPageFile(nb.notebookId, p.pageId)
+                val fileExists = pageFile.exists() && pageFile.length() > 0
+                val fileHash = if (fileExists) HashUtils.computeSha256(pageFile) else ""
+                val fileSize = if (fileExists) pageFile.length() else 0L
+
+                if (existing == null) {
+                    manifestDao.insertOrUpdate(
+                        BackupManifestEntity(
+                            path = path,
+                            contentHash = fileHash,
+                            sizeBytes = fileSize,
+                            lastBackedUpCommitSha = null,
+                            state = ManifestState.DIRTY,
+                            updatedAt = p.modifiedAt
+                        )
+                    )
+                } else if (existing.lastBackedUpCommitSha == null && existing.state != ManifestState.DIRTY) {
+                    manifestDao.insertOrUpdate(
+                        existing.copy(
+                            contentHash = fileHash,
+                            sizeBytes = fileSize,
+                            state = ManifestState.DIRTY,
+                            updatedAt = p.modifiedAt
+                        )
+                    )
+                } else if (existing.state == ManifestState.CLEAN && fileExists && existing.contentHash != fileHash && fileHash.isNotEmpty()) {
+                    manifestDao.insertOrUpdate(
+                        existing.copy(
+                            contentHash = fileHash,
+                            sizeBytes = fileSize,
+                            state = ManifestState.DIRTY,
+                            updatedAt = p.modifiedAt
+                        )
+                    )
+                }
+            }
         }
     }
 

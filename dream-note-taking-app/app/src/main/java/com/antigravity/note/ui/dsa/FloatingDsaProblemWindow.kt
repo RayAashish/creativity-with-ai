@@ -10,9 +10,11 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -98,6 +100,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FloatingDsaProblemWindow(
     page: PageEntity,
@@ -718,11 +721,16 @@ fun FloatingDsaProblemWindow(
                                     }
                                 },
                                 update = { webView ->
-                                    val textColor = if (isWindowDark) "#F0F0F4" else "#1B1B1F"
-                                    val codeBg = if (isWindowDark) "#2B2B30" else "#F1F3F8"
-                                    val preBorder = if (isWindowDark) "#44444A" else "#D4D7E2"
+                                    val textColor = if (isWindowDark) "#F0F0F4" else "#111827"
+                                    val codeBg = if (isWindowDark) "#2B2B30" else "#F3F4F6"
+                                    val preBorder = if (isWindowDark) "#44444A" else "#D1D5DB"
                                     val bodyBg = if (isWindowDark) "#1E1F24" else "#FFFFFF"
                                     webView.setBackgroundColor(if (isWindowDark) 0xFF1E1F24.toInt() else 0xFFFFFFFF.toInt())
+
+                                    // Sanitize inline color styles that cause faint or unreadable text
+                                    val cleanedHtml = descriptionHtml
+                                        .replace(Regex("(?i)color\\s*:\\s*[^;\"'>]+;?"), "")
+                                        .replace(Regex("(?i)background(-color)?\\s*:\\s*[^;\"'>]+;?"), "")
 
                                     val styledHtml = """
                                         <!DOCTYPE html>
@@ -731,14 +739,21 @@ fun FloatingDsaProblemWindow(
                                         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
                                         <style>
                                             body {
-                                                font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-                                                font-size: 13.5px;
-                                                line-height: 1.55;
-                                                color: $textColor;
+                                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                                                font-size: 14px;
+                                                line-height: 1.6;
+                                                color: $textColor !important;
                                                 margin: 0;
-                                                padding: 12px;
-                                                background-color: $bodyBg;
+                                                padding: 14px;
+                                                background-color: $bodyBg !important;
                                                 word-break: break-word;
+                                            }
+                                            *, p, span, div, li, ul, ol, h1, h2, h3, h4, h5, h6, b, em, i, td, th {
+                                                color: $textColor !important;
+                                            }
+                                            strong {
+                                                color: ${if (isWindowDark) "#90CAF9" else "#005AC1"} !important;
+                                                font-weight: 700;
                                             }
                                             img {
                                                 max-width: 100%;
@@ -748,23 +763,27 @@ fun FloatingDsaProblemWindow(
                                                 margin: 10px auto;
                                                 box-shadow: 0 2px 6px rgba(0,0,0,0.1);
                                             }
+                                            pre, pre *, code, code * {
+                                                color: ${if (isWindowDark) "#E6EDF3" else "#1F2328"} !important;
+                                                background-color: $codeBg !important;
+                                            }
                                             pre {
-                                                background-color: $codeBg;
+                                                background-color: $codeBg !important;
                                                 border-radius: 6px;
-                                                padding: 8px 10px;
-                                                font-family: ui-monospace, SFMono-Regular, monospace;
-                                                font-size: 12px;
+                                                padding: 10px 12px;
+                                                font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+                                                font-size: 12.5px;
                                                 overflow-x: auto;
                                                 border: 1px solid $preBorder;
                                                 white-space: pre-wrap;
                                                 word-break: break-word;
                                             }
                                             code {
-                                                background-color: $codeBg;
-                                                padding: 2px 4px;
+                                                background-color: $codeBg !important;
+                                                padding: 2px 5px;
                                                 border-radius: 4px;
-                                                font-family: ui-monospace, SFMono-Regular, monospace;
-                                                font-size: 12px;
+                                                font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+                                                font-size: 12.5px;
                                             }
                                             ul, ol {
                                                 padding-left: 20px;
@@ -776,13 +795,14 @@ fun FloatingDsaProblemWindow(
                                             p {
                                                 margin: 6px 0;
                                             }
-                                            strong {
-                                                color: ${if (isWindowDark) "#90CAF9" else "#005AC1"};
+                                            a, a * {
+                                                color: ${if (isWindowDark) "#58A6FF" else "#0969DA"} !important;
+                                                text-decoration: underline;
                                             }
                                         </style>
                                         </head>
                                         <body>
-                                        $descriptionHtml
+                                        $cleanedHtml
                                         </body>
                                         </html>
                                     """.trimIndent()
@@ -926,12 +946,18 @@ fun FloatingDsaProblemWindow(
                                         1.dp,
                                         if (isChecked) Color(0xFF146C2E) else borderColor
                                     ),
-                                    modifier = Modifier.clickable { toggleTestCaseCheck(index) }
+                                    modifier = Modifier.combinedClickable(
+                                        onClick = { toggleTestCaseCheck(index) },
+                                        onLongClick = {
+                                            testCaseToEdit = tc
+                                            isNewTestCaseDialog = false
+                                        }
+                                    )
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(start = 8.dp, end = 4.dp, top = 3.dp, bottom = 3.dp),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Check,
@@ -950,13 +976,13 @@ fun FloatingDsaProblemWindow(
                                                 testCaseToEdit = tc
                                                 isNewTestCaseDialog = false
                                             },
-                                            modifier = Modifier.size(18.dp)
+                                            modifier = Modifier.size(22.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Edit,
                                                 contentDescription = "Modify or Delete Test Case",
                                                 tint = if (isWindowDark) Color(0xFFAAAAAA) else Color(0xFF757575),
-                                                modifier = Modifier.size(10.dp)
+                                                modifier = Modifier.size(12.dp)
                                             )
                                         }
                                     }

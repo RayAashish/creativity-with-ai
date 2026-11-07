@@ -85,7 +85,7 @@ class LibraryRepository(
         notebookDao.insertNotebook(notebook)
 
         // Create initial page 1
-        val initialPage = pageRepository.createPage(notebook.notebookId, 0, PaperTemplate.RULED, "Page 1")
+        val initialPage = pageRepository.createPage(notebook.notebookId, 0, PaperTemplate.GRID, "Page 1")
         pageRepository.savePageAtomic(initialPage)
 
         val pageEntity = PageEntity(
@@ -93,7 +93,7 @@ class LibraryRepository(
             notebookId = notebook.notebookId,
             pageIndex = 0,
             title = "Page 1",
-            template = "RULED"
+            template = "GRID"
         )
         pageDao.insertPage(pageEntity)
         notebook
@@ -113,7 +113,7 @@ class LibraryRepository(
         testCasesJson: String? = null
     ): PageEntity = withContext(ioDispatcher) {
         val pageCount = pageDao.getPageCount(notebookId)
-        val docPage = pageRepository.createPage(notebookId, pageCount, PaperTemplate.RULED, title)
+        val docPage = pageRepository.createPage(notebookId, pageCount, PaperTemplate.GRID, title)
         pageRepository.savePageAtomic(docPage)
 
         val pageEntity = PageEntity(
@@ -147,7 +147,7 @@ class LibraryRepository(
     suspend fun createGeneralNotePage(
         notebookId: String,
         title: String,
-        template: PaperTemplate = PaperTemplate.RULED
+        template: PaperTemplate = PaperTemplate.GRID
     ): PageEntity = withContext(ioDispatcher) {
         val pageCount = pageDao.getPageCount(notebookId)
         val docPage = pageRepository.createPage(notebookId, pageCount, template, title)
@@ -529,7 +529,7 @@ class ConsistentHashRing(val replicas: Int = 3) {
         createGeneralNotePage(
             notebookId = shardingNb.notebookId,
             title = "Leader-Follower Replication & WAL",
-            template = PaperTemplate.RULED
+            template = PaperTemplate.GRID
         )
 
         // Subject 2: General Notes & Creative
@@ -561,7 +561,7 @@ class ConsistentHashRing(val replicas: Int = 3) {
         createGeneralNotePage(
             notebookId = brainstormNb.notebookId,
             title = "Dream Note Taking App Architecture",
-            template = PaperTemplate.RULED
+            template = PaperTemplate.GRID
         )
 
         createGeneralNotePage(

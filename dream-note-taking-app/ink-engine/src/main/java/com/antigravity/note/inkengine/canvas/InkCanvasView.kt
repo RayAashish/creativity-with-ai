@@ -313,6 +313,7 @@ class InkCanvasView @JvmOverloads constructor(
     private var lastGestureCenterX = 0f
     private var lastGestureCenterY = 0f
     private var gestureStartTime = 0L
+    private var totalGestureMovement = 0f
     private val tempPoint = PointF()
 
     // Debug overlay objects (zero-allocation)
@@ -488,6 +489,7 @@ class InkCanvasView @JvmOverloads constructor(
     override fun onTouchEvent(event: MotionEvent): Boolean {
         // Enforce unbuffered dispatch for sub-millisecond input path
         requestUnbufferedDispatch(event)
+        parent?.requestDisallowInterceptTouchEvent(true)
 
         val w = width.toFloat()
         val h = height.toFloat()
@@ -943,16 +945,32 @@ class InkCanvasView @JvmOverloads constructor(
                     lastGestureCenterX = centerX
                     lastGestureCenterY = centerY
                     gestureStartTime = SystemClock.uptimeMillis()
+                    totalGestureMovement = 0f
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    if (isGestureActive && lastGestureDistance > 0f) {
+                    if (!isGestureActive || lastGestureDistance <= 0f) {
+                        // Resilient gesture recovery:
+                        // If POINTER_DOWN was missed or merged by Android OS,
+                        // activate gesture tracking immediately on first MOVE!
+                        isGestureActive = true
+                        lastGestureDistance = currentDist
+                        lastGestureCenterX = centerX
+                        lastGestureCenterY = centerY
+                        gestureStartTime = SystemClock.uptimeMillis()
+                        totalGestureMovement = 0f
+                    } else {
                         val dx = centerX - lastGestureCenterX
                         val dy = centerY - lastGestureCenterY
-                        val scaleFactor = currentDist / lastGestureDistance
+                        val movement = hypot(dx, dy)
+                        totalGestureMovement += movement
 
                         dryInkView.transform.postTranslate(dx, dy)
-                        if (scaleFactor > 0.05f && scaleFactor < 20f) {
-                            dryInkView.transform.postScale(scaleFactor, centerX, centerY)
+
+                        if (lastGestureDistance > 0f) {
+                            val scaleFactor = currentDist / lastGestureDistance
+                            if (scaleFactor > 0.05f && scaleFactor < 20f) {
+                                dryInkView.transform.postScale(scaleFactor, centerX, centerY)
+                            }
                         }
 
                         lastGestureDistance = currentDist
@@ -961,9 +979,10 @@ class InkCanvasView @JvmOverloads constructor(
                         dryInkView.invalidate()
                     }
                 }
-                MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_UP -> {
+                MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     val duration = SystemClock.uptimeMillis() - gestureStartTime
-                    if (duration < palmFilter.config.gestureDisambiguationWindowMs * 4) {
+                    // Only trigger undo/redo if fingers were tapped in place without significant drag
+                    if (totalGestureMovement < 20f && duration < palmFilter.config.gestureDisambiguationWindowMs * 4) {
                         // Rapid 2-finger tap detected -> Undo
                         if (event.pointerCount == 2) {
                             undo()
@@ -973,6 +992,7 @@ class InkCanvasView @JvmOverloads constructor(
                     }
                     isGestureActive = false
                     lastGestureDistance = 0f
+                    totalGestureMovement = 0f
                 }
             }
         }

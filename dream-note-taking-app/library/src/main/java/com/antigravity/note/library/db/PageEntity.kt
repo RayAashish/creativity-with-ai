@@ -27,7 +27,7 @@ data class PageEntity(
     val notebookId: String,
     val pageIndex: Int,
     val title: String,
-    val template: String = "RULED",
+    val template: String = "GRID",
     val strokeCount: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),
     val modifiedAt: Long = System.currentTimeMillis(),

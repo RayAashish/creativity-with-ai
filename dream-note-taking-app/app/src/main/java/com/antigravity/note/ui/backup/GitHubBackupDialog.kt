@@ -767,14 +767,37 @@ fun GitHubBackupDialog(
                         Button(
                             onClick = {
                                 isBackingUp = true
-                                statusMessage = "Backing up snapshot to GitHub..."
+                                statusMessage = "Backing up notes to GitHub..."
                                 isSuccessMessage = true
-                                onTriggerBackupNow()
                                 scope.launch {
-                                    // Give worker moment and report
-                                    kotlinx.coroutines.delay(2000L)
-                                    isBackingUp = false
-                                    statusMessage = "Backup queued and processed!"
+                                    try {
+                                        val res = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                            engine.performBackup(isManualExpedited = true)
+                                        }
+                                        isBackingUp = false
+                                        when (res) {
+                                            is BackupResult.Success -> {
+                                                statusMessage = "✓ Successfully backed up ${res.itemsChanged} items to GitHub (${res.commitSha.take(7)})"
+                                                isSuccessMessage = true
+                                            }
+                                            is BackupResult.UpToDate -> {
+                                                statusMessage = "✓ All notes are already up-to-date with GitHub!"
+                                                isSuccessMessage = true
+                                            }
+                                            is BackupResult.Failure -> {
+                                                statusMessage = "✗ Backup failed: ${res.message}"
+                                                isSuccessMessage = false
+                                            }
+                                            is BackupResult.Conflicted -> {
+                                                statusMessage = "✓ Conflict resolved (${res.resolvedCount} items): commit ${res.commitSha.take(7)}"
+                                                isSuccessMessage = true
+                                            }
+                                        }
+                                    } catch (e: Exception) {
+                                        isBackingUp = false
+                                        statusMessage = "✗ Backup error: ${e.message}"
+                                        isSuccessMessage = false
+                                    }
                                 }
                             },
                             enabled = !isBackingUp,

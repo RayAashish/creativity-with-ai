@@ -89,11 +89,8 @@ class BackupWorker(
         }
 
         fun enqueueImmediate(context: Context) {
-            val tokenStorage = EncryptedTokenStorage(context)
-            val networkType = if (tokenStorage.isWifiOnly()) NetworkType.UNMETERED else NetworkType.CONNECTED
-
             val constraints = Constraints.Builder()
-                .setRequiredNetworkType(networkType)
+                .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
             val request = OneTimeWorkRequestBuilder<BackupWorker>()
