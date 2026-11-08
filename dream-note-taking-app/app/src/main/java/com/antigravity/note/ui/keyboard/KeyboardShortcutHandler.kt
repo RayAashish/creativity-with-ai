@@ -16,7 +16,8 @@ enum class NoteAppShortcut {
     TOOL_HIGHLIGHTER,
     TOOL_LASSO,
     TOOL_SHAPES,
-    TOGGLE_AUDIO
+    TOGGLE_AUDIO,
+    PASTE
 }
 
 object KeyboardShortcutManager {
@@ -39,6 +40,10 @@ object KeyboardShortcutManager {
             // Ctrl/Cmd + K -> Quick Switcher
             isCtrl && keyCode == KeyEvent.KEYCODE_K -> {
                 NoteAppShortcut.QUICK_SWITCHER
+            }
+            // Ctrl/Cmd + V -> Paste (Strokes or Images)
+            isCtrl && keyCode == KeyEvent.KEYCODE_V -> {
+                NoteAppShortcut.PASTE
             }
             // Ctrl/Cmd + E or Ctrl/Cmd + S -> Export
             isCtrl && (keyCode == KeyEvent.KEYCODE_E || keyCode == KeyEvent.KEYCODE_S) -> {

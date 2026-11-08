@@ -5,6 +5,7 @@ import com.antigravity.note.inkengine.lasso.LassoTool
 import com.antigravity.note.inkengine.shape.RecognizedShape
 import com.antigravity.note.inkengine.shape.ShapeRecognizer
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -94,5 +95,30 @@ class ShapeAndLassoTest {
         val selected = lasso.finishLasso(emptyList())
         assertEquals(false, selected)
         assertEquals(LassoMode.IDLE, lasso.mode)
+    }
+
+    @Test
+    fun testLassoTransformDecouplingAndOverlayMatrix() {
+        val lasso = LassoTool()
+        assertFalse(lasso.isTransformGestureActive)
+
+        // Start transform gesture on BODY via helper
+        val bounds = android.graphics.RectF(100f, 100f, 300f, 300f)
+        lasso.setTransformStateForTesting(bounds, com.antigravity.note.inkengine.lasso.TransformHandle.BODY)
+        assertTrue(lasso.isTransformGestureActive)
+
+        // Drag by +50, +30 (center is 200, 200 -> move to 250, 230)
+        var matrixChangeCount = 0
+        lasso.onOverlayMatrixChanged = { matrixChangeCount++ }
+        lasso.continueLasso(250f, 230f)
+
+        // Verify accumulated deltas and callback notification without mutating stroke coordinates
+        assertEquals(50f, lasso.accumulatedDeltaX, 0.001f) // 250 - 200 = 50
+        assertEquals(30f, lasso.accumulatedDeltaY, 0.001f) // 230 - 200 = 30
+        assertTrue("onOverlayMatrixChanged must be invoked", matrixChangeCount > 0)
+
+        // Finish transform
+        lasso.finishTransform()
+        assertFalse(lasso.isTransformGestureActive)
     }
 }

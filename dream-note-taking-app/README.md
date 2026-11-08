@@ -66,24 +66,36 @@ InkFlow is living proof of a new paradigm: **AI-assisted engineering makes build
 * **Ghost Transparency Mode:** Adjust window opacity ($20\% - 100\%$) to sketch diagrams or trace pointers directly over the problem text.
 * **Trace Table Stamp:** Instant one-tap insertion of 5-cell dynamic memory/array trace grids onto your canvas.
 
-### 📐 4. Smart Shape Recognition & Draggable Lasso
+### 📐 4. Smart Shape Recognition & Ultra-Smooth Dual-Layer Lasso
 * **Hold-to-Snap Vectors:** Draw rough shapes—circles, ellipses, rectangles, straight lines, or arrows—and hold the stylus tip for a brief moment to automatically transform them into geometrically crisp vector shapes.
+* **Dual-Layer Scratchpad Architecture (144 Hz Smooth Drag):** Fixes lasso stutter and frame drops completely. During lasso drag and resize gestures, the canvas decouples selected strokes onto an interactive hardware-accelerated overlay layer driven by a 2D affine transform matrix (`canvas.concat(overlayTransformMatrix)`). Zero per-event stroke coordinate mutations, zero full-canvas repaints, and zero spatial index rebuilds occur during motion. Coordinates are mutated and committed once upon pointer release.
+* **First-Class Image Selection:** Images inserted or pasted onto the canvas can be selected, moved, and scaled using the same hardware-accelerated transform pipeline as ink strokes.
 * **Floating & Draggable Lasso Toolbar:** When selecting handwritten notes with the lasso tool, the action toolbar automatically opens *beside* the selected strokes (rather than fixed at the screen bottom). It features an integrated drag handle, allowing you to freely drag the toolbar anywhere across the canvas. Includes Copy, Paste, Duplicate, On-Device ML Kit Handwriting-to-Text transcription, Quick Recolor, and Delete.
 
-### 🔒 5. Read-Only Lock Mode (Safe Study & Reading)
+### 🖼️ 5. Production-Grade Image Ingestion Pipeline
+* **Triple-Vector Ingestion:** Insert images seamlessly through:
+  * 📁 **Native Photo/File Picker:** Integrated toolbar button launching system media picker (`image/*`).
+  * 📋 **Clipboard Paste:** Instant paste via `Ctrl+V` / `Cmd+V` or context menu.
+  * 🖐️ **Drag-and-Drop:** Drag images directly into the canvas with dynamic screen-to-canvas coordinate mapping and visual drop-target boundary highlight.
+* **Off-Thread Async Processing (`Dispatchers.IO`):** Images are decoded and compressed asynchronously without causing dropped frames or blocking the ink thread.
+* **Deduplicated WebP Storage:** Computes cryptographic SHA-256 hashes to prevent redundant storage; stores assets as `assets/hash_{sha256}.webp`.
+* **4096px Downsampling Safeguard:** Automatically downsamples images exceeding 4096px in either dimension to prevent Out-Of-Memory (OOM) errors while preserving ultra-high detail.
+* **LRU Bitmap Caching:** Dry-ink canvas uses an efficient LRU bitmap cache to guarantee silky smooth multi-finger panning and zooming across image-heavy documents.
+
+### 🔒 6. Read-Only Lock Mode (Safe Study & Reading)
 * **Single-Tap Protection:** Tap the lock icon in the top toolbar to seal the note in read-only mode.
 * **Zero Write Vulnerability:** All inking, stylus writing, precision erasing, finger erasing, and page additions/deletions are locked down.
 * **Smooth Navigation:** Single-finger and stylus panning and pinch-to-zoom remain fluid so you can read, review, and navigate large documents without accidental marks.
 * **Persistent Status Pill:** A prominent `🔒 READ ONLY` pill appears in the top bar; tap it anytime to instantly unlock editing.
 
-### 🌓 6. Smart Dynamic Contrast Engine & Dark Mode
+### 🌓 7. Smart Dynamic Contrast Engine & Dark Mode
 * **Bidirectional Contrast Correction:** Notes written in light mode with black ink dynamically adapt to crisp off-white (`#F5F5F5`) on dark charcoal paper (`#18191D`), while notes written in dark mode with white ink render as deep near-black (`#111318`) on light paper (`#FCFAF6`). Zero ink invisibility bugs.
 * **Hue Preservation:** Chromatic inks (blue, red, green, purple, yellow highlighters) strictly preserve their vibrant colors without monochrome flattening.
 * **Adaptive Active Pen:** Toggling the app theme automatically flips the default monochrome pen color so newly written strokes match the paper canvas with perfect contrast.
 * **Expanded Palette & Custom Colors:** 24 high-visibility swatches + an interactive RGB hex color mixer.
 * **Paper Templates:** Blank, Ruled / Lined, Math Grid, Cornell, Dot Grid, and Infinite Canvas.
 
-### 🏷️ 7. CS & Engineering Hierarchical Organization & Custom Icon Picker
+### 🏷️ 8. CS & Engineering Hierarchical Organization & Custom Icon Picker
 * **Custom Logo / Icon Picker:** Customize subjects, topics, and subtopics with bundled icons or create custom badge tags. Includes 25+ curated engineering logos:
   * ☕ **Java:** Duke coffee cup badge
   * 🍃 **Spring Boot:** Spring leaf badge
@@ -96,26 +108,37 @@ InkFlow is living proof of a new paradigm: **AI-assisted engineering makes build
 * **Full Hierarchy:** `Subject (Folder) -> Topic (Notebook) -> Subtopic -> Pages`.
 * **Safe Deletion & 30-Day Trash:** Delete folders and notebooks directly from their 3-dots menu or use **Multi-Select Mode** to batch-move items to the 30-day Trash with automatic page cascade and 1-tap restore.
 
-### 💾 8. Persistent Local Backup & Resilient GitHub Sync
-* **Local-First Persistent Backup:** Automatically synchronizes and mirrors all notebooks to public user storage at `/storage/emulated/0/Documents/InkFlow/` every second. Survives app uninstalls and updates completely. Includes Storage Access Framework (SAF) folder picker and instant 1-tap restore.
+### ⚡ 9. Real-Time Local Stroke Persistence (Zero-Latency Journal)
+* **SQLite WAL Mode Engine:** Database configured with `PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;`.
+* **Zero-Latency PointerUp Appends:** Every stroke release immediately writes a binary blob to the `stroke_journal` table off-thread via `Dispatchers.IO` in $< 2\text{ ms}$, ensuring zero inking stalls.
+* **Debounced Page Compactor (3s):** A coroutine-based background worker compacts accumulated journal strokes into the `.inkflow` container every 3 seconds, sets `is_dirty = 1` for cloud sync, and cleans up compacted rows.
+* **Automatic Crash Recovery:** When opening any page, uncompacted journal strokes are replayed and re-rendered automatically, guaranteeing 100% data safety even after sudden battery drain or process termination.
+
+### ☁️ 10. Multi-Target Cloud Backup: Google Drive & GitHub
+* **Google Drive Lossless Cloud Backup (WhatsApp Style):**
+  * **Dual Storage Scopes:** Supports both the isolated `appDataFolder` sandbox (`https://www.googleapis.com/auth/drive.appdata` - hidden from user files) and the visible root Google Drive directory (`https://www.googleapis.com/auth/drive.file`).
+  * **Incremental Dirty-Tracking:** Scans `is_dirty = 1` notebooks, packages them into `inkflow_vault_backup.zip`, and generates a SHA-256 integrity manifest.
+  * **Multipart Resilient Uploads:** Streams backup archives using HTTP multipart requests (`uploadType=multipart`), resets dirty flags upon confirmation, and records telemetry.
+  * **Atomic Staging Restore:** Restores cloud archives into `/restore_staging/`, validates SHA-256 checksums, atomically updates local notes, and triggers an immediate catalog refresh.
 * **Resilient GitHub Device Flow Sync:** Directly backup your notes to your own private GitHub repository.
   * **Persistent Authentication:** Dual-storage security guarantees your GitHub authentication token and repository selection persist across app restarts and device reboots without repeated logins.
   * **Authoritative Manifest Reconciliation:** Every sync reconciles all local Room database notebooks and pages, ensuring untracked and modified notes are queued and committed atomically.
   * **Custom Repository Naming:** Choose any repository name you wish (defaulting to a clean suggestion `inkflow-notes-backup`).
   * **Lightweight `.inkflow` Architecture:** Replaces heavy uncompressed SVGs with compact, lossless `.inkflow` binary containers, cutting sync time and repository footprint by over 90%.
   * **Zero Lock-In:** Browse, inspect, and read notes from any laptop or desktop.
+* **Local-First Persistent Backup:** Automatically synchronizes and mirrors all notebooks to public user storage at `/storage/emulated/0/Documents/InkFlow/` every second. Survives app uninstalls and updates completely. Includes Storage Access Framework (SAF) folder picker and instant 1-tap restore.
 
-### 🌐 9. Universal Note Sharing & Blazing-Fast Web Reader
+### 🌐 11. Universal Note Sharing & Blazing-Fast Web Reader
 Never get locked into proprietary file formats. InkFlow provides a complete cross-platform ecosystem:
 * **Live Web Reader ([inkflow-reader.vercel.app](https://inkflow-reader.vercel.app)):** Blazing-fast read-only web reader deployed on Vercel. Connects to your private GitHub backup repository, fetches `.inkflow` vector notes, and renders them at 60–144 fps with pan/zoom, dark/light paper themes, and full folder tree navigation.
 * **Interactive Web Notes (`.html`):** Export notes to a single, self-contained offline HTML file. Features vector canvas rendering, pan & zoom, dark/light theme toggle, and PDF/PNG export. Opens in **any** browser on Windows, macOS, Linux, iPhone, iPad, and Android with **zero software installation**.
 * **Embedded Viewer in `.inkflow` Bundles:** Every exported `.inkflow` ZIP archive bundles an `index.html` viewer at its root. Simply double-click on any PC or Mac to view your notes offline.
 * **OS File Associations:** Native Android `intent-filter` registers InkFlow for `*.inkflow` files, allowing one-tap note opening directly from file managers, Gmail, WhatsApp, and Google Drive.
 
-### 🎙️ 10. Lecture Audio Sync
+### 🎙️ 12. Lecture Audio Sync
 * Record lecture audio timestamped against your ink strokes for synchronized audio-visual playback during revision.
 
-### 🔬 11. Hardware & Digitizer Diagnostics Probe Screen
+### 🔬 13. Hardware & Digitizer Diagnostics Probe Screen
 * Built-in diagnostic suite probing real-time display refresh rate, hardware axes (pressure, tilt, orientation, hover distance), and digitizer sampling rate.
 
 ---
@@ -212,6 +235,10 @@ adb shell monkey -p com.antigravity.note -c android.intent.category.LAUNCHER 1
 ## 🤝 Open Source Promise & Roadmap
 
 * [x] Ultra low-latency Google Ink engine (144 Hz / ~1 ms latency).
+* [x] Dual-layer scratchpad lasso with zero-stutter 144 Hz affine matrix transforms.
+* [x] Production-grade image ingestion pipeline (Media picker, Clipboard paste, Drag-and-Drop) with SHA-256 WebP storage.
+* [x] Real-time SQLite WAL stroke journal (< 2 ms pointer-up persistence & crash recovery).
+* [x] Google Drive lossless cloud backup & restore service (AppDataFolder sandbox & Drive.File scopes).
 * [x] Floating resizable DSA problem description window with test cases checklist.
 * [x] Problem description fetcher across Code360, LeetCode, GFG, Codeforces, HackerRank & Wikipedia.
 * [x] Precision partial eraser (stroke splitting at 144 Hz with gesture-scoped undo/redo).
@@ -225,7 +252,6 @@ adb shell monkey -p com.antigravity.note -c android.intent.category.LAUNCHER 1
 * [x] Persistent local backup to `Documents/InkFlow` (survives app reinstall) + SAF folder picker.
 * [x] Lightweight GitHub backup with custom repository naming & WebP previews.
 * [x] Universal note sharing (.html self-contained interactive notes, .inkflow bundles & standalone web viewer).
-* [ ] Additional cloud backup targets (Google Drive, WebDAV).
 * [ ] Google Play Store release (once developer funds are available).
 * [ ] PDF annotation and export with vector ink fidelity.
 

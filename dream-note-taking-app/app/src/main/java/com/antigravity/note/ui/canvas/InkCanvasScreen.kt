@@ -33,6 +33,8 @@ import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
@@ -163,6 +165,16 @@ import com.antigravity.note.library.backup.worker.BackupWorker
 import com.antigravity.note.ui.backup.BackupStatusChip
 import com.antigravity.note.ui.backup.BackupSyncStatus
 import com.antigravity.note.ui.backup.GitHubBackupDialog
+import com.antigravity.note.ui.backup.GoogleDriveBackupDialog
+import com.antigravity.note.library.backup.gdrive.GoogleDriveAuthStorage
+import com.antigravity.note.library.backup.gdrive.GoogleDriveBackupEngine
+import com.antigravity.note.library.backup.gdrive.GoogleDriveClient
+import com.antigravity.note.library.backup.gdrive.GoogleDriveRestoreEngine
+import com.antigravity.note.library.journal.StrokeJournalCompactor
+import com.antigravity.note.document.storage.ImageProcessor
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Cloud
+import android.graphics.PointF
 import com.antigravity.note.ui.settings.AppSettings
 import okhttp3.OkHttpClient
 import com.antigravity.note.library.db.NoteDatabase
@@ -200,6 +212,20 @@ fun InkCanvasScreen(
     val localBackupManager = remember { com.antigravity.note.library.backup.local.LocalBackupManager(context, database, pageRepo) }
     val libraryRepo = remember { LibraryRepository(database, pageRepo, localBackupManager = localBackupManager) }
 
+    // Real-Time SQLite WAL Stroke Journal Compactor
+    val strokeJournalCompactor = remember { StrokeJournalCompactor(database, pageRepo) }
+
+    // Google Drive Lossless Backup & Restore Service
+    val googleDriveAuthStorage = remember { GoogleDriveAuthStorage(context) }
+    val googleDriveClient = remember { GoogleDriveClient(googleDriveAuthStorage) }
+    val googleDriveBackupEngine = remember {
+        GoogleDriveBackupEngine(database, pageRepo, googleDriveAuthStorage, googleDriveClient)
+    }
+    val googleDriveRestoreEngine = remember {
+        GoogleDriveRestoreEngine(database, pageRepo, googleDriveAuthStorage, googleDriveClient)
+    }
+    var isGoogleDriveDialogOpen by remember { mutableStateOf(false) }
+
     var isLocalBackupDialogOpen by remember { mutableStateOf(false) }
     var detectedNotesPrompt by remember { mutableStateOf<com.antigravity.note.library.backup.local.ExistingNotesDetection.Found?>(null) }
 
@@ -222,6 +248,35 @@ fun InkCanvasScreen(
     val currentPage by docManager.currentPage.collectAsStateWithLifecycle()
     val pagesList by docManager.pagesList.collectAsStateWithLifecycle()
     val openLatency by docManager.lastOpenLatencyMs.collectAsStateWithLifecycle()
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            scope.launch {
+                val curPage = docManager.currentPage.value ?: return@launch
+                val assetsDir = pageRepo.getAssetsDir(curPage.metadata.notebookId)
+                val stream = context.contentResolver.openInputStream(uri) ?: return@launch
+                val centerPt = PointF()
+                val targetX = if (canvasView.width > 0) canvasView.width / 2f else 500f
+                val targetY = if (canvasView.height > 0) canvasView.height / 2f else 600f
+                canvasView.dryInkView.transform.screenToWorld(targetX, targetY, centerPt)
+                val canvasImg = ImageProcessor.processAndStoreImage(
+                    inputStream = stream,
+                    assetsDir = assetsDir,
+                    targetCenterX = centerPt.x,
+                    targetCenterY = centerPt.y
+                )
+                if (canvasImg != null) {
+                    curPage.addImage(canvasImg)
+                    canvasView.dryInkView.addImage(canvasImg)
+                    pageRepo.savePageAtomic(curPage)
+                    database.notebookDao().setNotebookDirty(curPage.metadata.notebookId, true)
+                    Toast.makeText(context, "Image inserted", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     // UI State
     var isSidebarOpen by remember { mutableStateOf(false) }
@@ -516,7 +571,13 @@ fun InkCanvasScreen(
         docManager.initialize(seededNotebookId) {
             val page = docManager.currentPage.value
             if (page != null) {
-                canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                scope.launch {
+                    val recovered = strokeJournalCompactor.recoverUncompactedStrokes(page.metadata.notebookId, page)
+                    if (recovered > 0) {
+                        Toast.makeText(context, "Recovered $recovered unsaved stroke(s) from journal", Toast.LENGTH_SHORT).show()
+                    }
+                    canvasView.loadPage(page, docManager.lastOpenLatencyMs.value, pageRepo.getAssetsDir(page.metadata.notebookId))
+                }
             }
         }
         if (!canvasView.digitalInkManager.isModelDownloaded()) {
@@ -542,10 +603,38 @@ fun InkCanvasScreen(
             canRedo = r
         }
         canvasView.onStrokeCommitted = { stroke ->
+            val curPage = docManager.currentPage.value
+            if (curPage != null) {
+                strokeJournalCompactor.recordStroke(
+                    curPage.metadata.notebookId,
+                    curPage.metadata.pageId,
+                    stroke
+                )
+            }
             docManager.onStrokeCommitted(stroke)
             scheduleSettledIdleGitHubBackup()
             if (isRecordingAudio) {
                 audioRecorder.recordStrokeTiming(docManager.currentPage.value?.strokes?.size ?: 0)
+            }
+        }
+        canvasView.onImageDropped = { uri, worldX, worldY ->
+            scope.launch {
+                val curPage = docManager.currentPage.value ?: return@launch
+                val assetsDir = pageRepo.getAssetsDir(curPage.metadata.notebookId)
+                val stream = try { context.contentResolver.openInputStream(uri) } catch (_: Exception) { null } ?: return@launch
+                val canvasImg = ImageProcessor.processAndStoreImage(
+                    inputStream = stream,
+                    assetsDir = assetsDir,
+                    targetCenterX = worldX,
+                    targetCenterY = worldY
+                )
+                if (canvasImg != null) {
+                    curPage.addImage(canvasImg)
+                    canvasView.dryInkView.addImage(canvasImg)
+                    pageRepo.savePageAtomic(curPage)
+                    database.notebookDao().setNotebookDirty(curPage.metadata.notebookId, true)
+                    Toast.makeText(context, "Image added", Toast.LENGTH_SHORT).show()
+                }
             }
         }
         canvasView.onUndoCommitted = { stroke ->
@@ -570,6 +659,16 @@ fun InkCanvasScreen(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
                 docManager.autoSaveCurrentPage()
+                val curPage = docManager.currentPage.value
+                if (curPage != null) {
+                    scope.launch {
+                        strokeJournalCompactor.flushImmediately(
+                            curPage.metadata.notebookId,
+                            curPage.metadata.pageId,
+                            curPage
+                        )
+                    }
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -639,6 +738,45 @@ fun InkCanvasScreen(
                         if (ok) isRecordingAudio = true
                     }
                     true
+                }
+                NoteAppShortcut.PASTE -> {
+                    val pastedStrokes = canvasView.pasteLassoClipboard()
+                    if (pastedStrokes.isNotEmpty()) {
+                        true
+                    } else {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                        val clip = clipboard?.primaryClip
+                        if (clip != null && clip.itemCount > 0) {
+                            val uri = clip.getItemAt(0).uri
+                            if (uri != null) {
+                                scope.launch {
+                                    val curPage = docManager.currentPage.value ?: return@launch
+                                    val assetsDir = pageRepo.getAssetsDir(curPage.metadata.notebookId)
+                                    val stream = try { context.contentResolver.openInputStream(uri) } catch (_: Exception) { null }
+                                    if (stream != null) {
+                                        val centerPt = PointF()
+                                        val targetX = if (canvasView.width > 0) canvasView.width / 2f else 500f
+                                        val targetY = if (canvasView.height > 0) canvasView.height / 2f else 600f
+                                        canvasView.dryInkView.transform.screenToWorld(targetX, targetY, centerPt)
+                                        val canvasImg = ImageProcessor.processAndStoreImage(
+                                            inputStream = stream,
+                                            assetsDir = assetsDir,
+                                            targetCenterX = centerPt.x,
+                                            targetCenterY = centerPt.y
+                                        )
+                                        if (canvasImg != null) {
+                                            curPage.addImage(canvasImg)
+                                            canvasView.dryInkView.addImage(canvasImg)
+                                            pageRepo.savePageAtomic(curPage)
+                                            database.notebookDao().setNotebookDirty(curPage.metadata.notebookId, true)
+                                            Toast.makeText(context, "Image pasted from clipboard", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                                true
+                            } else false
+                        } else false
+                    }
                 }
             }
         }
@@ -821,6 +959,17 @@ fun InkCanvasScreen(
                             status = backupSyncStatus,
                             onClick = { isBackupDialogOpen = true }
                         )
+                        IconButton(
+                            onClick = { isGoogleDriveDialogOpen = true },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Cloud,
+                                contentDescription = "Google Drive Cloud Backup",
+                                tint = Color(0xFF2E7D32),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                         if (isNoteLocked) {
                             Surface(
                                 color = MaterialTheme.colorScheme.errorContainer,
@@ -1039,6 +1188,12 @@ fun InkCanvasScreen(
                                     isPdfLoaded = true
                                 }
                             }
+                        )
+                        ToolIconButton(
+                            icon = Icons.Default.Image,
+                            label = "Image",
+                            isSelected = false,
+                            onClick = { imagePickerLauncher.launch("image/*") }
                         )
 
                         Spacer(modifier = Modifier.width(3.dp))
@@ -3141,6 +3296,28 @@ fun InkCanvasScreen(
                     BackupWorker.enqueueImmediate(context)
                     backupSyncStatus = BackupSyncStatus.BACKING_UP
                 }
+            )
+        }
+
+        // Google Drive Lossless Backup & Restore Dialog
+        if (isGoogleDriveDialogOpen) {
+            GoogleDriveBackupDialog(
+                authStorage = googleDriveAuthStorage,
+                backupEngine = googleDriveBackupEngine,
+                restoreEngine = googleDriveRestoreEngine,
+                onRestoreCompleted = {
+                    docManager.initialize(docManager.getActiveNotebookId()) {
+                        val cur = docManager.currentPage.value
+                        if (cur != null) {
+                            canvasView.loadPage(
+                                cur,
+                                docManager.lastOpenLatencyMs.value,
+                                pageRepo.getAssetsDir(cur.metadata.notebookId)
+                            )
+                        }
+                    }
+                },
+                onDismiss = { isGoogleDriveDialogOpen = false }
             )
         }
 

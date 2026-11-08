@@ -348,6 +348,7 @@ class InkCanvasView @JvmOverloads constructor(
     var onUndoCommitted: ((Stroke?) -> Unit)? = null
     var onClearCommitted: (() -> Unit)? = null
     var onStrokesReplaced: ((oldStrokes: List<Stroke>, newStrokes: List<Stroke>) -> Unit)? = null
+    var onImageDropped: ((uri: android.net.Uri, worldX: Float, worldY: Float) -> Unit)? = null
 
     // Document state
     var pageOpenLatencyMs: Long = 0L
@@ -376,16 +377,59 @@ class InkCanvasView @JvmOverloads constructor(
         dryInkView.lassoTool = lassoTool
         dryInkView.pdfTiler = pdfTiler
 
-        lassoTool.onStrokesTransformPreview = { oldStrokes, newStrokes ->
-            dryInkView.replaceStrokes(oldStrokes, newStrokes)
+        lassoTool.onOverlayMatrixChanged = {
+            dryInkView.postInvalidateOnAnimation()
         }
 
         lassoTool.onStrokesTransformCommitted = { oldStrokes, newStrokes ->
+            dryInkView.replaceStrokes(oldStrokes, newStrokes)
             undoStack.add(StrokeAction(addedStrokes = newStrokes, removedStrokes = oldStrokes))
             redoStack.clear()
             notifyUndoRedoState()
             onStrokesReplaced?.invoke(oldStrokes, newStrokes)
             dryInkView.invalidate()
+        }
+
+        // Setup Drag-and-Drop listener for external images
+        setOnDragListener { _, event ->
+            when (event.action) {
+                android.view.DragEvent.ACTION_DRAG_STARTED -> {
+                    val desc = event.clipDescription
+                    desc != null && (desc.hasMimeType("image/*") || desc.hasMimeType("image/png") || desc.hasMimeType("image/jpeg") || desc.hasMimeType("image/webp"))
+                }
+                android.view.DragEvent.ACTION_DRAG_ENTERED -> {
+                    dryInkView.isDropTargetActive = true
+                    dryInkView.invalidate()
+                    true
+                }
+                android.view.DragEvent.ACTION_DRAG_LOCATION -> {
+                    val p = PointF()
+                    dryInkView.transform.screenToWorld(event.x, event.y, p)
+                    dryInkView.dropTargetBounds.set(p.x - 150f, p.y - 120f, p.x + 150f, p.y + 120f)
+                    dryInkView.postInvalidateOnAnimation()
+                    true
+                }
+                android.view.DragEvent.ACTION_DROP -> {
+                    dryInkView.isDropTargetActive = false
+                    val clipData = event.clipData
+                    if (clipData != null && clipData.itemCount > 0) {
+                        val uri = clipData.getItemAt(0).uri
+                        if (uri != null) {
+                            val p = PointF()
+                            dryInkView.transform.screenToWorld(event.x, event.y, p)
+                            onImageDropped?.invoke(uri, p.x, p.y)
+                        }
+                    }
+                    dryInkView.invalidate()
+                    true
+                }
+                android.view.DragEvent.ACTION_DRAG_EXITED, android.view.DragEvent.ACTION_DRAG_ENDED -> {
+                    dryInkView.isDropTargetActive = false
+                    dryInkView.invalidate()
+                    true
+                }
+                else -> false
+            }
         }
 
         // Commit finished wet ink into dry ink view
@@ -411,7 +455,7 @@ class InkCanvasView @JvmOverloads constructor(
         setWillNotDraw(false)
     }
 
-    fun loadPage(page: DocumentPage, openLatencyMs: Long = 0L) {
+    fun loadPage(page: DocumentPage, openLatencyMs: Long = 0L, assetsDir: java.io.File? = null) {
         pageOpenLatencyMs = openLatencyMs
         pageTitle = page.metadata.title
         activeStrokeIds.clear()
@@ -421,6 +465,7 @@ class InkCanvasView @JvmOverloads constructor(
         isTransformingSelection = false
         onLassoSelectionChanged?.invoke(false)
         dryInkView.loadStrokes(page.strokes)
+        dryInkView.setImages(page.images, assetsDir)
         dryInkView.setPaperTemplate(page.metadata.template)
         undoStack.clear()
         redoStack.clear()

@@ -37,6 +37,15 @@ interface NotebookDao {
     @Query("UPDATE notebooks SET iconKey = :iconKey, modifiedAt = :timestamp WHERE notebookId = :notebookId")
     suspend fun updateNotebookIcon(notebookId: String, iconKey: String?, timestamp: Long = System.currentTimeMillis())
 
+    @Query("SELECT * FROM notebooks WHERE is_dirty = 1")
+    suspend fun getDirtyNotebooks(): List<NotebookEntity>
+
+    @Query("UPDATE notebooks SET is_dirty = :isDirty WHERE notebookId = :notebookId")
+    suspend fun setNotebookDirty(notebookId: String, isDirty: Boolean)
+
+    @Query("UPDATE notebooks SET is_dirty = 0")
+    suspend fun resetAllDirtyFlags()
+
     @Query("DELETE FROM notebooks WHERE notebookId = :notebookId")
     suspend fun deleteNotebook(notebookId: String)
 }

@@ -3,6 +3,7 @@ package com.antigravity.note.inkengine.lasso
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.DashPathEffect
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PointF
@@ -11,6 +12,7 @@ import androidx.ink.brush.Brush
 import androidx.ink.brush.InputToolType
 import androidx.ink.strokes.MutableStrokeInputBatch
 import androidx.ink.strokes.Stroke
+import androidx.ink.strokes.StrokeInput
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
@@ -46,8 +48,30 @@ class LassoTool {
 
     // Currently selected strokes
     val selectedStrokes = mutableListOf<Stroke>()
+    val selectedStrokesSet = HashSet<Stroke>()
     val initialStrokesBeforeTransform = mutableListOf<Stroke>()
     val selectionBounds = RectF()
+    val baseSelectionBounds = RectF()
+
+    // Dual-Layer Transform state
+    val overlayTransformMatrix = Matrix()
+    var isTransformGestureActive: Boolean = false
+        private set
+
+    private var gestureStartX = 0f
+    private var gestureStartY = 0f
+    var accumulatedDeltaX = 0f
+        private set
+    var accumulatedDeltaY = 0f
+        private set
+    var accumulatedScaleX = 1f
+        private set
+    var accumulatedScaleY = 1f
+        private set
+    var pivotX = 0f
+        private set
+    var pivotY = 0f
+        private set
 
     // Transform tracking
     private var activeHandle = TransformHandle.NONE
@@ -57,6 +81,7 @@ class LassoTool {
 
     var onStrokesTransformPreview: ((oldStrokes: List<Stroke>, newStrokes: List<Stroke>) -> Unit)? = null
     var onStrokesTransformCommitted: ((initialStrokes: List<Stroke>, finalStrokes: List<Stroke>) -> Unit)? = null
+    var onOverlayMatrixChanged: (() -> Unit)? = null
 
     @Deprecated("Use onStrokesTransformPreview or onStrokesTransformCommitted instead")
     var onStrokesTransformed: ((oldStrokes: List<Stroke>, newStrokes: List<Stroke>) -> Unit)? = null
@@ -107,6 +132,29 @@ class LassoTool {
         }
     }
 
+    @androidx.annotation.VisibleForTesting
+    fun setTransformStateForTesting(
+        bounds: RectF,
+        handle: TransformHandle = TransformHandle.BODY,
+        startX: Float = 200f,
+        startY: Float = 200f
+    ) {
+        mode = LassoMode.TRANSFORMING
+        selectionBounds.set(bounds)
+        baseSelectionBounds.set(bounds)
+        activeHandle = handle
+        gestureStartX = startX
+        gestureStartY = startY
+        lastTouchX = startX
+        lastTouchY = startY
+        accumulatedDeltaX = 0f
+        accumulatedDeltaY = 0f
+        accumulatedScaleX = 1f
+        accumulatedScaleY = 1f
+        overlayTransformMatrix.reset()
+        isTransformGestureActive = true
+    }
+
     fun startLasso(worldX: Float, worldY: Float) {
         // If clicking on existing selection handle or body, switch to transform
         if (mode == LassoMode.TRANSFORMING && selectedStrokes.isNotEmpty()) {
@@ -115,19 +163,56 @@ class LassoTool {
                 activeHandle = handle
                 lastTouchX = worldX
                 lastTouchY = worldY
+                gestureStartX = worldX
+                gestureStartY = worldY
+                accumulatedDeltaX = 0f
+                accumulatedDeltaY = 0f
+                accumulatedScaleX = 1f
+                accumulatedScaleY = 1f
+                baseSelectionBounds.set(selectionBounds)
                 initialStrokesBeforeTransform.clear()
                 initialStrokesBeforeTransform.addAll(selectedStrokes)
+                overlayTransformMatrix.reset()
+                isTransformGestureActive = true
+
+                // Calculate pivot based on handle
+                when (handle) {
+                    TransformHandle.BODY -> {
+                        pivotX = baseSelectionBounds.centerX()
+                        pivotY = baseSelectionBounds.centerY()
+                    }
+                    TransformHandle.BOTTOM_RIGHT -> {
+                        pivotX = baseSelectionBounds.left
+                        pivotY = baseSelectionBounds.top
+                    }
+                    TransformHandle.TOP_LEFT -> {
+                        pivotX = baseSelectionBounds.right
+                        pivotY = baseSelectionBounds.bottom
+                    }
+                    TransformHandle.TOP_RIGHT -> {
+                        pivotX = baseSelectionBounds.left
+                        pivotY = baseSelectionBounds.bottom
+                    }
+                    TransformHandle.BOTTOM_LEFT -> {
+                        pivotX = baseSelectionBounds.right
+                        pivotY = baseSelectionBounds.top
+                    }
+                    TransformHandle.NONE -> {}
+                }
                 return
             }
         }
 
         // Otherwise start fresh selection loop
         mode = LassoMode.SELECTING
+        isTransformGestureActive = false
+        overlayTransformMatrix.reset()
         lassoPoints.clear()
         lassoPoints.add(PointF(worldX, worldY))
         lassoPath.reset()
         lassoPath.moveTo(worldX, worldY)
         selectedStrokes.clear()
+        selectedStrokesSet.clear()
         initialStrokesBeforeTransform.clear()
     }
 
@@ -136,31 +221,96 @@ class LassoTool {
             lassoPoints.add(PointF(worldX, worldY))
             lassoPath.lineTo(worldX, worldY)
             return true
-        } else if (mode == LassoMode.TRANSFORMING && activeHandle != TransformHandle.NONE) {
-            val dx = worldX - lastTouchX
-            val dy = worldY - lastTouchY
-
+        } else if (mode == LassoMode.TRANSFORMING && activeHandle != TransformHandle.NONE && isTransformGestureActive) {
             when (activeHandle) {
                 TransformHandle.BODY -> {
-                    translateSelected(dx, dy)
+                    accumulatedDeltaX = worldX - gestureStartX
+                    accumulatedDeltaY = worldY - gestureStartY
+                    accumulatedScaleX = 1f
+                    accumulatedScaleY = 1f
+                    overlayTransformMatrix.setTranslate(accumulatedDeltaX, accumulatedDeltaY)
+                    selectionBounds.set(baseSelectionBounds)
+                    selectionBounds.offset(accumulatedDeltaX, accumulatedDeltaY)
+                    updateHandles()
                 }
                 TransformHandle.BOTTOM_RIGHT -> {
-                    scaleSelected(dx, dy, fromLeft = false, fromTop = false)
+                    val baseW = baseSelectionBounds.width().coerceAtLeast(15f)
+                    val baseH = baseSelectionBounds.height().coerceAtLeast(15f)
+                    val dx = worldX - gestureStartX
+                    val dy = worldY - gestureStartY
+                    accumulatedScaleX = ((baseW + dx) / baseW).coerceIn(0.15f, 8.0f)
+                    accumulatedScaleY = ((baseH + dy) / baseH).coerceIn(0.15f, 8.0f)
+                    accumulatedDeltaX = 0f
+                    accumulatedDeltaY = 0f
+                    overlayTransformMatrix.setScale(accumulatedScaleX, accumulatedScaleY, pivotX, pivotY)
+                    selectionBounds.set(
+                        baseSelectionBounds.left,
+                        baseSelectionBounds.top,
+                        baseSelectionBounds.left + baseW * accumulatedScaleX,
+                        baseSelectionBounds.top + baseH * accumulatedScaleY
+                    )
+                    updateHandles()
                 }
                 TransformHandle.TOP_LEFT -> {
-                    scaleSelected(dx, dy, fromLeft = true, fromTop = true)
+                    val baseW = baseSelectionBounds.width().coerceAtLeast(15f)
+                    val baseH = baseSelectionBounds.height().coerceAtLeast(15f)
+                    val dx = worldX - gestureStartX
+                    val dy = worldY - gestureStartY
+                    accumulatedScaleX = ((baseW - dx) / baseW).coerceIn(0.15f, 8.0f)
+                    accumulatedScaleY = ((baseH - dy) / baseH).coerceIn(0.15f, 8.0f)
+                    accumulatedDeltaX = 0f
+                    accumulatedDeltaY = 0f
+                    overlayTransformMatrix.setScale(accumulatedScaleX, accumulatedScaleY, pivotX, pivotY)
+                    selectionBounds.set(
+                        baseSelectionBounds.right - baseW * accumulatedScaleX,
+                        baseSelectionBounds.bottom - baseH * accumulatedScaleY,
+                        baseSelectionBounds.right,
+                        baseSelectionBounds.bottom
+                    )
+                    updateHandles()
                 }
                 TransformHandle.TOP_RIGHT -> {
-                    scaleSelected(dx, dy, fromLeft = false, fromTop = true)
+                    val baseW = baseSelectionBounds.width().coerceAtLeast(15f)
+                    val baseH = baseSelectionBounds.height().coerceAtLeast(15f)
+                    val dx = worldX - gestureStartX
+                    val dy = worldY - gestureStartY
+                    accumulatedScaleX = ((baseW + dx) / baseW).coerceIn(0.15f, 8.0f)
+                    accumulatedScaleY = ((baseH - dy) / baseH).coerceIn(0.15f, 8.0f)
+                    accumulatedDeltaX = 0f
+                    accumulatedDeltaY = 0f
+                    overlayTransformMatrix.setScale(accumulatedScaleX, accumulatedScaleY, pivotX, pivotY)
+                    selectionBounds.set(
+                        baseSelectionBounds.left,
+                        baseSelectionBounds.bottom - baseH * accumulatedScaleY,
+                        baseSelectionBounds.left + baseW * accumulatedScaleX,
+                        baseSelectionBounds.bottom
+                    )
+                    updateHandles()
                 }
                 TransformHandle.BOTTOM_LEFT -> {
-                    scaleSelected(dx, dy, fromLeft = true, fromTop = false)
+                    val baseW = baseSelectionBounds.width().coerceAtLeast(15f)
+                    val baseH = baseSelectionBounds.height().coerceAtLeast(15f)
+                    val dx = worldX - gestureStartX
+                    val dy = worldY - gestureStartY
+                    accumulatedScaleX = ((baseW - dx) / baseW).coerceIn(0.15f, 8.0f)
+                    accumulatedScaleY = ((baseH + dy) / baseH).coerceIn(0.15f, 8.0f)
+                    accumulatedDeltaX = 0f
+                    accumulatedDeltaY = 0f
+                    overlayTransformMatrix.setScale(accumulatedScaleX, accumulatedScaleY, pivotX, pivotY)
+                    selectionBounds.set(
+                        baseSelectionBounds.right - baseW * accumulatedScaleX,
+                        baseSelectionBounds.top,
+                        baseSelectionBounds.right,
+                        baseSelectionBounds.top + baseH * accumulatedScaleY
+                    )
+                    updateHandles()
                 }
                 TransformHandle.NONE -> {}
             }
 
             lastTouchX = worldX
             lastTouchY = worldY
+            onOverlayMatrixChanged?.invoke()
             return true
         }
         return false
@@ -179,6 +329,7 @@ class LassoTool {
 
             // Select strokes inside polygon
             selectedStrokes.clear()
+            selectedStrokesSet.clear()
             for (stroke in allCanvasStrokes) {
                 val box = stroke.shape.computeBoundingBox() ?: continue
                 val centerX = (box.xMin + box.xMax) / 2f
@@ -189,8 +340,10 @@ class LassoTool {
             }
 
             if (selectedStrokes.isNotEmpty()) {
+                selectedStrokesSet.addAll(selectedStrokes)
                 mode = LassoMode.TRANSFORMING
                 recomputeSelectionBounds()
+                baseSelectionBounds.set(selectionBounds)
                 initialStrokesBeforeTransform.clear()
                 initialStrokesBeforeTransform.addAll(selectedStrokes)
                 lassoPoints.clear()
@@ -207,17 +360,69 @@ class LassoTool {
     }
 
     fun finishTransform(): Boolean {
-        if (activeHandle != TransformHandle.NONE) {
-            activeHandle = TransformHandle.NONE
-            if (initialStrokesBeforeTransform.isNotEmpty() && selectedStrokes != initialStrokesBeforeTransform) {
-                val initial = initialStrokesBeforeTransform.toList()
-                val current = selectedStrokes.toList()
+        if (isTransformGestureActive) {
+            val moved = accumulatedDeltaX != 0f || accumulatedDeltaY != 0f || accumulatedScaleX != 1f || accumulatedScaleY != 1f
+            if (moved && initialStrokesBeforeTransform.isNotEmpty()) {
+                val finalStrokes = mutableListOf<Stroke>()
+                val strokeInputTemp = StrokeInput()
+                val pts = FloatArray(2)
+
+                for (stroke in initialStrokesBeforeTransform) {
+                    val newBatch = MutableStrokeInputBatch()
+                    val inputs = stroke.inputs
+                    for (i in 0 until inputs.size) {
+                        inputs.populate(i, strokeInputTemp)
+                        pts[0] = strokeInputTemp.x
+                        pts[1] = strokeInputTemp.y
+                        overlayTransformMatrix.mapPoints(pts)
+                        // Safety fallback for JVM unit testing if matrix was stubbed
+                        val finalX = if (pts[0] == 0f && pts[1] == 0f && (strokeInputTemp.x != 0f || strokeInputTemp.y != 0f)) {
+                            pivotX + (strokeInputTemp.x - pivotX) * accumulatedScaleX + accumulatedDeltaX
+                        } else {
+                            pts[0]
+                        }
+                        val finalY = if (pts[0] == 0f && pts[1] == 0f && (strokeInputTemp.y != 0f || strokeInputTemp.y != 0f)) {
+                            pivotY + (strokeInputTemp.y - pivotY) * accumulatedScaleY + accumulatedDeltaY
+                        } else {
+                            pts[1]
+                        }
+
+                        newBatch.add(
+                            strokeInputTemp.toolType,
+                            finalX,
+                            finalY,
+                            strokeInputTemp.elapsedTimeMillis,
+                            strokeInputTemp.strokeUnitLengthCm,
+                            strokeInputTemp.pressure.coerceIn(0.01f, 1.0f),
+                            strokeInputTemp.tiltRadians.coerceIn(0f, 1.57f),
+                            strokeInputTemp.orientationRadians
+                        )
+                    }
+                    if (newBatch.size > 0) {
+                        finalStrokes.add(Stroke(stroke.brush, newBatch.toImmutable()))
+                    }
+                }
+
+                val old = initialStrokesBeforeTransform.toList()
+                selectedStrokes.clear()
+                selectedStrokes.addAll(finalStrokes)
+                selectedStrokesSet.clear()
+                selectedStrokesSet.addAll(finalStrokes)
                 initialStrokesBeforeTransform.clear()
-                initialStrokesBeforeTransform.addAll(current)
-                onStrokesTransformCommitted?.invoke(initial, current)
-                return true
+                initialStrokesBeforeTransform.addAll(finalStrokes)
+                recomputeSelectionBounds()
+                onStrokesTransformCommitted?.invoke(old, finalStrokes)
             }
+            overlayTransformMatrix.reset()
+            accumulatedDeltaX = 0f
+            accumulatedDeltaY = 0f
+            accumulatedScaleX = 1f
+            accumulatedScaleY = 1f
+            activeHandle = TransformHandle.NONE
+            isTransformGestureActive = false
+            return true
         }
+        activeHandle = TransformHandle.NONE
         return false
     }
 
@@ -229,6 +434,7 @@ class LassoTool {
         clearSelection()
         if (strokes.isEmpty()) return
         selectedStrokes.addAll(strokes)
+        selectedStrokesSet.addAll(strokes)
         initialStrokesBeforeTransform.clear()
         initialStrokesBeforeTransform.addAll(strokes)
         mode = LassoMode.TRANSFORMING
@@ -281,6 +487,8 @@ class LassoTool {
         }
         selectedStrokes.clear()
         selectedStrokes.addAll(pasted)
+        selectedStrokesSet.clear()
+        selectedStrokesSet.addAll(pasted)
         mode = LassoMode.TRANSFORMING
         recomputeSelectionBounds()
         return pasted
@@ -289,11 +497,19 @@ class LassoTool {
     fun clearSelection() {
         mode = LassoMode.IDLE
         activeHandle = TransformHandle.NONE
+        isTransformGestureActive = false
+        overlayTransformMatrix.reset()
+        accumulatedDeltaX = 0f
+        accumulatedDeltaY = 0f
+        accumulatedScaleX = 1f
+        accumulatedScaleY = 1f
         lassoPoints.clear()
         lassoPath.reset()
         selectedStrokes.clear()
+        selectedStrokesSet.clear()
         initialStrokesBeforeTransform.clear()
         selectionBounds.setEmpty()
+        baseSelectionBounds.setEmpty()
     }
 
     fun duplicateSelected(): List<Stroke> {
@@ -336,6 +552,8 @@ class LassoTool {
         }
         selectedStrokes.clear()
         selectedStrokes.addAll(duplicated)
+        selectedStrokesSet.clear()
+        selectedStrokesSet.addAll(duplicated)
         recomputeSelectionBounds()
         return duplicated
     }
@@ -358,35 +576,49 @@ class LassoTool {
 
         selectedStrokes.clear()
         selectedStrokes.addAll(newStrokes)
+        selectedStrokesSet.clear()
+        selectedStrokesSet.addAll(newStrokes)
         return TransformedStrokesResult(oldStrokes, newStrokes)
     }
 
     fun translateSelected(dx: Float, dy: Float) {
         if (selectedStrokes.isEmpty()) return
         val oldStrokes = selectedStrokes.toList()
+        val matrix = Matrix().apply { setTranslate(dx, dy) }
+        val strokeInputTemp = StrokeInput()
+        val pts = FloatArray(2)
         val updated = mutableListOf<Stroke>()
         for (stroke in selectedStrokes) {
             val newBatch = MutableStrokeInputBatch()
             val inputs = stroke.inputs
             for (i in 0 until inputs.size) {
-                val pt = inputs.get(i)
+                inputs.populate(i, strokeInputTemp)
+                pts[0] = strokeInputTemp.x
+                pts[1] = strokeInputTemp.y
+                matrix.mapPoints(pts)
+                val finalX = if (pts[0] == 0f && pts[1] == 0f && (strokeInputTemp.x != 0f || strokeInputTemp.y != 0f)) strokeInputTemp.x + dx else pts[0]
+                val finalY = if (pts[0] == 0f && pts[1] == 0f && (strokeInputTemp.y != 0f || strokeInputTemp.y != 0f)) strokeInputTemp.y + dy else pts[1]
                 newBatch.add(
-                    pt.toolType,
-                    pt.x + dx,
-                    pt.y + dy,
-                    pt.elapsedTimeMillis,
-                    pt.strokeUnitLengthCm,
-                    pt.pressure.coerceIn(0.1f, 1.0f),
-                    pt.tiltRadians.coerceIn(0f, 1.57f),
-                    pt.orientationRadians
+                    strokeInputTemp.toolType,
+                    finalX,
+                    finalY,
+                    strokeInputTemp.elapsedTimeMillis,
+                    strokeInputTemp.strokeUnitLengthCm,
+                    strokeInputTemp.pressure.coerceIn(0.1f, 1.0f),
+                    strokeInputTemp.tiltRadians.coerceIn(0f, 1.57f),
+                    strokeInputTemp.orientationRadians
                 )
             }
             updated.add(Stroke(stroke.brush, newBatch.toImmutable()))
         }
         selectedStrokes.clear()
         selectedStrokes.addAll(updated)
+        selectedStrokesSet.clear()
+        selectedStrokesSet.addAll(updated)
         selectionBounds.offset(dx, dy)
+        baseSelectionBounds.set(selectionBounds)
         updateHandles()
+        onStrokesTransformCommitted?.invoke(oldStrokes, updated)
         onStrokesTransformPreview?.invoke(oldStrokes, updated)
         @Suppress("DEPRECATION")
         onStrokesTransformed?.invoke(oldStrokes, updated)
@@ -409,37 +641,42 @@ class LassoTool {
 
         val oldStrokes = selectedStrokes.toList()
         val updated = mutableListOf<Stroke>()
+        val strokeInputTemp = StrokeInput()
         for (stroke in selectedStrokes) {
             val newBatch = MutableStrokeInputBatch()
             val inputs = stroke.inputs
             for (i in 0 until inputs.size) {
-                val pt = inputs.get(i)
-                val newX = pivotX + (pt.x - pivotX) * clampedScaleX
-                val newY = pivotY + (pt.y - pivotY) * clampedScaleY
+                inputs.populate(i, strokeInputTemp)
+                val newX = pivotX + (strokeInputTemp.x - pivotX) * clampedScaleX
+                val newY = pivotY + (strokeInputTemp.y - pivotY) * clampedScaleY
                 newBatch.add(
-                    pt.toolType,
+                    strokeInputTemp.toolType,
                     newX,
                     newY,
-                    pt.elapsedTimeMillis,
-                    pt.strokeUnitLengthCm,
-                    pt.pressure.coerceIn(0.1f, 1.0f),
-                    pt.tiltRadians.coerceIn(0f, 1.57f),
-                    pt.orientationRadians
+                    strokeInputTemp.elapsedTimeMillis,
+                    strokeInputTemp.strokeUnitLengthCm,
+                    strokeInputTemp.pressure.coerceIn(0.1f, 1.0f),
+                    strokeInputTemp.tiltRadians.coerceIn(0f, 1.57f),
+                    strokeInputTemp.orientationRadians
                 )
             }
             updated.add(Stroke(stroke.brush, newBatch.toImmutable()))
         }
         selectedStrokes.clear()
         selectedStrokes.addAll(updated)
+        selectedStrokesSet.clear()
+        selectedStrokesSet.addAll(updated)
         recomputeSelectionBounds()
+        onStrokesTransformCommitted?.invoke(oldStrokes, updated)
         onStrokesTransformPreview?.invoke(oldStrokes, updated)
         @Suppress("DEPRECATION")
         onStrokesTransformed?.invoke(oldStrokes, updated)
     }
 
-    private fun recomputeSelectionBounds() {
+    fun recomputeSelectionBounds() {
         if (selectedStrokes.isEmpty()) {
             selectionBounds.setEmpty()
+            baseSelectionBounds.setEmpty()
             return
         }
 
@@ -457,6 +694,7 @@ class LassoTool {
         }
 
         selectionBounds.set(minX - 12f, minY - 12f, maxX + 12f, maxY + 12f)
+        baseSelectionBounds.set(selectionBounds)
         updateHandles()
     }
 

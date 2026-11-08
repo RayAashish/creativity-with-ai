@@ -47,6 +47,16 @@ class PageRepository(
         return dir
     }
 
+    fun getAssetsDir(notebookId: String): File {
+        val dir = File(getNotebookDir(notebookId), "assets")
+        if (!dir.exists()) dir.mkdirs()
+        return dir
+    }
+
+    fun getAssetFile(notebookId: String, assetRef: String): File {
+        return File(getAssetsDir(notebookId), assetRef)
+    }
+
     fun getPageFile(notebookId: String, pageId: String): File {
         return File(getPagesDir(notebookId), "$pageId.inkpage")
     }

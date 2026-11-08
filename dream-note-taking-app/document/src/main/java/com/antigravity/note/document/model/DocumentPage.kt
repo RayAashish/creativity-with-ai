@@ -6,8 +6,26 @@ import java.util.UUID
 data class DocumentPage(
     var metadata: PageMetadata,
     val strokes: MutableList<Stroke> = mutableListOf(),
-    val strokeIds: MutableList<String> = mutableListOf()
+    val strokeIds: MutableList<String> = mutableListOf(),
+    val images: MutableList<CanvasImage> = mutableListOf()
 ) {
+    fun addImage(image: CanvasImage) {
+        images.add(image)
+        metadata = metadata.copy(modifiedAt = System.currentTimeMillis())
+    }
+
+    fun removeImage(imageId: String): Boolean {
+        val removed = images.removeAll { it.id == imageId }
+        if (removed) {
+            metadata = metadata.copy(modifiedAt = System.currentTimeMillis())
+        }
+        return removed
+    }
+
+    fun clearAllImages() {
+        images.clear()
+        metadata = metadata.copy(modifiedAt = System.currentTimeMillis())
+    }
     fun addStroke(stroke: Stroke, id: String = UUID.randomUUID().toString()): Boolean {
         if (strokeIds.contains(id)) {
             return false // Deduplicate by unique stroke ID

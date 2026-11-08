@@ -1,23 +1,28 @@
 package com.antigravity.note.inkengine.canvas
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.DashPathEffect
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
+import android.util.LruCache
 import android.view.View
 import androidx.ink.brush.Brush
 import androidx.ink.brush.StockBrushes
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.Stroke
+import com.antigravity.note.document.model.CanvasImage
 import com.antigravity.note.document.model.PaperTemplate
 import com.antigravity.note.inkengine.eraser.EraserMode
 import com.antigravity.note.inkengine.eraser.PrecisionEraser
 import com.antigravity.note.inkengine.eraser.SpatialStrokeIndex
 import com.antigravity.note.inkengine.lasso.LassoTool
 import com.antigravity.note.inkengine.pdf.PdfTiler
+import java.io.File
 
 data class EraseModification(
     val removedStrokes: List<Stroke> = emptyList(),
@@ -89,6 +94,35 @@ class DryInkCanvasView @JvmOverloads constructor(
         style = Paint.Style.FILL
     }
     private val eraseQueryRect = RectF()
+
+    // Canvas Images & Offline Assets
+    val images = mutableListOf<CanvasImage>()
+    var assetsDir: File? = null
+    private val bitmapCache = object : LruCache<String, Bitmap>(32) {
+        override fun sizeOf(key: String, value: Bitmap): Int {
+            return value.byteCount / 1024
+        }
+    }
+    private val imageDstRect = RectF()
+    private val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+
+    // Drag-and-drop indicator
+    var isDropTargetActive = false
+    val dropTargetBounds = RectF()
+    private val dropTargetPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 4f
+            color = Color.parseColor("#2196F3")
+            pathEffect = DashPathEffect(floatArrayOf(16f, 12f), 0f)
+        }
+    }
+    private val dropTargetFillPaint by lazy {
+        Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.parseColor("#182196F3")
+        }
+    }
 
     init {
         // Ensure hardware acceleration is enabled
@@ -193,18 +227,73 @@ class DryInkCanvasView @JvmOverloads constructor(
             drawPaperGrid(canvas)
         }
 
-        // Draw dry vector strokes (2-pass: highlighters first underneath, so handwriting text stays crisp on top)
-        for (i in 0 until strokes.size) {
-            val stroke = strokes[i]
-            if (isHighlighterStroke(stroke)) {
-                strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
+        val lasso = lassoTool
+        val isTransforming = lasso != null && lasso.isTransformGestureActive && lasso.selectedStrokes.isNotEmpty()
+
+        if (isTransforming) {
+            val selectedSet = lasso.selectedStrokesSet
+
+            // 1. Base Layer (Static): Unselected images & unselected strokes
+            drawImages(canvas)
+
+            for (i in 0 until strokes.size) {
+                val stroke = strokes[i]
+                if (stroke !in selectedSet && isHighlighterStroke(stroke)) {
+                    strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
+                }
             }
+            for (i in 0 until strokes.size) {
+                val stroke = strokes[i]
+                if (stroke !in selectedSet && !isHighlighterStroke(stroke)) {
+                    strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
+                }
+            }
+
+            // 2. Interactive Scratchpad / Overlay Layer (Dynamic): Hardware-accelerated transform
+            canvas.save()
+            canvas.concat(lasso.overlayTransformMatrix)
+
+            for (i in 0 until lasso.selectedStrokes.size) {
+                val stroke = lasso.selectedStrokes[i]
+                if (isHighlighterStroke(stroke)) {
+                    strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
+                }
+            }
+            for (i in 0 until lasso.selectedStrokes.size) {
+                val stroke = lasso.selectedStrokes[i]
+                if (!isHighlighterStroke(stroke)) {
+                    strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
+                }
+            }
+            canvas.restore()
+
+            // 3. Selection Box & Handles in world space
+            lasso.draw(canvas)
+        } else {
+            // Standard render: all images then all strokes
+            drawImages(canvas)
+
+            for (i in 0 until strokes.size) {
+                val stroke = strokes[i]
+                if (isHighlighterStroke(stroke)) {
+                    strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
+                }
+            }
+            for (i in 0 until strokes.size) {
+                val stroke = strokes[i]
+                if (!isHighlighterStroke(stroke)) {
+                    strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
+                }
+            }
+
+            // Draw lasso selection overlay if active
+            lasso?.draw(canvas)
         }
-        for (i in 0 until strokes.size) {
-            val stroke = strokes[i]
-            if (!isHighlighterStroke(stroke)) {
-                strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
-            }
+
+        // Draw drag-and-drop indicator
+        if (isDropTargetActive && !dropTargetBounds.isEmpty) {
+            canvas.drawRoundRect(dropTargetBounds, 16f, 16f, dropTargetFillPaint)
+            canvas.drawRoundRect(dropTargetBounds, 16f, 16f, dropTargetPaint)
         }
 
         // Draw search match highlights
@@ -216,10 +305,56 @@ class DryInkCanvasView @JvmOverloads constructor(
             }
         }
 
-        // Draw lasso selection overlay if active
-        lassoTool?.draw(canvas)
-
         canvas.restore()
+    }
+
+    private fun drawImages(canvas: Canvas) {
+        if (images.isEmpty()) return
+        val dir = assetsDir ?: return
+        for (i in 0 until images.size) {
+            val img = images[i]
+            val bitmap = getBitmap(File(dir, img.assetRef))
+            if (bitmap != null) {
+                imageDstRect.set(img.x, img.y, img.x + img.width, img.y + img.height)
+                canvas.drawBitmap(bitmap, null, imageDstRect, bitmapPaint)
+            }
+        }
+    }
+
+    private fun getBitmap(file: File): Bitmap? {
+        if (!file.exists()) return null
+        val path = file.absolutePath
+        val cached = bitmapCache.get(path)
+        if (cached != null && !cached.isRecycled) return cached
+        return try {
+            val bmp = android.graphics.BitmapFactory.decodeFile(path)
+            if (bmp != null) {
+                bitmapCache.put(path, bmp)
+            }
+            bmp
+        } catch (e: Throwable) {
+            null
+        }
+    }
+
+    fun setImages(newImages: List<CanvasImage>, directory: File? = null) {
+        images.clear()
+        images.addAll(newImages)
+        if (directory != null) {
+            assetsDir = directory
+        }
+        invalidate()
+    }
+
+    fun addImage(image: CanvasImage) {
+        images.add(image)
+        invalidate()
+    }
+
+    fun removeImage(imageId: String): Boolean {
+        val removed = images.removeAll { it.id == imageId }
+        if (removed) invalidate()
+        return removed
     }
 
     private fun isHighlighterStroke(stroke: Stroke): Boolean {

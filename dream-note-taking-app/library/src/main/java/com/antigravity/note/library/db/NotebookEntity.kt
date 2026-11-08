@@ -1,5 +1,6 @@
 package com.antigravity.note.library.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -26,5 +27,7 @@ data class NotebookEntity(
     val isStarred: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
     val modifiedAt: Long = System.currentTimeMillis(),
-    val iconKey: String? = null
+    val iconKey: String? = null,
+    @ColumnInfo(name = "is_dirty", defaultValue = "1")
+    val isDirty: Boolean = true
 )
