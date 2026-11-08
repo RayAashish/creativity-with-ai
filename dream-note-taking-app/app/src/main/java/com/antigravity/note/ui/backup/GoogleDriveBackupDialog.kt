@@ -92,7 +92,8 @@ fun GoogleDriveBackupDialog(
     var lastBackupTime by remember { mutableStateOf(authStorage.getLastBackupTime()) }
     var lastBackupSize by remember { mutableStateOf(authStorage.getLastBackupSize()) }
     var lastBackupHash by remember { mutableStateOf(authStorage.getLastBackupHash()) }
-    var accountEmail by remember { mutableStateOf(authStorage.getAccountEmail() ?: "Google Account Connected") }
+    var apiKey by remember { mutableStateOf(authStorage.getApiKey()) }
+    var accountEmail by remember { mutableStateOf(authStorage.getAccountEmail() ?: "2002raysi@gmail.com") }
     val hasToken = authStorage.getAccessToken() != null
 
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy  hh:mm a", Locale.getDefault()) }
@@ -177,6 +178,11 @@ fun GoogleDriveBackupDialog(
                                     text = accountEmail,
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = if (apiKey.isNotEmpty()) "API Key: ${apiKey.take(10)}...${apiKey.takeLast(4)}" else "No API Key",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
                             }
                             OutlinedButton(
@@ -424,16 +430,18 @@ fun GoogleDriveBackupDialog(
     // Token configuration dialog
     if (showTokenDialog) {
         var tokenInput by remember { mutableStateOf(authStorage.getAccessToken().orEmpty()) }
-        var emailInput by remember { mutableStateOf(authStorage.getAccountEmail() ?: "user@gmail.com") }
+        var emailInput by remember { mutableStateOf(authStorage.getAccountEmail() ?: "2002raysi@gmail.com") }
+        var apiKeyInput by remember { mutableStateOf(authStorage.getApiKey()) }
 
         AlertDialog(
             onDismissRequest = { showTokenDialog = false },
-            title = { Text("Google Drive Authentication") },
+            title = { Text("Google Drive Credentials") },
             text = {
                 Column {
                     Text(
-                        "Enter your Google OAuth2 Access Token (with drive.appdata or drive.file scope):",
-                        style = MaterialTheme.typography.bodySmall
+                        "Google Drive API v3 requires an OAuth2 User Access Token to upload or restore private user files. Your Google API key is configured for project quotas.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     OutlinedTextField(
@@ -445,9 +453,18 @@ fun GoogleDriveBackupDialog(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
+                        value = apiKeyInput,
+                        onValueChange = { apiKeyInput = it },
+                        label = { Text("Google Drive API Key") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
                         value = tokenInput,
                         onValueChange = { tokenInput = it },
                         label = { Text("OAuth Bearer Token") },
+                        placeholder = { Text("ya29.a0...") },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -457,6 +474,8 @@ fun GoogleDriveBackupDialog(
                     onClick = {
                         authStorage.saveAccessToken(tokenInput.trim().ifEmpty { null })
                         authStorage.saveAccountEmail(emailInput.trim().ifEmpty { null })
+                        authStorage.saveApiKey(apiKeyInput.trim().ifEmpty { null })
+                        apiKey = apiKeyInput.trim()
                         accountEmail = emailInput.trim().ifEmpty { "Connected Account" }
                         showTokenDialog = false
                         Toast.makeText(context, "Google Drive credentials saved", Toast.LENGTH_SHORT).show()

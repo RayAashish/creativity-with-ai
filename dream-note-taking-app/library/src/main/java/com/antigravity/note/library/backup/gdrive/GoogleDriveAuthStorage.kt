@@ -36,7 +36,13 @@ class GoogleDriveAuthStorage(private val context: Context) {
         prefs.edit().putString(GoogleDriveConfig.PREF_REFRESH_TOKEN, token).apply()
     }
 
-    fun getAccountEmail(): String? = prefs.getString(GoogleDriveConfig.PREF_ACCOUNT_EMAIL, null)
+    fun getApiKey(): String = prefs.getString(GoogleDriveConfig.PREF_API_KEY, GoogleDriveConfig.DEFAULT_API_KEY) ?: GoogleDriveConfig.DEFAULT_API_KEY
+
+    fun saveApiKey(apiKey: String?) {
+        prefs.edit().putString(GoogleDriveConfig.PREF_API_KEY, apiKey).apply()
+    }
+
+    fun getAccountEmail(): String? = prefs.getString(GoogleDriveConfig.PREF_ACCOUNT_EMAIL, GoogleDriveConfig.DEFAULT_ACCOUNT_EMAIL) ?: GoogleDriveConfig.DEFAULT_ACCOUNT_EMAIL
 
     fun saveAccountEmail(email: String?) {
         prefs.edit().putString(GoogleDriveConfig.PREF_ACCOUNT_EMAIL, email).apply()

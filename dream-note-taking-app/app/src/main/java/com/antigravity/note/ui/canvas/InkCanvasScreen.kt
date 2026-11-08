@@ -92,6 +92,8 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PanTool
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Schedule
@@ -415,6 +417,8 @@ fun InkCanvasScreen(
     // Read-Only Lock & Draggable Lasso State
     var isNoteLocked by remember { mutableStateOf(false) }
     var lassoToolbarOffset by remember { mutableStateOf<Offset?>(null) }
+    var lassoCardWidthPx by remember { mutableFloatStateOf(0f) }
+    var lassoCardHeightPx by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(incomingFileUri) {
         val uri = incomingFileUri ?: return@LaunchedEffect
@@ -444,23 +448,43 @@ fun InkCanvasScreen(
             val screenBounds = canvasView.getLassoScreenBounds()
             val screenW = context.resources.displayMetrics.widthPixels.toFloat()
             val screenH = context.resources.displayMetrics.heightPixels.toFloat()
-            val toolbarWidthEst = 460f
-            val toolbarHeightEst = 60f
+            val density = context.resources.displayMetrics.density
+            val toolbarW = if (lassoCardWidthPx > 50f) lassoCardWidthPx else 560f * density
+            val toolbarH = if (lassoCardHeightPx > 20f) lassoCardHeightPx else 64f * density
+            val margin = 20f * density
+            val minX = margin
+            val maxX = (screenW - toolbarW - margin).coerceAtLeast(minX)
+            val minY = 100f * density
+            val maxY = (screenH - toolbarH - 90f * density).coerceAtLeast(minY)
 
             if (screenBounds != null) {
-                // Place beside selection: prefer right side, fallback to left
-                val posX = if (screenBounds.right + toolbarWidthEst + 30f < screenW) {
-                    screenBounds.right + 20f
-                } else if (screenBounds.left - toolbarWidthEst - 30f > 0f) {
-                    screenBounds.left - toolbarWidthEst - 20f
-                } else {
-                    (screenW - toolbarWidthEst) / 2f
-                }.coerceIn(20f, (screenW - toolbarWidthEst - 20f).coerceAtLeast(20f))
+                val canFitRight = (screenBounds.right + toolbarW + margin) <= screenW
+                val canFitLeft = (screenBounds.left - toolbarW - margin) >= 0f
 
-                val posY = screenBounds.top.coerceIn(90f, (screenH - toolbarHeightEst - 120f).coerceAtLeast(90f))
-                lassoToolbarOffset = Offset(posX, posY)
+                val (targetX, targetY) = when {
+                    canFitRight -> {
+                        Pair(screenBounds.right + 16f, screenBounds.top)
+                    }
+                    canFitLeft -> {
+                        Pair(screenBounds.left - toolbarW - 16f, screenBounds.top)
+                    }
+                    screenBounds.top - toolbarH - 16f >= minY -> {
+                        Pair(screenBounds.centerX() - toolbarW / 2f, screenBounds.top - toolbarH - 16f)
+                    }
+                    screenBounds.bottom + toolbarH + 16f <= maxY -> {
+                        Pair(screenBounds.centerX() - toolbarW / 2f, screenBounds.bottom + 16f)
+                    }
+                    else -> {
+                        Pair((screenW - toolbarW) / 2f, minY + 16f)
+                    }
+                }
+
+                lassoToolbarOffset = Offset(
+                    targetX.coerceIn(minX, maxX),
+                    targetY.coerceIn(minY, maxY)
+                )
             } else {
-                lassoToolbarOffset = Offset((screenW - toolbarWidthEst) / 2f, screenH - 180f)
+                lassoToolbarOffset = Offset((screenW - toolbarW) / 2f, maxY - 30f)
             }
         } else {
             lassoToolbarOffset = null
@@ -1240,212 +1264,14 @@ fun InkCanvasScreen(
                                 expanded = showColorPickerMenu,
                                 onDismissRequest = { showColorPickerMenu = false }
                             ) {
-                                Column(
-                                    modifier = Modifier
-                                        .width(290.dp)
-                                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    // 1. Preset Colors
-                                    Text(
-                                        text = "PRESET COLORS",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        activePalette.forEach { color ->
-                                            val isSelected = selectedColor == color
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(34.dp)
-                                                    .clip(CircleShape)
-                                                    .background(color)
-                                                    .border(
-                                                        width = if (isSelected) 3.dp else 1.dp,
-                                                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray.copy(alpha = 0.6f),
-                                                        shape = CircleShape
-                                                    )
-                                                    .clickable {
-                                                        applyColor(color)
-                                                        customRed = color.red * 255f
-                                                        customGreen = color.green * 255f
-                                                        customBlue = color.blue * 255f
-                                                    }
-                                            ) {
-                                                if (isSelected) {
-                                                    val lum = 0.299f * color.red + 0.587f * color.green + 0.114f * color.blue
-                                                    Icon(
-                                                        imageVector = Icons.Default.Check,
-                                                        contentDescription = null,
-                                                        tint = if (lum > 0.5f) Color.Black else Color.White,
-                                                        modifier = Modifier
-                                                            .size(16.dp)
-                                                            .align(Alignment.Center)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    HorizontalDivider(
-                                        modifier = Modifier.padding(vertical = 2.dp),
-                                        thickness = 0.8.dp,
-                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
-                                    )
-
-                                    // 2. Custom RGB Mixer
-                                    val rInt = customRed.toInt().coerceIn(0, 255)
-                                    val gInt = customGreen.toInt().coerceIn(0, 255)
-                                    val bInt = customBlue.toInt().coerceIn(0, 255)
-                                    val previewColor = Color(rInt / 255f, gInt / 255f, bInt / 255f)
-
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Column {
-                                            Text(
-                                                text = "CUSTOM RGB MIXER",
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            Text(
-                                                text = String.format("#%02X%02X%02X  (R:%d G:%d B:%d)", rInt, gInt, bInt, rInt, gInt, bInt),
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                        Box(
-                                            modifier = Modifier
-                                                .size(36.dp)
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(previewColor)
-                                                .border(1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                                        )
-                                    }
-
-                                    // Red Slider
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Text(
-                                            text = "R",
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFFD32F2F),
-                                            modifier = Modifier.width(16.dp)
-                                        )
-                                        Slider(
-                                            value = customRed,
-                                            onValueChange = {
-                                                customRed = it
-                                                val newColor = Color(customRed.toInt() / 255f, customGreen.toInt() / 255f, customBlue.toInt() / 255f)
-                                                applyColor(newColor)
-                                            },
-                                            valueRange = 0f..255f,
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(28.dp),
-                                            colors = SliderDefaults.colors(
-                                                thumbColor = Color(0xFFD32F2F),
-                                                activeTrackColor = Color(0xFFEF5350),
-                                                inactiveTrackColor = Color(0xFFFFCDD2)
-                                            )
-                                        )
-                                        Text(
-                                            text = rInt.toString(),
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            modifier = Modifier.width(28.dp),
-                                            textAlign = TextAlign.End
-                                        )
-                                    }
-
-                                    // Green Slider
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Text(
-                                            text = "G",
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF388E3C),
-                                            modifier = Modifier.width(16.dp)
-                                        )
-                                        Slider(
-                                            value = customGreen,
-                                            onValueChange = {
-                                                customGreen = it
-                                                val newColor = Color(customRed.toInt() / 255f, customGreen.toInt() / 255f, customBlue.toInt() / 255f)
-                                                applyColor(newColor)
-                                            },
-                                            valueRange = 0f..255f,
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(28.dp),
-                                            colors = SliderDefaults.colors(
-                                                thumbColor = Color(0xFF388E3C),
-                                                activeTrackColor = Color(0xFF66BB6A),
-                                                inactiveTrackColor = Color(0xFFC8E6C9)
-                                            )
-                                        )
-                                        Text(
-                                            text = gInt.toString(),
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            modifier = Modifier.width(28.dp),
-                                            textAlign = TextAlign.End
-                                        )
-                                    }
-
-                                    // Blue Slider
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Text(
-                                            text = "B",
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF1976D2),
-                                            modifier = Modifier.width(16.dp)
-                                        )
-                                        Slider(
-                                            value = customBlue,
-                                            onValueChange = {
-                                                customBlue = it
-                                                val newColor = Color(customRed.toInt() / 255f, customGreen.toInt() / 255f, customBlue.toInt() / 255f)
-                                                applyColor(newColor)
-                                            },
-                                            valueRange = 0f..255f,
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(28.dp),
-                                            colors = SliderDefaults.colors(
-                                                thumbColor = Color(0xFF1976D2),
-                                                activeTrackColor = Color(0xFF42A5F5),
-                                                inactiveTrackColor = Color(0xFFBBDEFB)
-                                            )
-                                        )
-                                        Text(
-                                            text = bInt.toString(),
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            modifier = Modifier.width(28.dp),
-                                            textAlign = TextAlign.End
-                                        )
-                                    }
-                                }
+                                GridColorPicker(
+                                    selectedColor = selectedColor,
+                                    onColorSelected = { color ->
+                                        applyColor(color)
+                                        showColorPickerMenu = false
+                                    },
+                                    modifier = Modifier.width(360.dp)
+                                )
                             }
                         }
 
@@ -2722,14 +2548,43 @@ fun InkCanvasScreen(
             Card(
                 modifier = Modifier
                     .offset { IntOffset(currentOffset.x.roundToInt(), currentOffset.y.roundToInt()) }
+                    .onGloballyPositioned { coords ->
+                        val measuredW = coords.size.width.toFloat()
+                        val measuredH = coords.size.height.toFloat()
+                        lassoCardWidthPx = measuredW
+                        lassoCardHeightPx = measuredH
+                        lassoToolbarOffset?.let { cur ->
+                            val screenW = context.resources.displayMetrics.widthPixels.toFloat()
+                            val screenH = context.resources.displayMetrics.heightPixels.toFloat()
+                            val density = context.resources.displayMetrics.density
+                            val margin = 16f * density
+                            val minX = margin
+                            val maxX = (screenW - measuredW - margin).coerceAtLeast(minX)
+                            val minY = 100f * density
+                            val maxY = (screenH - measuredH - 90f * density).coerceAtLeast(minY)
+                            val clampedX = cur.x.coerceIn(minX, maxX)
+                            val clampedY = cur.y.coerceIn(minY, maxY)
+                            if (clampedX != cur.x || clampedY != cur.y) {
+                                lassoToolbarOffset = Offset(clampedX, clampedY)
+                            }
+                        }
+                    }
                     .pointerInput(Unit) {
                         detectDragGestures { change, dragAmount ->
                             change.consume()
                             val cur = lassoToolbarOffset ?: Offset(60f, 180f)
                             val screenW = context.resources.displayMetrics.widthPixels.toFloat()
                             val screenH = context.resources.displayMetrics.heightPixels.toFloat()
-                            val newX = (cur.x + dragAmount.x).coerceIn(10f, (screenW - 120f).coerceAtLeast(10f))
-                            val newY = (cur.y + dragAmount.y).coerceIn(60f, (screenH - 80f).coerceAtLeast(60f))
+                            val density = context.resources.displayMetrics.density
+                            val toolbarW = if (lassoCardWidthPx > 50f) lassoCardWidthPx else 560f * density
+                            val toolbarH = if (lassoCardHeightPx > 20f) lassoCardHeightPx else 64f * density
+                            val margin = 16f * density
+                            val minX = margin
+                            val maxX = (screenW - toolbarW - margin).coerceAtLeast(minX)
+                            val minY = 100f * density
+                            val maxY = (screenH - toolbarH - 90f * density).coerceAtLeast(minY)
+                            val newX = (cur.x + dragAmount.x).coerceIn(minX, maxX)
+                            val newY = (cur.y + dragAmount.y).coerceIn(minY, maxY)
                             lassoToolbarOffset = Offset(newX, newY)
                         }
                     },
@@ -2815,19 +2670,22 @@ fun InkCanvasScreen(
                         Icon(Icons.Default.TextFields, contentDescription = "Convert to Text", modifier = Modifier.size(20.dp))
                     }
 
-                    // Recolor quick dots
+                    // Recolor quick dots & Full RGB Grid Palette Picker
+                    var showLassoColorPickerMenu by remember { mutableStateOf(false) }
+
                     listOf(
-                        Color(0xFF111318),
-                        Color(0xFF005AC1),
-                        Color(0xFFBA1A1A),
-                        Color(0xFF146C2E)
+                        Color(0xFF111318), // Black
+                        Color(0xFFFFFFFF), // White
+                        Color(0xFFFE0000), // Red
+                        Color(0xFF0001FE), // Blue
+                        Color(0xFF008101)  // Green
                     ).forEach { color ->
                         Box(
                             modifier = Modifier
                                 .size(22.dp)
                                 .clip(CircleShape)
                                 .background(color)
-                                .border(1.dp, Color.White, CircleShape)
+                                .border(1.dp, if (color == Color.White) Color.Gray else Color.White, CircleShape)
                                 .clickable {
                                     val intColor = AndroidColor.argb(
                                         (color.alpha * 255).toInt(),
@@ -2838,6 +2696,41 @@ fun InkCanvasScreen(
                                     canvasView.changeLassoSelectionColor(intColor)
                                 }
                         )
+                    }
+
+                    // Full Palette Button
+                    Box {
+                        IconButton(
+                            onClick = { showLassoColorPickerMenu = !showLassoColorPickerMenu },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Palette,
+                                contentDescription = "Full Color Palette",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = showLassoColorPickerMenu,
+                            onDismissRequest = { showLassoColorPickerMenu = false }
+                        ) {
+                            GridColorPicker(
+                                selectedColor = selectedColor,
+                                onColorSelected = { color ->
+                                    val intColor = AndroidColor.argb(
+                                        (color.alpha * 255).toInt(),
+                                        (color.red * 255).toInt(),
+                                        (color.green * 255).toInt(),
+                                        (color.blue * 255).toInt()
+                                    )
+                                    canvasView.changeLassoSelectionColor(intColor)
+                                    showLassoColorPickerMenu = false
+                                },
+                                modifier = Modifier.width(360.dp)
+                            )
+                        }
                     }
 
                     // Delete selection
