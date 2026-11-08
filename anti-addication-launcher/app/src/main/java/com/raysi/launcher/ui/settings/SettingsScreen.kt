@@ -57,6 +57,8 @@ fun SettingsScreen(
     val snapshot by viewModel.snapshot.collectAsState()
     val permissions by viewModel.permissionsState.collectAsState()
     val activePicker by viewModel.activePicker.collectAsState()
+    val isStealthMode by viewModel.isStealthMode.collectAsState()
+    val isSystemGrayscale by viewModel.isSystemGrayscale.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.refreshPermissions(context)
@@ -178,6 +180,26 @@ fun SettingsScreen(
                                 }
                             }
                         )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        PermissionRow(
+                            label = "Hardware Grayscale (Secure Settings)",
+                            description = "Enables system-wide grayscale Daltonizer via ADB",
+                            isGranted = permissions.isSecureSettingsGranted,
+                            onFix = {}
+                        )
+
+                        if (!permissions.isSecureSettingsGranted) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "adb shell pm grant com.raysi.launcher android.permission.WRITE_SECURE_SETTINGS",
+                                style = FocusTypography.bodySmall,
+                                color = DimGray,
+                                fontSize = 11.sp,
+                                lineHeight = 14.sp
+                            )
+                        }
                     }
                 }
 
@@ -388,7 +410,65 @@ fun SettingsScreen(
                     }
                 }
 
-                // Section 5: Architecture & Privacy
+                // Section 5: System Bar & Hardware Display
+                item {
+                    SettingsSection(title = "SYSTEM BAR & DISPLAY") {
+                        SettingSelectorRow(
+                            title = "Status bar style",
+                            subtitle = "Stealth pure black or custom monospaced telemetry bar",
+                            options = listOf(true, false),
+                            selected = isStealthMode,
+                            labelFormatter = { if (it) "Stealth (Hidden)" else "Monospace Bar" },
+                            onSelect = { viewModel.setStealthMode(it) }
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(enabled = permissions.isSecureSettingsGranted) {
+                                    viewModel.setSystemGrayscale(context, !isSystemGrayscale)
+                                }
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "System-wide hardware grayscale",
+                                    style = FocusTypography.bodyMedium,
+                                    color = PureWhite
+                                )
+                                Text(
+                                    text = if (permissions.isSecureSettingsGranted) {
+                                        "Force OS-wide monochromacy to eliminate dopamine cues"
+                                    } else {
+                                        "Requires WRITE_SECURE_SETTINGS permission via ADB"
+                                    },
+                                    style = FocusTypography.bodySmall,
+                                    color = DimGray
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Text(
+                                text = if (!permissions.isSecureSettingsGranted) {
+                                    "[ADB]"
+                                } else if (isSystemGrayscale) {
+                                    "[ON]"
+                                } else {
+                                    "[OFF]"
+                                },
+                                style = FocusTypography.bodyMedium,
+                                color = if (isSystemGrayscale) PureWhite else DimGray
+                            )
+                        }
+                    }
+                }
+
+                // Section 6: Architecture & Privacy
                 item {
                     SettingsSection(title = "ARCHITECTURAL GUARANTEES") {
                         Text(

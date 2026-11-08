@@ -5,6 +5,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
@@ -14,7 +16,7 @@ import com.readmaster.app.engine.eraser.EraserMode
 import com.readmaster.app.engine.eraser.PrecisionEraser
 import com.readmaster.app.engine.eraser.SpatialStrokeIndex
 import com.readmaster.app.engine.lasso.LassoTool
-import com.readmaster.app.engine.pdf.PdfTiler
+import com.readmaster.app.engine.pdf.PdfPageEngine
 
 data class EraseModification(
     val removedStrokes: List<Stroke> = emptyList(),
@@ -26,6 +28,11 @@ data class StrokeReplacement(
     val oldStroke: Stroke,
     val newStrokes: List<Stroke>
 )
+
+enum class ReadingMode {
+    BOOK_FLIP,           // Classic single-page book reading with swipe / tap page turn
+    CONTINUOUS_SCROLL    // Smooth vertical scroll through entire book
+}
 
 class DryInkCanvasView @JvmOverloads constructor(
     context: Context,
@@ -39,29 +46,93 @@ class DryInkCanvasView @JvmOverloads constructor(
     private val strokeRenderer: CanvasStrokeRenderer = CanvasStrokeRenderer.create()
     val transform = CanvasTransform()
 
-    var lassoTool: LassoTool? = null
-    var pdfTiler: PdfTiler? = null
-    var currentPdfPageIndex: Int = 0
+    var readingMode: ReadingMode = ReadingMode.BOOK_FLIP
         set(value) {
             field = value
             invalidate()
         }
 
-    private val viewportRect = RectF()
+    val pageOffsetsY = mutableListOf<Float>()
+    var totalDocumentHeight: Float = 0f
+        private set
+
+    var lassoTool: LassoTool? = null
+    var pageEngine: PdfPageEngine? = null
+        set(value) {
+            field = value
+            updatePageLayout()
+        }
+
+    var currentPdfPageIndex: Int = 0
+        set(value) {
+            field = value
+            selectedWordRect = null
+            invalidate()
+        }
+
+    // Selected word highlight
+    var selectedWordRect: RectF? = null
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    private val wordHighlightFillPaint = Paint().apply {
+        color = Color.parseColor("#4D3B82F6") // 30% translucent blue
+        style = Paint.Style.FILL
+    }
+    private val wordHighlightStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#3B82F6")
+        style = Paint.Style.STROKE
+        strokeWidth = 2f
+    }
+
     private val identityMatrix = Matrix()
 
+    private val deskBackgroundPaint = Paint().apply {
+        color = Color.parseColor("#EBECEF") // Soft reading desk background
+        style = Paint.Style.FILL
+    }
+
     private val paperPaint = Paint().apply {
-        color = Color.parseColor("#FCFAF6")
+        color = Color.WHITE
         style = Paint.Style.FILL
     }
 
-    private val pdfPageShadowPaint = Paint().apply {
-        color = Color.parseColor("#20000000")
+    private val pageShadowPaint = Paint().apply {
+        color = Color.parseColor("#25000000") // Realistic page shadow
         style = Paint.Style.FILL
     }
 
-    init {
-        setLayerType(LAYER_TYPE_HARDWARE, null)
+    fun updatePageLayout() {
+        pageOffsetsY.clear()
+        val engine = pageEngine ?: return
+        var currentY = 0f
+        val gap = 36f
+        for (i in 0 until engine.pageCount) {
+            pageOffsetsY.add(currentY)
+            val size = engine.getPageSize(i)
+            val h = size?.second?.toFloat() ?: 792f
+            currentY += h + gap
+        }
+        totalDocumentHeight = currentY
+    }
+
+    fun findCenterPageIndex(): Int {
+        if (pageOffsetsY.isEmpty()) updatePageLayout()
+        if (pageOffsetsY.isEmpty() || readingMode == ReadingMode.BOOK_FLIP) return currentPdfPageIndex
+        val centerWorldY = (-transform.translationY + height / 2f) / transform.scale
+        for (i in pageOffsetsY.indices.reversed()) {
+            if (centerWorldY >= pageOffsetsY[i]) {
+                return i
+            }
+        }
+        return 0
+    }
+
+    fun getPageTopOffset(pageIndex: Int): Float {
+        if (pageOffsetsY.isEmpty()) updatePageLayout()
+        return pageOffsetsY.getOrElse(pageIndex) { 0f }
     }
 
     private fun isHighlighterStroke(stroke: Stroke): Boolean {
@@ -173,41 +244,94 @@ class DryInkCanvasView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        // Draw background canvas
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paperPaint)
+        // Draw reading desk background
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), deskBackgroundPaint)
 
         canvas.save()
         canvas.concat(transform.worldToScreenMatrix)
 
-        val tiler = pdfTiler
-        if (tiler != null && tiler.pageCount > 0) {
-            // Draw page border/shadow in world coordinates
-            val pageSize = tiler.getPageSize(currentPdfPageIndex)
-            if (pageSize != null) {
-                val (pw, ph) = pageSize
-                canvas.drawRect(4f, 4f, pw.toFloat() + 8f, ph.toFloat() + 8f, pdfPageShadowPaint)
-                canvas.drawRect(0f, 0f, pw.toFloat(), ph.toFloat(), paperPaint)
+        val engine = pageEngine
+        if (engine != null && engine.pageCount > 0) {
+            val targetWidth = width.toFloat() * transform.scale
+
+            if (readingMode == ReadingMode.CONTINUOUS_SCROLL) {
+                if (pageOffsetsY.isEmpty()) updatePageLayout()
+                val visibleRect = RectF(0f, 0f, width.toFloat(), height.toFloat())
+                transform.screenToWorld(visibleRect)
+
+                for (i in 0 until engine.pageCount) {
+                    val pageTop = pageOffsetsY.getOrElse(i) { 0f }
+                    val pageSize = engine.getPageSize(i) ?: continue
+                    val (pw, ph) = pageSize
+                    val pwF = pw.toFloat()
+                    val phF = ph.toFloat()
+                    val pageBottom = pageTop + phF
+
+                    // Only render pages currently intersecting the viewport
+                    if (pageBottom >= visibleRect.top && pageTop <= visibleRect.bottom) {
+                        canvas.save()
+                        canvas.translate(0f, pageTop)
+
+                        canvas.drawRoundRect(4f, 6f, pwF + 8f, phF + 10f, 6f, 6f, pageShadowPaint)
+                        canvas.drawRect(0f, 0f, pwF, phF, paperPaint)
+
+                        engine.drawPage(
+                            canvas = canvas,
+                            pageIndex = i,
+                            targetWidth = targetWidth,
+                            onPageLoaded = { postInvalidateOnAnimation() }
+                        )
+
+                        canvas.restore()
+                    }
+                }
+            } else {
+                // BOOK_FLIP mode: Single page centered
+                val pageSize = engine.getPageSize(currentPdfPageIndex)
+                if (pageSize != null) {
+                    val (pw, ph) = pageSize
+                    val pwF = pw.toFloat()
+                    val phF = ph.toFloat()
+
+                    // Realistic book page drop shadow
+                    canvas.drawRoundRect(4f, 6f, pwF + 8f, phF + 10f, 6f, 6f, pageShadowPaint)
+                    canvas.drawRect(0f, 0f, pwF, phF, paperPaint)
+
+                    // Draw complete, crisp unified page bitmap without seams
+                    engine.drawPage(
+                        canvas = canvas,
+                        pageIndex = currentPdfPageIndex,
+                        targetWidth = targetWidth,
+                        onPageLoaded = { postInvalidateOnAnimation() }
+                    )
+
+                    // Highlight selected word if active
+                    selectedWordRect?.let { r ->
+                        canvas.drawRoundRect(r, 4f, 4f, wordHighlightFillPaint)
+                        canvas.drawRoundRect(r, 4f, 4f, wordHighlightStrokePaint)
+                    }
+                }
             }
-
-            viewportRect.set(0f, 0f, width.toFloat(), height.toFloat())
-            transform.screenToWorld(viewportRect)
-
-            tiler.drawVisibleTiles(
-                canvas = canvas,
-                pageIndex = currentPdfPageIndex,
-                viewportRect = viewportRect,
-                zoomScale = transform.scale,
-                onTileLoaded = { postInvalidateOnAnimation() }
-            )
         }
 
-        // Draw dry vector strokes (highlighters first underneath, opaque pen strokes on top)
-        for (i in 0 until strokes.size) {
-            val stroke = strokes[i]
-            if (isHighlighterStroke(stroke)) {
-                strokeRenderer.draw(canvas, stroke, identityMatrix)
+        // Draw dry vector strokes
+        // 1. Highlighters: Rendered using MULTIPLY blend mode so text beneath stays 100% black and razor-sharp!
+        val hasHighlighters = strokes.any { isHighlighterStroke(it) }
+        if (hasHighlighters) {
+            val highlighterPaint = Paint().apply {
+                xfermode = PorterDuffXfermode(PorterDuff.Mode.MULTIPLY)
             }
+            val saveCount = canvas.saveLayer(null, highlighterPaint)
+            for (i in 0 until strokes.size) {
+                val stroke = strokes[i]
+                if (isHighlighterStroke(stroke)) {
+                    strokeRenderer.draw(canvas, stroke, identityMatrix)
+                }
+            }
+            canvas.restoreToCount(saveCount)
         }
+
+        // 2. Opaque Pen / Marker strokes on top
         for (i in 0 until strokes.size) {
             val stroke = strokes[i]
             if (!isHighlighterStroke(stroke)) {
@@ -215,7 +339,7 @@ class DryInkCanvasView @JvmOverloads constructor(
             }
         }
 
-        // Draw lasso selection overlay if active
+        // 3. Draw lasso selection overlay if active
         lassoTool?.draw(canvas)
 
         canvas.restore()

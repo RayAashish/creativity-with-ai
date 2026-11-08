@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.raysi.launcher.service.notification.NotificationFilterTest" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-11-07T16:38:42.432Z" hostname="Aashishs-MacBook-Air.local" time="0.003">
+<testsuite name="com.raysi.launcher.service.notification.NotificationFilterTest" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-11-08T14:56:59.327Z" hostname="Aashishs-MacBook-Air.local" time="0.003">
   <properties/>
-  <testcase name="testLauncherSelfPackageIsExempt" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.001"/>
+  <testcase name="testLauncherSelfPackageIsExempt" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.0"/>
   <testcase name="testForegroundServiceFlagIsExempt" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.0"/>
-  <testcase name="testEventCategoryIsExempt" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.0"/>
+  <testcase name="testEventCategoryIsExempt" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.001"/>
   <testcase name="testSystemUiPackageIsExempt" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.0"/>
   <testcase name="testCallStyleIsExempt" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.0"/>
   <testcase name="testTransportCategoryIsExempt" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.0"/>
@@ -11,7 +11,7 @@
   <testcase name="testMediaTemplateIsExempt" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.0"/>
   <testcase name="testNavigationCategoryIsExempt" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.0"/>
   <testcase name="testOngoingNotificationIsExempt" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.0"/>
-  <testcase name="testSocialMediaNotificationIsQuarantined" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.0"/>
+  <testcase name="testSocialMediaNotificationIsQuarantined" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.001"/>
   <testcase name="testReminderCategoryIsExempt" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.0"/>
   <testcase name="testMediaSessionIsExempt" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.0"/>
   <testcase name="testDefaultSmsAppIsExempt" classname="com.raysi.launcher.service.notification.NotificationFilterTest" time="0.0"/>

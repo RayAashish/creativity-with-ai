@@ -82,6 +82,9 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.CopyAll
+import androidx.compose.material.icons.filled.Crop
+import androidx.compose.material.icons.filled.AspectRatio
+import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -272,6 +275,7 @@ fun InkCanvasScreen(
                 if (canvasImg != null) {
                     curPage.addImage(canvasImg)
                     canvasView.dryInkView.addImage(canvasImg)
+                    canvasView.selectImage(canvasImg)
                     pageRepo.savePageAtomic(curPage)
                     database.notebookDao().setNotebookDirty(curPage.metadata.notebookId, true)
                     Toast.makeText(context, "Image inserted", Toast.LENGTH_SHORT).show()
@@ -420,6 +424,13 @@ fun InkCanvasScreen(
     var lassoCardWidthPx by remember { mutableFloatStateOf(0f) }
     var lassoCardHeightPx by remember { mutableFloatStateOf(0f) }
 
+    // Image Selection & Transformation State
+    var selectedCanvasImage by remember { mutableStateOf<com.antigravity.note.document.model.CanvasImage?>(null) }
+    var imageBeingCropped by remember { mutableStateOf<com.antigravity.note.document.model.CanvasImage?>(null) }
+    var imageToolbarOffset by remember { mutableStateOf<Offset?>(null) }
+    var imageCardWidthPx by remember { mutableFloatStateOf(0f) }
+    var imageCardHeightPx by remember { mutableFloatStateOf(0f) }
+
     LaunchedEffect(incomingFileUri) {
         val uri = incomingFileUri ?: return@LaunchedEffect
         try {
@@ -488,6 +499,44 @@ fun InkCanvasScreen(
             }
         } else {
             lassoToolbarOffset = null
+        }
+    }
+
+    LaunchedEffect(selectedCanvasImage) {
+        if (selectedCanvasImage != null) {
+            val screenBounds = canvasView.getImageScreenBounds()
+            val screenW = context.resources.displayMetrics.widthPixels.toFloat()
+            val screenH = context.resources.displayMetrics.heightPixels.toFloat()
+            val density = context.resources.displayMetrics.density
+            val toolbarW = if (imageCardWidthPx > 50f) imageCardWidthPx else 420f * density
+            val toolbarH = if (imageCardHeightPx > 20f) imageCardHeightPx else 64f * density
+            val margin = 20f * density
+            val minX = margin
+            val maxX = (screenW - toolbarW - margin).coerceAtLeast(minX)
+            val minY = 100f * density
+            val maxY = (screenH - toolbarH - 90f * density).coerceAtLeast(minY)
+
+            if (screenBounds != null) {
+                val canFitRight = (screenBounds.right + toolbarW + margin) <= screenW
+                val canFitLeft = (screenBounds.left - toolbarW - margin) >= 0f
+
+                val (targetX, targetY) = when {
+                    canFitRight -> Pair(screenBounds.right + 16f, screenBounds.top)
+                    canFitLeft -> Pair(screenBounds.left - toolbarW - 16f, screenBounds.top)
+                    screenBounds.top - toolbarH - 16f >= minY -> Pair(screenBounds.centerX() - toolbarW / 2f, screenBounds.top - toolbarH - 16f)
+                    screenBounds.bottom + toolbarH + 16f <= maxY -> Pair(screenBounds.centerX() - toolbarW / 2f, screenBounds.bottom + 16f)
+                    else -> Pair((screenW - toolbarW) / 2f, minY + 16f)
+                }
+
+                imageToolbarOffset = Offset(
+                    targetX.coerceIn(minX, maxX),
+                    targetY.coerceIn(minY, maxY)
+                )
+            } else {
+                imageToolbarOffset = Offset((screenW - toolbarW) / 2f, maxY - 30f)
+            }
+        } else {
+            imageToolbarOffset = null
         }
     }
 
@@ -675,6 +724,34 @@ fun InkCanvasScreen(
         }
         canvasView.onLassoSelectionChanged = { selected ->
             hasLassoSelection = selected
+        }
+        canvasView.onImageSelectionChanged = { img ->
+            selectedCanvasImage = img
+        }
+        canvasView.onImageChanged = { img ->
+            val curPage = docManager.currentPage.value
+            if (curPage != null) {
+                val idx = curPage.images.indexOfFirst { it.id == img.id }
+                if (idx >= 0) {
+                    curPage.images[idx] = img
+                } else {
+                    curPage.addImage(img)
+                }
+                scope.launch {
+                    pageRepo.savePageAtomic(curPage)
+                    database.notebookDao().setNotebookDirty(curPage.metadata.notebookId, true)
+                }
+            }
+        }
+        canvasView.onImageRemoved = { img ->
+            val curPage = docManager.currentPage.value
+            if (curPage != null) {
+                curPage.images.removeAll { it.id == img.id }
+                scope.launch {
+                    pageRepo.savePageAtomic(curPage)
+                    database.notebookDao().setNotebookDirty(curPage.metadata.notebookId, true)
+                }
+            }
         }
     }
 
@@ -2785,6 +2862,144 @@ fun InkCanvasScreen(
             }
         }
 
+        // Floating Image Action Bar (When an image is selected)
+        if (selectedCanvasImage != null) {
+            val currentOffset = imageToolbarOffset ?: Offset(60f, 180f)
+            Card(
+                modifier = Modifier
+                    .offset { IntOffset(currentOffset.x.roundToInt(), currentOffset.y.roundToInt()) }
+                    .onGloballyPositioned { coordinates ->
+                        val w = coordinates.size.width.toFloat()
+                        val h = coordinates.size.height.toFloat()
+                        if (w > 50f) imageCardWidthPx = w
+                        if (h > 20f) imageCardHeightPx = h
+
+                        imageToolbarOffset?.let { cur ->
+                            val screenW = context.resources.displayMetrics.widthPixels.toFloat()
+                            val screenH = context.resources.displayMetrics.heightPixels.toFloat()
+                            val density = context.resources.displayMetrics.density
+                            val margin = 20f * density
+                            val minX = margin
+                            val maxX = (screenW - w - margin).coerceAtLeast(minX)
+                            val minY = 100f * density
+                            val maxY = (screenH - h - 90f * density).coerceAtLeast(minY)
+
+                            val clampedX = cur.x.coerceIn(minX, maxX)
+                            val clampedY = cur.y.coerceIn(minY, maxY)
+                            if (clampedX != cur.x || clampedY != cur.y) {
+                                imageToolbarOffset = Offset(clampedX, clampedY)
+                            }
+                        }
+                    }
+                    .pointerInput(Unit) {
+                        detectDragGestures { change, dragAmount ->
+                            change.consume()
+                            val cur = imageToolbarOffset ?: Offset(60f, 180f)
+                            val screenW = context.resources.displayMetrics.widthPixels.toFloat()
+                            val screenH = context.resources.displayMetrics.heightPixels.toFloat()
+                            val density = context.resources.displayMetrics.density
+                            val margin = 20f * density
+                            val w = if (imageCardWidthPx > 50f) imageCardWidthPx else 420f * density
+                            val h = if (imageCardHeightPx > 20f) imageCardHeightPx else 64f * density
+                            val minX = margin
+                            val maxX = (screenW - w - margin).coerceAtLeast(minX)
+                            val minY = 100f * density
+                            val maxY = (screenH - h - 90f * density).coerceAtLeast(minY)
+
+                            val newX = (cur.x + dragAmount.x).coerceIn(minX, maxX)
+                            val newY = (cur.y + dragAmount.y).coerceIn(minY, maxY)
+                            imageToolbarOffset = Offset(newX, newY)
+                        }
+                    },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DragHandle,
+                        contentDescription = "Drag Toolbar",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.size(20.dp)
+                    )
+
+                    Text(
+                        text = "Image",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // Crop Button
+                    IconButton(
+                        onClick = { imageBeingCropped = selectedCanvasImage }
+                    ) {
+                        Icon(Icons.Default.Crop, contentDescription = "Crop Image", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    }
+
+                    // Rotate 90 Button
+                    IconButton(
+                        onClick = { canvasView.rotateSelectedImage(90f) }
+                    ) {
+                        Icon(Icons.Default.RotateRight, contentDescription = "Rotate 90", modifier = Modifier.size(20.dp))
+                    }
+
+                    // Fit Width
+                    IconButton(
+                        onClick = {
+                            canvasView.fitSelectedImageToWidth()
+                            Toast.makeText(context, "Fitted to page width", Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Icon(Icons.Default.AspectRatio, contentDescription = "Fit Page Width", modifier = Modifier.size(20.dp))
+                    }
+
+                    // Duplicate
+                    IconButton(
+                        onClick = {
+                            val dup = canvasView.duplicateSelectedImage()
+                            if (dup != null) {
+                                val curPage = docManager.currentPage.value
+                                if (curPage != null) {
+                                    curPage.addImage(dup)
+                                    scope.launch {
+                                        pageRepo.savePageAtomic(curPage)
+                                        database.notebookDao().setNotebookDirty(curPage.metadata.notebookId, true)
+                                    }
+                                }
+                                Toast.makeText(context, "Duplicated image", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Default.CopyAll, contentDescription = "Duplicate Image", modifier = Modifier.size(20.dp))
+                    }
+
+                    // Delete
+                    IconButton(
+                        onClick = {
+                            canvasView.deleteSelectedImage()
+                            Toast.makeText(context, "Deleted image", Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete Image", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                    }
+
+                    // Done / Clear selection
+                    IconButton(
+                        onClick = {
+                            canvasView.clearImageSelection()
+                        }
+                    ) {
+                        Icon(Icons.Default.Check, contentDescription = "Done Editing Image", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+        }
+
         // PDF Page Selector Pill (When PDF background is active)
         if (isPdfLoaded && canvasView.pdfTiler.pageCount > 1) {
             Card(
@@ -3267,6 +3482,31 @@ fun InkCanvasScreen(
                     }
                 }
             )
+        }
+        if (imageBeingCropped != null) {
+            val curPage = docManager.currentPage.value
+            if (curPage != null) {
+                val assetsDir = pageRepo.getAssetsDir(curPage.metadata.notebookId)
+                ImageCropDialog(
+                    canvasImage = imageBeingCropped!!,
+                    assetsDir = assetsDir,
+                    onDismiss = { imageBeingCropped = null },
+                    onCropApplied = { cropped ->
+                        curPage.images.removeAll { it.id == cropped.id }
+                        curPage.addImage(cropped)
+                        canvasView.dryInkView.images.removeAll { it.id == cropped.id }
+                        canvasView.dryInkView.addImage(cropped)
+                        canvasView.selectImage(cropped)
+                        canvasView.dryInkView.invalidate()
+                        scope.launch {
+                            pageRepo.savePageAtomic(curPage)
+                            database.notebookDao().setNotebookDirty(curPage.metadata.notebookId, true)
+                        }
+                        imageBeingCropped = null
+                        Toast.makeText(context, "Crop applied", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
         }
     }
 }

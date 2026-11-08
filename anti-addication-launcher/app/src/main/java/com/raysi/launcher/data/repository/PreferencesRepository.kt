@@ -4,6 +4,7 @@ package com.raysi.launcher.data.repository
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -29,11 +30,15 @@ interface PreferencesRepository {
     val customAppLimitsFlow: Flow<Map<String, Int>>
     val lastAwayDurationFlow: Flow<Long>
     val dailyUnlockCountFlow: Flow<Int>
+    val isStealthModeFlow: Flow<Boolean>
+    val isSystemGrayscaleEnabledFlow: Flow<Boolean>
 
     suspend fun setDailyFocusGoal(goal: String)
     suspend fun clearDailyFocusGoal()
     suspend fun saveScratchpadContent(content: String)
     suspend fun setCustomAppLimit(packageName: String, limitMinutes: Int)
+    suspend fun setStealthMode(enabled: Boolean)
+    suspend fun setSystemGrayscaleEnabled(enabled: Boolean)
     suspend fun recordScreenOff(timestampMs: Long = System.currentTimeMillis())
     suspend fun recordUserPresent(timestampMs: Long = System.currentTimeMillis()): Int
     suspend fun getScratchpadContent(): String
@@ -54,6 +59,8 @@ class PreferencesRepositoryImpl(
         val KEY_DAILY_UNLOCK_COUNT = intPreferencesKey("daily_unlock_count")
         val KEY_LAST_UNLOCK_DAY_OF_YEAR = intPreferencesKey("last_unlock_day_of_year")
         val KEY_LAST_UNLOCK_YEAR = intPreferencesKey("last_unlock_year")
+        val KEY_STEALTH_MODE = booleanPreferencesKey("stealth_mode")
+        val KEY_SYSTEM_GRAYSCALE = booleanPreferencesKey("system_grayscale")
 
         /**
          * Determines if a focus goal saved at [savedTimestampMs] has expired
@@ -159,7 +166,31 @@ class PreferencesRepositoryImpl(
             }
         }
 
-    override suspend fun setDailyFocusGoal(goal: String) = withContext(dispatchers.io) {
+    override val isStealthModeFlow: Flow<Boolean> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { prefs -> prefs[KEY_STEALTH_MODE] ?: true }
+
+    override val isSystemGrayscaleEnabledFlow: Flow<Boolean> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { prefs -> prefs[KEY_SYSTEM_GRAYSCALE] ?: false }
+
+    override suspend fun setStealthMode(enabled: Boolean): Unit = withContext(dispatchers.io) {
+        dataStore.edit { prefs ->
+            prefs[KEY_STEALTH_MODE] = enabled
+        }
+    }
+
+    override suspend fun setSystemGrayscaleEnabled(enabled: Boolean): Unit = withContext(dispatchers.io) {
+        dataStore.edit { prefs ->
+            prefs[KEY_SYSTEM_GRAYSCALE] = enabled
+        }
+    }
+
+    override suspend fun setDailyFocusGoal(goal: String): Unit = withContext(dispatchers.io) {
         val trimmed = goal.trim()
         val now = System.currentTimeMillis()
         dataStore.edit { prefs ->
@@ -168,20 +199,20 @@ class PreferencesRepositoryImpl(
         }
     }
 
-    override suspend fun clearDailyFocusGoal() = withContext(dispatchers.io) {
+    override suspend fun clearDailyFocusGoal(): Unit = withContext(dispatchers.io) {
         dataStore.edit { prefs ->
             prefs[KEY_DAILY_FOCUS_GOAL] = ""
             prefs[KEY_FOCUS_GOAL_TIMESTAMP] = 0L
         }
     }
 
-    override suspend fun saveScratchpadContent(content: String) = withContext(dispatchers.io) {
+    override suspend fun saveScratchpadContent(content: String): Unit = withContext(dispatchers.io) {
         dataStore.edit { prefs ->
             prefs[KEY_SCRATCHPAD_CONTENT] = content
         }
     }
 
-    override suspend fun setCustomAppLimit(packageName: String, limitMinutes: Int) = withContext(dispatchers.io) {
+    override suspend fun setCustomAppLimit(packageName: String, limitMinutes: Int): Unit = withContext(dispatchers.io) {
         dataStore.edit { prefs ->
             val currentLimits = parseLimits(prefs[KEY_CUSTOM_APP_LIMITS]).toMutableMap()
             if (limitMinutes <= 0) {
@@ -193,7 +224,7 @@ class PreferencesRepositoryImpl(
         }
     }
 
-    override suspend fun recordScreenOff(timestampMs: Long) = withContext(dispatchers.io) {
+    override suspend fun recordScreenOff(timestampMs: Long): Unit = withContext(dispatchers.io) {
         dataStore.edit { prefs ->
             prefs[KEY_LAST_SCREEN_OFF_TIME] = timestampMs
         }

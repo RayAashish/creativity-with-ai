@@ -1,21 +1,24 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   GitBranch,
   Folder,
   FolderOpen,
   FileText,
+  FileCode,
   ChevronRight,
-  ChevronLeft,
   Search,
   Key,
   Star,
   RefreshCw,
   Check,
   AlertCircle,
-  ExternalLink,
   BookOpen,
   X,
-  ArrowLeft
+  ArrowLeft,
+  Code2,
+  Clock,
+  Sparkles,
+  Download
 } from 'lucide-react';
 import {
   GitHubRepo,
@@ -23,10 +26,18 @@ import {
   ExplorerItem,
   fetchUserRepos,
   fetchRepoTree,
+  fetchDirectoryContents,
   getItemsInDirectory,
-  fetchRawMarkdown,
+  fetchRawFileContent,
   extractGitHubUsername
 } from '../utils/githubService';
+import {
+  formatCodeAsDocument,
+  getLanguageInfo,
+  isMarkdownFile,
+  isSupportedTextFile,
+  formatFileSize
+} from '../utils/codeHelper';
 
 interface GitHubExplorerProps {
   onSelectNote: (content: string, fileName: string, title: string, sourceUrl?: string) => void;
@@ -34,12 +45,24 @@ interface GitHubExplorerProps {
   onNavigateToPreview?: () => void;
 }
 
+interface RecentFile {
+  name: string;
+  path: string;
+  repo: string;
+  owner: string;
+  branch: string;
+  category: string;
+}
+
 const STORAGE_KEYS = {
-  USERNAME: 'markpdf_github_username',
-  TOKEN: 'markpdf_github_token',
-  REPO: 'markpdf_github_selected_repo',
-  PATH: 'markpdf_github_current_path',
-  FILE: 'markpdf_github_selected_file'
+  USERNAME: 'markforge_github_username',
+  LEGACY_USERNAME: 'markpdf_github_username',
+  TOKEN: 'markforge_github_token',
+  REPO: 'markforge_github_selected_repo',
+  PATH: 'markforge_github_current_path',
+  FILE: 'markforge_github_selected_file',
+  FILTER: 'markforge_github_filter_mode',
+  RECENTS: 'markforge_github_recents'
 };
 
 export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
@@ -49,7 +72,11 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
 }) => {
   // Username state (Default to RayAashish or saved)
   const [username, setUsername] = useState<string>(() => {
-    return localStorage.getItem(STORAGE_KEYS.USERNAME) || 'RayAashish';
+    return (
+      localStorage.getItem(STORAGE_KEYS.USERNAME) ||
+      localStorage.getItem(STORAGE_KEYS.LEGACY_USERNAME) ||
+      'RayAashish'
+    );
   });
 
   const [token, setToken] = useState<string>(() => {
@@ -66,7 +93,9 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
   // Selected Repo state
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.REPO);
+      const saved =
+        localStorage.getItem(STORAGE_KEYS.REPO) ||
+        localStorage.getItem('markpdf_github_selected_repo');
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -76,21 +105,49 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
   // Tree & Folder state
   const [tree, setTree] = useState<GitHubTreeItem[]>([]);
   const [isLoadingTree, setIsLoadingTree] = useState<boolean>(false);
+  const [isTreeTruncated, setIsTreeTruncated] = useState<boolean>(false);
   const [treeError, setTreeError] = useState<string | null>(null);
 
+  // Direct contents fallback items (for truncated trees or API sync)
+  const [directApiItems, setDirectApiItems] = useState<ExplorerItem[] | null>(null);
+  const [isLoadingDirectApi, setIsLoadingDirectApi] = useState<boolean>(false);
+
   const [currentPath, setCurrentPath] = useState<string>(() => {
-    return localStorage.getItem(STORAGE_KEYS.PATH) || '';
+    return (
+      localStorage.getItem(STORAGE_KEYS.PATH) ||
+      localStorage.getItem('markpdf_github_current_path') ||
+      ''
+    );
   });
 
   const [selectedFilePath, setSelectedFilePath] = useState<string>(() => {
-    return localStorage.getItem(STORAGE_KEYS.FILE) || '';
+    return (
+      localStorage.getItem(STORAGE_KEYS.FILE) ||
+      localStorage.getItem('markpdf_github_selected_file') ||
+      ''
+    );
   });
 
   const [fileSearch, setFileSearch] = useState<string>('');
-  const [onlyMarkdown, setOnlyMarkdown] = useState<boolean>(true);
+  // Filter mode: 'all' (default, shows all code & notes), 'notes' (.md only), 'code' (code only)
+  const [filterMode, setFilterMode] = useState<'all' | 'notes' | 'code'>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.FILTER) as any;
+    return saved === 'notes' || saved === 'code' ? saved : 'all';
+  });
+
   const [loadingFile, setLoadingFile] = useState<string | null>(null);
 
-  // Save username & token to localStorage
+  // Recent files shelf
+  const [recentFiles, setRecentFiles] = useState<RecentFile[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.RECENTS);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Persistence
   useEffect(() => {
     if (username.trim()) {
       localStorage.setItem(STORAGE_KEYS.USERNAME, username.trim());
@@ -115,11 +172,23 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.PATH, currentPath);
+    // Reset direct API cache when path changes
+    setDirectApiItems(null);
   }, [currentPath]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.FILE, selectedFilePath);
   }, [selectedFilePath]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.FILTER, filterMode);
+  }, [filterMode]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.RECENTS, JSON.stringify(recentFiles.slice(0, 8)));
+    } catch (_) {}
+  }, [recentFiles]);
 
   // Load repositories for current username
   const handleFetchRepos = async (userToFetch?: string) => {
@@ -133,7 +202,6 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
       const fetchedRepos = await fetchUserRepos(user, token);
       setRepos(fetchedRepos);
 
-      // If we don't have a selected repo or the user changed, reset repo selection
       if (selectedRepo && !selectedRepo.full_name.toLowerCase().startsWith(user.toLowerCase())) {
         setSelectedRepo(null);
         setTree([]);
@@ -151,19 +219,39 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
     setSelectedRepo(repo);
     setIsLoadingTree(true);
     setTreeError(null);
+    setDirectApiItems(null);
+
+    const owner = repo.full_name.split('/')[0];
+    const branch = repo.default_branch || 'main';
 
     try {
-      const { tree: fullTree } = await fetchRepoTree(
-        repo.full_name.split('/')[0],
-        repo.name,
-        repo.default_branch || 'main',
-        token
-      );
+      const { tree: fullTree, truncated } = await fetchRepoTree(owner, repo.name, branch, token);
       setTree(fullTree);
+      setIsTreeTruncated(truncated);
     } catch (err: any) {
       setTreeError(err.message || 'Failed to load repository folder structure.');
+      // Auto-fallback: try contents API for root
+      handleFetchDirectContents(owner, repo.name, currentPath, branch);
     } finally {
       setIsLoadingTree(false);
+    }
+  };
+
+  // Direct GitHub API contents fallback (for specific folder or truncated trees)
+  const handleFetchDirectContents = async (
+    owner: string,
+    repoName: string,
+    path: string,
+    branch?: string
+  ) => {
+    setIsLoadingDirectApi(true);
+    try {
+      const items = await fetchDirectoryContents(owner, repoName, path, branch, token);
+      setDirectApiItems(items);
+    } catch (err: any) {
+      console.warn('Direct contents API fallback failed:', err);
+    } finally {
+      setIsLoadingDirectApi(false);
     }
   };
 
@@ -206,7 +294,7 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
     setCurrentPath(newPath);
   };
 
-  // Handle clicking a file to load into MarkPDF editor & preview
+  // Handle clicking a file (Code or Markdown) to load into editor & preview
   const handleSelectFile = async (item: ExplorerItem | GitHubTreeItem) => {
     if (!selectedRepo) return;
     const filePath = item.path;
@@ -216,21 +304,69 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
 
     setLoadingFile(filePath);
     try {
-      const content = await fetchRawMarkdown(owner, repoName, branch, filePath, token);
+      const rawContent = await fetchRawFileContent(owner, repoName, branch, filePath, token);
       setSelectedFilePath(filePath);
 
-      const fileName = filePath.split('/').pop() || 'note.md';
-      // Extract title from markdown heading or filename
-      const titleMatch = content.match(/^#\s+(.+)$/m);
-      const title = titleMatch ? titleMatch[1].trim() : fileName.replace(/\.md$/i, '');
+      const fileName = filePath.split('/').pop() || 'file';
+      const isMd = isMarkdownFile(fileName);
+
+      let finalContent = rawContent;
+      let title = fileName;
+
+      if (isMd) {
+        // Extract title from markdown heading or filename
+        const titleMatch = rawContent.match(/^#\s+(.+)$/m);
+        title = titleMatch ? titleMatch[1].trim() : fileName.replace(/\.md$/i, '');
+      } else {
+        // CODE FILE: Format code into publication-grade executive markdown document
+        finalContent = formatCodeAsDocument(rawContent, fileName, filePath, repoName);
+        title = fileName;
+      }
+
       const rawUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/${branch}/${filePath}`;
 
-      onSelectNote(content, fileName, title, rawUrl);
+      // Track in recent files
+      const langInfo = getLanguageInfo(fileName);
+      setRecentFiles((prev) => {
+        const filtered = prev.filter((r) => !(r.repo === repoName && r.path === filePath));
+        return [
+          {
+            name: fileName,
+            path: filePath,
+            repo: repoName,
+            owner,
+            branch,
+            category: isMd ? 'note' : langInfo.category
+          },
+          ...filtered
+        ].slice(0, 8);
+      });
+
+      onSelectNote(finalContent, fileName, title, rawUrl);
     } catch (err: any) {
-      alert(`Could not load note: ${err.message}`);
+      alert(`Could not load file: ${err.message}`);
     } finally {
       setLoadingFile(null);
     }
+  };
+
+  // Handle clicking a recent file pill
+  const handleSelectRecent = async (rf: RecentFile) => {
+    // If not in this repo, set repo first
+    if (!selectedRepo || selectedRepo.name !== rf.repo) {
+      const matchingRepo = repos.find((r) => r.name === rf.repo);
+      if (matchingRepo) {
+        setSelectedRepo(matchingRepo);
+        handleLoadRepoTree(matchingRepo);
+      }
+    }
+    handleSelectFile({
+      name: rf.name,
+      path: rf.path,
+      type: 'file',
+      isMarkdown: isMarkdownFile(rf.name),
+      category: isMarkdownFile(rf.name) ? 'note' : 'code'
+    } as any);
   };
 
   // Filtered repositories
@@ -252,36 +388,71 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
       const q = fileSearch.toLowerCase().trim();
       const matched = tree.filter((item) => {
         if (item.type !== 'blob') return false;
-        const isMd = /\.(md|markdown|mdx|txt)$/i.test(item.path);
-        if (onlyMarkdown && !isMd) return false;
+        const fileName = item.path.split('/').pop() || item.path;
+        const isMd = isMarkdownFile(fileName);
+
+        if (filterMode === 'notes' && !isMd) return false;
+        if (filterMode === 'code' && isMd) return false;
+
         return item.path.toLowerCase().includes(q);
       });
 
       const explorerItems: ExplorerItem[] = matched.map((m) => {
         const name = m.path.split('/').pop() || m.path;
+        const isMd = isMarkdownFile(name);
+        const langInfo = getLanguageInfo(name);
+
         return {
           name,
           path: m.path,
           type: 'file',
-          isMarkdown: /\.(md|markdown|mdx|txt)$/i.test(m.path),
-          size: m.size
+          isMarkdown: isMd,
+          category: isMd ? 'note' : langInfo.category,
+          language: langInfo.name,
+          badge: isMd ? 'NOTE' : langInfo.badge,
+          badgeColor: isMd ? undefined : langInfo.color,
+          size: m.size,
+          formattedSize: m.size !== undefined ? formatFileSize(m.size) : undefined
         };
       });
 
       return { folderItems: explorerItems, isGlobalSearch: true };
     }
 
-    // Normal folder view
-    let items = getItemsInDirectory(tree, currentPath);
-    if (onlyMarkdown) {
-      items = items.filter((item) => item.type === 'dir' || item.isMarkdown);
+    // Direct API fallback active
+    if (directApiItems && directApiItems.length > 0) {
+      let filtered = directApiItems;
+      if (filterMode === 'notes') {
+        filtered = filtered.filter((i) => i.type === 'dir' || i.isMarkdown);
+      } else if (filterMode === 'code') {
+        filtered = filtered.filter((i) => i.type === 'dir' || !i.isMarkdown);
+      }
+      return { folderItems: filtered, isGlobalSearch: false };
     }
-    return { folderItems: items, isGlobalSearch: false };
-  }, [tree, currentPath, fileSearch, onlyMarkdown]);
 
-  // All markdown files count in this repo
-  const totalMarkdownCount = useMemo(() => {
-    return tree.filter((t) => t.type === 'blob' && /\.(md|markdown|mdx|txt)$/i.test(t.path)).length;
+    // Normal folder view from recursive tree
+    let items = getItemsInDirectory(tree, currentPath);
+
+    if (filterMode === 'notes') {
+      items = items.filter((item) => item.type === 'dir' || item.isMarkdown);
+    } else if (filterMode === 'code') {
+      items = items.filter((item) => item.type === 'dir' || !item.isMarkdown);
+    }
+
+    return { folderItems: items, isGlobalSearch: false };
+  }, [tree, currentPath, fileSearch, filterMode, directApiItems]);
+
+  // Metrics: Count markdown notes and code files
+  const { totalMarkdownCount, totalCodeCount } = useMemo(() => {
+    let md = 0;
+    let code = 0;
+    for (const item of tree) {
+      if (item.type === 'blob') {
+        if (isMarkdownFile(item.path)) md++;
+        else code++;
+      }
+    }
+    return { totalMarkdownCount: md, totalCodeCount: code };
   }, [tree]);
 
   return (
@@ -301,7 +472,7 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="GitHub username (e.g. RayAashish)"
-              className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] focus:border-[var(--accent)] rounded-xl px-3 py-2 pl-8 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition"
+              className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] focus:border-[var(--accent)] rounded-xl px-3 py-2 pl-8 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition shadow-sm"
             />
             <GitBranch className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-2.5 top-1/2 -translate-y-1/2" />
           </div>
@@ -323,12 +494,12 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
           <button
             type="button"
             onClick={() => setShowTokenInput(!showTokenInput)}
-            className={`p-2 rounded-xl border transition ${
+            className={`p-2 rounded-xl border transition shrink-0 ${
               token
                 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
                 : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
             }`}
-            title="GitHub Personal Access Token (Optional)"
+            title="GitHub Personal Access Token (Optional: Increases rate limit)"
           >
             <Key className="w-3.5 h-3.5" />
           </button>
@@ -336,12 +507,12 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
 
         {/* Collapsible GitHub Token Input */}
         {showTokenInput && (
-          <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-1 animate-in fade-in duration-100">
+          <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-1 animate-in fade-in duration-100 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-semibold text-[var(--text-muted)] uppercase">
                 GitHub Token (Optional)
               </span>
-              <span className="text-[10px] text-[var(--text-muted)]">Increases API limit to 5000/hr</span>
+              <span className="text-[10px] text-[var(--text-muted)]">Rate limit: 5000/hr</span>
             </div>
             <input
               type="password"
@@ -350,6 +521,29 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
               placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
               className="w-full bg-[var(--bg-subtle)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none"
             />
+          </div>
+        )}
+
+        {/* Recent Files Shelf (If any exist) */}
+        {recentFiles.length > 0 && !selectedRepo && (
+          <div className="pt-1">
+            <div className="flex items-center space-x-1.5 text-[10px] text-[var(--text-muted)] mb-1">
+              <Clock className="w-3 h-3" />
+              <span>Recent Documents:</span>
+            </div>
+            <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5">
+              {recentFiles.map((rf, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSelectRecent(rf)}
+                  className="px-2 py-1 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] text-[10px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center space-x-1 shrink-0 transition"
+                  title={`${rf.repo} / ${rf.path}`}
+                >
+                  <FileCode className="w-3 h-3 text-sky-400" />
+                  <span className="max-w-[120px] truncate">{rf.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -400,7 +594,7 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
                 <div className="py-12 text-center text-[var(--text-muted)] space-y-2">
                   <BookOpen className="w-8 h-8 mx-auto opacity-40" />
                   <p className="text-xs font-semibold">Ready to explore</p>
-                  <p className="text-[11px]">Enter a GitHub username and tap "Fetch" to explore repositories & notes.</p>
+                  <p className="text-[11px]">Enter a GitHub username and tap &quot;Fetch&quot; to explore repositories, code & notes.</p>
                 </div>
               )}
 
@@ -409,7 +603,7 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
                   <button
                     key={repo.id}
                     onClick={() => handleLoadRepoTree(repo)}
-                    className="w-full text-left p-3 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--accent)] transition group flex flex-col space-y-1.5 shadow-sm"
+                    className="w-full text-left p-3 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--accent)] transition group flex flex-col space-y-1.5 shadow-sm active:scale-[0.99]"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-1.5 font-bold text-xs text-[var(--text-primary)] group-hover:text-[var(--accent)] transition">
@@ -445,7 +639,7 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
           </div>
         ) : (
           /* ══════════════════════════════════════════════════
-             STATE 2: REPOSITORY FOLDER & NOTE EXPLORER VIEW
+             STATE 2: REPOSITORY FOLDER & CODE EXPLORER VIEW
              ══════════════════════════════════════════════════ */
           <div className="flex-1 flex flex-col min-h-0">
             {/* Repo Subheader & Back Button */}
@@ -456,6 +650,7 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
                     setSelectedRepo(null);
                     setCurrentPath('');
                     setFileSearch('');
+                    setDirectApiItems(null);
                   }}
                   className="inline-flex items-center space-x-1 text-[11px] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 py-1 rounded-lg hover:bg-[var(--bg-card)] transition"
                 >
@@ -463,9 +658,12 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
                   <span>All Repos</span>
                 </button>
 
-                <div className="flex items-center space-x-1">
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[var(--badge-bg)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 border border-emerald-500/30">
                     {totalMarkdownCount} notes
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-sky-500/10 text-sky-500 border border-sky-500/30">
+                    {totalCodeCount} code
                   </span>
                   <button
                     onClick={() => handleLoadRepoTree(selectedRepo)}
@@ -506,14 +704,14 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
                 ))}
               </div>
 
-              {/* Note Search & Markdown Toggle Bar */}
-              <div className="flex items-center gap-1.5 pt-0.5">
-                <div className="relative flex-1">
+              {/* Search Bar + 3-Way Filter Pills (All / Notes / Code) */}
+              <div className="space-y-1.5">
+                <div className="relative">
                   <input
                     type="text"
                     value={fileSearch}
                     onChange={(e) => setFileSearch(e.target.value)}
-                    placeholder="Search notes in this repo..."
+                    placeholder="Search all files & code in repo..."
                     className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-1.5 pl-7 text-[11px] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
                   />
                   <Search className="w-3 h-3 text-[var(--text-muted)] absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -527,36 +725,92 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
                   )}
                 </div>
 
-                <button
-                  onClick={() => setOnlyMarkdown(!onlyMarkdown)}
-                  className={`px-2 py-1.5 rounded-lg border text-[10px] font-semibold transition shrink-0 ${
-                    onlyMarkdown
-                      ? 'bg-[var(--accent)] text-[var(--accent-contrast)] border-transparent'
-                      : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
-                  }`}
-                  title="Show only markdown files"
-                >
-                  MD Only
-                </button>
+                {/* Filter Pills */}
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={() => setFilterMode('all')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition ${
+                      filterMode === 'all'
+                        ? 'bg-[var(--accent)] text-[var(--accent-contrast)] shadow-xs'
+                        : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]'
+                    }`}
+                  >
+                    All Files
+                  </button>
+                  <button
+                    onClick={() => setFilterMode('notes')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition ${
+                      filterMode === 'notes'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]'
+                    }`}
+                  >
+                    Notes (.md)
+                  </button>
+                  <button
+                    onClick={() => setFilterMode('code')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition ${
+                      filterMode === 'code'
+                        ? 'bg-sky-600 text-white shadow-xs'
+                        : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]'
+                    }`}
+                  >
+                    Code Files
+                  </button>
+                </div>
               </div>
+
+              {/* Truncated Tree Warning & API Sync Button */}
+              {isTreeTruncated && (
+                <div className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[10px] flex items-center justify-between">
+                  <span>Large repository tree (100k+ files).</span>
+                  <button
+                    onClick={() =>
+                      handleFetchDirectContents(
+                        selectedRepo.full_name.split('/')[0],
+                        selectedRepo.name,
+                        currentPath,
+                        selectedRepo.default_branch
+                      )
+                    }
+                    disabled={isLoadingDirectApi}
+                    className="underline font-semibold hover:text-amber-400"
+                  >
+                    {isLoadingDirectApi ? 'Syncing...' : 'Sync Current Folder'}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Folder & Files List */}
             <div className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-1">
-              {isLoadingTree && (
+              {(isLoadingTree || isLoadingDirectApi) && (
                 <div className="py-12 text-center text-[var(--text-muted)] space-y-2">
                   <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
-                  <p className="text-xs">Reading repository structure...</p>
+                  <p className="text-xs">Reading repository folders & files...</p>
                 </div>
               )}
 
-              {treeError && (
-                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 text-xs">
-                  {treeError}
+              {treeError && !directApiItems && (
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 text-xs space-y-2">
+                  <p>{treeError}</p>
+                  <button
+                    onClick={() =>
+                      handleFetchDirectContents(
+                        selectedRepo.full_name.split('/')[0],
+                        selectedRepo.name,
+                        currentPath,
+                        selectedRepo.default_branch
+                      )
+                    }
+                    className="px-2.5 py-1 bg-red-500 text-white rounded-lg text-[11px] font-semibold"
+                  >
+                    Load Folder via GitHub API
+                  </button>
                 </div>
               )}
 
-              {!isLoadingTree && !treeError && (
+              {!isLoadingTree && !isLoadingDirectApi && (
                 <>
                   {/* Up one folder button (if inside a subfolder and not searching globally) */}
                   {currentPath && !isGlobalSearch && (
@@ -580,7 +834,7 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
                         <button
                           key={item.path}
                           onClick={() => handleOpenFolder(item.path)}
-                          className="w-full text-left px-3 py-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--accent)] transition flex items-center justify-between group shadow-sm"
+                          className="w-full text-left px-3 py-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--accent)] transition flex items-center justify-between group shadow-xs active:scale-[0.99]"
                         >
                           <div className="flex items-center space-x-2.5 truncate">
                             <Folder className="w-4 h-4 text-amber-500 shrink-0" />
@@ -588,36 +842,51 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
                               {item.name}
                             </span>
                           </div>
-                          <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:translate-x-0.5 transition shrink-0" />
+                          <div className="flex items-center space-x-1.5 shrink-0">
+                            {item.childCount !== undefined && item.childCount > 0 && (
+                              <span className="text-[9px] text-[var(--text-muted)]">
+                                {item.childCount} items
+                              </span>
+                            )}
+                            <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:translate-x-0.5 transition" />
+                          </div>
                         </button>
                       );
                     }
 
-                    // File item (Markdown files styled prominently as notes)
+                    // File item (Notes & Code Files)
+                    const isNote = item.isMarkdown;
+                    const badgeText = item.badge || (isNote ? 'NOTE' : 'CODE');
+                    const badgeClass =
+                      item.badgeColor ||
+                      (isNote
+                        ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
+                        : 'text-sky-400 bg-sky-500/10 border-sky-500/30');
+
                     return (
                       <button
                         key={item.path}
                         onClick={() => handleSelectFile(item)}
                         disabled={isLoadingThisFile}
-                        className={`w-full text-left px-3 py-2.5 rounded-xl border transition flex items-center justify-between group shadow-sm ${
+                        className={`w-full text-left px-3 py-2.5 rounded-xl border transition flex items-center justify-between group shadow-xs active:scale-[0.99] ${
                           isSelected
                             ? 'bg-[var(--accent)] text-[var(--accent-contrast)] border-[var(--accent)] font-semibold shadow-md'
-                            : item.isMarkdown
-                            ? 'bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border-[var(--border-subtle)] hover:border-[var(--accent)] text-[var(--text-primary)]'
-                            : 'bg-[var(--bg-card)]/40 hover:bg-[var(--bg-card)] border-[var(--border-subtle)] text-[var(--text-muted)]'
+                            : 'bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border-[var(--border-subtle)] hover:border-[var(--accent)] text-[var(--text-primary)]'
                         }`}
                       >
                         <div className="flex items-center space-x-2.5 truncate pr-2">
                           {isLoadingThisFile ? (
                             <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin shrink-0" />
-                          ) : (
+                          ) : isNote ? (
                             <FileText
                               className={`w-4 h-4 shrink-0 ${
-                                isSelected
-                                  ? 'text-[var(--accent-contrast)]'
-                                  : item.isMarkdown
-                                  ? 'text-sky-500'
-                                  : 'text-[var(--text-muted)]'
+                                isSelected ? 'text-[var(--accent-contrast)]' : 'text-emerald-400'
+                              }`}
+                            />
+                          ) : (
+                            <FileCode
+                              className={`w-4 h-4 shrink-0 ${
+                                isSelected ? 'text-[var(--accent-contrast)]' : 'text-sky-400'
                               }`}
                             />
                           )}
@@ -637,17 +906,26 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
                         </div>
 
                         <div className="flex items-center space-x-1.5 shrink-0">
-                          {item.isMarkdown && (
+                          {item.formattedSize && (
                             <span
-                              className={`text-[9px] font-mono px-1.5 py-0.2 rounded-md ${
-                                isSelected
-                                  ? 'bg-black/20 text-current'
-                                  : 'bg-[var(--badge-bg)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
+                              className={`text-[9px] ${
+                                isSelected ? 'opacity-80' : 'text-[var(--text-muted)]'
                               }`}
                             >
-                              NOTE
+                              {item.formattedSize}
                             </span>
                           )}
+
+                          <span
+                            className={`text-[9px] font-mono px-1.5 py-0.2 rounded-md border ${
+                              isSelected
+                                ? 'bg-black/20 text-current border-transparent'
+                                : badgeClass
+                            }`}
+                          >
+                            {badgeText}
+                          </span>
+
                           {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
                         </div>
                       </button>
@@ -655,16 +933,31 @@ export const GitHubExplorer: React.FC<GitHubExplorerProps> = ({
                   })}
 
                   {folderItems.length === 0 && (
-                    <div className="py-12 text-center text-[var(--text-muted)] space-y-1">
-                      <p className="text-xs">No files found in this folder</p>
-                      {onlyMarkdown && (
+                    <div className="py-12 text-center text-[var(--text-muted)] space-y-2">
+                      <p className="text-xs">No matching files found in this folder</p>
+                      {filterMode !== 'all' && (
                         <button
-                          onClick={() => setOnlyMarkdown(false)}
+                          onClick={() => setFilterMode('all')}
                           className="text-[11px] underline text-[var(--accent)]"
                         >
                           Show all files
                         </button>
                       )}
+                      <div>
+                        <button
+                          onClick={() =>
+                            handleFetchDirectContents(
+                              selectedRepo.full_name.split('/')[0],
+                              selectedRepo.name,
+                              currentPath,
+                              selectedRepo.default_branch
+                            )
+                          }
+                          className="px-2.5 py-1 bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--accent)] rounded-lg text-[11px] text-[var(--text-secondary)] transition"
+                        >
+                          Sync from GitHub API
+                        </button>
+                      </div>
                     </div>
                   )}
                 </>

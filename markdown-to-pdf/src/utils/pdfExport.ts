@@ -117,7 +117,7 @@ export async function exportPdfClientSide(
 
       await Share.share({
         title: safeTitle,
-        text: `Exported ${fileName} from MarkPDF`,
+        text: `Exported ${fileName} from CodexPress`,
         url: savedFile.uri,
         dialogTitle: 'Save or Open PDF'
       });
@@ -157,7 +157,7 @@ export async function exportMarkdownFile(
 
       await Share.share({
         title: fileName,
-        text: 'Markdown document from MarkPDF',
+        text: 'Markdown document from CodexPress',
         url: savedFile.uri,
         dialogTitle: 'Save or Open Markdown File'
       });

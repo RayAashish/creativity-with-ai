@@ -224,6 +224,50 @@ class LassoTool {
         return removed
     }
 
+    fun changeColor(newColor: Int): Pair<List<Stroke>, List<Stroke>> {
+        if (selectedStrokes.isEmpty()) return Pair(emptyList(), emptyList())
+        val oldStrokes = selectedStrokes.toList()
+        val newStrokes = mutableListOf<Stroke>()
+        for (stroke in selectedStrokes) {
+            val newBrush = stroke.brush.copyWithColorIntArgb(newColor)
+            newStrokes.add(Stroke(newBrush, stroke.inputs))
+        }
+        selectedStrokes.clear()
+        selectedStrokes.addAll(newStrokes)
+        initialStrokesBeforeTransform.clear()
+        initialStrokesBeforeTransform.addAll(newStrokes)
+        return Pair(oldStrokes, newStrokes)
+    }
+
+    fun duplicateSelected(offsetX: Float = 40f, offsetY: Float = 40f): List<Stroke> {
+        if (selectedStrokes.isEmpty()) return emptyList()
+        val duplicates = mutableListOf<Stroke>()
+        for (stroke in selectedStrokes) {
+            val newBatch = MutableStrokeInputBatch()
+            val inputs = stroke.inputs
+            for (i in 0 until inputs.size) {
+                val pt = inputs.get(i)
+                newBatch.add(
+                    pt.toolType,
+                    pt.x + offsetX,
+                    pt.y + offsetY,
+                    pt.elapsedTimeMillis,
+                    pt.strokeUnitLengthCm,
+                    pt.pressure.coerceIn(0.1f, 1.0f),
+                    pt.tiltRadians.coerceIn(0f, 1.57f),
+                    pt.orientationRadians
+                )
+            }
+            duplicates.add(Stroke(stroke.brush, newBatch.toImmutable()))
+        }
+        selectedStrokes.clear()
+        selectedStrokes.addAll(duplicates)
+        initialStrokesBeforeTransform.clear()
+        initialStrokesBeforeTransform.addAll(duplicates)
+        recomputeSelectionBounds()
+        return duplicates
+    }
+
     fun translateSelected(dx: Float, dy: Float) {
         if (selectedStrokes.isEmpty()) return
         val oldStrokes = selectedStrokes.toList()

@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.raysi.launcher.app-mergeReleaseResources-54:/values-v23/values-v23.xml",
+            "outputFile": "com.raysi.launcher.app-mergeReleaseResources-55:/values-v23/values-v23.xml",
             "map": [
                 {
-                    "source": "/Users/aashishkumarray/.gradle/caches/8.13/transforms/2e18419558b06d86c42893ae2e92a124/transformed/work-runtime-2.10.0/res/values-v23/values-v23.xml",
+                    "source": "/Users/aashishkumarray/.gradle/caches/8.13/transforms/01ec35226d3e1ac37f68c15a23543067/transformed/work-runtime-2.10.0/res/values-v23/values-v23.xml",
                     "from": {
                         "startLines": "2,3",
                         "startColumns": "4,4",

@@ -134,3 +134,27 @@ h1, h2, h3, h4, .font-heading {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
+
+/* Document Paper Simulation */
+.paper-preview-sheet {
+  background-color: #ffffff;
+  color: #111827;
+  min-height: 1050px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  padding: 48px;
+  margin: 0 auto 60px auto;
+  box-sizing: border-box;
+}
+
+[data-theme="beige"] .paper-preview-sheet {
+  background-color: #fdfbf7;
+  color: #1c1917;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .paper-preview-sheet {
+  background-color: #ffffff;
+  color: #090a0c;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05);
+}

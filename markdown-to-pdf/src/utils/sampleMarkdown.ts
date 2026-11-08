@@ -1,13 +1,13 @@
-export const SAMPLE_SHOWCASE = `# MarkPDF Feature Showcase
+export const SAMPLE_SHOWCASE = `# CodexPress Feature Showcase
 
 > [!NOTE]
-> MarkPDF transforms any Markdown document or GitHub README into an executive-ready, print-perfect PDF with full support for tables, KaTeX math, code highlighting, and Mermaid diagrams.
+> CodexPress transforms any Markdown document, source code file, or GitHub repository into an executive-ready, print-perfect PDF with full support for tables, KaTeX math, code highlighting, and Mermaid diagrams.
 
 ---
 
 ## 1. Mathematical Equations (KaTeX)
 
-MarkPDF natively supports both inline math like $E = mc^2$ or $\\lim_{x \\to 0} \\frac{\\sin x}{x} = 1$, and complex block equations:
+CodexPress natively supports both inline math like $E = mc^2$ or $\\lim_{x \\to 0} \\frac{\\sin x}{x} = 1$, and complex block equations:
 
 $$
 f(x) = \\int_{-\\infty}^{\\infty} \\hat{f}(\\xi)\\,e^{2 \\pi i \\xi x}\\,d\\xi
@@ -42,20 +42,20 @@ $$
 
 ## 3. Architecture Diagrams (Mermaid)
 
-MarkPDF renders Mermaid diagrams directly into scalable vector graphics:
+CodexPress renders Mermaid diagrams directly into scalable vector graphics:
 
 \`\`\`mermaid
 flowchart TD
-    A[Markdown File / GitHub URL] --> B[MarkPDF Parser]
+    A[Markdown / Code File / GitHub Repo] --> B[CodexPress Parser]
     B --> C{Process Elements}
     C -->|Math| D[KaTeX Renderer]
     C -->|Diagrams| E[Mermaid Engine]
     C -->|Code| F[Syntax Highlighter]
-    D --> G[Unified HTML Document]
+    D --> G[Unified Document Layout]
     E --> G
     F --> G
     G --> H[High-Fidelity PDF Engine]
-    H --> I[Vector PDF Download]
+    H --> I[Vector PDF Download & Print]
 \`\`\`
 
 ---
@@ -104,7 +104,7 @@ class TransformerEncoder(nn.Module):
 
 ## 5. Structured Data & Comparison Tables
 
-| Feature | Standard Markdown | MarkPDF Output | Export Fidelity |
+| Feature | Standard Markdown | CodexPress Output | Export Fidelity |
 | :--- | :---: | :---: | :---: |
 | **KaTeX Math** | Raw code | Fully Rendered Formula | Vector SVG |
 | **Mermaid Charts** | Plain text | Crisp Diagrams | Vector SVG |

@@ -7,12 +7,14 @@ import androidx.lifecycle.viewModelScope
 import com.raysi.launcher.data.model.AppInfo
 import com.raysi.launcher.data.model.PinnedAppEntry
 import com.raysi.launcher.data.repository.AppInventoryRepository
-import com.raysi.launcher.data.repository.HudState
+import com.raysi.launcher.data.repository.PreferencesRepository
 import com.raysi.launcher.data.repository.QuarantineRepository
 import com.raysi.launcher.data.repository.SettingsRepository
-import com.raysi.launcher.data.repository.UsageRepository
-import com.raysi.launcher.data.usage.format.UsageDurationFormatter
-import com.raysi.launcher.ui.home.model.PinnedAppUiModel
+import com.raysi.launcher.data.repository.TelemetryRepository
+import com.raysi.launcher.domain.model.DailyProgress
+import com.raysi.launcher.domain.model.PinnedAppItem
+import com.raysi.launcher.domain.model.TelemetryUiState
+import com.raysi.launcher.util.SystemThemingHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,22 +28,28 @@ import kotlinx.coroutines.launch
 sealed interface HomeDialogState {
     data object None : HomeDialogState
     data class Options(
-        val pin: PinnedAppUiModel,
+        val pin: PinnedAppItem,
         val canMoveUp: Boolean,
         val canMoveDown: Boolean
     ) : HomeDialogState
     data class Rename(
-        val pin: PinnedAppUiModel,
+        val pin: PinnedAppItem,
         val currentText: String,
         val error: String? = null
+    ) : HomeDialogState
+    data class SetLimit(
+        val pin: PinnedAppItem,
+        val currentLimit: Int
     ) : HomeDialogState
 }
 
 class HomeViewModel(
     private val appInventoryRepository: AppInventoryRepository,
     private val settingsRepository: SettingsRepository,
-    private val usageRepository: UsageRepository,
+    private val telemetryRepository: TelemetryRepository,
+    private val preferencesRepository: PreferencesRepository,
     private val quarantineRepository: QuarantineRepository? = null,
+    private val systemThemingHelper: SystemThemingHelper? = null,
     coroutineScope: CoroutineScope? = null
 ) : ViewModel() {
 
@@ -49,6 +57,21 @@ class HomeViewModel(
 
     private val _dialogState = MutableStateFlow<HomeDialogState>(HomeDialogState.None)
     val dialogState: StateFlow<HomeDialogState> = _dialogState.asStateFlow()
+
+    val isStealthMode: StateFlow<Boolean> = preferencesRepository.isStealthModeFlow
+        .stateIn(scope, SharingStarted.Lazily, true)
+
+    val customStatusBarLine: StateFlow<String> = (systemThemingHelper?.customStatusBarLine ?: flowOf(""))
+        .stateIn(scope, SharingStarted.Lazily, "")
+
+    val telemetryUiState: StateFlow<TelemetryUiState> = telemetryRepository.telemetryUiStateFlow
+    val dailyProgress: StateFlow<DailyProgress> = telemetryRepository.dailyProgressFlow
+
+    val dailyFocusGoal: StateFlow<String> = preferencesRepository.dailyFocusGoalFlow
+        .stateIn(scope, SharingStarted.Lazily, "")
+
+    val scratchpadContent: StateFlow<String> = preferencesRepository.scratchpadContentFlow
+        .stateIn(scope, SharingStarted.Lazily, "")
 
     val quarantinedCount: StateFlow<Int> = (quarantineRepository?.unreadCountFlow ?: flowOf(0))
         .stateIn(scope, SharingStarted.Lazily, 0)
@@ -62,67 +85,56 @@ class HomeViewModel(
     )
     val isDefaultLauncher: StateFlow<Boolean> = _isDefaultLauncher.asStateFlow()
 
-    val hudState: StateFlow<HudState> = usageRepository.hudStateFlow
-
-    val pinnedApps: StateFlow<List<PinnedAppUiModel>> = combine(
+    val pinnedApps: StateFlow<List<PinnedAppItem>> = combine(
         settingsRepository.snapshotFlow,
         appInventoryRepository.appsMapFlow,
-        usageRepository.hudStateFlow
-    ) { snapshot, appsMap, hud ->
+        telemetryRepository.perAppDurationsFlow,
+        preferencesRepository.customAppLimitsFlow
+    ) { snapshot, appsMap, perAppDurations, customLimits ->
         val sortedPins = snapshot.pinnedApps.sortedBy { it.displayOrder }.take(5)
-        sortedPins.mapIndexed { index, pin ->
+        sortedPins.map { pin ->
             val app = appsMap["${pin.componentName}#${pin.userSerialNumber}"]
-            val userHandle = try {
-                app?.userHandle ?: appInventoryRepository.getUserHandle(pin.userSerialNumber)
-            } catch (t: Throwable) {
-                null
-            }
-
-            val cleanLabel = when {
-                pin.customLabel.isNotBlank() -> pin.customLabel
-                app != null -> app.label
-                else -> pin.componentName.substringBefore('/')
-            }
-
             val parts = pin.componentName.split('/')
             val pkg = parts.getOrNull(0) ?: pin.componentName
             val cls = parts.getOrNull(1) ?: ""
             val fullCls = if (cls.startsWith(".")) "$pkg$cls" else cls
-            val component = try {
-                ComponentName(pkg, fullCls)
-            } catch (t: Throwable) {
-                null
+
+            val cleanLabel = when {
+                pin.customLabel.isNotBlank() -> pin.customLabel
+                app != null -> app.label
+                else -> pkg
             }
 
-            val durationFormatted = if (hud.hasPermission) {
-                val appDurationMs = hud.perAppDurations[pkg] ?: 0L
-                UsageDurationFormatter.formatAppDuration(appDurationMs)
-            } else {
-                null
-            }
+            val durationMs = perAppDurations[pkg] ?: 0L
+            val durationMinutes = durationMs / 60000L
+            val timeLimit = customLimits[pkg] ?: 45
+            val isSatiated = durationMinutes >= timeLimit
+            val usageFormatted = if (durationMinutes >= 15L) "${durationMinutes}m" else null
 
-            PinnedAppUiModel(
+            PinnedAppItem(
                 id = "${pin.componentName}#${pin.userSerialNumber}",
+                packageName = pkg,
+                className = fullCls,
                 componentNameStr = pin.componentName,
-                componentName = component,
-                userHandle = userHandle,
-                displayLabel = cleanLabel,
+                label = cleanLabel,
                 userSerialNumber = pin.userSerialNumber,
-                displayOrder = index,
-                isInstalled = app != null,
                 isWorkProfile = app?.isWorkProfile ?: false,
-                usageDurationFormatted = durationFormatted
+                isInstalled = app != null,
+                usageDurationMinutes = durationMinutes,
+                usageFormatted = usageFormatted,
+                isSatiated = isSatiated,
+                timeLimitMinutes = timeLimit
             )
         }
     }.stateIn(scope, SharingStarted.Lazily, emptyList())
 
     fun onResume() {
         refreshDefaultLauncherStatus()
-        usageRepository.onScreenResumed()
+        telemetryRepository.onScreenResumed()
     }
 
     fun onPause() {
-        usageRepository.onScreenPaused()
+        telemetryRepository.onScreenPaused()
     }
 
     fun refreshDefaultLauncherStatus() {
@@ -133,29 +145,29 @@ class HomeViewModel(
         }
     }
 
-    fun getAppInfoForPin(pin: PinnedAppUiModel): AppInfo? {
+    fun saveFocusGoal(goal: String) {
+        scope.launch {
+            preferencesRepository.setDailyFocusGoal(goal)
+        }
+    }
+
+    fun saveScratchpad(content: String) {
+        scope.launch {
+            preferencesRepository.saveScratchpadContent(content)
+        }
+    }
+
+    fun toggleStealthMode() {
+        scope.launch {
+            preferencesRepository.setStealthMode(!isStealthMode.value)
+        }
+    }
+
+    fun getAppInfoForPin(pin: PinnedAppItem): AppInfo? {
         return appInventoryRepository.findApp(pin.componentNameStr, pin.userSerialNumber)
     }
 
-    fun onAppClick(pin: PinnedAppUiModel) {
-        val component = pin.componentName ?: try {
-            val parts = pin.componentNameStr.split('/')
-            val pkg = parts.getOrNull(0) ?: pin.componentNameStr
-            val cls = parts.getOrNull(1) ?: ""
-            ComponentName(pkg, if (cls.startsWith(".")) "$pkg$cls" else cls)
-        } catch (t: Throwable) {
-            null
-        }
-        val handle = pin.userHandle
-        if (pin.isInstalled && component != null && handle != null) {
-            appInventoryRepository.launchApp(component, handle)
-        } else {
-            // Show options dialog to allow unpinning or renaming uninstalled app
-            onPinLongClick(pin)
-        }
-    }
-
-    fun onPinLongClick(pin: PinnedAppUiModel) {
+    fun onPinLongClick(pin: PinnedAppItem) {
         val currentPins = pinnedApps.value
         val index = currentPins.indexOfFirst { it.id == pin.id }
         if (index == -1) return
@@ -169,7 +181,7 @@ class HomeViewModel(
         )
     }
 
-    fun onMoveUp(pin: PinnedAppUiModel) {
+    fun onMoveUp(pin: PinnedAppItem) {
         val list = settingsRepository.snapshot.pinnedApps.toMutableList()
         val index = list.indexOfFirst {
             it.componentName == pin.componentNameStr && it.userSerialNumber == pin.userSerialNumber
@@ -182,7 +194,7 @@ class HomeViewModel(
         dismissDialog()
     }
 
-    fun onMoveDown(pin: PinnedAppUiModel) {
+    fun onMoveDown(pin: PinnedAppItem) {
         val list = settingsRepository.snapshot.pinnedApps.toMutableList()
         val index = list.indexOfFirst {
             it.componentName == pin.componentNameStr && it.userSerialNumber == pin.userSerialNumber
@@ -195,7 +207,7 @@ class HomeViewModel(
         dismissDialog()
     }
 
-    fun onUnpin(pin: PinnedAppUiModel) {
+    fun onUnpin(pin: PinnedAppItem) {
         val list = settingsRepository.snapshot.pinnedApps.filterNot {
             it.componentName == pin.componentNameStr && it.userSerialNumber == pin.userSerialNumber
         }
@@ -203,15 +215,15 @@ class HomeViewModel(
         dismissDialog()
     }
 
-    fun onStartRename(pin: PinnedAppUiModel) {
+    fun onStartRename(pin: PinnedAppItem) {
         _dialogState.value = HomeDialogState.Rename(
             pin = pin,
-            currentText = pin.displayLabel,
+            currentText = pin.label,
             error = null
         )
     }
 
-    fun onConfirmRename(pin: PinnedAppUiModel, newName: String) {
+    fun onConfirmRename(pin: PinnedAppItem, newName: String) {
         val trimmed = newName.trim()
         if (trimmed.isEmpty() || trimmed.length > 24) {
             val current = _dialogState.value
@@ -233,6 +245,20 @@ class HomeViewModel(
             }
         }
         saveUpdatedPins(list)
+        dismissDialog()
+    }
+
+    fun onStartSetLimit(pin: PinnedAppItem) {
+        _dialogState.value = HomeDialogState.SetLimit(
+            pin = pin,
+            currentLimit = pin.timeLimitMinutes
+        )
+    }
+
+    fun onConfirmSetLimit(pin: PinnedAppItem, limitMinutes: Int) {
+        scope.launch {
+            preferencesRepository.setCustomAppLimit(pin.packageName, limitMinutes)
+        }
         dismissDialog()
     }
 

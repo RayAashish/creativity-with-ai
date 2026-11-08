@@ -3,8 +3,6 @@ package com.raysi.launcher.ui.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,10 +11,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -26,29 +23,31 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.raysi.launcher.R
 import com.raysi.launcher.data.model.AppInfo
-import com.raysi.launcher.ui.home.model.PinnedAppUiModel
+import com.raysi.launcher.domain.model.PinnedAppItem
+import com.raysi.launcher.service.FocusAccessibilityService
+import com.raysi.launcher.ui.gesture.homeGestureDetector
+import com.raysi.launcher.ui.home.components.DailyFocusLine
+import com.raysi.launcher.ui.home.components.DayProgressBar
+import com.raysi.launcher.ui.home.components.PinnedAppsList
+import com.raysi.launcher.ui.home.components.TelemetryHud
 import com.raysi.launcher.ui.theme.DimGray
 import com.raysi.launcher.ui.theme.FocusTypography
 import com.raysi.launcher.ui.theme.OledBlack
 import com.raysi.launcher.ui.theme.PureWhite
 
-/**
- * Minimalist OLED home screen with pinned essentials and Live Usage HUD.
- * Displays max 5 pinned apps (text only, zero icons), dynamic status color, and search trigger.
- */
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
@@ -56,51 +55,61 @@ fun HomeScreen(
     onOpenDrawer: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onOpenQuarantine: () -> Unit = {},
+    onOpenScratchpad: () -> Unit = {},
     onRequestDefaultLauncher: () -> Unit = {},
     onOpenUsageAccessSettings: () -> Unit = {},
     onLaunchApp: (AppInfo) -> Unit = {}
 ) {
+    val telemetryState by viewModel.telemetryUiState.collectAsState()
+    val dailyProgress by viewModel.dailyProgress.collectAsState()
+    val dailyFocusGoal by viewModel.dailyFocusGoal.collectAsState()
     val pinnedApps by viewModel.pinnedApps.collectAsState()
     val isDefaultLauncher by viewModel.isDefaultLauncher.collectAsState()
-    val hudState by viewModel.hudState.collectAsState()
-    val quarantinedCount by viewModel.quarantinedCount.collectAsState()
+    val isStealthMode by viewModel.isStealthMode.collectAsState()
+    val customStatusBarLine by viewModel.customStatusBarLine.collectAsState()
     val dialogState by viewModel.dialogState.collectAsState()
-
-    var dragOffsetY by remember { mutableFloatStateOf(0f) }
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(OledBlack)
-            .systemBarsPadding()
-            .pointerInput(Unit) {
-                detectVerticalDragGestures(
-                    onDragStart = { dragOffsetY = 0f },
-                    onDragEnd = {
-                        if (dragOffsetY < -50f) {
-                            onOpenDrawer()
-                        }
-                    },
-                    onVerticalDrag = { change, dragAmount ->
-                        change.consume()
-                        dragOffsetY += dragAmount
-                    }
-                )
-            }
-            .padding(horizontal = 24.dp, vertical = 20.dp)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .homeGestureDetector(
+                onSwipeUp = onOpenDrawer,
+                onSwipeDown = onOpenScratchpad,
+                onSwipeLeft = onOpenSettings,
+                onDoubleTap = {
+                    FocusAccessibilityService.lockScreen()
+                },
+                onLongPress = {
+                    onOpenDrawer()
+                }
+            )
+            .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Header / HUD Area
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            // TOP ZONE: Themed Status Bar (Mode B) + Header + Telemetry HUD + Memento Mori Day Progress Bar
+            Column(modifier = Modifier.fillMaxWidth()) {
+                if (!isStealthMode && customStatusBarLine.isNotBlank()) {
+                    Text(
+                        text = customStatusBarLine,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 12.sp,
+                        color = DimGray,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp)
+                    )
+                }
+
                 if (!isDefaultLauncher) {
                     Text(
                         text = stringResource(R.string.set_default_launcher),
-                        style = FocusTypography.bodyMedium,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 13.sp,
                         color = DimGray,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -109,105 +118,50 @@ fun HomeScreen(
                     )
                 }
 
-                val hudClickAction = if (hudState.hasPermission) {
-                    onOpenSettings
-                } else {
-                    onOpenUsageAccessSettings
-                }
-
-                Text(
-                    text = if (hudState.formattedText.isNotBlank()) {
-                        hudState.formattedText
-                    } else {
-                        stringResource(R.string.hud_loading)
-                    },
-                    style = FocusTypography.bodyMedium,
-                    color = hudState.statusColor,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = hudClickAction)
+                TelemetryHud(
+                    state = telemetryState,
+                    onOpenQuarantine = onOpenQuarantine,
+                    onOpenUsageSettings = onOpenUsageAccessSettings,
+                    onOpenSettings = onOpenSettings
                 )
 
-                if (quarantinedCount > 0) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "Quarantined: $quarantinedCount • tap to review",
-                        style = FocusTypography.bodySmall,
-                        color = DimGray,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(onClick = onOpenQuarantine)
-                    )
-                }
+                Spacer(modifier = Modifier.height(6.dp))
+
+                DayProgressBar(progress = dailyProgress)
             }
 
-            // Center: Pinned Essentials Area
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f, fill = false),
-                contentAlignment = Alignment.CenterStart
+            Spacer(modifier = Modifier.weight(1f))
+
+            // CENTER ZONE: Focus Goal + Pinned Essentials
+            Column(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                if (pinnedApps.isEmpty()) {
-                    Text(
-                        text = stringResource(R.string.pinned_empty_hint),
-                        style = FocusTypography.bodyMedium,
-                        color = DimGray
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(20.dp)
-                    ) {
-                        items(
-                            items = pinnedApps,
-                            key = { it.id }
-                        ) { pin ->
-                            PinnedAppRow(
-                                pin = pin,
-                                onClick = {
-                                    val app = viewModel.getAppInfoForPin(pin)
-                                    if (app != null) {
-                                        onLaunchApp(app)
-                                    } else {
-                                        viewModel.onAppClick(pin)
-                                    }
-                                },
-                                onLongClick = { viewModel.onPinLongClick(pin) }
-                            )
+                DailyFocusLine(
+                    focusGoal = dailyFocusGoal,
+                    onSaveFocusGoal = { viewModel.saveFocusGoal(it) }
+                )
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                PinnedAppsList(
+                    pinnedApps = pinnedApps,
+                    onLaunchApp = { pin ->
+                        val app = viewModel.getAppInfoForPin(pin)
+                        if (app != null) {
+                            onLaunchApp(app)
                         }
+                    },
+                    onLongClickApp = { pin ->
+                        viewModel.onPinLongClick(pin)
                     }
-                }
-            }
-
-            // Bottom: Search Drawer Trigger & Settings Link
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.search_hint),
-                    style = FocusTypography.bodyLarge,
-                    color = PureWhite,
-                    modifier = Modifier.clickable(onClick = onOpenDrawer)
-                )
-
-                Text(
-                    text = "settings",
-                    style = FocusTypography.bodySmall,
-                    color = DimGray,
-                    modifier = Modifier
-                        .clickable(onClick = onOpenSettings)
-                        .padding(8.dp)
                 )
             }
+
+            Spacer(modifier = Modifier.weight(1.2f))
         }
     }
 
-    // Dialogs for Pin Actions
+    // Pinned App Action Dialogs
     when (val state = dialogState) {
         is HomeDialogState.Options -> {
             PinnedOptionsDialog(
@@ -217,16 +171,23 @@ fun HomeScreen(
                 onMoveUp = { viewModel.onMoveUp(state.pin) },
                 onMoveDown = { viewModel.onMoveDown(state.pin) },
                 onRename = { viewModel.onStartRename(state.pin) },
+                onSetLimit = { viewModel.onStartSetLimit(state.pin) },
                 onUnpin = { viewModel.onUnpin(state.pin) },
                 onDismiss = { viewModel.dismissDialog() }
             )
         }
         is HomeDialogState.Rename -> {
-            RenamePinDialog(
-                pin = state.pin,
-                initialText = state.currentText,
+            RenameDialog(
+                currentText = state.currentText,
                 error = state.error,
                 onConfirm = { newName -> viewModel.onConfirmRename(state.pin, newName) },
+                onDismiss = { viewModel.dismissDialog() }
+            )
+        }
+        is HomeDialogState.SetLimit -> {
+            SetTimeLimitDialog(
+                currentLimitMinutes = state.currentLimit,
+                onSelectLimit = { limit -> viewModel.onConfirmSetLimit(state.pin, limit) },
                 onDismiss = { viewModel.dismissDialog() }
             )
         }
@@ -235,45 +196,14 @@ fun HomeScreen(
 }
 
 @Composable
-private fun PinnedAppRow(
-    pin: PinnedAppUiModel,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit
-) {
-    val textBuilder = StringBuilder(pin.displayLabel)
-    if (pin.usageDurationFormatted != null) {
-        textBuilder.append(" (").append(pin.usageDurationFormatted).append(")")
-    }
-    if (pin.isWorkProfile) {
-        textBuilder.append(" ").append(stringResource(R.string.work_profile_indicator))
-    }
-    if (!pin.isInstalled) {
-        textBuilder.append(" ").append(stringResource(R.string.uninstalled_indicator))
-    }
-
-    Text(
-        text = textBuilder.toString(),
-        style = FocusTypography.headlineMedium,
-        color = if (pin.isInstalled) PureWhite else DimGray,
-        modifier = Modifier
-            .fillMaxWidth()
-            .pointerInput(pin.id) {
-                detectTapGestures(
-                    onTap = { onClick() },
-                    onLongPress = { onLongClick() }
-                )
-            }
-    )
-}
-
-@Composable
 private fun PinnedOptionsDialog(
-    pin: PinnedAppUiModel,
+    pin: PinnedAppItem,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onRename: () -> Unit,
+    onSetLimit: () -> Unit,
     onUnpin: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -282,20 +212,18 @@ private fun PinnedOptionsDialog(
         containerColor = OledBlack,
         title = {
             Text(
-                text = pin.displayLabel,
-                style = FocusTypography.titleLarge,
+                text = pin.label,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 16.sp,
                 color = PureWhite
             )
         },
         text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 if (canMoveUp) {
                     Text(
                         text = stringResource(R.string.action_move_up),
-                        style = FocusTypography.bodyLarge,
+                        fontFamily = FontFamily.Monospace,
                         color = PureWhite,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -305,7 +233,7 @@ private fun PinnedOptionsDialog(
                 if (canMoveDown) {
                     Text(
                         text = stringResource(R.string.action_move_down),
-                        style = FocusTypography.bodyLarge,
+                        fontFamily = FontFamily.Monospace,
                         color = PureWhite,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -313,8 +241,16 @@ private fun PinnedOptionsDialog(
                     )
                 }
                 Text(
+                    text = "Set daily time cap (${pin.timeLimitMinutes}m)",
+                    fontFamily = FontFamily.Monospace,
+                    color = PureWhite,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onSetLimit)
+                )
+                Text(
                     text = stringResource(R.string.action_rename),
-                    style = FocusTypography.bodyLarge,
+                    fontFamily = FontFamily.Monospace,
                     color = PureWhite,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -322,20 +258,19 @@ private fun PinnedOptionsDialog(
                 )
                 Text(
                     text = stringResource(R.string.action_unpin),
-                    style = FocusTypography.bodyLarge,
-                    color = DimGray,
+                    fontFamily = FontFamily.Monospace,
+                    color = PureWhite,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable(onClick = onUnpin)
                 )
             }
         },
-        confirmButton = {},
-        dismissButton = {
+        confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text(
                     text = stringResource(R.string.action_cancel),
-                    style = FocusTypography.labelLarge,
+                    fontFamily = FontFamily.Monospace,
                     color = DimGray
                 )
             }
@@ -344,14 +279,69 @@ private fun PinnedOptionsDialog(
 }
 
 @Composable
-private fun RenamePinDialog(
-    pin: PinnedAppUiModel,
-    initialText: String,
+private fun SetTimeLimitDialog(
+    currentLimitMinutes: Int,
+    onSelectLimit: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = OledBlack,
+        title = {
+            Text(
+                text = "DAILY TIME CAP",
+                fontFamily = FontFamily.Monospace,
+                fontSize = 16.sp,
+                color = PureWhite
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                listOf(15, 30, 45, 60, 90).forEach { mins ->
+                    val isSelected = mins == currentLimitMinutes
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelectLimit(mins) }
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "$mins minutes",
+                            fontFamily = FontFamily.Monospace,
+                            color = if (isSelected) PureWhite else DimGray
+                        )
+                        if (isSelected) {
+                            Text(
+                                text = "[✓]",
+                                fontFamily = FontFamily.Monospace,
+                                color = PureWhite
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = stringResource(R.string.action_cancel),
+                    fontFamily = FontFamily.Monospace,
+                    color = DimGray
+                )
+            }
+        }
+    )
+}
+
+@Composable
+private fun RenameDialog(
+    currentText: String,
     error: String?,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var text by remember(pin.id) { mutableStateOf(initialText) }
+    var text by remember { mutableStateOf(currentText) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -359,33 +349,32 @@ private fun RenamePinDialog(
         title = {
             Text(
                 text = stringResource(R.string.rename_dialog_title),
-                style = FocusTypography.titleLarge,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 16.sp,
                 color = PureWhite
             )
         },
         text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Column {
                 BasicTextField(
                     value = text,
-                    onValueChange = {
-                        if (it.length <= 24) {
-                            text = it
-                        }
-                    },
-                    textStyle = FocusTypography.bodyLarge.copy(color = PureWhite),
+                    onValueChange = { text = it },
+                    singleLine = true,
                     cursorBrush = SolidColor(PureWhite),
+                    textStyle = FocusTypography.bodyMedium.copy(
+                        fontFamily = FontFamily.Monospace,
+                        color = PureWhite
+                    ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { onConfirm(text) }),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(OledBlack)
-                        .padding(vertical = 8.dp)
+                    modifier = Modifier.fillMaxWidth()
                 )
                 if (error != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = error,
-                        style = FocusTypography.labelMedium,
+                        fontFamily = FontFamily.Monospace,
+                        style = FocusTypography.bodySmall,
                         color = DimGray
                     )
                 }
@@ -395,7 +384,7 @@ private fun RenamePinDialog(
             TextButton(onClick = { onConfirm(text) }) {
                 Text(
                     text = stringResource(R.string.rename_dialog_save),
-                    style = FocusTypography.labelLarge,
+                    fontFamily = FontFamily.Monospace,
                     color = PureWhite
                 )
             }
@@ -404,7 +393,7 @@ private fun RenamePinDialog(
             TextButton(onClick = onDismiss) {
                 Text(
                     text = stringResource(R.string.rename_dialog_cancel),
-                    style = FocusTypography.labelLarge,
+                    fontFamily = FontFamily.Monospace,
                     color = DimGray
                 )
             }

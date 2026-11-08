@@ -28,6 +28,6 @@
       applicationId="com.raysi.launcher"
       generatedSourceFolders="build/generated/ksp/release/java:build/generated/source/proto/release/java:build/generated/ksp/release/kotlin:build/generated/ap_generated_sources/release/out"
       generatedResourceFolders="build/generated/res/resValues/release"
-      desugaredMethodsFiles="/Users/aashishkumarray/.gradle/caches/8.13/transforms/6b8adb00fcb32156f7c90ad05f9befdf/transformed/D8BackportedDesugaredMethods.txt">
+      desugaredMethodsFiles="/Users/aashishkumarray/.gradle/caches/8.13/transforms/9e109b14b0f79f6a6cc4b92f9413e201/transformed/D8BackportedDesugaredMethods.txt">
   </artifact>
 </variant>

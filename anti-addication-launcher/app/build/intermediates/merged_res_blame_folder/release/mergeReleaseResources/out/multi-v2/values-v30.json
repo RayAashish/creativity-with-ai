@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.raysi.launcher.app-mergeReleaseResources-54:/values-v30/values-v30.xml",
+            "outputFile": "com.raysi.launcher.app-mergeReleaseResources-55:/values-v30/values-v30.xml",
             "map": [
                 {
-                    "source": "/Users/aashishkumarray/.gradle/caches/8.13/transforms/429d709779dc2b55a9fb8bf7b1f3e8f5/transformed/material3-release/res/values-v30/values-v30.xml",
+                    "source": "/Users/aashishkumarray/.gradle/caches/8.13/transforms/63aec177a98aed8b00099647bd9aba38/transformed/material3-release/res/values-v30/values-v30.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

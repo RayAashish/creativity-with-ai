@@ -70,6 +70,9 @@ object UsageAggregationEngine {
             }
         }
 
+        val closedStartOfDayPackages = mutableSetOf<String>()
+        val maxPossibleDurationToday = max(0L, nowMs - startOfDayMs)
+
         for (event in sortedEvents) {
             val timestamp = event.timestampMs.coerceIn(startOfDayMs, nowMs)
 
@@ -128,9 +131,12 @@ object UsageAggregationEngine {
                     val activeClasses = activeActivitiesPerPackage[pkg]
                     if (activeClasses == null) {
                         // Session open at startOfDay (started yesterday before midnight, paused today)
-                        val duration = max(0L, timestamp - startOfDayMs)
-                        if (duration > 0L) {
-                            perAppDurations[pkg] = (perAppDurations[pkg] ?: 0L) + duration
+                        // Must only be counted once per package to prevent repeated pause event accumulation
+                        if (closedStartOfDayPackages.add(pkg)) {
+                            val duration = max(0L, timestamp - startOfDayMs)
+                            if (duration > 0L) {
+                                perAppDurations[pkg] = (perAppDurations[pkg] ?: 0L) + duration
+                            }
                         }
                     } else {
                         activeClasses.remove(cls)
@@ -157,8 +163,10 @@ object UsageAggregationEngine {
             closePackageSession(currentForegroundPackage!!, nowMs)
         }
 
-        // Clean per-app durations: strictly exclude FocusLauncher itself
-        val finalPerAppDurations = perAppDurations.filterKeys { it != ownPackageName }
+        // Clean per-app durations: strictly exclude FocusLauncher itself and clamp to max possible duration today
+        val finalPerAppDurations = perAppDurations
+            .filterKeys { it != ownPackageName }
+            .mapValues { min(it.value, maxPossibleDurationToday) }
 
         // If no SCREEN_INTERACTIVE events were emitted by system (some OEM ROMs filter them),
         // fallback to the union of all activity foreground durations including the launcher

@@ -8,6 +8,7 @@ import { SAMPLE_SHOWCASE } from './utils/sampleMarkdown';
 import { parseMarkdownToHtml } from './utils/markdownParser';
 import { downloadPdfFromServer, exportPdfClientSide, printViaBrowser, buildCompleteHtml } from './utils/pdfExport';
 import { fetchMarkdownContent } from './utils/githubUrlHelper';
+import { formatCodeAsDocument, isMarkdownFile } from './utils/codeHelper';
 import { FileEdit, SlidersHorizontal, Eye, PanelLeftOpen, GripVertical } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 
@@ -37,7 +38,7 @@ export const App: React.FC = () => {
       const saved = localStorage.getItem(STORAGE_KEYS.TITLE);
       if (saved && saved.trim().length > 0) return saved;
     }
-    return 'MarkPDF Feature Showcase';
+    return 'CodexPress Feature Showcase';
   });
   const [fileName, setFileName] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -98,7 +99,7 @@ export const App: React.FC = () => {
     fontFamily: 'mono',
     showPageNumbers: true,
     showHeader: false,
-    headerTitle: 'MarkPDF Document',
+    headerTitle: 'CodexPress Document',
     showDate: true,
     showToc: false,
     codeTheme: 'github'
@@ -227,12 +228,14 @@ export const App: React.FC = () => {
     showToast('Document reset');
   };
 
-  // File Upload Handler
+  // File Upload Handler (Supports both Markdown notes and Code files)
   const handleFileUpload = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      const content = e.target?.result as string;
-      if (content) {
+      const rawContent = e.target?.result as string;
+      if (rawContent) {
+        const isMd = isMarkdownFile(file.name);
+        const content = isMd ? rawContent : formatCodeAsDocument(rawContent, file.name);
         setMarkdown(content);
         setFileName(file.name);
         const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
@@ -244,13 +247,13 @@ export const App: React.FC = () => {
           localStorage.setItem(STORAGE_KEYS.FILENAME, file.name);
         } catch (_) {}
         setMode('editor');
-        showToast(`Loaded ${file.name}`);
+        showToast(`Loaded ${isMd ? 'document' : 'code'}: ${file.name}`);
       }
     };
     reader.readAsText(file);
   };
 
-  // GitHub Explorer Note Selection Handler
+  // GitHub Explorer Note & Code Selection Handler
   const handleSelectNote = (content: string, name: string, title: string, sourceUrl?: string) => {
     setMarkdown(content);
     setFileName(name);
@@ -264,7 +267,7 @@ export const App: React.FC = () => {
       if (sourceUrl) localStorage.setItem(STORAGE_KEYS.URL, sourceUrl);
     } catch (_) {}
 
-    showToast(`Loaded note: ${name}`);
+    showToast(`Loaded: ${name}`);
   };
 
   // URL Fetch Handler

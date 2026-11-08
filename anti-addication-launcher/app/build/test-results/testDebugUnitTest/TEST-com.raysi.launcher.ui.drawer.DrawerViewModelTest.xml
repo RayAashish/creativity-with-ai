@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.raysi.launcher.ui.drawer.DrawerViewModelTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-07T16:38:42.441Z" hostname="Aashishs-MacBook-Air.local" time="0.049">
+<testsuite name="com.raysi.launcher.ui.drawer.DrawerViewModelTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-08T14:56:59.332Z" hostname="Aashishs-MacBook-Air.local" time="0.022">
   <properties/>
   <testcase name="pinFromDrawer_rejectsWhenAlreadyFive" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.011"/>
-  <testcase name="closeDrawer_resetsState" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.003"/>
-  <testcase name="pinFromDrawer_addsPinnedAppUpToFive" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.004"/>
-  <testcase name="openDrawer_opensAndPopulatesAllApps" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.005"/>
-  <testcase name="search_damerauLevenshteinTypoMatches" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.004"/>
-  <testcase name="launchTopMatch_launchesFirstAppAndClosesDrawer" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.004"/>
-  <testcase name="search_wordBoundaryMatches" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.003"/>
-  <testcase name="launchApp_launchesSelectedAppAndClosesDrawer" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.004"/>
-  <testcase name="search_zeroResultsHandled" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.005"/>
-  <testcase name="search_exactPrefixRanksFirst" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.005"/>
+  <testcase name="closeDrawer_resetsState" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.002"/>
+  <testcase name="pinFromDrawer_addsPinnedAppUpToFive" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.002"/>
+  <testcase name="openDrawer_opensAndPopulatesAllApps" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.001"/>
+  <testcase name="search_damerauLevenshteinTypoMatches" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.001"/>
+  <testcase name="launchTopMatch_launchesFirstAppAndClosesDrawer" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.001"/>
+  <testcase name="search_wordBoundaryMatches" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.001"/>
+  <testcase name="launchApp_launchesSelectedAppAndClosesDrawer" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.001"/>
+  <testcase name="search_zeroResultsHandled" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.001"/>
+  <testcase name="search_exactPrefixRanksFirst" classname="com.raysi.launcher.ui.drawer.DrawerViewModelTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

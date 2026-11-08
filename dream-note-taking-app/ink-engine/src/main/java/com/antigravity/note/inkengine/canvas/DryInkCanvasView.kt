@@ -97,6 +97,7 @@ class DryInkCanvasView @JvmOverloads constructor(
 
     // Canvas Images & Offline Assets
     val images = mutableListOf<CanvasImage>()
+    var selectedImage: CanvasImage? = null
     var assetsDir: File? = null
     private val bitmapCache = object : LruCache<String, Bitmap>(32) {
         override fun sizeOf(key: String, value: Bitmap): Int {
@@ -105,6 +106,34 @@ class DryInkCanvasView @JvmOverloads constructor(
     }
     private val imageDstRect = RectF()
     private val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+
+    // Image selection paints
+    private val imageSelectBorderPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 3.5f
+            color = Color.parseColor("#1976D2")
+        }
+    }
+    private val imageSelectFillPaint by lazy {
+        Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.parseColor("#141976D2")
+        }
+    }
+    private val imageHandlePaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = Color.WHITE
+        }
+    }
+    private val imageHandleBorderPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 3f
+            color = Color.parseColor("#1976D2")
+        }
+    }
 
     // Drag-and-drop indicator
     var isDropTargetActive = false
@@ -290,6 +319,9 @@ class DryInkCanvasView @JvmOverloads constructor(
             lasso?.draw(canvas)
         }
 
+        // Draw image selection overlay if active
+        drawImageSelection(canvas)
+
         // Draw drag-and-drop indicator
         if (isDropTargetActive && !dropTargetBounds.isEmpty) {
             canvas.drawRoundRect(dropTargetBounds, 16f, 16f, dropTargetFillPaint)
@@ -315,10 +347,62 @@ class DryInkCanvasView @JvmOverloads constructor(
             val img = images[i]
             val bitmap = getBitmap(File(dir, img.assetRef))
             if (bitmap != null) {
+                canvas.save()
+                if (img.rotation != 0f) {
+                    canvas.rotate(img.rotation, img.x + img.width / 2f, img.y + img.height / 2f)
+                }
                 imageDstRect.set(img.x, img.y, img.x + img.width, img.y + img.height)
                 canvas.drawBitmap(bitmap, null, imageDstRect, bitmapPaint)
+                canvas.restore()
             }
         }
+    }
+
+    private fun drawImageSelection(canvas: Canvas) {
+        val img = selectedImage ?: return
+        canvas.save()
+        if (img.rotation != 0f) {
+            canvas.rotate(img.rotation, img.x + img.width / 2f, img.y + img.height / 2f)
+        }
+        // Fill tint & highlight border
+        canvas.drawRect(img.x, img.y, img.x + img.width, img.y + img.height, imageSelectFillPaint)
+        canvas.drawRect(img.x, img.y, img.x + img.width, img.y + img.height, imageSelectBorderPaint)
+
+        val hr = 16f
+        fun drawHandle(cx: Float, cy: Float) {
+            canvas.drawCircle(cx, cy, hr, imageHandlePaint)
+            canvas.drawCircle(cx, cy, hr, imageHandleBorderPaint)
+        }
+        // 4 Corner handles
+        drawHandle(img.x, img.y)
+        drawHandle(img.x + img.width, img.y)
+        drawHandle(img.x, img.y + img.height)
+        drawHandle(img.x + img.width, img.y + img.height)
+
+        // 4 Midpoint edge handles
+        val midX = img.x + img.width / 2f
+        val midY = img.y + img.height / 2f
+        drawHandle(midX, img.y)
+        drawHandle(midX, img.y + img.height)
+        drawHandle(img.x, midY)
+        drawHandle(img.x + img.width, midY)
+
+        canvas.restore()
+    }
+
+    fun findImageAt(worldX: Float, worldY: Float): CanvasImage? {
+        for (i in images.indices.reversed()) {
+            val img = images[i]
+            val cx = img.x + img.width / 2f
+            val cy = img.y + img.height / 2f
+            val rad = Math.toRadians(-img.rotation.toDouble())
+            val unrotX = (Math.cos(rad) * (worldX - cx) - Math.sin(rad) * (worldY - cy) + cx).toFloat()
+            val unrotY = (Math.sin(rad) * (worldX - cx) + Math.cos(rad) * (worldY - cy) + cy).toFloat()
+            if (unrotX >= img.x && unrotX <= img.x + img.width && unrotY >= img.y && unrotY <= img.y + img.height) {
+                return img
+            }
+        }
+        return null
     }
 
     private fun getBitmap(file: File): Bitmap? {

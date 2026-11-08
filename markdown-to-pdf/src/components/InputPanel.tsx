@@ -177,9 +177,10 @@ export const InputPanel: React.FC<InputPanelProps> = ({
               ? 'bg-[var(--accent)] text-[var(--accent-contrast)] shadow-sm'
               : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)]'
           }`}
+          title="Upload Markdown notes or Code files"
         >
           <Upload className="w-3.5 h-3.5" />
-          <span>Upload</span>
+          <span>Upload File / Code</span>
         </button>
       </div>
 
@@ -212,7 +213,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
                   onFileUpload(e.target.files[0]);
                 }
               }}
-              accept=".md,.markdown,.txt,.mdown,.mkdn"
+              accept=".md,.markdown,.txt,.mdown,.mkdn,.java,.py,.ts,.tsx,.js,.jsx,.cpp,.c,.h,.hpp,.rs,.go,.kt,.swift,.rb,.php,.cs,.html,.css,.scss,.json,.yaml,.yml,.xml,.sql,.sh,.bash,.toml,.gradle,.properties"
               className="hidden"
             />
             <div className="w-12 h-12 rounded-2xl bg-[var(--badge-bg)] text-[var(--text-primary)] flex items-center justify-center">
@@ -220,10 +221,10 @@ export const InputPanel: React.FC<InputPanelProps> = ({
             </div>
             <div>
               <p className="font-semibold text-[var(--text-primary)] text-xs">
-                Drop your Markdown file here, or <span className="underline">browse</span>
+                Drop your Markdown or Code file here, or <span className="underline">browse</span>
               </p>
               <p className="text-[11px] text-[var(--text-muted)] mt-1">
-                Supports .md, .markdown, .txt
+                Supports .md, Java, Python, TypeScript, C++, Rust, Go, SQL & all code files
               </p>
             </div>
           </div>

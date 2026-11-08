@@ -14,12 +14,21 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.AbstractSavedStateViewModelFactory
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.launch
 import com.raysi.launcher.FocusApplication
+import com.raysi.launcher.service.FocusAccessibilityService
 import com.raysi.launcher.service.notification.NotificationUtils
+import com.raysi.launcher.util.SystemThemingHelper
 import com.raysi.launcher.ui.drawer.DrawerScreen
 import com.raysi.launcher.ui.drawer.DrawerViewModel
 import com.raysi.launcher.ui.gate.GateScreen
@@ -29,6 +38,7 @@ import com.raysi.launcher.ui.home.HomeScreen
 import com.raysi.launcher.ui.home.HomeViewModel
 import com.raysi.launcher.ui.quarantine.QuarantineScreen
 import com.raysi.launcher.ui.quarantine.QuarantineViewModel
+import com.raysi.launcher.ui.scratchpad.ScratchpadOverlay
 import com.raysi.launcher.ui.settings.SettingsScreen
 import com.raysi.launcher.ui.settings.SettingsViewModel
 import com.raysi.launcher.ui.theme.FocusLauncherTheme
@@ -49,8 +59,10 @@ class MainActivity : ComponentActivity() {
                 return HomeViewModel(
                     appInventoryRepository = locator.appInventoryRepository,
                     settingsRepository = locator.settingsRepository,
-                    usageRepository = locator.usageRepository,
-                    quarantineRepository = locator.quarantineRepository
+                    telemetryRepository = locator.telemetryRepository,
+                    preferencesRepository = locator.preferencesRepository,
+                    quarantineRepository = locator.quarantineRepository,
+                    systemThemingHelper = locator.systemThemingHelper
                 ) as T
             }
         }
@@ -113,6 +125,7 @@ class MainActivity : ComponentActivity() {
                     settingsRepository = locator.settingsRepository,
                     appInventoryRepository = locator.appInventoryRepository,
                     usageRepository = locator.usageRepository,
+                    preferencesRepository = locator.preferencesRepository,
                     dispatchers = locator.dispatchers
                 ) as T
             }
@@ -121,6 +134,7 @@ class MainActivity : ComponentActivity() {
 
     private var isQuarantineOpen = androidx.compose.runtime.mutableStateOf(false)
     private var isSettingsOpen = androidx.compose.runtime.mutableStateOf(false)
+    private var isScratchpadOpen = androidx.compose.runtime.mutableStateOf(false)
 
     private val defaultLauncherResultLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -136,7 +150,16 @@ class MainActivity : ComponentActivity() {
         }
 
         // Enforce edge-to-edge rendering across all supported API levels (28-35)
-        enableEdgeToEdge()
+        SystemThemingHelper.configureEdgeToEdge(this, homeViewModel.isStealthMode.value)
+        SystemThemingHelper.applyZeroJankTransition(this)
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                homeViewModel.isStealthMode.collect { stealth ->
+                    SystemThemingHelper.configureEdgeToEdge(this@MainActivity, stealth)
+                }
+            }
+        }
 
         setContent {
             FocusLauncherTheme {
@@ -148,6 +171,7 @@ class MainActivity : ComponentActivity() {
                     val isDrawerOpen by drawerViewModel.isDrawerOpen.collectAsState()
                     val showQuarantine by isQuarantineOpen
                     val showSettings by isSettingsOpen
+                    val showScratchpad by isScratchpadOpen
 
                     if (gateState !is GateState.Idle) {
                         GateScreen(
@@ -180,6 +204,13 @@ class MainActivity : ComponentActivity() {
                             },
                             onDismiss = { isQuarantineOpen.value = false }
                         )
+                    } else if (showScratchpad) {
+                        val scratchContent by homeViewModel.scratchpadContent.collectAsState()
+                        ScratchpadOverlay(
+                            initialContent = scratchContent,
+                            onSaveContent = { homeViewModel.saveScratchpad(it) },
+                            onDismiss = { isScratchpadOpen.value = false }
+                        )
                     } else if (isDrawerOpen) {
                         DrawerScreen(
                             viewModel = drawerViewModel,
@@ -197,6 +228,9 @@ class MainActivity : ComponentActivity() {
                             },
                             onOpenQuarantine = {
                                 isQuarantineOpen.value = true
+                            },
+                            onOpenScratchpad = {
+                                isScratchpadOpen.value = true
                             },
                             onRequestDefaultLauncher = {
                                 requestDefaultLauncher()
@@ -217,6 +251,12 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         homeViewModel.onResume()
+        applyImmersiveStatusBar()
+        SystemThemingHelper.applyZeroJankTransition(this)
+    }
+
+    private fun applyImmersiveStatusBar() {
+        SystemThemingHelper.configureEdgeToEdge(this, homeViewModel.isStealthMode.value)
     }
 
     override fun onPause() {
@@ -230,12 +270,14 @@ class MainActivity : ComponentActivity() {
         if (intent.action == NotificationUtils.ACTION_OPEN_QUARANTINE) {
             isQuarantineOpen.value = true
             isSettingsOpen.value = false
+            isScratchpadOpen.value = false
             gateViewModel.cancelGate()
             drawerViewModel.closeDrawer()
         } else {
             // Home press while open -> close gate, drawer, quarantine, settings and return to Home
             isQuarantineOpen.value = false
             isSettingsOpen.value = false
+            isScratchpadOpen.value = false
             gateViewModel.cancelGate()
             drawerViewModel.closeDrawer()
         }

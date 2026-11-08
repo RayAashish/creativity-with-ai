@@ -13,15 +13,18 @@ import com.raysi.launcher.data.model.LauncherSettingsSnapshot
 import com.raysi.launcher.data.model.PinnedAppEntry
 import com.raysi.launcher.data.repository.AppInventoryRepository
 import com.raysi.launcher.data.repository.HudState
+import com.raysi.launcher.data.repository.PreferencesRepository
 import com.raysi.launcher.data.repository.SettingsRepository
 import com.raysi.launcher.data.repository.UsageRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -115,9 +118,33 @@ class SettingsViewModelTest {
         override suspend fun reconcileUsage() {}
     }
 
+    private class FakePreferencesRepo : PreferencesRepository {
+        val stealthFlow = MutableStateFlow(true)
+        val grayscaleFlow = MutableStateFlow(false)
+
+        override val dailyFocusGoalFlow: Flow<String> = flowOf("")
+        override val scratchpadContentFlow: Flow<String> = flowOf("")
+        override val customAppLimitsFlow: Flow<Map<String, Int>> = flowOf(emptyMap())
+        override val lastAwayDurationFlow: Flow<Long> = flowOf(0L)
+        override val dailyUnlockCountFlow: Flow<Int> = flowOf(0)
+        override val isStealthModeFlow: Flow<Boolean> = stealthFlow.asStateFlow()
+        override val isSystemGrayscaleEnabledFlow: Flow<Boolean> = grayscaleFlow.asStateFlow()
+
+        override suspend fun setDailyFocusGoal(goal: String) {}
+        override suspend fun clearDailyFocusGoal() {}
+        override suspend fun saveScratchpadContent(content: String) {}
+        override suspend fun setCustomAppLimit(packageName: String, limitMinutes: Int) {}
+        override suspend fun setStealthMode(enabled: Boolean) { stealthFlow.value = enabled }
+        override suspend fun setSystemGrayscaleEnabled(enabled: Boolean) { grayscaleFlow.value = enabled }
+        override suspend fun recordScreenOff(timestampMs: Long) {}
+        override suspend fun recordUserPresent(timestampMs: Long): Int = 0
+        override suspend fun getScratchpadContent(): String = ""
+    }
+
     private lateinit var fakeSettings: FakeSettingsRepo
     private lateinit var fakeInventory: FakeAppInventoryRepo
     private lateinit var fakeUsage: FakeUsageRepo
+    private lateinit var fakePreferences: FakePreferencesRepo
     private lateinit var viewModel: SettingsViewModel
 
     @Before
@@ -126,10 +153,12 @@ class SettingsViewModelTest {
         fakeSettings = FakeSettingsRepo()
         fakeInventory = FakeAppInventoryRepo()
         fakeUsage = FakeUsageRepo()
+        fakePreferences = FakePreferencesRepo()
         viewModel = SettingsViewModel(
             settingsRepository = fakeSettings,
             appInventoryRepository = fakeInventory,
             usageRepository = fakeUsage,
+            preferencesRepository = fakePreferences,
             dispatchers = TestFocusDispatchers(testDispatcher)
         )
     }
@@ -237,5 +266,16 @@ class SettingsViewModelTest {
         val queryFiltered = viewModel.filteredPickerApps.first { it.size == 1 }
         assertEquals(1, queryFiltered.size)
         assertEquals("com.instagram.android", queryFiltered[0].packageName)
+    }
+
+    @Test
+    fun testStealthModeAndGrayscaleToggles() = runTest(testDispatcher) {
+        viewModel.setStealthMode(false)
+        advanceUntilIdle()
+        assertFalse(fakePreferences.stealthFlow.value)
+
+        viewModel.setStealthMode(true)
+        advanceUntilIdle()
+        assertTrue(fakePreferences.stealthFlow.value)
     }
 }

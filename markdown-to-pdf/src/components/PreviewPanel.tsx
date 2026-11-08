@@ -1,17 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ZoomIn,
   ZoomOut,
   Maximize2,
+  Minimize2,
   Copy,
   Download,
   List,
   Check,
-  Printer,
   FileDown,
   ChevronLeft,
   ChevronRight,
-  Eye
+  BookOpen,
+  Code2,
+  Clock,
+  Sparkles
 } from 'lucide-react';
 import { PdfSettings, HeadingItem } from '../types';
 import { generateThemeCss } from '../utils/themeStyles';
@@ -48,6 +51,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   const [fitToWidth, setFitToWidth] = useState(true);
   const [showTocDrawer, setShowTocDrawer] = useState(false);
   const [copiedHtml, setCopiedHtml] = useState(false);
+  const [copiedContent, setCopiedContent] = useState(false);
+  const [isFocusReader, setIsFocusReader] = useState(false);
+  const [readingProgress, setReadingProgress] = useState(0);
+
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(800);
 
@@ -75,27 +82,32 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
 
   const triggerZoomPill = () => {
     setShowZoomPill(true);
-    if (zoomPillTimeoutRef.current) {
-      clearTimeout(zoomPillTimeoutRef.current);
-    }
-    zoomPillTimeoutRef.current = setTimeout(() => {
-      setShowZoomPill(false);
-    }, 2000);
+    if (zoomPillTimeoutRef.current) clearTimeout(zoomPillTimeoutRef.current);
+    zoomPillTimeoutRef.current = setTimeout(() => setShowZoomPill(false), 2200);
   };
 
-  // Track container width and bind pinch-to-zoom gestures
+  // Keyboard shortcut: Escape exits focus reader mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFocusReader) {
+        setIsFocusReader(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFocusReader]);
+
+  // Read container width via ResizeObserver
   useEffect(() => {
     const el = scrollAreaRef.current;
     if (!el) return;
 
-    const updateWidth = () => {
-      setContainerWidth(el.clientWidth);
-    };
-    updateWidth();
-
-    const resizeObserver = new ResizeObserver(() => {
-      updateWidth();
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
     });
+
     resizeObserver.observe(el);
 
     // Two-finger Touch Pinch-in / Pinch-out Handlers (Moto Pad 70 Pro & Touchscreens)
@@ -107,12 +119,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           e.touches[0].clientY - e.touches[1].clientY
         );
         pinchStartDistRef.current = dist;
-
-        const currentEffectiveScale = fitToWidthRef.current
-          ? Math.min(1, Math.max(0.45, (containerWidthRef.current - 48) / targetPaperWidthRef.current))
+        const currentEffective = fitToWidthRef.current
+          ? Math.min(1, Math.max(0.35, (containerWidthRef.current - 48) / targetPaperWidthRef.current))
           : zoomRef.current / 100;
-
-        pinchStartZoomRef.current = Math.round(currentEffectiveScale * 100);
+        pinchStartZoomRef.current = Math.round(currentEffective * 100);
         setIsPinching(true);
         triggerZoomPill();
       } else if (e.touches.length === 1) {
@@ -140,7 +150,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           e.touches[0].clientY - e.touches[1].clientY
         );
         const factor = dist / pinchStartDistRef.current;
-        const newZoom = Math.max(35, Math.min(260, Math.round(pinchStartZoomRef.current * factor)));
+        const newZoom = Math.min(260, Math.max(35, Math.round(pinchStartZoomRef.current * factor)));
         setFitToWidth(false);
         setZoom(newZoom);
         triggerZoomPill();
@@ -163,9 +173,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           ? Math.min(1, Math.max(0.45, (containerWidthRef.current - 48) / targetPaperWidthRef.current))
           : zoomRef.current / 100;
         const baseZoom = Math.round(currentEffectiveScale * 100);
-        const nextZoom = Math.max(35, Math.min(260, Math.round(baseZoom + delta)));
         setFitToWidth(false);
-        setZoom(nextZoom);
+        setZoom(Math.min(260, Math.max(35, Math.round(baseZoom + delta))));
         triggerZoomPill();
       }
     };
@@ -175,7 +184,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
     el.addEventListener('touchend', handleTouchEnd);
     el.addEventListener('touchcancel', handleTouchEnd);
     el.addEventListener('wheel', handleWheel, { passive: false });
-    window.addEventListener('resize', updateWidth);
 
     return () => {
       resizeObserver.disconnect();
@@ -184,7 +192,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
       el.removeEventListener('touchend', handleTouchEnd);
       el.removeEventListener('touchcancel', handleTouchEnd);
       el.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('resize', updateWidth);
       if (zoomPillTimeoutRef.current) clearTimeout(zoomPillTimeoutRef.current);
     };
   }, []);
@@ -208,26 +215,33 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
       await navigator.clipboard.writeText(html);
       setCopiedHtml(true);
       setTimeout(() => setCopiedHtml(false), 2000);
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (_) {}
   };
 
-  // Download raw markdown file (Works on both Web and Android native)
-  const handleDownloadMarkdown = async () => {
-    await exportMarkdownFile(markdown, documentTitle);
+  // Copy raw content/code to clipboard
+  const handleCopyContent = async () => {
+    try {
+      await navigator.clipboard.writeText(markdown);
+      setCopiedContent(true);
+      setTimeout(() => setCopiedContent(false), 2000);
+    } catch (_) {}
   };
 
-  // Handle and save scroll position to localStorage
+  // Unique scroll storage key per document to prevent cross-document scroll jumps
+  const scrollStorageKey = `markforge_scroll_${documentTitle.replace(/[^\w-]/g, '_')}`;
+
+  // Handle and save scroll position to localStorage + update reading progress
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     if (target) {
       try {
-        localStorage.setItem('markpdf_preview_scroll_top', String(target.scrollTop));
-        if (target.scrollHeight > 0) {
-          localStorage.setItem('markpdf_preview_scroll_ratio', String(target.scrollTop / target.scrollHeight));
-        }
+        localStorage.setItem(scrollStorageKey, String(target.scrollTop));
       } catch (_) {}
+
+      // Calculate 0 to 100% progress
+      const maxScroll = target.scrollHeight - target.clientHeight;
+      const progress = maxScroll > 0 ? Math.min(100, Math.max(0, Math.round((target.scrollTop / maxScroll) * 100))) : 0;
+      setReadingProgress(progress);
     }
   };
 
@@ -239,36 +253,28 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
       const el = scrollAreaRef.current;
       if (!el) return;
 
-      const savedTopStr = localStorage.getItem('markpdf_preview_scroll_top');
-      const savedRatioStr = localStorage.getItem('markpdf_preview_scroll_ratio');
-
+      const savedTopStr = localStorage.getItem(scrollStorageKey);
       if (savedTopStr !== null) {
         const savedTop = parseFloat(savedTopStr);
-        if (!isNaN(savedTop) && savedTop > 0) {
-          if (el.scrollHeight >= savedTop) {
-            el.scrollTop = savedTop;
-          } else if (savedRatioStr !== null) {
-            const ratio = parseFloat(savedRatioStr);
-            if (!isNaN(ratio)) {
-              el.scrollTop = ratio * el.scrollHeight;
-            }
-          }
+        if (!isNaN(savedTop) && savedTop > 0 && savedTop <= el.scrollHeight) {
+          el.scrollTop = savedTop;
+          return;
         }
       }
+      // If no valid saved position for this document, ensure it's at top
+      el.scrollTop = 0;
     };
 
     const t1 = setTimeout(restoreScroll, 50);
     const t2 = setTimeout(restoreScroll, 200);
     const t3 = setTimeout(restoreScroll, 500);
-    const t4 = setTimeout(restoreScroll, 1000);
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
-      clearTimeout(t4);
     };
-  }, [html]);
+  }, [documentTitle, html, scrollStorageKey]);
 
   // Jump to heading in preview
   const scrollToHeading = (id: string) => {
@@ -276,32 +282,59 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+    setShowTocDrawer(false);
   };
 
+  const handleDownloadMarkdown = () => {
+    exportMarkdownFile(markdown, documentTitle);
+  };
+
+  // Metrics: word count, lines, reading time
+  const { wordCount, lineCount, readingTimeMinutes } = useMemo(() => {
+    const text = markdown.trim();
+    const words = text ? text.split(/\s+/).length : 0;
+    const lines = markdown.split('\n').length;
+    const minutes = Math.max(1, Math.ceil(words / 220));
+    return { wordCount: words, lineCount: lines, readingTimeMinutes: minutes };
+  }, [markdown]);
+
   return (
-    <div className="flex-1 flex flex-col h-full bg-[var(--bg-page)] text-[var(--text-primary)] font-mono overflow-hidden relative">
+    <div
+      className={`flex-1 flex flex-col h-full bg-[var(--bg-page)] text-[var(--text-primary)] font-mono overflow-hidden relative ${
+        isFocusReader ? 'fixed inset-0 z-50 bg-[var(--bg-page)]' : ''
+      }`}
+    >
+      {/* ── Dynamic Reading Progress Bar ── */}
+      <div className="w-full h-[2.5px] bg-transparent absolute top-0 left-0 right-0 z-30 pointer-events-none">
+        <div
+          className="h-full bg-[var(--accent)] transition-all duration-150 ease-out shadow-xs"
+          style={{ width: `${readingProgress}%` }}
+        />
+      </div>
+
       {/* Top Preview Controls Bar - DSASpace Style */}
       <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 bg-[var(--bg-subtle)] border-b border-[var(--border-subtle)] text-xs shrink-0 overflow-x-auto no-scrollbar gap-2 sm:gap-3">
         {/* Left: Outline & Sidebar Minimizer */}
         <div className="flex items-center space-x-2">
-          {/* Collapse/Expand Sidebar Toggle (Desktop/Tablet Split Mode Only) */}
-          <button
-            onClick={onToggleSidebar}
-            className="hidden md:flex px-3 py-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition items-center space-x-1.5 text-xs font-mono"
-            title={isSidebarCollapsed ? 'Show Editor' : 'Minimize Editor Side'}
-          >
-            {isSidebarCollapsed ? (
-              <>
-                <ChevronRight className="w-4 h-4" />
-                <span className="hidden sm:inline">Show Editor</span>
-              </>
-            ) : (
-              <>
-                <ChevronLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">Minimize Text</span>
-              </>
-            )}
-          </button>
+          {!isFocusReader && (
+            <button
+              onClick={onToggleSidebar}
+              className="hidden md:flex px-3 py-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition items-center space-x-1.5 text-xs font-mono"
+              title={isSidebarCollapsed ? 'Show Editor Side' : 'Minimize Editor Side'}
+            >
+              {isSidebarCollapsed ? (
+                <>
+                  <ChevronRight className="w-4 h-4" />
+                  <span className="hidden sm:inline">Show Editor</span>
+                </>
+              ) : (
+                <>
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Minimize Text</span>
+                </>
+              )}
+            </button>
+          )}
 
           <button
             onClick={() => setShowTocDrawer(!showTocDrawer)}
@@ -320,6 +353,12 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
               </span>
             )}
           </button>
+
+          {/* Reading Time Badge */}
+          <div className="hidden lg:flex items-center space-x-1 text-[10px] text-[var(--text-muted)] bg-[var(--bg-card)] border border-[var(--border-subtle)] px-2 py-1 rounded-xl">
+            <Clock className="w-3 h-3 text-[var(--text-muted)]" />
+            <span>~{readingTimeMinutes} min read</span>
+          </div>
         </div>
 
         {/* Center: Zoom & Auto-Fit Controls (Solves clipping on tablets) */}
@@ -362,17 +401,33 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           </button>
         </div>
 
-        {/* Right: Document Actions (Copy HTML & Download Markdown — Print & PDF are in Top Header) */}
+        {/* Right: Reader Mode & Document Actions */}
         <div className="flex items-center space-x-1.5 sm:space-x-2">
+          {/* Focus Reader Toggle */}
           <button
-            onClick={handleCopyHtml}
-            className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition flex items-center space-x-1.5 text-xs font-mono"
-            title="Copy Rendered HTML"
+            onClick={() => setIsFocusReader(!isFocusReader)}
+            className={`px-2.5 sm:px-3 py-1.5 rounded-xl border transition flex items-center space-x-1.5 text-xs font-mono ${
+              isFocusReader
+                ? 'bg-[var(--accent)] text-[var(--accent-contrast)] border-transparent shadow-sm'
+                : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
+            }`}
+            title={isFocusReader ? 'Exit Focus Reader (Esc)' : 'Enter Distraction-Free Focus Reader'}
           >
-            {copiedHtml ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-            <span className="hidden sm:inline">{copiedHtml ? 'Copied' : 'HTML'}</span>
+            {isFocusReader ? <Minimize2 className="w-4 h-4" /> : <BookOpen className="w-4 h-4 text-emerald-400" />}
+            <span className="hidden sm:inline">{isFocusReader ? 'Exit Reader' : 'Reader'}</span>
           </button>
 
+          {/* Copy Raw Code / Markdown Button */}
+          <button
+            onClick={handleCopyContent}
+            className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition flex items-center space-x-1.5 text-xs font-mono"
+            title="Copy Content / Code"
+          >
+            {copiedContent ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+            <span className="hidden sm:inline">{copiedContent ? 'Copied' : 'Copy'}</span>
+          </button>
+
+          {/* Download Markdown */}
           <button
             onClick={handleDownloadMarkdown}
             className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition flex items-center space-x-1.5 text-xs font-mono"
@@ -398,51 +453,42 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
         {/* Paper Container Simulation (Dynamically scaled via Pinch or Auto Fit) */}
         <div
           style={{
-            width: `${scaledWidth}px`,
+            width: fitToWidth ? '100%' : `${scaledWidth}px`,
             minHeight: `${scaledHeight}px`,
-            marginBottom: '60px'
+            margin: '0 auto',
+            display: 'flex',
+            justifyContent: 'center'
           }}
-          className="mx-auto relative"
         >
           <div
+            id="markpdf-paper-container"
+            className="paper-preview-wrapper transition-transform duration-75 origin-top"
             style={{
-              transform: `scale(${computedScale})`,
-              transformOrigin: 'top left',
-              transition: isPinching ? 'none' : 'transform 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
               width: `${targetPaperWidth}px`,
-              minHeight: `${basePaperHeight}px`
+              transform: `scale(${computedScale})`,
+              transformOrigin: 'top center',
+              margin: '0 auto'
             }}
-            className="bg-white text-slate-900 rounded-2xl shadow-xl p-6 sm:p-12 lg:p-14 relative border border-[var(--border-subtle)] shrink-0"
           >
-            <div id="markpdf-paper-container">
-              {isRendering && (
-                <div className="absolute top-4 right-4 bg-zinc-900/10 text-zinc-800 border border-zinc-300 px-2.5 py-1 rounded-full text-[10px] font-mono flex items-center space-x-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-800 animate-ping" />
-                  <span>Rendering...</span>
-                </div>
-              )}
-
+            <div className={`paper-preview-sheet theme-${settings.theme}`}>
               {/* Document Header if enabled */}
               {settings.showHeader && (
-                <div className="border-b border-slate-200 pb-3 mb-6 flex items-center justify-between text-xs text-slate-400 font-mono">
-                  <span className="font-semibold text-slate-600 uppercase tracking-wider">
-                    {settings.headerTitle || documentTitle}
-                  </span>
+                <div className="border-b border-slate-200 pb-3 mb-6 flex items-center justify-between text-xs text-slate-500 font-mono">
+                  <span className="font-semibold">{settings.headerTitle || documentTitle}</span>
                   {settings.showDate && <span>{new Date().toLocaleDateString()}</span>}
                 </div>
               )}
 
-              {/* Table of Contents in document if enabled */}
+              {/* Table of Contents if enabled */}
               {settings.showToc && headings.length > 0 && (
-                <div className="doc-toc-wrapper mb-8 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                  <div className="doc-toc-title font-mono font-bold text-xs uppercase tracking-wider text-slate-500 mb-2">
+                <div className="mb-8 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 mb-3 font-mono">
                     Table of Contents
-                  </div>
-                  <ul className="doc-toc-list space-y-1 text-xs">
-                    {headings.map((h) => (
+                  </h2>
+                  <ul className="space-y-1.5 text-xs">
+                    {headings.map((h, i) => (
                       <li
-                        key={h.id}
-                        className={`doc-toc-item-${Math.min(h.level, 3)}`}
+                        key={`${h.id}-${i}`}
                         style={{ paddingLeft: `${(h.level - 1) * 16}px` }}
                       >
                         <a
@@ -461,7 +507,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
                 </div>
               )}
 
-              {/* Rendered Markdown Body */}
+              {/* Rendered Markdown & Code Body */}
               <div
                 className="markpdf-doc"
                 dangerouslySetInnerHTML={{ __html: html || '<p class="text-slate-400 italic">No content to preview</p>' }}
@@ -532,6 +578,21 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Focus Reader Mode Quick Exit Floating Pill */}
+        {isFocusReader && (
+          <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2 bg-[var(--bg-card)]/95 backdrop-blur-md border border-[var(--border-strong)] px-3 py-2 rounded-2xl shadow-2xl">
+            <span className="text-[11px] font-semibold text-[var(--text-muted)]">
+              {readingProgress}% read
+            </span>
+            <button
+              onClick={() => setIsFocusReader(false)}
+              className="px-3 py-1 bg-[var(--accent)] text-[var(--accent-contrast)] font-semibold rounded-xl text-xs transition"
+            >
+              Exit Focus (Esc)
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Floating Outline / TOC Drawer */}
@@ -548,6 +609,11 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
             >
               Close
             </button>
+          </div>
+
+          <div className="text-[10px] text-[var(--text-muted)] mb-2 flex items-center justify-between">
+            <span>{wordCount} words • {lineCount} lines</span>
+            <span>~{readingTimeMinutes}m read</span>
           </div>
 
           {headings.length === 0 ? (

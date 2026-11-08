@@ -3,6 +3,12 @@ local
 color dim_gray
 color oled_black
 color pure_white
+drawable ic_launcher
+drawable ic_launcher_background
+drawable ic_launcher_foreground
+drawable ic_launcher_monochrome
+mipmap ic_launcher
+mipmap ic_launcher_round
 string accessibility_disabled_prompt
 string accessibility_service_description
 string action_cancel

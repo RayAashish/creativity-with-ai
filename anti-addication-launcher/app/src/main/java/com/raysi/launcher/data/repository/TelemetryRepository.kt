@@ -2,15 +2,19 @@
 package com.raysi.launcher.data.repository
 
 import android.app.AppOpsManager
+import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.os.Process
 import android.os.SystemClock
 import com.raysi.launcher.core.dispatchers.FocusDispatchers
+import com.raysi.launcher.data.model.AppInfo
 import com.raysi.launcher.data.receiver.DeviceStateEvent
 import com.raysi.launcher.data.receiver.DeviceStateReceiver
 import com.raysi.launcher.data.service.QuarantineNotificationService
 import com.raysi.launcher.data.usage.engine.UsageAggregationEngine
+import com.raysi.launcher.data.usage.engine.UsageAggregationResult
+import com.raysi.launcher.data.usage.model.UsageEventRecord
 import com.raysi.launcher.domain.model.CulpritApp
 import com.raysi.launcher.domain.model.DailyProgress
 import com.raysi.launcher.domain.model.TelemetryUiState
@@ -194,39 +198,58 @@ class TelemetryRepositoryImpl(
         }
         val startOfDayMs = cal.timeInMillis
 
-        val events = try {
-            usageManager.queryEvents(startOfDayMs, nowMs)
+        val rawEvents = ArrayList<UsageEventRecord>(512)
+        try {
+            val usageEvents = usageManager.queryEvents(startOfDayMs, nowMs)
+            val event = UsageEvents.Event()
+            while (usageEvents != null && usageEvents.hasNextEvent()) {
+                usageEvents.getNextEvent(event)
+                rawEvents.add(
+                    UsageEventRecord(
+                        eventType = event.eventType,
+                        timestampMs = event.timeStamp,
+                        packageName = event.packageName ?: "",
+                        className = event.className ?: ""
+                    )
+                )
+            }
         } catch (e: Exception) {
-            null
+            // Degrade gracefully on query exception
         }
 
-        val snapshot = settingsRepository.snapshot
-        val aggregation = UsageAggregationEngine.aggregate(
-            events = events,
+        val aggregation: UsageAggregationResult = UsageAggregationEngine.aggregate(
+            events = rawEvents,
             startOfDayMs = startOfDayMs,
             nowMs = nowMs,
-            launcherPackage = context.packageName,
-            screenTimeIncludesLauncher = snapshot.screenTimeIncludesLauncher
+            ownPackageName = context.packageName
         )
 
-        baseScreenTimeMs = aggregation.totalInteractiveMs
+        baseScreenTimeMs = aggregation.totalScreenTimeMs
         baseElapsedRealtime = SystemClock.elapsedRealtime()
 
-        _perAppDurations.value = aggregation.perAppDurations
+        _perAppDurations.value = aggregation.perAppDurationsMs
 
-        // Compute top drain culprit app (excluding launcher)
+        // Compute top drain culprit app (strictly excluding system launchers & internal OS packages)
+        val appMap = appInventoryRepository.appsMapFlow.value
+
         var maxDurationMs = 0L
         var topPkg: String? = null
-        for ((pkg, duration) in aggregation.perAppDurations) {
-            if (pkg != context.packageName && duration > maxDurationMs) {
+        for ((pkg, duration) in aggregation.perAppDurationsMs) {
+            val isIgnored = pkg == context.packageName ||
+                    pkg in SYSTEM_LAUNCHER_PACKAGES ||
+                    pkg.startsWith("com.android.internal") ||
+                    pkg == "android" ||
+                    pkg == "com.android.systemui" ||
+                    pkg == "com.google.android.permissioncontroller"
+
+            if (!isIgnored && duration > maxDurationMs) {
                 maxDurationMs = duration
                 topPkg = pkg
             }
         }
 
         val culprit = if (topPkg != null && maxDurationMs > 0L) {
-            val appMap = appInventoryRepository.appsMapFlow.value
-            val label = appMap.values.firstOrNull { it.packageName == topPkg }?.label ?: topPkg
+            val label = resolveAppLabel(context, appMap, topPkg)
             CulpritApp(
                 packageName = topPkg,
                 label = label,
@@ -283,6 +306,38 @@ class TelemetryRepositoryImpl(
     }
 
     companion object {
+        val SYSTEM_LAUNCHER_PACKAGES = setOf(
+            "com.miui.home",
+            "com.sec.android.app.launcher",
+            "com.google.android.apps.nexuslauncher",
+            "com.android.launcher",
+            "com.android.launcher3",
+            "com.oppo.launcher",
+            "com.huawei.android.launcher",
+            "com.bbk.launcher2",
+            "com.vivo.launcher",
+            "com.oneplus.launcher"
+        )
+
+        fun resolveAppLabel(context: Context, appMap: Map<String, AppInfo>, pkg: String): String {
+            val cached = appMap.values.firstOrNull { it.packageName == pkg }?.label
+            if (!cached.isNullOrBlank() && cached != pkg) {
+                return cached
+            }
+            return try {
+                val pm = context.packageManager
+                val appInfo = pm.getApplicationInfo(pkg, 0)
+                pm.getApplicationLabel(appInfo).toString()
+            } catch (_: Exception) {
+                val fallback = pkg.substringAfterLast('.')
+                if (fallback.isNotBlank()) {
+                    fallback.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.US) else it.toString() }
+                } else {
+                    pkg
+                }
+            }
+        }
+
         fun formatScreenTime(durationMs: Long): String {
             val totalSeconds = (durationMs / 1000L).coerceAtLeast(0L)
             val hours = totalSeconds / 3600L

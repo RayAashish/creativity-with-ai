@@ -1,3 +1,5 @@
+import { getLanguageInfo, isMarkdownFile, formatFileSize } from './codeHelper';
+
 export interface GitHubRepo {
   id: number;
   name: string;
@@ -15,7 +17,7 @@ export interface GitHubRepo {
 export interface GitHubTreeItem {
   path: string;
   mode: string;
-  type: 'blob' | 'tree';
+  type: 'blob' | 'tree' | 'commit';
   sha: string;
   size?: number;
   url: string;
@@ -26,7 +28,13 @@ export interface ExplorerItem {
   path: string;
   type: 'dir' | 'file';
   isMarkdown: boolean;
+  category: 'dir' | 'note' | 'code' | 'config' | 'web' | 'data' | 'other';
+  language?: string;
+  badge?: string;
+  badgeColor?: string;
   size?: number;
+  formattedSize?: string;
+  childCount?: number;
 }
 
 /**
@@ -45,7 +53,7 @@ export function extractGitHubUsername(input: string): string {
 function getHeaders(token?: string): HeadersInit {
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github.v3+json',
-    'User-Agent': 'MarkPDF-App'
+    'User-Agent': 'CodexPress-App'
   };
   if (token && token.trim()) {
     headers.Authorization = `Bearer ${token.trim()}`;
@@ -96,32 +104,104 @@ export async function fetchRepoTree(
   branch: string = 'main',
   token?: string
 ): Promise<{ tree: GitHubTreeItem[]; truncated: boolean }> {
-  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
-  const response = await fetch(url, { headers: getHeaders(token) });
+  const candidateBranches = [branch, 'main', 'master', 'HEAD'].filter(
+    (b, i, arr) => arr.indexOf(b) === i && Boolean(b)
+  );
 
-  if (!response.ok) {
-    // If branch doesn't exist, try 'master' if we tried 'main', or vice versa
-    if (branch === 'main') {
-      const fallbackUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/trees/master?recursive=1`;
-      const fallbackRes = await fetch(fallbackUrl, { headers: getHeaders(token) });
-      if (fallbackRes.ok) {
-        const data = await fallbackRes.json();
+  let lastError = '';
+
+  for (const b of candidateBranches) {
+    try {
+      const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/trees/${encodeURIComponent(b)}?recursive=1`;
+      const response = await fetch(url, { headers: getHeaders(token) });
+
+      if (response.status === 409) {
+        // Git Repository is empty
+        return { tree: [], truncated: false };
+      }
+
+      if (response.ok) {
+        const data = await response.json();
         return { tree: data.tree || [], truncated: Boolean(data.truncated) };
       }
+
+      if (response.status === 403) {
+        const rateLimitReset = response.headers.get('x-ratelimit-reset');
+        const resetTime = rateLimitReset ? new Date(parseInt(rateLimitReset, 10) * 1000).toLocaleTimeString() : 'soon';
+        throw new Error(`GitHub API rate limit reached. Resets at ${resetTime}. Add a Personal Access Token.`);
+      }
+
+      lastError = `HTTP ${response.status} ${response.statusText}`;
+    } catch (err: any) {
+      if (err.message && err.message.includes('rate limit')) throw err;
+      lastError = err.message || 'Network error';
     }
-    throw new Error(`Could not load file tree for ${owner}/${repo} (HTTP ${response.status})`);
+  }
+
+  throw new Error(`Could not load file tree for ${owner}/${repo}: ${lastError}`);
+}
+
+/**
+ * Fallback to direct GitHub Contents API for a specific directory path
+ * Ensures 100% of files and folders are accessible even if recursive tree was truncated!
+ */
+export async function fetchDirectoryContents(
+  owner: string,
+  repo: string,
+  dirPath: string = '',
+  branch?: string,
+  token?: string
+): Promise<ExplorerItem[]> {
+  const cleanPath = dirPath.replace(/^\/+|\/+$/g, '');
+  let url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(cleanPath)}`;
+  if (branch) {
+    url += `?ref=${encodeURIComponent(branch)}`;
+  }
+
+  const response = await fetch(url, { headers: getHeaders(token) });
+  if (!response.ok) {
+    throw new Error(`Failed to load directory contents (${response.status} ${response.statusText})`);
   }
 
   const data = await response.json();
-  return { tree: data.tree || [], truncated: Boolean(data.truncated) };
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
+  return data.map((item: any) => {
+    const isDir = item.type === 'dir' || item.type === 'submodule';
+    const isMd = isMarkdownFile(item.name);
+    const langInfo = getLanguageInfo(item.name);
+
+    return {
+      name: item.name,
+      path: item.path,
+      type: (isDir ? 'dir' : 'file') as 'dir' | 'file',
+      isMarkdown: isMd,
+      category: (isDir ? 'dir' : isMd ? 'note' : langInfo.category) as ExplorerItem['category'],
+      language: langInfo.name,
+      badge: isDir ? undefined : langInfo.badge,
+      badgeColor: isDir ? undefined : langInfo.color,
+      size: item.size,
+      formattedSize: item.size !== undefined ? formatFileSize(item.size) : undefined
+    };
+  }).sort((a, b) => {
+    if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+    if (a.isMarkdown !== b.isMarkdown) return a.isMarkdown ? -1 : 1;
+    return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+  });
 }
 
 /**
  * Filter items in a specific directory from recursive tree list
+ * Handles direct children, subdirectories, code files, and child count metrics
  */
 export function getItemsInDirectory(tree: GitHubTreeItem[], currentPath: string): ExplorerItem[] {
-  const prefix = currentPath ? (currentPath.endsWith('/') ? currentPath : `${currentPath}/`) : '';
+  // Normalize currentPath: remove leading and trailing slashes
+  const cleanPath = currentPath.replace(/^\/+|\/+$/g, '');
+  const prefix = cleanPath ? `${cleanPath}/` : '';
   const dirMap = new Map<string, ExplorerItem>();
+  const dirChildCounts = new Map<string, number>();
 
   for (const item of tree) {
     if (!item.path.startsWith(prefix)) continue;
@@ -130,32 +210,54 @@ export function getItemsInDirectory(tree: GitHubTreeItem[], currentPath: string)
 
     const slashIdx = rel.indexOf('/');
     if (slashIdx === -1) {
-      // Direct child
-      const isDir = item.type === 'tree';
-      const isMarkdown = !isDir && (/\.(md|markdown|mdx|txt)$/i.test(rel));
+      // Direct child of currentPath
+      const isDir = item.type === 'tree' || item.type === 'commit';
+      const isMd = !isDir && isMarkdownFile(rel);
+      const langInfo = getLanguageInfo(rel);
+
       dirMap.set(rel, {
         name: rel,
         path: item.path,
         type: isDir ? 'dir' : 'file',
-        isMarkdown,
-        size: item.size
+        isMarkdown: isMd,
+        category: isDir ? 'dir' : isMd ? 'note' : langInfo.category,
+        language: langInfo.name,
+        badge: isDir ? undefined : langInfo.badge,
+        badgeColor: isDir ? undefined : langInfo.color,
+        size: item.size,
+        formattedSize: item.size !== undefined ? formatFileSize(item.size) : undefined
       });
     } else {
-      // Subdirectory
+      // Subdirectory item
       const subDirName = rel.slice(0, slashIdx);
+      const subDirPath = prefix + subDirName;
+
+      // Track child counts for folders
+      dirChildCounts.set(subDirName, (dirChildCounts.get(subDirName) || 0) + 1);
+
       if (!dirMap.has(subDirName)) {
         dirMap.set(subDirName, {
           name: subDirName,
-          path: prefix + subDirName,
+          path: subDirPath,
           type: 'dir',
-          isMarkdown: false
+          isMarkdown: false,
+          category: 'dir'
         });
       }
     }
   }
 
-  // Sort: directories first, then markdown files, then other files
-  return Array.from(dirMap.values()).sort((a, b) => {
+  // Attach child counts to directories
+  const results = Array.from(dirMap.values()).map((item) => {
+    if (item.type === 'dir') {
+      const count = dirChildCounts.get(item.name) || 0;
+      return { ...item, childCount: count };
+    }
+    return item;
+  });
+
+  // Sort: directories first, then notes, then code, then other files alphabetically
+  return results.sort((a, b) => {
     if (a.type !== b.type) {
       return a.type === 'dir' ? -1 : 1;
     }
@@ -167,17 +269,17 @@ export function getItemsInDirectory(tree: GitHubTreeItem[], currentPath: string)
 }
 
 /**
- * Fetch raw markdown content of a file
+ * Fetch raw file content (Markdown, Java, Python, C++, TS, etc.)
  */
-export async function fetchRawMarkdown(
+export async function fetchRawFileContent(
   owner: string,
   repo: string,
   branch: string,
   filePath: string,
   token?: string
 ): Promise<string> {
-  // 1. Direct raw.githubusercontent.com (fast and not rate-limited)
-  const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
+  // 1. Direct raw.githubusercontent.com (fast and not rate-limited for public repos)
+  const rawUrl = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${filePath}`;
   try {
     const rawRes = await fetch(rawUrl);
     if (rawRes.ok) {
@@ -187,8 +289,8 @@ export async function fetchRawMarkdown(
     console.warn('Direct raw fetch failed, trying API...', err);
   }
 
-  // 2. Fallback to GitHub API with custom Accept header (works with tokens)
-  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}?ref=${branch}`;
+  // 2. Fallback to GitHub API with raw accept header (works with private repos and tokens)
+  const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${filePath}?ref=${encodeURIComponent(branch)}`;
   const apiRes = await fetch(apiUrl, {
     headers: {
       ...getHeaders(token),
@@ -202,3 +304,8 @@ export async function fetchRawMarkdown(
 
   return await apiRes.text();
 }
+
+/**
+ * Backward compatibility alias for fetchRawFileContent
+ */
+export const fetchRawMarkdown = fetchRawFileContent;

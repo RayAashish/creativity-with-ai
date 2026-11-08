@@ -10,17 +10,20 @@ import com.raysi.launcher.data.model.AppInfo
 import com.raysi.launcher.data.model.LauncherSettingsSnapshot
 import com.raysi.launcher.data.model.PinnedAppEntry
 import com.raysi.launcher.data.repository.AppInventoryRepository
-import com.raysi.launcher.data.repository.HudState
+import com.raysi.launcher.data.repository.PreferencesRepository
 import com.raysi.launcher.data.repository.SettingsRepository
-import com.raysi.launcher.data.repository.UsageRepository
+import com.raysi.launcher.data.repository.TelemetryRepository
+import com.raysi.launcher.domain.model.DailyProgress
+import com.raysi.launcher.domain.model.PinnedAppItem
+import com.raysi.launcher.domain.model.TelemetryUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -39,14 +42,16 @@ class HomeViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var fakeSettingsRepo: FakeSettingsRepository
     private lateinit var fakeInventoryRepo: FakeAppInventoryRepository
-    private lateinit var fakeUsageRepo: FakeUsageRepository
+    private lateinit var fakeTelemetryRepo: FakeTelemetryRepository
+    private lateinit var fakePreferencesRepo: FakePreferencesRepository
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         fakeSettingsRepo = FakeSettingsRepository()
         fakeInventoryRepo = FakeAppInventoryRepository()
-        fakeUsageRepo = FakeUsageRepository()
+        fakeTelemetryRepo = FakeTelemetryRepository()
+        fakePreferencesRepo = FakePreferencesRepository()
     }
 
     @After
@@ -58,7 +63,9 @@ class HomeViewModelTest {
         return HomeViewModel(
             appInventoryRepository = fakeInventoryRepo,
             settingsRepository = fakeSettingsRepo,
-            usageRepository = fakeUsageRepo,
+            telemetryRepository = fakeTelemetryRepo,
+            preferencesRepository = fakePreferencesRepo,
+            quarantineRepository = null,
             coroutineScope = scope
         )
     }
@@ -79,14 +86,15 @@ class HomeViewModelTest {
                 componentName = "com.test.pkg$i/.Activity",
                 userSerialNumber = 0L,
                 customLabel = "App $i",
-                displayOrder = 6 - i
+                displayOrder = i
             )
         }
         fakeSettingsRepo.updatePinnedApps(pins)
 
         val result = viewModel.pinnedApps.first { it.size == 5 }
         assertEquals(5, result.size)
-        assertTrue(result[0].displayOrder <= result[1].displayOrder)
+        assertEquals("App 0", result[0].label)
+        assertEquals("App 4", result[4].label)
     }
 
     @Test
@@ -106,35 +114,86 @@ class HomeViewModelTest {
 
         val pins = viewModel.pinnedApps.first { it.isNotEmpty() }
         assertEquals(1, pins.size)
-        assertEquals("Ghost App", pins[0].displayLabel)
+        assertEquals("Ghost App", pins[0].label)
         assertFalse(pins[0].isInstalled)
     }
 
     @Test
-    fun pinnedApps_displaysUsageDurationWhenGranted_andHidesWhenDenied() = runTest(testDispatcher) {
-        fakeUsageRepo.setPermission(true)
-        fakeUsageRepo.setAppDuration("com.test", 720_000L) // 12m
+    fun pinnedApps_displaysUsageDurationWhenAbove15Minutes_andHidesWhenBelow() = runTest(testDispatcher) {
+        // App 1: 20 minutes (1_200_000 ms) -> usage tag visible
+        // App 2: 10 minutes (600_000 ms) -> usage tag hidden (< 15m)
+        fakeTelemetryRepo.setAppDuration("com.app.above", 20 * 60 * 1000L)
+        fakeTelemetryRepo.setAppDuration("com.app.below", 10 * 60 * 1000L)
 
         val viewModel = createViewModel(backgroundScope)
 
         fakeSettingsRepo.updatePinnedApps(
             listOf(
                 PinnedAppEntry(
-                    componentName = "com.test/.App",
+                    componentName = "com.app.above/.App",
                     userSerialNumber = 0L,
-                    customLabel = "Messages",
+                    customLabel = "Above 15m",
+                    displayOrder = 0
+                ),
+                PinnedAppEntry(
+                    componentName = "com.app.below/.App",
+                    userSerialNumber = 0L,
+                    customLabel = "Below 15m",
+                    displayOrder = 1
+                )
+            )
+        )
+
+        val pins = viewModel.pinnedApps.first { it.size == 2 && it[0].usageFormatted != null }
+        assertEquals("20m", pins[0].usageFormatted)
+        assertNull(pins[1].usageFormatted)
+    }
+
+    @Test
+    fun pinnedApps_visualSatietyDimming_whenExceedsDefault45Minutes() = runTest(testDispatcher) {
+        // Exceeds default 45m limit (50m)
+        fakeTelemetryRepo.setAppDuration("com.app.social", 50 * 60 * 1000L)
+
+        val viewModel = createViewModel(backgroundScope)
+
+        fakeSettingsRepo.updatePinnedApps(
+            listOf(
+                PinnedAppEntry(
+                    componentName = "com.app.social/.Feed",
+                    userSerialNumber = 0L,
+                    customLabel = "Social",
                     displayOrder = 0
                 )
             )
         )
 
-        val pinsGranted = viewModel.pinnedApps.first { it.isNotEmpty() && it[0].usageDurationFormatted != null }
-        assertEquals("12m", pinsGranted[0].usageDurationFormatted)
+        val pins = viewModel.pinnedApps.first { it.isNotEmpty() && it[0].isSatiated }
+        assertTrue(pins[0].isSatiated)
+        assertEquals(45, pins[0].timeLimitMinutes)
+    }
 
-        // Deny usage permission
-        fakeUsageRepo.setPermission(false)
-        val pinsDenied = viewModel.pinnedApps.first { it.isNotEmpty() && it[0].usageDurationFormatted == null }
-        assertNull(pinsDenied[0].usageDurationFormatted)
+    @Test
+    fun pinnedApps_customTimeCap_triggersSatietyWhenExceeded() = runTest(testDispatcher) {
+        // 35m usage with 30m custom limit
+        fakeTelemetryRepo.setAppDuration("com.app.game", 35 * 60 * 1000L)
+        fakePreferencesRepo.setCustomAppLimit("com.app.game", 30)
+
+        val viewModel = createViewModel(backgroundScope)
+
+        fakeSettingsRepo.updatePinnedApps(
+            listOf(
+                PinnedAppEntry(
+                    componentName = "com.app.game/.Game",
+                    userSerialNumber = 0L,
+                    customLabel = "Game",
+                    displayOrder = 0
+                )
+            )
+        )
+
+        val pins = viewModel.pinnedApps.first { it.isNotEmpty() && it[0].isSatiated }
+        assertTrue(pins[0].isSatiated)
+        assertEquals(30, pins[0].timeLimitMinutes)
     }
 
     @Test
@@ -169,9 +228,9 @@ class HomeViewModelTest {
 
         // Valid rename (1-24 chars)
         viewModel.onConfirmRename(pin, "Focus App")
-        val updated = viewModel.pinnedApps.first { it[0].displayLabel == "Focus App" }
+        val updated = viewModel.pinnedApps.first { it[0].label == "Focus App" }
         assertEquals(HomeDialogState.None, viewModel.dialogState.value)
-        assertEquals("Focus App", updated[0].displayLabel)
+        assertEquals("Focus App", updated[0].label)
     }
 
     @Test
@@ -203,9 +262,31 @@ class HomeViewModelTest {
         val updated = viewModel.pinnedApps.first { it.isEmpty() }
         assertTrue(updated.isEmpty())
     }
+
+    @Test
+    fun dailyFocusGoal_saveAndExpose() = runTest(testDispatcher) {
+        val viewModel = createViewModel(backgroundScope)
+
+        viewModel.saveFocusGoal("Finish Phase 9 verification")
+        testScheduler.advanceUntilIdle()
+
+        val goal = viewModel.dailyFocusGoal.first { it == "Finish Phase 9 verification" }
+        assertEquals("Finish Phase 9 verification", goal)
+    }
+
+    @Test
+    fun scratchpad_saveAndExpose() = runTest(testDispatcher) {
+        val viewModel = createViewModel(backgroundScope)
+
+        viewModel.saveScratchpad("Quick memo line 1\nLine 2")
+        testScheduler.advanceUntilIdle()
+
+        val content = viewModel.scratchpadContent.first { it.isNotBlank() }
+        assertEquals("Quick memo line 1\nLine 2", content)
+    }
 }
 
-// Fakes for testing
+// Test Fakes
 private class FakeSettingsRepository : SettingsRepository {
     private val _snapshotFlow = MutableStateFlow(LauncherSettingsSnapshot.DEFAULT)
     override val snapshotFlow: StateFlow<LauncherSettingsSnapshot> = _snapshotFlow.asStateFlow()
@@ -246,21 +327,87 @@ private class FakeAppInventoryRepository : AppInventoryRepository {
     override fun createDefaultLauncherIntent(): Intent = Intent()
 }
 
-private class FakeUsageRepository : UsageRepository {
-    private val _hudStateFlow = MutableStateFlow(HudState(hasPermission = true, perAppDurations = mapOf("com.test" to 720_000L)))
-    override val hudStateFlow: StateFlow<HudState> = _hudStateFlow.asStateFlow()
-    override fun hasUsagePermission(): Boolean = _hudStateFlow.value.hasPermission
-    override fun onScreenResumed() {}
-    override fun onScreenPaused() {}
-    override suspend fun reconcileUsage() {}
+private class FakeTelemetryRepository : TelemetryRepository {
+    private val _uiState = MutableStateFlow(TelemetryUiState())
+    override val telemetryUiStateFlow: StateFlow<TelemetryUiState> = _uiState.asStateFlow()
 
-    fun setPermission(granted: Boolean) {
-        _hudStateFlow.value = _hudStateFlow.value.copy(hasPermission = granted)
-    }
+    private val _dailyProgress = MutableStateFlow(DailyProgress())
+    override val dailyProgressFlow: StateFlow<DailyProgress> = _dailyProgress.asStateFlow()
+
+    private val _perAppDurations = MutableStateFlow<Map<String, Long>>(emptyMap())
+    override val perAppDurationsFlow: StateFlow<Map<String, Long>> = _perAppDurations.asStateFlow()
 
     fun setAppDuration(pkg: String, durationMs: Long) {
-        val updated = _hudStateFlow.value.perAppDurations.toMutableMap()
+        val updated = _perAppDurations.value.toMutableMap()
         updated[pkg] = durationMs
-        _hudStateFlow.value = _hudStateFlow.value.copy(perAppDurations = updated)
+        _perAppDurations.value = updated
     }
+
+    override suspend fun reconcile() {}
+    override fun onScreenResumed() {}
+    override fun onScreenPaused() {}
+    override fun close() {}
+}
+
+private class FakePreferencesRepository : PreferencesRepository {
+    private val _focusGoal = MutableStateFlow("")
+    override val dailyFocusGoalFlow: Flow<String> = _focusGoal.asStateFlow()
+
+    private val _scratchpad = MutableStateFlow("")
+    override val scratchpadContentFlow: Flow<String> = _scratchpad.asStateFlow()
+
+    private val _customLimits = MutableStateFlow<Map<String, Int>>(emptyMap())
+    override val customAppLimitsFlow: Flow<Map<String, Int>> = _customLimits.asStateFlow()
+
+    private val _awayDuration = MutableStateFlow(0L)
+    override val lastAwayDurationFlow: Flow<Long> = _awayDuration.asStateFlow()
+
+    private val _unlockCount = MutableStateFlow(0)
+    override val dailyUnlockCountFlow: Flow<Int> = _unlockCount.asStateFlow()
+
+    private val _stealthMode = MutableStateFlow(true)
+    override val isStealthModeFlow: Flow<Boolean> = _stealthMode.asStateFlow()
+
+    private val _systemGrayscale = MutableStateFlow(false)
+    override val isSystemGrayscaleEnabledFlow: Flow<Boolean> = _systemGrayscale.asStateFlow()
+
+    override suspend fun setDailyFocusGoal(goal: String) {
+        _focusGoal.value = goal
+    }
+
+    override suspend fun clearDailyFocusGoal() {
+        _focusGoal.value = ""
+    }
+
+    override suspend fun saveScratchpadContent(content: String) {
+        _scratchpad.value = content
+    }
+
+    override suspend fun setCustomAppLimit(packageName: String, limitMinutes: Int) {
+        val updated = _customLimits.value.toMutableMap()
+        if (limitMinutes <= 0) {
+            updated.remove(packageName)
+        } else {
+            updated[packageName] = limitMinutes
+        }
+        _customLimits.value = updated
+    }
+
+    override suspend fun setStealthMode(enabled: Boolean) {
+        _stealthMode.value = enabled
+    }
+
+    override suspend fun setSystemGrayscaleEnabled(enabled: Boolean) {
+        _systemGrayscale.value = enabled
+    }
+
+    override suspend fun recordScreenOff(timestampMs: Long) {}
+
+    override suspend fun recordUserPresent(timestampMs: Long): Int {
+        val next = _unlockCount.value + 1
+        _unlockCount.value = next
+        return next
+    }
+
+    override suspend fun getScratchpadContent(): String = _scratchpad.value
 }

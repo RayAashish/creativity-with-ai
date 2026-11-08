@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,46 +27,48 @@ fun TelemetryHud(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val secondaryColor = Color(0xFF777777)
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onOpenSettings)
     ) {
-        // Line 1: Date & Clock
+        // Primary Line: Date & Clock (16sp Pure White)
         if (state.formattedTime.isNotBlank()) {
             Text(
                 text = state.formattedTime,
                 fontFamily = FontFamily.Monospace,
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 color = PureWhite
             )
             Spacer(modifier = Modifier.height(4.dp))
         }
 
-        // Line 2: Screen-Time · Unlocks · Offline Streak
+        // Secondary Line: Screen-Time · Unlocks · Offline Streak (12sp #777777)
         if (state.hasUsagePermission) {
             val line2 = "${state.screenTimeFormatted} screen · ${state.unlockCount} unlocks · ${state.awayDurationFormatted}"
             Text(
                 text = line2,
                 fontFamily = FontFamily.Monospace,
-                fontSize = 13.sp,
-                color = DimGray
+                fontSize = 12.sp,
+                color = secondaryColor
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(3.dp))
         } else {
             Text(
                 text = "Usage access off • tap to enable",
                 fontFamily = FontFamily.Monospace,
-                fontSize = 13.sp,
+                fontSize = 12.sp,
                 color = HudAmber,
                 modifier = Modifier
                     .clickable(onClick = onOpenUsageSettings)
                     .padding(vertical = 2.dp)
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(3.dp))
         }
 
-        // Line 3: Top Drain · Quarantined Alerts
+        // Secondary Line: Top Drain · Quarantined Alerts (12sp #777777)
         val culpritText = if (state.topDrain != null) {
             "top drain: ${state.topDrain.label} (${state.topDrain.durationFormatted})"
         } else {
@@ -78,8 +81,8 @@ fun TelemetryHud(
         Text(
             text = line3,
             fontFamily = FontFamily.Monospace,
-            fontSize = 13.sp,
-            color = DimGray,
+            fontSize = 12.sp,
+            color = secondaryColor,
             modifier = Modifier.clickable {
                 if (state.quietAlertsCount > 0) {
                     onOpenQuarantine()

@@ -2,7 +2,7 @@
 package com.raysi.launcher.ui.home.components
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,6 +33,12 @@ import androidx.compose.ui.unit.sp
 import com.raysi.launcher.ui.theme.DimGray
 import com.raysi.launcher.ui.theme.PureWhite
 
+/**
+ * DailyFocusLine:
+ * Minimalist, intentional single focus intent line.
+ * When a focus is set, an explicit [edit] trigger prevents accidental keyboard popups.
+ * Includes inline [save] and [esc] actions for zero friction.
+ */
 @Composable
 fun DailyFocusLine(
     focusGoal: String,
@@ -40,13 +46,12 @@ fun DailyFocusLine(
     modifier: Modifier = Modifier
 ) {
     var isEditing by remember { mutableStateOf(false) }
-    var draftText by remember(focusGoal) { mutableStateOf(focusGoal) }
+    var draftText by remember(focusGoal, isEditing) { mutableStateOf(focusGoal) }
     val focusRequester = remember { FocusRequester() }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { isEditing = true }
             .padding(vertical = 4.dp)
     ) {
         Text(
@@ -83,13 +88,39 @@ fun DailyFocusLine(
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(
                         onDone = {
-                            onSaveFocusGoal(draftText)
+                            onSaveFocusGoal(draftText.trim())
                             isEditing = false
                         }
                     ),
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .weight(1f)
                         .focusRequester(focusRequester)
+                )
+
+                Text(
+                    text = "[save]",
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 12.sp,
+                    color = PureWhite,
+                    modifier = Modifier
+                        .clickable {
+                            onSaveFocusGoal(draftText.trim())
+                            isEditing = false
+                        }
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+
+                Text(
+                    text = "[esc]",
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 12.sp,
+                    color = DimGray,
+                    modifier = Modifier
+                        .clickable {
+                            draftText = focusGoal
+                            isEditing = false
+                        }
+                        .padding(start = 2.dp, top = 2.dp, bottom = 2.dp)
                 )
             }
 
@@ -97,20 +128,42 @@ fun DailyFocusLine(
                 focusRequester.requestFocus()
             }
         } else {
-            val displayGoal = if (focusGoal.isNotBlank()) {
-                "> $focusGoal"
+            if (focusGoal.isNotBlank()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "> $focusGoal",
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 14.sp,
+                        color = PureWhite,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+
+                    Text(
+                        text = "[edit]",
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 12.sp,
+                        color = DimGray,
+                        modifier = Modifier
+                            .clickable { isEditing = true }
+                            .padding(start = 12.dp, top = 2.dp, bottom = 2.dp)
+                    )
+                }
             } else {
-                "> tap to set today's focus..."
+                Text(
+                    text = "> tap to set today's focus...",
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 14.sp,
+                    color = Color(0xFF666666),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { isEditing = true }
+                        .padding(vertical = 2.dp)
+                )
             }
-
-            val textColor = if (focusGoal.isNotBlank()) PureWhite else Color(0xFF555555)
-
-            Text(
-                text = displayGoal,
-                fontFamily = FontFamily.Monospace,
-                fontSize = 14.sp,
-                color = textColor
-            )
         }
     }
 }

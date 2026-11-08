@@ -1,74 +1,7 @@
-restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun DrawerScreen(
-  unstable viewModel: DrawerViewModel
-  stable modifier: Modifier? = @static Companion
-  stable onCloseDrawer: Function0<Unit>? = @static $composer.startReplaceGroup(944347765)
-sourceInformation($composer, "CC(remember):DrawerScreen.kt#9igjgp")
-val tmp0_group = $composer.cache(false) {
-  {
-
-  }
-
-}
-
-$composer.endReplaceGroup()
-tmp0_group@com.raysi.launcher.ui.drawer.DrawerScreen
-  stable onLaunchApp: Function1<AppInfo, Unit>? = @dynamic $composer.startReplaceGroup(944349102)
-sourceInformation($composer, "CC(remember):DrawerScreen.kt#9igjgp")
-val tmp1_group = $composer.cache($composer.changedInstance(viewModel)) {
-  {     it  :   AppInfo   ->
-    viewModel    .    launchApp    (    it    )
-  }
-
-}
-
-$composer.endReplaceGroup()
-tmp1_group@com.raysi.launcher.ui.drawer.DrawerScreen
-)
-restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun DrawerAppRow(
-  unstable app: AppInfo
-  stable onClick: Function0<Unit>
-  stable onLongClick: Function0<Unit>
-)
-restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun AppOptionsDialog(
-  unstable state: AppOptions
-  stable onPin: Function0<Unit>
-  stable onUnpin: Function0<Unit>
-  stable onDismiss: Function0<Unit>
-)
-restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun GateScreen(
-  unstable viewModel: GateViewModel
-  stable modifier: Modifier? = @static Companion
-  stable onCancel: Function0<Unit>? = @static $composer.startReplaceGroup(-375172875)
-sourceInformation($composer, "CC(remember):GateScreen.kt#9igjgp")
-val tmp0_group = $composer.cache(false) {
-  {
-
-  }
-
-}
-
-$composer.endReplaceGroup()
-tmp0_group@com.raysi.launcher.ui.gate.GateScreen
-)
-restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun BreathingCountdownView(
-  stable appLabel: String
-  stable totalSeconds: Int
-  stable remainingSeconds: Int
-  stable onCancel: Function0<Unit>
-)
-restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun DurationSelectionView(
-  stable appLabel: String
-  stable onSelectDuration: Function1<Int, Unit>
-  stable onCancel: Function0<Unit>
-)
-restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun DurationPill(
-  stable label: String
-  stable onClick: Function0<Unit>
-)
 restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun HomeScreen(
   unstable viewModel: HomeViewModel
   stable modifier: Modifier? = @static Companion
-  stable onOpenDrawer: Function0<Unit>? = @static $composer.startReplaceGroup(-1720126155)
+  stable onOpenDrawer: Function0<Unit>? = @static $composer.startReplaceGroup(-1720126699)
 sourceInformation($composer, "CC(remember):HomeScreen.kt#9igjgp")
 val tmp0_group = $composer.cache(false) {
   {
@@ -79,7 +12,7 @@ val tmp0_group = $composer.cache(false) {
 
 $composer.endReplaceGroup()
 tmp0_group@com.raysi.launcher.ui.home.HomeScreen
-  stable onOpenSettings: Function0<Unit>? = @static $composer.startReplaceGroup(-1720124971)
+  stable onOpenSettings: Function0<Unit>? = @static $composer.startReplaceGroup(-1720125515)
 sourceInformation($composer, "CC(remember):HomeScreen.kt#9igjgp")
 val tmp1_group = $composer.cache(false) {
   {
@@ -90,7 +23,7 @@ val tmp1_group = $composer.cache(false) {
 
 $composer.endReplaceGroup()
 tmp1_group@com.raysi.launcher.ui.home.HomeScreen
-  stable onOpenQuarantine: Function0<Unit>? = @static $composer.startReplaceGroup(-1720123723)
+  stable onOpenQuarantine: Function0<Unit>? = @static $composer.startReplaceGroup(-1720124267)
 sourceInformation($composer, "CC(remember):HomeScreen.kt#9igjgp")
 val tmp2_group = $composer.cache(false) {
   {
@@ -101,7 +34,7 @@ val tmp2_group = $composer.cache(false) {
 
 $composer.endReplaceGroup()
 tmp2_group@com.raysi.launcher.ui.home.HomeScreen
-  stable onRequestDefaultLauncher: Function0<Unit>? = @static $composer.startReplaceGroup(-1720122219)
+  stable onOpenScratchpad: Function0<Unit>? = @static $composer.startReplaceGroup(-1720123019)
 sourceInformation($composer, "CC(remember):HomeScreen.kt#9igjgp")
 val tmp3_group = $composer.cache(false) {
   {
@@ -112,7 +45,7 @@ val tmp3_group = $composer.cache(false) {
 
 $composer.endReplaceGroup()
 tmp3_group@com.raysi.launcher.ui.home.HomeScreen
-  stable onOpenUsageAccessSettings: Function0<Unit>? = @static $composer.startReplaceGroup(-1720120683)
+  stable onRequestDefaultLauncher: Function0<Unit>? = @static $composer.startReplaceGroup(-1720121515)
 sourceInformation($composer, "CC(remember):HomeScreen.kt#9igjgp")
 val tmp4_group = $composer.cache(false) {
   {
@@ -123,10 +56,10 @@ val tmp4_group = $composer.cache(false) {
 
 $composer.endReplaceGroup()
 tmp4_group@com.raysi.launcher.ui.home.HomeScreen
-  stable onLaunchApp: Function1<AppInfo, Unit>? = @static $composer.startReplaceGroup(-1720119371)
+  stable onOpenUsageAccessSettings: Function0<Unit>? = @static $composer.startReplaceGroup(-1720119979)
 sourceInformation($composer, "CC(remember):HomeScreen.kt#9igjgp")
 val tmp5_group = $composer.cache(false) {
-  {     it  :   AppInfo   ->
+  {
 
   }
 
@@ -134,38 +67,50 @@ val tmp5_group = $composer.cache(false) {
 
 $composer.endReplaceGroup()
 tmp5_group@com.raysi.launcher.ui.home.HomeScreen
-)
-restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun PinnedAppRow(
-  unstable pin: PinnedAppUiModel
-  stable onClick: Function0<Unit>
-  stable onLongClick: Function0<Unit>
+  stable onLaunchApp: Function1<AppInfo, Unit>? = @static $composer.startReplaceGroup(-1720118667)
+sourceInformation($composer, "CC(remember):HomeScreen.kt#9igjgp")
+val tmp6_group = $composer.cache(false) {
+  {     it  :   AppInfo   ->
+
+  }
+
+}
+
+$composer.endReplaceGroup()
+tmp6_group@com.raysi.launcher.ui.home.HomeScreen
 )
 restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun PinnedOptionsDialog(
-  unstable pin: PinnedAppUiModel
+  stable pin: PinnedAppItem
   stable canMoveUp: Boolean
   stable canMoveDown: Boolean
   stable onMoveUp: Function0<Unit>
   stable onMoveDown: Function0<Unit>
   stable onRename: Function0<Unit>
+  stable onSetLimit: Function0<Unit>
   stable onUnpin: Function0<Unit>
   stable onDismiss: Function0<Unit>
 )
-restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun RenamePinDialog(
-  unstable pin: PinnedAppUiModel
-  stable initialText: String
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun SetTimeLimitDialog(
+  stable currentLimitMinutes: Int
+  stable onSelectLimit: Function1<Int, Unit>
+  stable onDismiss: Function0<Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun RenameDialog(
+  stable currentText: String
   stable error: String?
   stable onConfirm: Function1<String, Unit>
   stable onDismiss: Function0<Unit>
 )
-restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun QuarantineScreen(
-  unstable viewModel: QuarantineViewModel
-  stable onLaunchPackage: Function1<String, Unit>
-  stable onDismiss: Function0<Unit>
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun DailyFocusLine(
+  stable focusGoal: String
+  stable onSaveFocusGoal: Function1<String, Unit>
   stable modifier: Modifier? = @static Companion
 )
-restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun QuarantineItemRow(
-  stable item: QuarantineItemUi
-  stable onClick: Function0<Unit>
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun TelemetryHud(
+  stable state: TelemetryUiState
+  stable onOpenQuarantine: Function0<Unit>
+  stable onOpenUsageSettings: Function0<Unit>
+  stable onOpenSettings: Function0<Unit>
   stable modifier: Modifier? = @static Companion
 )
 restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun SettingsScreen(
@@ -202,7 +147,4 @@ restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun AppPicker
   stable pickerType: AppPickerType
   unstable viewModel: SettingsViewModel
   stable onClose: Function0<Unit>
-)
-restartable skippable scheme("[0, [0]]") fun FocusLauncherTheme(
-  stable content: Function2<Composer, Int, Unit>
 )

@@ -1,8 +1,25 @@
+unstable class PreferencesRepositoryTest {
+  unstable val utcZone: @[FlexibleNullability] TimeZone?
+  <runtime stability> = Unstable
+}
+unstable class TelemetryRepositoryTest {
+  unstable val utcZone: @[FlexibleNullability] TimeZone?
+  <runtime stability> = Unstable
+}
+unstable class HomeViewModelTest {
+  unstable val testDispatcher: TestDispatcher
+  unstable var fakeSettingsRepo: FakeSettingsRepository
+  unstable var fakeInventoryRepo: FakeAppInventoryRepository
+  unstable var fakeTelemetryRepo: FakeTelemetryRepository
+  unstable var fakePreferencesRepo: FakePreferencesRepository
+  <runtime stability> = Unstable
+}
 unstable class SettingsViewModelTest {
   unstable val testDispatcher: TestDispatcher
   unstable var fakeSettings: FakeSettingsRepo
   unstable var fakeInventory: FakeAppInventoryRepo
   unstable var fakeUsage: FakeUsageRepo
+  unstable var fakePreferences: FakePreferencesRepo
   runtime var viewModel: SettingsViewModel
   <runtime stability> = Unstable
 }

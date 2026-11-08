@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Glowing ink curve connecting reading to writing -->
+    <path
+        android:pathData="M 36,66 C 45,74 62,74 72,64 C 77,59 75,50 68,48 C 62,46 58,52 64,56 C 70,60 80,56 82,48"
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round" />
+
+    <!-- Open Book Left Page -->
+    <path
+        android:pathData="M 53,42 C 45,39 37,39 27,42 C 26,42.5 25.5,43.5 25.5,44.5 L 25.5,70 C 25.5,71 26.5,72 27.5,71.5 C 37,68.5 45,68.5 53,72 Z"
+        android:fillColor="#E0E7FF" />
+
+    <!-- Left Page text lines -->
+    <path
+        android:pathData="M 31,48 L 47,48 M 31,54 L 46,54 M 31,60 L 42,60"
+        android:strokeColor="#A5B4FC"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round" />
+
+    <!-- Open Book Right Page -->
+    <path
+        android:pathData="M 55,42 C 63,39 71,39 81,42 C 82,42.5 82.5,43.5 82.5,44.5 L 82.5,70 C 82.5,71 81.5,72 80.5,71.5 C 71,68.5 63,68.5 55,72 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Right Page text lines -->
+    <path
+        android:pathData="M 59,48 L 76,48 M 59,54 L 72,54 M 59,60 L 68,60"
+        android:strokeColor="#CBD5E1"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round" />
+
+    <!-- Book Spine Center Fold -->
+    <path
+        android:pathData="M 53.5,41 L 54.5,41 L 54.5,72.5 L 53.5,72.5 Z"
+        android:fillColor="#6366F1" />
+
+    <!-- Golden Stylus Pen Body (Angled 45 deg, writing on the book) -->
+    <!-- Stylus Barrel -->
+    <path
+        android:pathData="M 67,27 L 78,38 L 73,43 L 62,32 Z"
+        android:fillColor="#F59E0B" />
+
+    <!-- Stylus Grip Ring -->
+    <path
+        android:pathData="M 62,32 L 73,43 L 70,46 L 59,35 Z"
+        android:fillColor="#D97706" />
+
+    <!-- Stylus Cone / Collar -->
+    <path
+        android:pathData="M 59,35 L 70,46 L 66,50 L 55,39 Z"
+        android:fillColor="#FBBF24" />
+
+    <!-- Stylus Fine Nib Tip touching the page -->
+    <path
+        android:pathData="M 55,39 L 66,50 L 58,58 Z"
+        android:fillColor="#1E293B" />
+
+    <!-- Spark / Inking Highlight at nib touch point -->
+    <path
+        android:pathData="M 58,58 m -2,0 a 2,2 0 1,0 4,0 a 2,2 0 1,0 -4,0"
+        android:fillColor="#38BDF8" />
+
+    <!-- Bilingual Accent: Devanagari 'लि' glyph watermark on left page -->
+    <path
+        android:pathData="M 33,37 L 45,37"
+        android:strokeColor="#818CF8"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round" />
+</vector>

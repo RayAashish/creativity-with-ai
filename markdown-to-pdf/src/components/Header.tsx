@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { TabletViewMode, AppTheme } from '../types';
 import { SAMPLE_SHOWCASE, SAMPLE_GITHUB_README, SAMPLE_ACADEMIC_PAPER } from '../utils/sampleMarkdown';
+import { CodexPressLogo } from './CodexPressLogo';
 
 interface HeaderProps {
   onLoadSample: (content: string, title: string) => void;
@@ -75,16 +76,14 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
 
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] flex items-center justify-center font-mono font-bold text-xs shadow-sm shrink-0">
-              <FileText className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-            </div>
+          <div className="flex items-center space-x-2.5">
+            <CodexPressLogo size={34} />
             <div className="flex items-center space-x-1.5">
               <span className="font-mono font-bold text-sm sm:text-base tracking-tight text-[var(--text-primary)]">
-                MarkPDF
+                CodexPress
               </span>
               <span className="hidden sm:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-[var(--badge-bg)] text-[var(--badge-text)] border border-[var(--border-subtle)]">
-                PRO
+                STUDIO
               </span>
             </div>
           </div>

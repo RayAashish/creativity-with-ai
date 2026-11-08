@@ -5,16 +5,22 @@ import android.content.Context
 import com.raysi.launcher.core.dispatchers.FocusDispatchers
 import com.raysi.launcher.core.dispatchers.StandardFocusDispatchers
 import com.raysi.launcher.data.quarantine.QuarantineDatabase
+import com.raysi.launcher.data.receiver.DeviceStateReceiver
 import com.raysi.launcher.data.repository.AppInventoryRepository
 import com.raysi.launcher.data.repository.AppInventoryRepositoryImpl
+import com.raysi.launcher.data.repository.PreferencesRepository
+import com.raysi.launcher.data.repository.PreferencesRepositoryImpl
 import com.raysi.launcher.data.repository.QuarantineRepository
 import com.raysi.launcher.data.repository.QuarantineRepositoryImpl
 import com.raysi.launcher.data.repository.SettingsRepository
 import com.raysi.launcher.data.repository.SettingsRepositoryImpl
+import com.raysi.launcher.data.repository.TelemetryRepository
+import com.raysi.launcher.data.repository.TelemetryRepositoryImpl
 import com.raysi.launcher.data.repository.UsageRepository
 import com.raysi.launcher.data.repository.UsageRepositoryImpl
 import com.raysi.launcher.data.search.KotlinSearchEngine
 import com.raysi.launcher.data.search.SearchEngine
+import com.raysi.launcher.util.SystemThemingHelper
 import java.io.Closeable
 
 /**
@@ -50,7 +56,38 @@ class FocusLocator(
         QuarantineRepositoryImpl(quarantineDatabase.quarantineDao(), dispatchers)
     }
 
+    val preferencesRepository: PreferencesRepository by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        PreferencesRepositoryImpl(appContext, dispatchers)
+    }
+
+    val deviceStateReceiver: DeviceStateReceiver by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        DeviceStateReceiver(preferencesRepository, dispatchers)
+    }
+
+    val telemetryRepository: TelemetryRepository by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        TelemetryRepositoryImpl(
+            context = appContext,
+            preferencesRepository = preferencesRepository,
+            quarantineRepository = quarantineRepository,
+            appInventoryRepository = appInventoryRepository,
+            settingsRepository = settingsRepository,
+            deviceStateReceiver = deviceStateReceiver,
+            dispatchers = dispatchers
+        )
+    }
+
+    val systemThemingHelper: SystemThemingHelper by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        SystemThemingHelper(appContext)
+    }
+
     override fun close() {
+        try {
+            systemThemingHelper.close()
+        } catch (_: Exception) {}
+        try {
+            telemetryRepository.close()
+        } catch (ignored: Exception) {
+        }
         try {
             if (quarantineDatabase.isOpen) {
                 quarantineDatabase.close()

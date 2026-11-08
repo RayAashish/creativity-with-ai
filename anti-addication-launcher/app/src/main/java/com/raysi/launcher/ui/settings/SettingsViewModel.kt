@@ -9,11 +9,13 @@ import com.raysi.launcher.core.dispatchers.FocusDispatchers
 import com.raysi.launcher.data.model.AppInfo
 import com.raysi.launcher.data.model.LauncherSettingsSnapshot
 import com.raysi.launcher.data.repository.AppInventoryRepository
+import com.raysi.launcher.data.repository.PreferencesRepository
 import com.raysi.launcher.data.repository.SettingsRepository
 import com.raysi.launcher.data.repository.UsageRepository
 import com.raysi.launcher.service.AccessibilityUtils
 import com.raysi.launcher.service.notification.DigestScheduler
 import com.raysi.launcher.service.notification.NotificationUtils
+import com.raysi.launcher.util.SystemThemingHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -32,19 +34,27 @@ data class SettingsPermissionsState(
     val isDefaultLauncher: Boolean = false,
     val isUsageGranted: Boolean = false,
     val isAccessibilityEnabled: Boolean = false,
-    val isNotificationListenerEnabled: Boolean = false
+    val isNotificationListenerEnabled: Boolean = false,
+    val isSecureSettingsGranted: Boolean = false
 )
 
 class SettingsViewModel(
     private val settingsRepository: SettingsRepository,
     private val appInventoryRepository: AppInventoryRepository,
     private val usageRepository: UsageRepository,
+    private val preferencesRepository: PreferencesRepository,
     private val dispatchers: FocusDispatchers
 ) : ViewModel() {
 
     val snapshot: StateFlow<LauncherSettingsSnapshot> = settingsRepository.snapshotFlow
 
     val allApps: StateFlow<List<AppInfo>> = appInventoryRepository.appsFlow
+
+    val isStealthMode: StateFlow<Boolean> = preferencesRepository.isStealthModeFlow
+        .stateIn(viewModelScope, SharingStarted.Lazily, true)
+
+    val isSystemGrayscale: StateFlow<Boolean> = preferencesRepository.isSystemGrayscaleEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
     private val _permissionsState = MutableStateFlow(SettingsPermissionsState())
     val permissionsState: StateFlow<SettingsPermissionsState> = _permissionsState.asStateFlow()
@@ -85,13 +95,28 @@ class SettingsViewModel(
         val isUsage = usageRepository.hasUsagePermission()
         val isA11y = AccessibilityUtils.isAccessibilityServiceEnabled(context)
         val isNotif = NotificationUtils.isNotificationListenerEnabled(context)
+        val isSecure = SystemThemingHelper.isSecureSettingsGranted(context)
 
         _permissionsState.value = SettingsPermissionsState(
             isDefaultLauncher = isDefault,
             isUsageGranted = isUsage,
             isAccessibilityEnabled = isA11y,
-            isNotificationListenerEnabled = isNotif
+            isNotificationListenerEnabled = isNotif,
+            isSecureSettingsGranted = isSecure
         )
+    }
+
+    fun setStealthMode(enabled: Boolean) {
+        viewModelScope.launch(dispatchers.io) {
+            preferencesRepository.setStealthMode(enabled)
+        }
+    }
+
+    fun setSystemGrayscale(context: Context, enabled: Boolean) {
+        viewModelScope.launch(dispatchers.io) {
+            preferencesRepository.setSystemGrayscaleEnabled(enabled)
+            SystemThemingHelper.setHardwareGrayscale(context, enabled)
+        }
     }
 
     fun setGateDelay(seconds: Int) {

@@ -23,6 +23,7 @@ import androidx.ink.brush.BrushFamily
 import androidx.ink.brush.StockBrushes
 import androidx.ink.strokes.Stroke
 import androidx.input.motionprediction.MotionEventPredictor
+import com.antigravity.note.document.model.CanvasImage
 import com.antigravity.note.document.model.DocumentPage
 import com.antigravity.note.document.model.PaperTemplate
 import com.antigravity.note.inkengine.eraser.EraserMode
@@ -38,6 +39,19 @@ import com.antigravity.note.inkengine.shape.RecognizedShape
 import com.antigravity.note.inkengine.shape.ShapeRecognizer
 import java.io.File
 import kotlin.math.hypot
+
+enum class ImageHandle {
+    NONE,
+    BODY,
+    TOP_LEFT,
+    TOP_RIGHT,
+    BOTTOM_LEFT,
+    BOTTOM_RIGHT,
+    TOP,
+    BOTTOM,
+    LEFT,
+    RIGHT
+}
 
 enum class CanvasTool {
     PRESSURE_PEN,
@@ -229,6 +243,171 @@ class InkCanvasView @JvmOverloads constructor(
         val top = minOf(tl.y, br.y)
         val bottom = maxOf(tl.y, br.y)
         return RectF(left, top, right, bottom)
+    }
+
+    // Image Selection & Transformation
+    var onImageSelectionChanged: ((CanvasImage?) -> Unit)? = null
+    var onImageChanged: ((CanvasImage) -> Unit)? = null
+    var onImageRemoved: ((CanvasImage) -> Unit)? = null
+
+    var selectedImage: CanvasImage?
+        get() = dryInkView.selectedImage
+        set(value) {
+            dryInkView.selectedImage = value
+        }
+
+    private var isTransformingImage = false
+    private var activeImageHandle = ImageHandle.NONE
+    private val imageTransformStartBounds = RectF()
+    private var imageTransformDownX = 0f
+    private var imageTransformDownY = 0f
+
+    fun getImageScreenBounds(): RectF? {
+        val img = selectedImage ?: return null
+        val tl = PointF()
+        val br = PointF()
+        dryInkView.transform.worldToScreen(img.x, img.y, tl)
+        dryInkView.transform.worldToScreen(img.x + img.width, img.y + img.height, br)
+        return RectF(minOf(tl.x, br.x), minOf(tl.y, br.y), maxOf(tl.x, br.x), maxOf(tl.y, br.y))
+    }
+
+    fun selectImage(image: CanvasImage?) {
+        selectedImage = image
+        if (image != null) {
+            lassoTool.clearSelection()
+            onLassoSelectionChanged?.invoke(false)
+        }
+        dryInkView.invalidate()
+        onImageSelectionChanged?.invoke(image)
+    }
+
+    fun clearImageSelection() {
+        selectedImage = null
+        isTransformingImage = false
+        activeImageHandle = ImageHandle.NONE
+        dryInkView.invalidate()
+        onImageSelectionChanged?.invoke(null)
+    }
+
+    fun rotateSelectedImage(degrees: Float = 90f) {
+        val img = selectedImage ?: return
+        img.rotation = (img.rotation + degrees) % 360f
+        dryInkView.invalidate()
+        onImageSelectionChanged?.invoke(img)
+        onImageChanged?.invoke(img)
+    }
+
+    fun duplicateSelectedImage(): CanvasImage? {
+        val img = selectedImage ?: return null
+        val dup = img.copyElement()
+        dryInkView.addImage(dup)
+        selectImage(dup)
+        onImageChanged?.invoke(dup)
+        return dup
+    }
+
+    fun deleteSelectedImage(): Boolean {
+        val img = selectedImage ?: return false
+        dryInkView.removeImage(img.id)
+        clearImageSelection()
+        onImageRemoved?.invoke(img)
+        return true
+    }
+
+    fun fitSelectedImageToWidth() {
+        val img = selectedImage ?: return
+        val screenW = width.toFloat().takeIf { it > 0 } ?: 1200f
+        val targetW = screenW * 0.8f
+        val aspect = if (img.width > 0) img.height / img.width else 0.75f
+        img.width = targetW
+        img.height = targetW * aspect
+        val centerPt = PointF()
+        dryInkView.transform.screenToWorld(width / 2f, height / 2f, centerPt)
+        img.x = centerPt.x - (targetW / 2f)
+        img.y = centerPt.y - (img.height / 2f)
+        dryInkView.invalidate()
+        onImageSelectionChanged?.invoke(img)
+        onImageChanged?.invoke(img)
+    }
+
+    fun hitTestImageHandle(img: CanvasImage, worldX: Float, worldY: Float): ImageHandle {
+        val cx = img.x + img.width / 2f
+        val cy = img.y + img.height / 2f
+        val rad = Math.toRadians(-img.rotation.toDouble())
+        val unrotX = (Math.cos(rad) * (worldX - cx) - Math.sin(rad) * (worldY - cy) + cx).toFloat()
+        val unrotY = (Math.sin(rad) * (worldX - cx) + Math.cos(rad) * (worldY - cy) + cy).toFloat()
+
+        val hr = 55f
+        if (Math.hypot((unrotX - img.x).toDouble(), (unrotY - img.y).toDouble()) <= hr) return ImageHandle.TOP_LEFT
+        if (Math.hypot((unrotX - (img.x + img.width)).toDouble(), (unrotY - img.y).toDouble()) <= hr) return ImageHandle.TOP_RIGHT
+        if (Math.hypot((unrotX - img.x).toDouble(), (unrotY - (img.y + img.height)).toDouble()) <= hr) return ImageHandle.BOTTOM_LEFT
+        if (Math.hypot((unrotX - (img.x + img.width)).toDouble(), (unrotY - (img.y + img.height)).toDouble()) <= hr) return ImageHandle.BOTTOM_RIGHT
+
+        val midX = img.x + img.width / 2f
+        val midY = img.y + img.height / 2f
+        if (Math.hypot((unrotX - midX).toDouble(), (unrotY - img.y).toDouble()) <= hr) return ImageHandle.TOP
+        if (Math.hypot((unrotX - midX).toDouble(), (unrotY - (img.y + img.height)).toDouble()) <= hr) return ImageHandle.BOTTOM
+        if (Math.hypot((unrotX - img.x).toDouble(), (unrotY - midY).toDouble()) <= hr) return ImageHandle.LEFT
+        if (Math.hypot((unrotX - (img.x + img.width)).toDouble(), (unrotY - midY).toDouble()) <= hr) return ImageHandle.RIGHT
+
+        if (unrotX >= img.x && unrotX <= img.x + img.width && unrotY >= img.y && unrotY <= img.y + img.height) {
+            return ImageHandle.BODY
+        }
+        return ImageHandle.NONE
+    }
+
+    private fun applyImageTransform(img: CanvasImage, handle: ImageHandle, dx: Float, dy: Float) {
+        val b = imageTransformStartBounds
+        val aspect = if (b.width() > 0) b.height() / b.width() else 1f
+        when (handle) {
+            ImageHandle.BODY -> {
+                img.x = b.left + dx
+                img.y = b.top + dy
+            }
+            ImageHandle.BOTTOM_RIGHT -> {
+                val newW = (b.width() + dx).coerceAtLeast(80f)
+                img.width = newW
+                img.height = newW * aspect
+            }
+            ImageHandle.BOTTOM_LEFT -> {
+                val newW = (b.width() - dx).coerceAtLeast(80f)
+                img.x = b.right - newW
+                img.width = newW
+                img.height = newW * aspect
+            }
+            ImageHandle.TOP_RIGHT -> {
+                val newW = (b.width() + dx).coerceAtLeast(80f)
+                val newH = newW * aspect
+                img.y = b.bottom - newH
+                img.width = newW
+                img.height = newH
+            }
+            ImageHandle.TOP_LEFT -> {
+                val newW = (b.width() - dx).coerceAtLeast(80f)
+                val newH = newW * aspect
+                img.x = b.right - newW
+                img.y = b.bottom - newH
+                img.width = newW
+                img.height = newH
+            }
+            ImageHandle.RIGHT -> {
+                img.width = (b.width() + dx).coerceAtLeast(80f)
+            }
+            ImageHandle.BOTTOM -> {
+                img.height = (b.height() + dy).coerceAtLeast(80f)
+            }
+            ImageHandle.LEFT -> {
+                val newW = (b.width() - dx).coerceAtLeast(80f)
+                img.x = b.right - newW
+                img.width = newW
+            }
+            ImageHandle.TOP -> {
+                val newH = (b.height() - dy).coerceAtLeast(80f)
+                img.y = b.bottom - newH
+                img.height = newH
+            }
+            ImageHandle.NONE -> {}
+        }
     }
 
     fun setAdaptiveContrast(enabled: Boolean) {
@@ -541,6 +720,57 @@ class InkCanvasView @JvmOverloads constructor(
         val pointerIndex = event.actionIndex.coerceIn(0, (event.pointerCount - 1).coerceAtLeast(0))
         val pointerId = event.getPointerId(pointerIndex)
 
+        // Allow finger/stylus touch to resize/move active image selection handles!
+        val selImg = selectedImage
+        if (event.pointerCount == 1 && selImg != null) {
+            val screenX = event.getX(pointerIndex)
+            val screenY = event.getY(pointerIndex)
+            dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
+            val action = event.actionMasked
+
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                val handle = hitTestImageHandle(selImg, tempPoint.x, tempPoint.y)
+                if (handle != ImageHandle.NONE) {
+                    isTransformingImage = true
+                    activeImageHandle = handle
+                    imageTransformStartBounds.set(selImg.x, selImg.y, selImg.x + selImg.width, selImg.y + selImg.height)
+                    imageTransformDownX = tempPoint.x
+                    imageTransformDownY = tempPoint.y
+                    dryInkView.invalidate()
+                    return true
+                } else {
+                    val otherImg = dryInkView.findImageAt(tempPoint.x, tempPoint.y)
+                    if (otherImg != null) {
+                        selectImage(otherImg)
+                        isTransformingImage = true
+                        activeImageHandle = ImageHandle.BODY
+                        imageTransformStartBounds.set(otherImg.x, otherImg.y, otherImg.x + otherImg.width, otherImg.y + otherImg.height)
+                        imageTransformDownX = tempPoint.x
+                        imageTransformDownY = tempPoint.y
+                        dryInkView.invalidate()
+                        return true
+                    } else {
+                        clearImageSelection()
+                    }
+                }
+            } else if (isTransformingImage) {
+                if (action == MotionEvent.ACTION_MOVE) {
+                    val dx = tempPoint.x - imageTransformDownX
+                    val dy = tempPoint.y - imageTransformDownY
+                    applyImageTransform(selImg, activeImageHandle, dx, dy)
+                    dryInkView.invalidate()
+                    onImageSelectionChanged?.invoke(selImg)
+                    return true
+                } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP || action == MotionEvent.ACTION_CANCEL) {
+                    isTransformingImage = false
+                    activeImageHandle = ImageHandle.NONE
+                    onImageChanged?.invoke(selImg)
+                    dryInkView.invalidate()
+                    return true
+                }
+            }
+        }
+
         // Allow finger touch to resize/move active selection handles!
         if (event.pointerCount == 1 && lassoTool.mode == com.antigravity.note.inkengine.lasso.LassoMode.TRANSFORMING && lassoTool.selectedStrokes.isNotEmpty()) {
             val screenX = event.getX(pointerIndex)
@@ -704,6 +934,11 @@ class InkCanvasView @JvmOverloads constructor(
             dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
             when (action) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                    val hitImg = dryInkView.findImageAt(tempPoint.x, tempPoint.y)
+                    if (hitImg != null) {
+                        selectImage(hitImg)
+                        return
+                    }
                     lassoTool.startLasso(tempPoint.x, tempPoint.y)
                     dryInkView.invalidate()
                 }

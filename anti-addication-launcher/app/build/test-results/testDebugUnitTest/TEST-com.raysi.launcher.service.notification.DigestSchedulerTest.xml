@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.raysi.launcher.service.notification.DigestSchedulerTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-07T16:38:42.430Z" hostname="Aashishs-MacBook-Air.local" time="0.001">
+<testsuite name="com.raysi.launcher.service.notification.DigestSchedulerTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-08T14:56:59.324Z" hostname="Aashishs-MacBook-Air.local" time="0.001">
   <properties/>
-  <testcase name="testAfternoonDelayToEveningDigest" classname="com.raysi.launcher.service.notification.DigestSchedulerTest" time="0.0"/>
+  <testcase name="testAfternoonDelayToEveningDigest" classname="com.raysi.launcher.service.notification.DigestSchedulerTest" time="0.001"/>
   <testcase name="testUnorderedAndDuplicateDigestHours" classname="com.raysi.launcher.service.notification.DigestSchedulerTest" time="0.0"/>
   <testcase name="testMorningDelayToNoonDigest" classname="com.raysi.launcher.service.notification.DigestSchedulerTest" time="0.0"/>
   <testcase name="testMinimumDelayGuaranteed" classname="com.raysi.launcher.service.notification.DigestSchedulerTest" time="0.0"/>
