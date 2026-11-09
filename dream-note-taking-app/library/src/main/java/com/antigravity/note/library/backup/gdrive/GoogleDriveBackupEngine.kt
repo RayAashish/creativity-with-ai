@@ -44,6 +44,7 @@ class GoogleDriveBackupEngine(
         onProgress: (progress: Float, status: String) -> Unit = { _, _ -> }
     ): Result<GoogleDriveBackupResult> = withContext(ioDispatcher) {
         try {
+            android.util.Log.d("GDriveBackup", "uploadBackup starting...")
             onProgress(0.05f, "Querying local notebook state...")
 
             // 1. Query dirty notebooks (or all if forceFullSnapshot)
@@ -178,6 +179,7 @@ class GoogleDriveBackupEngine(
                 )
             )
         } catch (e: Exception) {
+            android.util.Log.e("GDriveBackup", "uploadBackup failed with exception: ${e.message}", e)
             if (e is CancellationException) throw e
             Result.failure(e)
         }

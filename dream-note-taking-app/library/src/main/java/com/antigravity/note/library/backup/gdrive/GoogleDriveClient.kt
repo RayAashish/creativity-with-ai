@@ -1,9 +1,11 @@
 package com.antigravity.note.library.backup.gdrive
 
+import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -39,28 +41,31 @@ class GoogleDriveClient(
     suspend fun queryLatestBackup(useVisibleFolder: Boolean): Result<DriveFileItem?> = withContext(ioDispatcher) {
         try {
             val token = getAuthToken()
-            val apiKey = authStorage.getApiKey().trim()
-            val keyParam = if (apiKey.isNotEmpty()) "&key=$apiKey" else ""
-            val url = if (!useVisibleFolder) {
-                "${GoogleDriveConfig.FILES_ENDPOINT}?spaces=appDataFolder&q=name='${GoogleDriveConfig.BACKUP_FILENAME}' and trashed=false&fields=files(id,name,modifiedTime,size)&orderBy=modifiedTime desc$keyParam"
-            } else {
-                "${GoogleDriveConfig.FILES_ENDPOINT}?q=name='${GoogleDriveConfig.BACKUP_FILENAME}' and trashed=false&fields=files(id,name,modifiedTime,size)&orderBy=modifiedTime desc$keyParam"
+
+            val urlBuilder = GoogleDriveConfig.FILES_ENDPOINT.toHttpUrl().newBuilder()
+            if (!useVisibleFolder) {
+                urlBuilder.addQueryParameter("spaces", "appDataFolder")
             }
+            urlBuilder.addQueryParameter("q", "name='${GoogleDriveConfig.BACKUP_FILENAME}' and trashed=false")
+            urlBuilder.addQueryParameter("fields", "files(id,name,modifiedTime,size)")
+            urlBuilder.addQueryParameter("orderBy", "modifiedTime desc")
+            val requestUrl = urlBuilder.build()
+            Log.d("GDriveBackup", "Querying latest backup: $requestUrl")
 
             val request = Request.Builder()
-                .url(url)
+                .url(requestUrl)
                 .header("Authorization", "Bearer $token")
                 .get()
                 .build()
 
             client.newCall(request).execute().use { response ->
+                val body = response.body?.string().orEmpty()
+                Log.d("GDriveBackup", "Query response code ${response.code}: $body")
                 if (!response.isSuccessful) {
                     val code = response.code
-                    val errorBody = response.body?.string().orEmpty()
-                    return@withContext Result.failure(IOException("Google Drive Query failed ($code): $errorBody"))
+                    return@withContext Result.failure(IOException("Google Drive Query failed ($code): $body"))
                 }
 
-                val body = response.body?.string().orEmpty()
                 val idMatch = Regex("\"id\"\\s*:\\s*\"(.*?)\"").find(body)
                 val nameMatch = Regex("\"name\"\\s*:\\s*\"(.*?)\"").find(body)
                 val modifiedMatch = Regex("\"modifiedTime\"\\s*:\\s*\"(.*?)\"").find(body)
@@ -77,6 +82,7 @@ class GoogleDriveClient(
                 }
             }
         } catch (e: Exception) {
+            Log.e("GDriveBackup", "queryLatestBackup error: ${e.message}", e)
             if (e is CancellationException) throw e
             Result.failure(e)
         }
@@ -96,7 +102,7 @@ class GoogleDriveClient(
             }
 
             val multipartBody = MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
+                .setType("multipart/related".toMediaType())
                 .addPart(
                     metadataJson.toRequestBody("application/json; charset=UTF-8".toMediaType())
                 )
@@ -108,31 +114,36 @@ class GoogleDriveClient(
             val requestBuilder = Request.Builder()
                 .header("Authorization", "Bearer $token")
 
-            val apiKey = authStorage.getApiKey().trim()
-            val keyParam = if (apiKey.isNotEmpty()) "&key=$apiKey" else ""
+            val urlBuilder = if (existingFileId != null) {
+                "https://www.googleapis.com/upload/drive/v3/files/$existingFileId".toHttpUrl().newBuilder()
+            } else {
+                "https://www.googleapis.com/upload/drive/v3/files".toHttpUrl().newBuilder()
+            }
+            urlBuilder.addQueryParameter("uploadType", "multipart")
+            val requestUrl = urlBuilder.build()
+            requestBuilder.url(requestUrl)
 
             if (existingFileId != null) {
-                requestBuilder.url("https://www.googleapis.com/upload/drive/v3/files/$existingFileId?uploadType=multipart$keyParam")
                 requestBuilder.patch(multipartBody)
             } else {
-                val uploadEndpoint = if (keyParam.isNotEmpty()) "${GoogleDriveConfig.UPLOAD_ENDPOINT}$keyParam" else GoogleDriveConfig.UPLOAD_ENDPOINT
-                requestBuilder.url(uploadEndpoint)
                 requestBuilder.post(multipartBody)
             }
 
+            Log.d("GDriveBackup", "Executing upload to $requestUrl (${archiveBytes.size} bytes)")
             client.newCall(requestBuilder.build()).execute().use { response ->
+                val body = response.body?.string().orEmpty()
+                Log.d("GDriveBackup", "Upload response code ${response.code}: $body")
                 if (!response.isSuccessful) {
                     val code = response.code
-                    val errorBody = response.body?.string().orEmpty()
-                    return@withContext Result.failure(IOException("Google Drive Upload failed ($code): $errorBody"))
+                    return@withContext Result.failure(IOException("Google Drive Upload failed ($code): $body"))
                 }
 
-                val body = response.body?.string().orEmpty()
                 val idMatch = Regex("\"id\"\\s*:\\s*\"(.*?)\"").find(body)
                 val id = idMatch?.groupValues?.get(1) ?: (existingFileId ?: "")
                 Result.success(DriveFileItem(id, GoogleDriveConfig.BACKUP_FILENAME, size = archiveBytes.size.toLong()))
             }
         } catch (e: Exception) {
+            Log.e("GDriveBackup", "uploadMultipart error: ${e.message}", e)
             if (e is CancellationException) throw e
             Result.failure(e)
         }
@@ -141,12 +152,14 @@ class GoogleDriveClient(
     suspend fun downloadBackup(fileId: String, destinationFile: File): Result<File> = withContext(ioDispatcher) {
         try {
             val token = getAuthToken()
-            val apiKey = authStorage.getApiKey().trim()
-            val keyParam = if (apiKey.isNotEmpty()) "&key=$apiKey" else ""
-            val url = "${GoogleDriveConfig.FILES_ENDPOINT}/$fileId?alt=media$keyParam"
+
+            val urlBuilder = "${GoogleDriveConfig.FILES_ENDPOINT}/$fileId".toHttpUrl().newBuilder()
+            urlBuilder.addQueryParameter("alt", "media")
+            val requestUrl = urlBuilder.build()
+            Log.d("GDriveBackup", "Downloading backup from $requestUrl")
 
             val request = Request.Builder()
-                .url(url)
+                .url(requestUrl)
                 .header("Authorization", "Bearer $token")
                 .get()
                 .build()
@@ -170,6 +183,7 @@ class GoogleDriveClient(
                 Result.success(destinationFile)
             }
         } catch (e: Exception) {
+            Log.e("GDriveBackup", "downloadBackup error: ${e.message}", e)
             if (e is CancellationException) throw e
             Result.failure(e)
         }

@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity() {
 
         probeController = DeviceProbeController(applicationContext)
         incomingUri = intent?.data ?: intent?.getParcelableExtra(Intent.EXTRA_STREAM)
+        handleDriveIntent(intent)
 
         setContent {
             val appSettings = remember { AppSettings(applicationContext) }
@@ -77,6 +78,27 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         incomingUri = intent.data ?: intent.getParcelableExtra(Intent.EXTRA_STREAM)
+        handleDriveIntent(intent)
+    }
+
+    private fun handleDriveIntent(intent: Intent?) {
+        if (intent == null) return
+        val token = intent.getStringExtra("SET_GDRIVE_TOKEN")
+        android.util.Log.d("GDriveBackup", "handleDriveIntent token present: ${!token.isNullOrBlank()}")
+        if (!token.isNullOrBlank()) {
+            val authStorage = com.antigravity.note.library.backup.gdrive.GoogleDriveAuthStorage(applicationContext)
+            authStorage.saveAccessToken(token.trim())
+            intent.getStringExtra("SET_GDRIVE_REFRESH_TOKEN")?.let {
+                if (it.isNotBlank()) authStorage.saveRefreshToken(it.trim())
+            }
+            intent.getStringExtra("SET_GDRIVE_EMAIL")?.let {
+                if (it.isNotBlank()) authStorage.saveAccountEmail(it.trim())
+            }
+            val useVisible = intent.getBooleanExtra("SET_GDRIVE_VISIBLE_FOLDER", true)
+            authStorage.setUseVisibleFolder(useVisible)
+            android.util.Log.d("GDriveBackup", "Saved token to authStorage, useVisible=$useVisible")
+            android.widget.Toast.makeText(applicationContext, "Google Drive connected successfully!", android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {

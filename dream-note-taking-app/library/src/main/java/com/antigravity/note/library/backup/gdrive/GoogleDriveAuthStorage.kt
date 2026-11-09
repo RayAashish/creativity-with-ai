@@ -48,7 +48,7 @@ class GoogleDriveAuthStorage(private val context: Context) {
         prefs.edit().putString(GoogleDriveConfig.PREF_ACCOUNT_EMAIL, email).apply()
     }
 
-    fun isUseVisibleFolder(): Boolean = prefs.getBoolean(GoogleDriveConfig.PREF_USE_VISIBLE_FOLDER, false)
+    fun isUseVisibleFolder(): Boolean = prefs.getBoolean(GoogleDriveConfig.PREF_USE_VISIBLE_FOLDER, true)
 
     fun setUseVisibleFolder(useVisible: Boolean) {
         prefs.edit().putBoolean(GoogleDriveConfig.PREF_USE_VISIBLE_FOLDER, useVisible).apply()
