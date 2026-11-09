@@ -1,5 +1,7 @@
 package com.antigravity.note.ui.backup
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -459,7 +461,33 @@ fun GoogleDriveBackupDialog(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Need a token? (Takes 30s):",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        TextButton(
+                            onClick = {
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://developers.google.com/oauthplayground"))
+                                    context.startActivity(intent)
+                                } catch (_: Exception) {
+                                    Toast.makeText(context, "Visit developers.google.com/oauthplayground", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        ) {
+                            Text("Generate Online ↗", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+
                     OutlinedTextField(
                         value = tokenInput,
                         onValueChange = { tokenInput = it },
@@ -480,6 +508,9 @@ fun GoogleDriveBackupDialog(
                             ) {
                                 Text("Paste", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
+                        },
+                        supportingText = {
+                            Text("Step: In Playground -> select Drive API v3 -> Authorize -> Exchange code -> Copy Access Token (ya29...)", fontSize = 10.sp)
                         },
                         modifier = Modifier.fillMaxWidth()
                     )
