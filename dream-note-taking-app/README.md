@@ -114,19 +114,31 @@ InkFlow is living proof of a new paradigm: **AI-assisted engineering makes build
 * **Debounced Page Compactor (3s):** A coroutine-based background worker compacts accumulated journal strokes into the `.inkflow` container every 3 seconds, sets `is_dirty = 1` for cloud sync, and cleans up compacted rows.
 * **Automatic Crash Recovery:** When opening any page, uncompacted journal strokes are replayed and re-rendered automatically, guaranteeing 100% data safety even after sudden battery drain or process termination.
 
-### ☁️ 10. Multi-Target Cloud Backup: Google Drive & GitHub
-* **Google Drive Lossless Cloud Backup (WhatsApp Style):**
+### ☁️ 10. Exclusive Google Drive Cloud Backup (Local-First Snapshot Sync)
+* **Dedicated Google Drive Cloud Engine:**
+  * **Seamless Cloud Sync:** Backs up your notes, notebooks, folders, and assets directly to Google Drive using Google Drive API v3.
+  * **Configured User Credentials:** Pre-configured for account `2002raysi@gmail.com` and Google Drive API Key `AIzaSyC1S3Iu_iBJxO4dKCJYNVLuqkfsW_2_u2Y`.
+  * **1-Tap Token Paste:** Built-in clipboard paste action makes entering or updating OAuth Bearer access tokens instantaneous on Android tablets.
   * **Dual Storage Scopes:** Supports both the isolated `appDataFolder` sandbox (`https://www.googleapis.com/auth/drive.appdata` - hidden from user files) and the visible root Google Drive directory (`https://www.googleapis.com/auth/drive.file`).
   * **Incremental Dirty-Tracking:** Scans `is_dirty = 1` notebooks, packages them into `inkflow_vault_backup.zip`, and generates a SHA-256 integrity manifest.
+  * **Settled-Idle Auto Sync:** Automatically queues background snapshot synchronization after 60 seconds of settled drawing/editing idle time.
   * **Multipart Resilient Uploads:** Streams backup archives using HTTP multipart requests (`uploadType=multipart`), resets dirty flags upon confirmation, and records telemetry.
   * **Atomic Staging Restore:** Restores cloud archives into `/restore_staging/`, validates SHA-256 checksums, atomically updates local notes, and triggers an immediate catalog refresh.
-* **Resilient GitHub Device Flow Sync:** Directly backup your notes to your own private GitHub repository.
-  * **Persistent Authentication:** Dual-storage security guarantees your GitHub authentication token and repository selection persist across app restarts and device reboots without repeated logins.
-  * **Authoritative Manifest Reconciliation:** Every sync reconciles all local Room database notebooks and pages, ensuring untracked and modified notes are queued and committed atomically.
-  * **Custom Repository Naming:** Choose any repository name you wish (defaulting to a clean suggestion `inkflow-notes-backup`).
-  * **Lightweight `.inkflow` Architecture:** Replaces heavy uncompressed SVGs with compact, lossless `.inkflow` binary containers, cutting sync time and repository footprint by over 90%.
-  * **Zero Lock-In:** Browse, inspect, and read notes from any laptop or desktop.
-* **Local-First Persistent Backup:** Automatically synchronizes and mirrors all notebooks to public user storage at `/storage/emulated/0/Documents/InkFlow/` every second. Survives app uninstalls and updates completely. Includes Storage Access Framework (SAF) folder picker and instant 1-tap restore.
+* **Local-First Persistent Backup:** Automatically synchronizes and mirrors all notebooks to public user storage at `/storage/emulated/0/Documents/InkFlow/` every second. Survives app updates completely. Includes Storage Access Framework (SAF) folder picker and instant 1-tap restore.
+
+### 🎨 11. 133-Color Professional RGB Palette & Lasso Recolor
+* **Professional 133-Color Grid:** Features 16 quick-access circular swatches across the top, paired with a 13-column × 9-row continuous spectrum matrix (12 hue columns across tints, vibrant pure tones, and deep shades + 1 dedicated 10-shade grayscale column).
+* **Dual Integration:** Available both in the top bar pen color menu and in the floating lasso selection action toolbar to recolor strokes instantly.
+* **Live Hex & Swatch Preview:** Displays the exact hex code `#RRGGBB` and a real-time swatch preview of the active color selection.
+
+### 🖼️ 12. Full-Featured Image Manipulation & Annotations
+* **8-Point Interactive Transform Handles:** Move and resize inserted images with precision using 4 corner and 4 edge handles.
+* **Image Action Toolbar:** Automatically appears beside selected images with:
+  * ✂️ **Crop & Rotate:** Dedicated dialog with interactive crop bounds, aspect ratio presets, and real-time preview.
+  * 🔄 **Rotate 90°:** Instant clockwise rotation.
+  * 📐 **Fit Page Width:** Scales image to neatly span the page margin.
+  * 📋 **Duplicate & Delete:** Quick cloning and removal.
+* **Seamless Inking on Images:** Full stylus writing support over inserted images so you can freely annotate diagrams, textbook excerpts, and screenshots without restrictions.
 
 ### 🌐 11. Universal Note Sharing & Blazing-Fast Web Reader
 Never get locked into proprietary file formats. InkFlow provides a complete cross-platform ecosystem:
