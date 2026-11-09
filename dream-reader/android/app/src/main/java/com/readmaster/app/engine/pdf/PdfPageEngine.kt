@@ -121,6 +121,28 @@ class PdfPageEngine(
         prefetchAdjacentPages(pageIndex, renderScale)
     }
 
+    fun prefetchPage(pageIndex: Int, targetWidth: Float, onLoaded: (() -> Unit)? = null) {
+        if (pageIndex !in 0 until pageCount) return
+        val (pageW, _) = pageDimensions.getOrNull(pageIndex) ?: return
+        val renderScale = (targetWidth / pageW.toFloat()).coerceIn(1.5f, 3.5f)
+        val key = "${pageIndex}_${(renderScale * 10).toInt()}"
+        if (pageCache.get(key) == null) {
+            requestPageRender(pageIndex, renderScale) {
+                onLoaded?.invoke()
+            }
+        }
+    }
+
+    fun getPageBitmap(pageIndex: Int, targetWidth: Float): Bitmap? {
+        if (pageIndex !in 0 until pageCount) return null
+        val (pageW, _) = pageDimensions.getOrNull(pageIndex) ?: return null
+        val renderScale = (targetWidth / pageW.toFloat()).coerceIn(1.5f, 3.5f)
+        val key = "${pageIndex}_${(renderScale * 10).toInt()}"
+        val bmp = pageCache.get(key)
+        if (bmp != null && !bmp.isRecycled) return bmp
+        return null
+    }
+
     private fun prefetchAdjacentPages(currentPage: Int, renderScale: Float) {
         if (currentPage + 1 < pageCount) {
             val nextKey = "${currentPage + 1}_${(renderScale * 10).toInt()}"
@@ -248,11 +270,14 @@ class PdfPageEngine(
 
     /**
      * Hit-tests words at world (x, y) coordinates on the page for instant lookup.
+     * Searches for direct containment first, then falls back to the nearest word within [maxDistance].
      */
-    fun findWordAt(worldX: Float, worldY: Float, pageIndex: Int): PageWord? {
+    fun findWordAt(worldX: Float, worldY: Float, pageIndex: Int, maxDistance: Float = 40f): PageWord? {
         val words = synchronized(pageWords) { pageWords[pageIndex] } ?: return null
-        // Slight padding for touch ergonomics
-        val touchPadding = 8f
+        if (words.isEmpty()) return null
+
+        // 1. Direct hit-test with slight padding
+        val touchPadding = 12f
         for (w in words) {
             val b = w.boundsInPoints
             if (worldX >= b.left - touchPadding && worldX <= b.right + touchPadding &&
@@ -260,7 +285,25 @@ class PdfPageEngine(
                 return w
             }
         }
-        return null
+
+        // 2. Nearest word fallback within maxDistance
+        var closestWord: PageWord? = null
+        var minDistanceSq = maxDistance * maxDistance
+
+        for (w in words) {
+            val b = w.boundsInPoints
+            val cx = b.centerX()
+            val cy = b.centerY()
+            val dx = worldX - cx
+            val dy = worldY - cy
+            val distSq = dx * dx + dy * dy
+            if (distSq < minDistanceSq) {
+                minDistanceSq = distSq
+                closestWord = w
+            }
+        }
+
+        return closestWord
     }
 
     fun close() {

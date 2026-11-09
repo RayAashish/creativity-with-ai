@@ -1,15 +1,24 @@
 package com.readmaster.app.engine.canvas
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.PointF
+import android.graphics.Rect
+import android.os.Build
 import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.VelocityTracker
+import android.view.ViewConfiguration
+import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
+import android.widget.OverScroller
 import androidx.ink.authoring.InProgressStrokeId
 import androidx.ink.authoring.InProgressStrokesFinishedListener
 import androidx.ink.authoring.InProgressStrokesView
@@ -26,15 +35,23 @@ import kotlin.math.abs
 import kotlin.math.hypot
 
 enum class CanvasTool {
-    READ_BOOK, // Book Reading Mode: single-finger horizontal swipe flips page like a book
-    PEN,       // Ultra-low latency pen inking (<2ms)
-    HIGHLIGHTER,
-    ERASER,
-    LASSO,
-    TEXT_SELECT
+    BOOK,        // Single-source Book Reading Mode (Pen is OFF, gestures arbitrated: curl, tap, 500ms long press, pinch zoom)
+    PEN,         // Ultra-low latency pen inking (<2ms)
+    HIGHLIGHT,   // Translucent highlighter directly on page
+    ERASER,      // Precision stroke cutting & stroke eraser
+    LASSO,       // Freehand vector lasso selection, move & color change
+    TRANSLATE;   // Dedicated instant dictionary lookup
+
+    companion object {
+        val READ_BOOK get() = BOOK
+        val HIGHLIGHTER get() = HIGHLIGHT
+        val TEXT_SELECT get() = TRANSLATE
+    }
 }
+typealias ActiveTool = CanvasTool
 
 data class StrokeAction(
+    val pageIndex: Int,
     val addedStrokes: List<Stroke> = emptyList(),
     val removedStrokes: List<Stroke> = emptyList()
 )
@@ -59,35 +76,72 @@ class InkCanvasView @JvmOverloads constructor(
     private val predictor = MotionEventPredictor.newInstance(this)
     private val identityMatrix = Matrix()
 
-    // Active tool & brush properties
-    var currentTool: CanvasTool = CanvasTool.PEN
+    // Single source of truth for Active Tool
+    var activeTool: CanvasTool = CanvasTool.BOOK
         set(value) {
-            if (field == CanvasTool.LASSO && value != CanvasTool.LASSO) {
+            val previous = field
+            field = value
+            if (previous == CanvasTool.LASSO && value != CanvasTool.LASSO) {
                 lassoTool.clearSelection()
                 dryInkView.invalidate()
                 onLassoSelectionChanged?.invoke(false)
             }
-            if (value != CanvasTool.TEXT_SELECT && value != CanvasTool.READ_BOOK) {
+            if (value != CanvasTool.TRANSLATE && value != CanvasTool.BOOK) {
                 dryInkView.selectedWordRect = null
             }
-            field = value
-            activeBrush = createBrushForTool(value, strokeColor, strokeWidth)
+            if (value == CanvasTool.BOOK) {
+                // Detach pointer handling from drawing layer entirely
+                inProgressStrokesView.isEnabled = false
+                inProgressStrokesView.isClickable = false
+            } else if (value == CanvasTool.PEN || value == CanvasTool.HIGHLIGHT) {
+                inProgressStrokesView.isEnabled = true
+                activeBrush = createBrushForTool(value, strokeColor, strokeWidth)
+            } else {
+                inProgressStrokesView.isEnabled = false
+            }
+        }
+
+    // Property alias for currentTool
+    var currentTool: CanvasTool
+        get() = activeTool
+        set(value) {
+            activeTool = value
         }
 
     var strokeColor: Int = Color.parseColor("#111318")
         set(value) {
             field = value
-            activeBrush = createBrushForTool(currentTool, value, strokeWidth)
+            activeBrush = createBrushForTool(activeTool, value, strokeWidth)
         }
 
     var strokeWidth: Float = 4.0f
         set(value) {
             field = value
-            activeBrush = createBrushForTool(currentTool, strokeColor, value)
+            activeBrush = createBrushForTool(activeTool, strokeColor, value)
         }
 
-    private var activeBrush: Brush = createBrushForTool(currentTool, strokeColor, strokeWidth)
+    private var activeBrush: Brush = createBrushForTool(activeTool, strokeColor, strokeWidth)
     private val activeStrokeIds = HashMap<Int, InProgressStrokeId>()
+    private val activeStrokePages = HashMap<Int, Int>()
+    private var lastActiveStrokeTargetPage: Int = 0
+
+    // Ultra-smooth 120Hz/144Hz Fling Physics
+    private val scroller = OverScroller(context)
+    private var velocityTracker: VelocityTracker? = null
+
+    // Fixed Screen Viewport Lock Toggle
+    var isFixedScreen: Boolean = false
+        set(value) {
+            field = value
+            if (value && width > 0 && height > 0) {
+                if (readingMode == ReadingMode.BOOK_FLIP) {
+                    autoFitPage(width.toFloat(), height.toFloat())
+                } else {
+                    fitWidth(width.toFloat(), height.toFloat())
+                    clampScrollBounds()
+                }
+            }
+        }
 
     // Undo / Redo Command Stack
     private val undoStack = mutableListOf<StrokeAction>()
@@ -159,11 +213,11 @@ class InkCanvasView @JvmOverloads constructor(
         dryInkView.pageEngine = pageEngine
 
         lassoTool.onStrokesTransformPreview = { oldStrokes, newStrokes ->
-            dryInkView.replaceStrokes(oldStrokes, newStrokes)
+            dryInkView.replacePageStrokes(dryInkView.currentPdfPageIndex, oldStrokes, newStrokes)
         }
 
         lassoTool.onStrokesTransformCommitted = { oldStrokes, newStrokes ->
-            undoStack.add(StrokeAction(addedStrokes = newStrokes, removedStrokes = oldStrokes))
+            undoStack.add(StrokeAction(pageIndex = dryInkView.currentPdfPageIndex, addedStrokes = newStrokes, removedStrokes = oldStrokes))
             redoStack.clear()
             notifyUndoRedoState()
             dryInkView.invalidate()
@@ -173,8 +227,9 @@ class InkCanvasView @JvmOverloads constructor(
             override fun onStrokesFinished(strokes: Map<InProgressStrokeId, Stroke>) {
                 val finishedList = strokes.values.toList()
                 if (finishedList.isNotEmpty()) {
-                    dryInkView.addStrokes(finishedList)
-                    undoStack.add(StrokeAction(addedStrokes = finishedList))
+                    val targetPage = lastActiveStrokeTargetPage.coerceIn(0, (pageEngine.pageCount - 1).coerceAtLeast(0))
+                    dryInkView.addPageStrokes(targetPage, finishedList)
+                    undoStack.add(StrokeAction(pageIndex = targetPage, addedStrokes = finishedList))
                     redoStack.clear()
                     notifyUndoRedoState()
                     inProgressStrokesView.removeFinishedStrokes(strokes.keys)
@@ -191,6 +246,61 @@ class InkCanvasView @JvmOverloads constructor(
                 autoFitPage(w.toFloat(), h.toFloat())
             }
         }
+        updateGestureExclusion()
+    }
+
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+        updateGestureExclusion()
+    }
+
+    private fun updateGestureExclusion() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && width > 0 && height > 0) {
+            // Exclude vertical strips along the left and right edges from Android's system edge back gesture
+            val edgeWidth = (56 * resources.displayMetrics.density).toInt()
+            val topBound = (height * 0.10f).toInt()
+            val bottomBound = (height * 0.90f).toInt()
+            val leftRect = Rect(0, topBound, edgeWidth, bottomBound)
+            val rightRect = Rect(width - edgeWidth, topBound, width, bottomBound)
+            systemGestureExclusionRects = listOf(leftRect, rightRect)
+        }
+    }
+
+    override fun computeScroll() {
+        super.computeScroll()
+        if (scroller.computeScrollOffset()) {
+            val newY = scroller.currY.toFloat()
+            dryInkView.transform.setTransform(dryInkView.transform.scale, dryInkView.transform.translationX, newY)
+            clampScrollBounds()
+            val centerPage = dryInkView.findCenterPageIndex()
+            if (centerPage != dryInkView.currentPdfPageIndex) {
+                dryInkView.currentPdfPageIndex = centerPage
+                onPageChanged?.invoke(centerPage)
+            }
+            dryInkView.invalidate()
+            postInvalidateOnAnimation()
+        }
+    }
+
+    fun clampScrollBounds() {
+        if (readingMode != ReadingMode.CONTINUOUS_SCROLL) return
+        val totalH = dryInkView.totalDocumentHeight * dryInkView.transform.scale
+        val h = height.toFloat()
+        val w = width.toFloat()
+        if (h <= 0f || totalH <= 0f) return
+
+        if (isFixedScreen) {
+            // Lock horizontal translation strictly to center
+            val pageSize = pageEngine.getPageSize(0)
+            val pw = pageSize?.first?.toFloat() ?: 612f
+            val expectedTx = (w - pw * dryInkView.transform.scale) / 2f
+
+            // Clamp vertical translation so it can't exceed document viewing bounds
+            val minY = (h - totalH).coerceAtMost(0f)
+            val maxY = 0f
+            val clampedTy = dryInkView.transform.translationY.coerceIn(minY, maxY)
+            dryInkView.transform.setTransform(dryInkView.transform.scale, expectedTx, clampedTy)
+        }
     }
 
     private fun createBrushForTool(tool: CanvasTool, color: Int, size: Float): Brush {
@@ -198,13 +308,13 @@ class InkCanvasView @JvmOverloads constructor(
             CanvasTool.PEN -> {
                 Brush.createWithColorIntArgb(StockBrushes.pressurePen(), color, size, 0.01f)
             }
-            CanvasTool.HIGHLIGHTER -> {
+            CanvasTool.HIGHLIGHT -> {
                 val highlighterSize = (size * 3.5f).coerceAtLeast(18f)
-                val translucentColor = (color and 0x00FFFFFF) or (0x55 shl 24)
+                val translucentColor = (color and 0x00FFFFFF) or (0x4D shl 24) // ~30% alpha for clean highlighting
                 Brush.createWithColorIntArgb(StockBrushes.highlighter(), translucentColor, highlighterSize, 0.01f)
             }
-            CanvasTool.ERASER, CanvasTool.LASSO, CanvasTool.TEXT_SELECT, CanvasTool.READ_BOOK -> {
-                Brush.createWithColorIntArgb(StockBrushes.marker(), color, size.coerceAtLeast(3f), 0.01f)
+            CanvasTool.ERASER, CanvasTool.LASSO, CanvasTool.TRANSLATE, CanvasTool.BOOK -> {
+                Brush.createWithColorIntArgb(StockBrushes.marker(), Color.TRANSPARENT, 1f, 0.01f)
             }
         }
     }
@@ -212,9 +322,6 @@ class InkCanvasView @JvmOverloads constructor(
     fun setPdfPage(pageIndex: Int, fitToScreen: Boolean = true) {
         if (pageIndex in 0 until pageEngine.pageCount) {
             dryInkView.currentPdfPageIndex = pageIndex
-            dryInkView.clearAllStrokes()
-            undoStack.clear()
-            redoStack.clear()
             notifyUndoRedoState()
             onPageChanged?.invoke(pageIndex)
 
@@ -243,8 +350,9 @@ class InkCanvasView @JvmOverloads constructor(
     fun deleteLassoSelection() {
         val removed = lassoTool.deleteSelected()
         if (removed.isNotEmpty()) {
-            dryInkView.removeStrokes(removed)
-            undoStack.add(StrokeAction(removedStrokes = removed))
+            val page = dryInkView.currentPdfPageIndex
+            dryInkView.removePageStrokes(page, removed)
+            undoStack.add(StrokeAction(pageIndex = page, removedStrokes = removed))
             redoStack.clear()
             notifyUndoRedoState()
             dryInkView.invalidate()
@@ -255,8 +363,9 @@ class InkCanvasView @JvmOverloads constructor(
     fun changeLassoSelectionColor(newColor: Int) {
         val (oldStrokes, newStrokes) = lassoTool.changeColor(newColor)
         if (oldStrokes.isNotEmpty()) {
-            dryInkView.replaceStrokes(oldStrokes, newStrokes)
-            undoStack.add(StrokeAction(addedStrokes = newStrokes, removedStrokes = oldStrokes))
+            val page = dryInkView.currentPdfPageIndex
+            dryInkView.replacePageStrokes(page, oldStrokes, newStrokes)
+            undoStack.add(StrokeAction(pageIndex = page, addedStrokes = newStrokes, removedStrokes = oldStrokes))
             redoStack.clear()
             notifyUndoRedoState()
             dryInkView.invalidate()
@@ -266,8 +375,9 @@ class InkCanvasView @JvmOverloads constructor(
     fun duplicateLassoSelection() {
         val duplicates = lassoTool.duplicateSelected(40f, 40f)
         if (duplicates.isNotEmpty()) {
-            dryInkView.addStrokes(duplicates)
-            undoStack.add(StrokeAction(addedStrokes = duplicates))
+            val page = dryInkView.currentPdfPageIndex
+            dryInkView.addPageStrokes(page, duplicates)
+            undoStack.add(StrokeAction(pageIndex = page, addedStrokes = duplicates))
             redoStack.clear()
             notifyUndoRedoState()
             dryInkView.invalidate()
@@ -282,14 +392,20 @@ class InkCanvasView @JvmOverloads constructor(
     }
 
     fun zoomIn() {
-        dryInkView.transform.postScale(1.25f, width / 2f, height / 2f)
-        dryInkView.invalidate()
+        if (!isFixedScreen) {
+            dryInkView.transform.postScale(1.25f, width / 2f, height / 2f)
+            dryInkView.invalidate()
+        }
     }
 
     fun zoomOut() {
-        dryInkView.transform.postScale(0.8f, width / 2f, height / 2f)
-        dryInkView.invalidate()
+        if (!isFixedScreen) {
+            dryInkView.transform.postScale(0.8f, width / 2f, height / 2f)
+            dryInkView.invalidate()
+        }
     }
+
+    var baseFitScale: Float = 1.0f
 
     fun autoFitPage(viewWidth: Float, viewHeight: Float) {
         val pageSize = pageEngine.getPageSize(dryInkView.currentPdfPageIndex) ?: return
@@ -299,11 +415,12 @@ class InkCanvasView @JvmOverloads constructor(
         // Fill 92% of screen to leave a clean book margin
         val scaleX = (viewWidth * 0.92f) / pw.toFloat()
         val scaleY = (viewHeight * 0.92f) / ph.toFloat()
-        val targetScale = minOf(scaleX, scaleY).coerceIn(0.5f, 5.0f)
+        val targetScale = minOf(scaleX, scaleY).coerceIn(0.5f, 6.0f)
 
         val tx = (viewWidth - pw * targetScale) / 2f
         val ty = (viewHeight - ph * targetScale) / 2f
 
+        baseFitScale = targetScale
         dryInkView.transform.setTransform(targetScale, tx, ty)
         dryInkView.invalidate()
     }
@@ -338,8 +455,8 @@ class InkCanvasView @JvmOverloads constructor(
             val action = undoStack.removeAt(undoStack.lastIndex)
             redoStack.add(action)
 
-            dryInkView.removeStrokes(action.addedStrokes)
-            dryInkView.addStrokes(action.removedStrokes)
+            dryInkView.removePageStrokes(action.pageIndex, action.addedStrokes)
+            dryInkView.addPageStrokes(action.pageIndex, action.removedStrokes)
             notifyUndoRedoState()
             dryInkView.invalidate()
         }
@@ -350,45 +467,145 @@ class InkCanvasView @JvmOverloads constructor(
             val action = redoStack.removeAt(redoStack.lastIndex)
             undoStack.add(action)
 
-            dryInkView.removeStrokes(action.removedStrokes)
-            dryInkView.addStrokes(action.addedStrokes)
+            dryInkView.removePageStrokes(action.pageIndex, action.removedStrokes)
+            dryInkView.addPageStrokes(action.pageIndex, action.addedStrokes)
             notifyUndoRedoState()
             dryInkView.invalidate()
         }
     }
 
     fun clearPageInk() {
-        if (dryInkView.strokes.isNotEmpty()) {
-            val current = dryInkView.strokes.toList()
-            undoStack.add(StrokeAction(removedStrokes = current))
+        val page = dryInkView.currentPdfPageIndex
+        val current = dryInkView.getPageStrokes(page).toList()
+        if (current.isNotEmpty()) {
+            undoStack.add(StrokeAction(pageIndex = page, removedStrokes = current))
             redoStack.clear()
-            dryInkView.clearAllStrokes()
+            dryInkView.clearPageStrokes(page)
             notifyUndoRedoState()
         }
     }
 
     private fun notifyUndoRedoState() {
-        onUndoRedoStateChanged?.invoke(undoStack.isNotEmpty(), redoStack.isNotEmpty())
+        post {
+            onUndoRedoStateChanged?.invoke(undoStack.isNotEmpty(), redoStack.isNotEmpty())
+        }
+    }
+
+    override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
+        // In BOOK mode, intercept all touches so drawing layer never consumes or sees them
+        if (activeTool == CanvasTool.BOOK) {
+            return true
+        }
+        return super.onInterceptTouchEvent(ev)
+    }
+
+    private var hasFiredLongPress: Boolean = false
+    private var isPageCurling: Boolean = false
+    private var curlAnimator: ValueAnimator? = null
+
+    private fun cancelPageCurlAnimation() {
+        curlAnimator?.cancel()
+        curlAnimator = null
+    }
+
+    private fun animatePageCurl(commit: Boolean, direction: CurlDirection) {
+        cancelPageCurlAnimation()
+        val startProgress = dryInkView.curlProgress
+        val endProgress = if (commit) 1.0f else 0.0f
+        val duration = if (commit) {
+            ((1f - startProgress) * 320L).toLong().coerceIn(200L, 380L)
+        } else {
+            (startProgress * 280L).toLong().coerceIn(180L, 320L)
+        }
+
+        val anim = ValueAnimator.ofFloat(startProgress, endProgress).apply {
+            this.duration = duration
+            interpolator = DecelerateInterpolator(1.5f)
+            addUpdateListener { va ->
+                val p = va.animatedValue as Float
+                dryInkView.updatePageCurl(direction, p, lastFingerY)
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    if (commit) {
+                        if (direction == CurlDirection.FORWARD) {
+                            nextPage()
+                        } else if (direction == CurlDirection.BACKWARD) {
+                            prevPage()
+                        }
+                    }
+                    dryInkView.resetPageCurl()
+                    isPageCurling = false
+                    curlAnimator = null
+                }
+
+                override fun onAnimationCancel(animation: Animator) {
+                    dryInkView.resetPageCurl()
+                    isPageCurling = false
+                    curlAnimator = null
+                }
+            })
+        }
+        curlAnimator = anim
+        anim.start()
+    }
+
+    private fun animateEdgeFlip(direction: CurlDirection) {
+        cancelPageCurlAnimation()
+        isPageCurling = true
+        dryInkView.curlDirection = direction
+        val anim = ValueAnimator.ofFloat(0f, 1.0f).apply {
+            duration = 300L
+            interpolator = DecelerateInterpolator(1.5f)
+            addUpdateListener { va ->
+                val p = va.animatedValue as Float
+                dryInkView.updatePageCurl(direction, p, height / 2f)
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    if (direction == CurlDirection.FORWARD) {
+                        nextPage()
+                    } else if (direction == CurlDirection.BACKWARD) {
+                        prevPage()
+                    }
+                    dryInkView.resetPageCurl()
+                    isPageCurling = false
+                    curlAnimator = null
+                }
+
+                override fun onAnimationCancel(animation: Animator) {
+                    dryInkView.resetPageCurl()
+                    isPageCurling = false
+                    curlAnimator = null
+                }
+            })
+        }
+        curlAnimator = anim
+        anim.start()
     }
 
     private fun scheduleLongPressLookup(screenX: Float, screenY: Float) {
         cancelPendingLongPress()
         longPressStartX = screenX
         longPressStartY = screenY
+        hasFiredLongPress = false
 
         val runnable = Runnable {
-            dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
-            val hitWord = pageEngine.findWordAt(tempPoint.x, tempPoint.y, dryInkView.currentPdfPageIndex)
-            if (hitWord != null) {
-                performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
-                dryInkView.selectedWordRect = hitWord.boundsInPoints
-                dryInkView.invalidate()
-                onWordSelected?.invoke(hitWord.text, screenX, screenY)
+            if (!isPageCurling) {
+                dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
+                val hitWord = pageEngine.findWordAt(tempPoint.x, tempPoint.y, dryInkView.currentPdfPageIndex, maxDistance = 48f)
+                if (hitWord != null) {
+                    hasFiredLongPress = true
+                    performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                    dryInkView.selectedWordRect = hitWord.boundsInPoints
+                    dryInkView.invalidate()
+                    onWordSelected?.invoke(hitWord.text, screenX, screenY)
+                }
             }
             pendingLookupRunnable = null
         }
         pendingLookupRunnable = runnable
-        longPressHandler.postDelayed(runnable, 1200L) // 1.2s intentional hold
+        longPressHandler.postDelayed(runnable, 500L) // 500ms intentional hold with touch slop cancellation
     }
 
     private fun cancelPendingLongPress() {
@@ -403,6 +620,11 @@ class InkCanvasView @JvmOverloads constructor(
         requestUnbufferedDispatch(event)
         parent?.requestDisallowInterceptTouchEvent(true)
 
+        if (velocityTracker == null) {
+            velocityTracker = VelocityTracker.obtain()
+        }
+        velocityTracker?.addMovement(event)
+
         val w = width.toFloat()
         val h = height.toFloat()
         val action = event.actionMasked
@@ -413,10 +635,15 @@ class InkCanvasView @JvmOverloads constructor(
         val screenX = event.getX(pointerIndex)
         val screenY = event.getY(pointerIndex)
 
-        // 1. Multi-Touch Tracking (Pinch-to-zoom & two-finger pan)
+        // 1. Central Multi-Touch Handler (Pinch-to-zoom & two-finger pan)
         if (pointerCount >= 2) {
             isMultiTouchSession = true
             cancelPendingLongPress()
+            if (isPageCurling) {
+                cancelPageCurlAnimation()
+                dryInkView.resetPageCurl()
+                isPageCurling = false
+            }
             isTrackingFinger = false
             isTrackingSwipe = false
             handleMultiFingerGesture(event)
@@ -434,19 +661,42 @@ class InkCanvasView @JvmOverloads constructor(
                 isTrackingFinger = false
                 isTrackingSwipe = false
             }
-            // During multi-finger liftoff, suppress single-finger moves and translation jumps
             return true
         }
 
-        // 3. Post-pinch release grace window (350ms): ignore stray liftoff moves
-        if (SystemClock.uptimeMillis() - lastMultiTouchReleaseTime < 350L) {
+        // 3. Post-pinch release grace window (300ms)
+        if (SystemClock.uptimeMillis() - lastMultiTouchReleaseTime < 300L) {
             cancelPendingLongPress()
             isTrackingFinger = false
             isTrackingSwipe = false
             return true
         }
 
-        // 4. Stylus vs Finger routing via PalmRejectionFilter
+        // =========================================================================
+        // CENTRAL GESTURE ARBITRATOR
+        // Decides routing based strictly on activeTool
+        // =========================================================================
+
+        if (activeTool == CanvasTool.BOOK) {
+            // BOOK MODE: Single source of truth.
+            // Drawing is COMPLETELY DETACHED and DISABLED. Stylus and finger do not draw.
+            // Touch routes to:
+            // - Horizontal drag: Real-time Page Curl (follows finger, dynamic fold & shadows)
+            // - Edge tap (15% margins): Short flip animation (300ms)
+            // - Long-press (500ms): Bilingual dictionary lookup with touch slop cancellation
+            // - Pinch: Zoom and Pan
+            handleBookModeGesture(event, pointerIndex, screenX, screenY, w, h)
+            return true
+        }
+
+        if (activeTool == CanvasTool.TRANSLATE) {
+            // TRANSLATE MODE: Dedicated dictionary inspection
+            handleTranslateModeGesture(event, pointerIndex, screenX, screenY)
+            return true
+        }
+
+        // DRAWING TOOLS: PEN, HIGHLIGHT, ERASER, LASSO
+        // Page-curl and page-swiping are 100% DISABLED so ink strokes never turn pages!
         val filterResult = palmFilter.evaluatePointer(event, pointerIndex, w, h)
 
         when (filterResult) {
@@ -457,11 +707,16 @@ class InkCanvasView @JvmOverloads constructor(
                 handleEraserAction(event, pointerIndex)
             }
             is PalmRejectionFilter.FilteredResult.MultiFingerGesture -> {
-                // Unified finger interaction: Book Swipe / Continuous Scroll / Zoom Pan / Long-Press Lookup
-                handleFingerInteraction(event, pointerIndex, screenX, screenY, w, h)
+                if (activeTool == CanvasTool.ERASER) {
+                    handleEraserAction(event, pointerIndex)
+                } else if (!isPalmFilterActive) {
+                    // Finger drawing enabled: draw with finger
+                    handleStylusAction(event, pointerIndex, pointerId, false)
+                }
             }
             is PalmRejectionFilter.FilteredResult.CancelStroke -> {
                 val strokeId = activeStrokeIds.remove(pointerId)
+                activeStrokePages.remove(pointerId)
                 if (strokeId != null) {
                     try {
                         inProgressStrokesView.cancelStroke(strokeId, event)
@@ -497,6 +752,15 @@ class InkCanvasView @JvmOverloads constructor(
         val worldX = tempPoint.x
         val worldY = tempPoint.y
 
+        val targetPageIndex = if (readingMode == ReadingMode.BOOK_FLIP) {
+            dryInkView.currentPdfPageIndex
+        } else {
+            dryInkView.findPageIndexAtWorldY(worldY)
+        }
+        val pageTop = if (readingMode == ReadingMode.BOOK_FLIP) 0f else dryInkView.getPageTopOffset(targetPageIndex)
+        val localX = worldX
+        val localY = worldY - pageTop
+
         // Hardware or active Eraser
         val isEraser = isHardwareEraser || currentTool == CanvasTool.ERASER ||
                 (event.buttonState and MotionEvent.BUTTON_STYLUS_PRIMARY) != 0 ||
@@ -511,16 +775,16 @@ class InkCanvasView @JvmOverloads constructor(
         if (currentTool == CanvasTool.LASSO) {
             when (action) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
-                    lassoTool.startLasso(worldX, worldY)
+                    lassoTool.startLasso(localX, localY)
                     dryInkView.invalidate()
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    if (lassoTool.continueLasso(worldX, worldY)) {
+                    if (lassoTool.continueLasso(localX, localY)) {
                         dryInkView.invalidate()
                     }
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
-                    lassoTool.finishLasso(dryInkView.strokes)
+                    lassoTool.finishLasso(dryInkView.getPageStrokes(targetPageIndex))
                     dryInkView.invalidate()
                     onLassoSelectionChanged?.invoke(lassoTool.selectedStrokes.isNotEmpty())
                 }
@@ -532,11 +796,19 @@ class InkCanvasView @JvmOverloads constructor(
         when (action) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                 predictor.record(event)
+                activeStrokePages[pointerId] = targetPageIndex
+                lastActiveStrokeTargetPage = targetPageIndex
+
+                // Map touch events to page coordinates
+                val screenToPage = Matrix(dryInkView.transform.screenToWorldMatrix).apply {
+                    postTranslate(0f, -pageTop)
+                }
+
                 val strokeId = inProgressStrokesView.startStroke(
                     event,
                     pointerId,
                     activeBrush,
-                    dryInkView.transform.screenToWorldMatrix,
+                    screenToPage,
                     identityMatrix
                 )
                 activeStrokeIds[pointerId] = strokeId
@@ -550,10 +822,12 @@ class InkCanvasView @JvmOverloads constructor(
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                 val strokeId = activeStrokeIds.remove(pointerId) ?: return
+                activeStrokePages.remove(pointerId)
                 inProgressStrokesView.finishStroke(event, pointerId, strokeId)
             }
             MotionEvent.ACTION_CANCEL -> {
                 val strokeId = activeStrokeIds.remove(pointerId) ?: return
+                activeStrokePages.remove(pointerId)
                 inProgressStrokesView.cancelStroke(strokeId, event)
             }
         }
@@ -564,17 +838,26 @@ class InkCanvasView @JvmOverloads constructor(
         val screenY = event.getY(pointerIndex)
         dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
 
+        val targetPageIndex = if (readingMode == ReadingMode.BOOK_FLIP) {
+            dryInkView.currentPdfPageIndex
+        } else {
+            dryInkView.findPageIndexAtWorldY(tempPoint.y)
+        }
+        val pageTop = if (readingMode == ReadingMode.BOOK_FLIP) 0f else dryInkView.getPageTopOffset(targetPageIndex)
+        val localX = tempPoint.x
+        val localY = tempPoint.y - pageTop
+
         val eraseRadius = (strokeWidth * 4f / dryInkView.transform.scale).coerceAtLeast(24f)
-        val mod = dryInkView.eraseStrokesWithDetails(tempPoint.x, tempPoint.y, eraseRadius, EraserMode.PRECISION)
+        val mod = dryInkView.eraseStrokesWithDetails(targetPageIndex, localX, localY, eraseRadius, EraserMode.PRECISION)
 
         if (mod.removedStrokes.isNotEmpty() || mod.addedStrokes.isNotEmpty()) {
-            undoStack.add(StrokeAction(addedStrokes = mod.addedStrokes, removedStrokes = mod.removedStrokes))
+            undoStack.add(StrokeAction(pageIndex = targetPageIndex, addedStrokes = mod.addedStrokes, removedStrokes = mod.removedStrokes))
             redoStack.clear()
             notifyUndoRedoState()
         }
     }
 
-    private fun handleFingerInteraction(
+    private fun handleBookModeGesture(
         event: MotionEvent,
         pointerIndex: Int,
         screenX: Float,
@@ -583,19 +866,29 @@ class InkCanvasView @JvmOverloads constructor(
         h: Float
     ) {
         val action = event.actionMasked
+        val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
 
         when (action) {
             MotionEvent.ACTION_DOWN -> {
+                if (!scroller.isFinished) {
+                    scroller.abortAnimation()
+                }
+                cancelPageCurlAnimation()
                 fingerStartX = screenX
                 fingerStartY = screenY
                 lastFingerX = screenX
                 lastFingerY = screenY
                 fingerStartTime = SystemClock.uptimeMillis()
                 isTrackingFinger = true
+                isPageCurling = false
+                hasFiredLongPress = false
 
-                if (currentTool == CanvasTool.READ_BOOK || currentTool == CanvasTool.TEXT_SELECT) {
-                    scheduleLongPressLookup(screenX, screenY)
-                }
+                // Pre-render adjacent pages into bitmap cache
+                pageEngine.prefetchPage(dryInkView.currentPdfPageIndex + 1, w)
+                pageEngine.prefetchPage(dryInkView.currentPdfPageIndex - 1, w)
+
+                // Schedule 500ms long press dictionary lookup
+                scheduleLongPressLookup(screenX, screenY)
             }
             MotionEvent.ACTION_MOVE -> {
                 if (!isTrackingFinger) {
@@ -607,14 +900,23 @@ class InkCanvasView @JvmOverloads constructor(
                     isTrackingFinger = true
                 }
 
-                val moveDist = hypot(screenX - fingerStartX, screenY - fingerStartY)
-                if (moveDist > 16f) {
+                val dx = screenX - fingerStartX
+                val dy = screenY - fingerStartY
+                val moveDist = hypot(dx, dy)
+
+                if (moveDist > touchSlop) {
                     cancelPendingLongPress()
                 }
 
+                if (hasFiredLongPress) {
+                    return
+                }
+
                 if (readingMode == ReadingMode.CONTINUOUS_SCROLL) {
-                    val dy = screenY - lastFingerY
-                    dryInkView.transform.postTranslate(0f, dy)
+                    // SCROLL MODE UNTOUCHED
+                    val scrollDy = screenY - lastFingerY
+                    dryInkView.transform.postTranslate(0f, scrollDy)
+                    clampScrollBounds()
                     val centerPage = dryInkView.findCenterPageIndex()
                     if (centerPage != dryInkView.currentPdfPageIndex) {
                         dryInkView.currentPdfPageIndex = centerPage
@@ -623,12 +925,42 @@ class InkCanvasView @JvmOverloads constructor(
                     dryInkView.invalidate()
                 } else {
                     // BOOK_FLIP mode
-                    if (dryInkView.transform.scale > 1.15f) {
-                        // User is zoomed in: allow smooth 1-finger panning across the page
-                        val dx = screenX - lastFingerX
-                        val dy = screenY - lastFingerY
-                        dryInkView.transform.postTranslate(dx, dy)
+                    val isZoomed = !isFixedScreen && dryInkView.transform.scale > baseFitScale * 1.15f
+                    val isHorizontal = abs(dx) > abs(dy) * 0.55f
+
+                    if (isZoomed && !isHorizontal) {
+                        // User is zoomed in and moving vertically: allow smooth 1-finger vertical panning
+                        val panDy = screenY - lastFingerY
+                        dryInkView.transform.postTranslate(0f, panDy)
                         dryInkView.invalidate()
+                    } else {
+                        // Real-time Page Curl!
+                        if (!isPageCurling && moveDist > touchSlop) {
+                            if (isHorizontal) {
+                                if (dx < 0 && dryInkView.currentPdfPageIndex < pageEngine.pageCount - 1) {
+                                    isPageCurling = true
+                                    dryInkView.curlDirection = CurlDirection.FORWARD
+                                } else if (dx > 0 && dryInkView.currentPdfPageIndex > 0) {
+                                    isPageCurling = true
+                                    dryInkView.curlDirection = CurlDirection.BACKWARD
+                                }
+                            }
+                        }
+
+                        if (isPageCurling) {
+                            val dragSpan = (w * 0.75f).coerceAtLeast(100f)
+                            val progress = if (dryInkView.curlDirection == CurlDirection.FORWARD) {
+                                (-dx / dragSpan).coerceIn(0f, 1f)
+                            } else {
+                                (dx / dragSpan).coerceIn(0f, 1f)
+                            }
+                            dryInkView.updatePageCurl(dryInkView.curlDirection, progress, screenY)
+                        } else if (isZoomed) {
+                            // User is zoomed in but not curling: allow horizontal panning
+                            val panDx = screenX - lastFingerX
+                            dryInkView.transform.postTranslate(panDx, 0f)
+                            dryInkView.invalidate()
+                        }
                     }
                 }
 
@@ -638,32 +970,51 @@ class InkCanvasView @JvmOverloads constructor(
             MotionEvent.ACTION_UP -> {
                 cancelPendingLongPress()
 
-                if (isTrackingFinger && readingMode == ReadingMode.BOOK_FLIP) {
-                    val dx = screenX - fingerStartX
-                    val dy = screenY - fingerStartY
-                    val dt = (SystemClock.uptimeMillis() - fingerStartTime).coerceAtLeast(1)
-                    val vx = (dx / dt) * 1000f
+                if (hasFiredLongPress) {
+                    isTrackingFinger = false
+                    return
+                }
 
-                    val isHorizontal = abs(dx) > abs(dy) * 0.65f
-                    val isFlick = abs(vx) > 280f && abs(dx) > 25f
-                    val isDragSwipe = abs(dx) > 45f
+                if (readingMode == ReadingMode.CONTINUOUS_SCROLL) {
+                    // CONTINUOUS_SCROLL fling physics preserved
+                    velocityTracker?.computeCurrentVelocity(1000)
+                    val vy = velocityTracker?.yVelocity ?: 0f
+                    if (abs(vy) > 250f) {
+                        val startY = dryInkView.transform.translationY.toInt()
+                        val totalH = dryInkView.totalDocumentHeight * dryInkView.transform.scale
+                        val minY = (h - totalH - 120f).coerceAtMost(0f).toInt()
+                        val maxY = 60
+                        scroller.fling(0, startY, 0, vy.toInt(), 0, 0, minY, maxY, 0, 100)
+                        postInvalidateOnAnimation()
+                    }
+                } else if (isPageCurling) {
+                    velocityTracker?.computeCurrentVelocity(1000)
+                    val vx = velocityTracker?.xVelocity ?: 0f
+                    val commitThreshold = 0.38f // 38% drag distance threshold
 
-                    if (isHorizontal && (isFlick || isDragSwipe)) {
-                        // SWIPE LIKE A BOOK! 100% reliable page turn!
-                        if (dx < 0 || vx < -280f) {
-                            nextPage()
+                    val isCommit = if (dryInkView.curlDirection == CurlDirection.FORWARD) {
+                        dryInkView.curlProgress >= commitThreshold || vx < -900f
+                    } else {
+                        dryInkView.curlProgress >= commitThreshold || vx > 900f
+                    }
+
+                    animatePageCurl(commit = isCommit, direction = dryInkView.curlDirection)
+                } else {
+                    val moveDist = hypot(screenX - fingerStartX, screenY - fingerStartY)
+                    if (moveDist < touchSlop) {
+                        // Edge Tap Navigation (15% edge zones)
+                        if (screenX > w * 0.85f && dryInkView.currentPdfPageIndex < pageEngine.pageCount - 1) {
+                            animateEdgeFlip(CurlDirection.FORWARD)
+                        } else if (screenX < w * 0.15f && dryInkView.currentPdfPageIndex > 0) {
+                            animateEdgeFlip(CurlDirection.BACKWARD)
                         } else {
-                            prevPage()
+                            // Center tap: dismiss active word highlight if any
+                            if (dryInkView.selectedWordRect != null) {
+                                dryInkView.selectedWordRect = null
+                                dryInkView.invalidate()
+                            }
                         }
-                    } else if (hypot(dx, dy) < 25f) {
-                        // Single-finger margin tap: turn page (left 18% = prev, right 18% = next)
-                        if (screenX > w * 0.82f) {
-                            nextPage()
-                        } else if (screenX < w * 0.18f) {
-                            prevPage()
-                        }
-                    } else if (dryInkView.transform.scale <= 1.15f) {
-                        // User dragged slightly but didn't swipe: snap back centered so page NEVER drifts off!
+                    } else if (isFixedScreen || dryInkView.transform.scale <= baseFitScale * 1.15f) {
                         autoFitPage(w, h)
                     }
                 }
@@ -672,13 +1023,59 @@ class InkCanvasView @JvmOverloads constructor(
             }
             MotionEvent.ACTION_CANCEL -> {
                 cancelPendingLongPress()
+                if (isPageCurling) {
+                    animatePageCurl(commit = false, direction = dryInkView.curlDirection)
+                }
                 isTrackingFinger = false
+            }
+        }
+    }
+
+    private fun handleTranslateModeGesture(
+        event: MotionEvent,
+        pointerIndex: Int,
+        screenX: Float,
+        screenY: Float
+    ) {
+        val action = event.actionMasked
+        val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
+
+        when (action) {
+            MotionEvent.ACTION_DOWN -> {
+                fingerStartX = screenX
+                fingerStartY = screenY
+                scheduleLongPressLookup(screenX, screenY)
+            }
+            MotionEvent.ACTION_MOVE -> {
+                if (hypot(screenX - fingerStartX, screenY - fingerStartY) > touchSlop) {
+                    cancelPendingLongPress()
+                }
+            }
+            MotionEvent.ACTION_UP -> {
+                if (hypot(screenX - fingerStartX, screenY - fingerStartY) < touchSlop && !hasFiredLongPress) {
+                    cancelPendingLongPress()
+                    dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
+                    val hitWord = pageEngine.findWordAt(tempPoint.x, tempPoint.y, dryInkView.currentPdfPageIndex, maxDistance = 48f)
+                    if (hitWord != null) {
+                        performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                        dryInkView.selectedWordRect = hitWord.boundsInPoints
+                        dryInkView.invalidate()
+                        onWordSelected?.invoke(hitWord.text, screenX, screenY)
+                    }
+                }
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                cancelPendingLongPress()
             }
         }
     }
 
     private fun handleMultiFingerGesture(event: MotionEvent) {
         cancelPendingLongPress()
+        if (isFixedScreen) {
+            // Viewport locked to screen when Fixed Screen is ON
+            return
+        }
         val action = event.actionMasked
 
         if (event.pointerCount >= 2) {

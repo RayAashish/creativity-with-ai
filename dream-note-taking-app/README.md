@@ -114,16 +114,19 @@ InkFlow is living proof of a new paradigm: **AI-assisted engineering makes build
 * **Debounced Page Compactor (3s):** A coroutine-based background worker compacts accumulated journal strokes into the `.inkflow` container every 3 seconds, sets `is_dirty = 1` for cloud sync, and cleans up compacted rows.
 * **Automatic Crash Recovery:** When opening any page, uncompacted journal strokes are replayed and re-rendered automatically, guaranteeing 100% data safety even after sudden battery drain or process termination.
 
-### ☁️ 10. Exclusive Google Drive Cloud Backup (Local-First Snapshot Sync)
-* **Dedicated Google Drive Cloud Engine:**
-  * **Seamless Cloud Sync:** Backs up your notes, notebooks, folders, and assets directly to Google Drive using Google Drive API v3.
-  * **Configured User Credentials:** Pre-configured for account `2002raysi@gmail.com` and Google Drive API Key `AIzaSyC1S3Iu_iBJxO4dKCJYNVLuqkfsW_2_u2Y`.
-  * **1-Tap Token Paste:** Built-in clipboard paste action makes entering or updating OAuth Bearer access tokens instantaneous on Android tablets.
-  * **Dual Storage Scopes:** Supports both the isolated `appDataFolder` sandbox (`https://www.googleapis.com/auth/drive.appdata` - hidden from user files) and the visible root Google Drive directory (`https://www.googleapis.com/auth/drive.file`).
-  * **Incremental Dirty-Tracking:** Scans `is_dirty = 1` notebooks, packages them into `inkflow_vault_backup.zip`, and generates a SHA-256 integrity manifest.
+### ☁️ 10. Exclusive Google Drive Cloud Backup (Native Google Sign-In & Silent Auto-Sync)
+* **Native One-Tap Google Sign-In (`play-services-auth`):**
+  * **Seamless Android Account Integration:** Built directly with Google Play Services Auth. Sign in with a single tap using your connected Google Account (`2002raysi@gmail.com`) with zero password or token friction.
+  * **Configured Android Client Credentials:** Secured via official Android OAuth Client ID (`662174002466-r9dj2kh3buuqvik5nr0pnln5imdcqbgf.apps.googleusercontent.com`) bound to the app's cryptographic SHA-1 signature.
+  * **Silent Background Token Renewal:** Google Play Services automatically and silently manages token lifecycle and renewals via `GoogleAuthUtil.getToken()`. Never worry about 1-hour session expirations or manual token pastes.
+  * **Fallback Credential Storage:** Encrypted SharedPreferences with AES-256 GCM master key safeguards credentials locally with optional manual OAuth Bearer token overrides.
+* **Dedicated Google Drive Cloud Engine (API v3):**
+  * **Standard `multipart/related` Protocol:** Streams backup payloads directly to `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart` using the official Google Drive multipart specification with URL-encoded query parameters.
+  * **Dedicated Visible Folder by Default:** Syncs notes directly to the Google Drive root (`https://www.googleapis.com/auth/drive.file` scope) so your `inkflow_vault_backup.zip` is always accessible, visible, and safely stored in your cloud drive.
+  * **Incremental Dirty-Tracking:** Scans `is_dirty = 1` notebooks, packages them into an atomic compressed archive, and generates a SHA-256 integrity manifest.
   * **Settled-Idle Auto Sync:** Automatically queues background snapshot synchronization after 60 seconds of settled drawing/editing idle time.
-  * **Multipart Resilient Uploads:** Streams backup archives using HTTP multipart requests (`uploadType=multipart`), resets dirty flags upon confirmation, and records telemetry.
   * **Atomic Staging Restore:** Restores cloud archives into `/restore_staging/`, validates SHA-256 checksums, atomically updates local notes, and triggers an immediate catalog refresh.
+  * **WhatsApp-Style Status Dashboard:** Real-time backup dashboard displaying exact timestamp, archive size in KB, SHA-256 checksum, and top bar `Drive Synced` status pill.
 * **Local-First Persistent Backup:** Automatically synchronizes and mirrors all notebooks to public user storage at `/storage/emulated/0/Documents/InkFlow/` every second. Survives app updates completely. Includes Storage Access Framework (SAF) folder picker and instant 1-tap restore.
 
 ### 🎨 11. 133-Color Professional RGB Palette & Lasso Recolor
@@ -140,17 +143,17 @@ InkFlow is living proof of a new paradigm: **AI-assisted engineering makes build
   * 📋 **Duplicate & Delete:** Quick cloning and removal.
 * **Seamless Inking on Images:** Full stylus writing support over inserted images so you can freely annotate diagrams, textbook excerpts, and screenshots without restrictions.
 
-### 🌐 11. Universal Note Sharing & Blazing-Fast Web Reader
+### 🌐 13. Universal Note Sharing & Blazing-Fast Web Reader
 Never get locked into proprietary file formats. InkFlow provides a complete cross-platform ecosystem:
-* **Live Web Reader ([inkflow-reader.vercel.app](https://inkflow-reader.vercel.app)):** Blazing-fast read-only web reader deployed on Vercel. Connects to your private GitHub backup repository, fetches `.inkflow` vector notes, and renders them at 60–144 fps with pan/zoom, dark/light paper themes, and full folder tree navigation.
+* **Live Web Reader ([inkflow-reader.vercel.app](https://inkflow-reader.vercel.app)):** Blazing-fast read-only web reader deployed on Vercel. Connects to your private backup repository, fetches `.inkflow` vector notes, and renders them at 60–144 fps with pan/zoom, dark/light paper themes, and full folder tree navigation.
 * **Interactive Web Notes (`.html`):** Export notes to a single, self-contained offline HTML file. Features vector canvas rendering, pan & zoom, dark/light theme toggle, and PDF/PNG export. Opens in **any** browser on Windows, macOS, Linux, iPhone, iPad, and Android with **zero software installation**.
 * **Embedded Viewer in `.inkflow` Bundles:** Every exported `.inkflow` ZIP archive bundles an `index.html` viewer at its root. Simply double-click on any PC or Mac to view your notes offline.
 * **OS File Associations:** Native Android `intent-filter` registers InkFlow for `*.inkflow` files, allowing one-tap note opening directly from file managers, Gmail, WhatsApp, and Google Drive.
 
-### 🎙️ 12. Lecture Audio Sync
+### 🎙️ 14. Lecture Audio Sync
 * Record lecture audio timestamped against your ink strokes for synchronized audio-visual playback during revision.
 
-### 🔬 13. Hardware & Digitizer Diagnostics Probe Screen
+### 🔬 15. Hardware & Digitizer Diagnostics Probe Screen
 * Built-in diagnostic suite probing real-time display refresh rate, hardware axes (pressure, tilt, orientation, hover distance), and digitizer sampling rate.
 
 ---
@@ -178,7 +181,7 @@ graph TD
         DocManager[Document Lifecycle Manager]
         BinaryLog[Append-Only Binary Stroke Logs]
         RoomDB[Room SQLite + FTS5 Full-Text Search]
-        GitSync[GitHub REST API Sync Engine]
+        DriveSync[Google Drive API v3 + Play Services Auth Sync Engine]
     end
 
     UI Layer -->|State & Chrome Only| DocManager
@@ -189,14 +192,14 @@ graph TD
     GoogleInk --> BinaryLog
     DocManager --> BinaryLog
     DocManager --> RoomDB
-    DocManager --> GitSync
+    DocManager --> DriveSync
 ```
 
 ### Module Breakdown
-* `:app`: Application entry point, navigation, main canvas screen, floating DSA window, and settings.
+* `:app`: Application entry point, navigation, main canvas screen, floating DSA window, Google Drive backup dialog with native Google Sign-In, and settings.
 * `:ink-engine`: Front-buffered low-latency canvas, Google Ink stroke pipelines, palm rejection filters, motion predictor, and shape recognition.
 * `:document`: Immutable stroke models, binary append-only page serialization, undo/redo command stack, and spatial index.
-* `:library`: Hierarchical tree (Folders, Notebooks, Pages), Room database + FTS5 search, DSA Problem Page model, and GitHub sync engine.
+* `:library`: Hierarchical tree (Folders, Notebooks, Pages), Room database + FTS5 search, DSA Problem Page model, and Google Drive API v3 cloud backup engine.
 * `:design-system`: Material 3 theme, dark/light paper palettes, typography, and adaptive tablet tokens.
 
 ---

@@ -3,6 +3,7 @@ package com.readmaster.app.ui.reader
 import android.content.Context
 import android.graphics.Color as AndroidColor
 import android.net.Uri
+import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -46,6 +47,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Highlight
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
@@ -69,10 +72,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -124,7 +129,7 @@ fun ReaderScreen(
 
     var currentPage by remember(document.id) { mutableIntStateOf(savedPage) }
     var totalPages by remember { mutableIntStateOf(document.pageCount.coerceAtLeast(1)) }
-    var currentTool by remember { mutableStateOf(CanvasTool.READ_BOOK) }
+    var currentTool by remember { mutableStateOf(CanvasTool.BOOK) }
     var currentColor by remember { mutableIntStateOf(AndroidColor.parseColor("#111318")) }
     var currentWidth by remember { mutableStateOf(4.0f) }
     var canUndo by remember { mutableStateOf(false) }
@@ -132,8 +137,28 @@ fun ReaderScreen(
     var isZenMode by remember { mutableStateOf(false) }
     var isPalmFilterActive by remember { mutableStateOf(true) }
     var readingMode by remember { mutableStateOf(ReadingMode.BOOK_FLIP) }
+    var isFixedScreen by remember { mutableStateOf(false) }
     var hasLassoSelection by remember { mutableStateOf(false) }
     var showLassoColorPicker by remember { mutableStateOf(false) }
+    var lastBackPressTime by remember { mutableStateOf(0L) }
+
+    // One-time Book Mode Reading Hint
+    val readingPrefs = remember { context.getSharedPreferences("lipi_reading_prefs", Context.MODE_PRIVATE) }
+    var hasShownBookHint by rememberSaveable {
+        mutableStateOf(readingPrefs.getBoolean("has_shown_book_mode_hint", false))
+    }
+
+    LaunchedEffect(currentTool) {
+        if (currentTool == CanvasTool.BOOK && !hasShownBookHint) {
+            hasShownBookHint = true
+            readingPrefs.edit().putBoolean("has_shown_book_mode_hint", true).apply()
+            android.widget.Toast.makeText(
+                context,
+                "Reading mode: pen is off. Select Pen to draw.",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    }
 
     // Lifecycle monitoring: immediately save page on app pause or stop
     DisposableEffect(lifecycleOwner, document.id) {
@@ -166,12 +191,23 @@ fun ReaderScreen(
     var showManualLookupDialog by remember { mutableStateOf(false) }
     var manualWordInput by remember { mutableStateOf("") }
 
+    // Defensive Back Handler: Prevents accidental system back gestures while swiping from kicking user out
     BackHandler {
         if (isZenMode) {
             isZenMode = false
         } else {
-            onUpdateDocProgress(currentPage)
-            onBackClick()
+            val now = SystemClock.uptimeMillis()
+            if (now - lastBackPressTime < 2500L) {
+                onUpdateDocProgress(currentPage)
+                onBackClick()
+            } else {
+                lastBackPressTime = now
+                android.widget.Toast.makeText(
+                    context,
+                    "Swipe or press back again to exit document",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
         }
     }
 
@@ -306,6 +342,8 @@ fun ReaderScreen(
 
                             Spacer(modifier = Modifier.width(10.dp))
 
+                            Spacer(modifier = Modifier.width(10.dp))
+
                             // Reading Mode Switch: Book Page Turn vs Continuous Vertical Scroll
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -347,6 +385,37 @@ fun ReaderScreen(
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (readingMode == ReadingMode.CONTINUOUS_SCROLL) Color.White else Color(0xFFF1F5F9)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            // Fixed Screen Lock Toggle (Locks viewport bounds so page cannot drift or exceed screen)
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(if (isFixedScreen) Color(0xFF059669) else Color(0xFF1E293B))
+                                    .border(1.dp, if (isFixedScreen) Color(0xFF10B981) else Color(0xFF475569), RoundedCornerShape(10.dp))
+                                    .clickable {
+                                        isFixedScreen = !isFixedScreen
+                                        inkCanvasView?.isFixedScreen = isFixedScreen
+                                    }
+                                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = if (isFixedScreen) Icons.Default.Lock else Icons.Default.LockOpen,
+                                        contentDescription = "Fixed Screen",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    Text(
+                                        text = if (isFixedScreen) "Fixed Screen ON" else "Fixed Screen",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
                                     )
                                 }
                             }
@@ -476,7 +545,9 @@ fun ReaderScreen(
                                 e.printStackTrace()
                             }
 
-                            currentTool = CanvasTool.READ_BOOK
+                            currentTool = CanvasTool.BOOK
+                            inkCanvasView?.activeTool = CanvasTool.BOOK
+                            isFixedScreen = isFixedScreen
 
                             // Undo / Redo listener
                             onUndoRedoStateChanged = { u, r ->
@@ -680,12 +751,12 @@ fun ReaderScreen(
                 ) {
                     // Tools: Book Read, Pen, Highlighter, Eraser, Lasso, Word Translate
                     listOf(
-                        Triple(CanvasTool.READ_BOOK, Icons.Default.AutoStories, "Book"),
+                        Triple(CanvasTool.BOOK, Icons.Default.AutoStories, "Book"),
                         Triple(CanvasTool.PEN, Icons.Default.Edit, "Pen"),
-                        Triple(CanvasTool.HIGHLIGHTER, Icons.Default.Highlight, "Highlight"),
+                        Triple(CanvasTool.HIGHLIGHT, Icons.Default.Highlight, "Highlight"),
                         Triple(CanvasTool.ERASER, Icons.Default.CleaningServices, "Eraser"),
                         Triple(CanvasTool.LASSO, Icons.Default.CropFree, "Lasso"),
-                        Triple(CanvasTool.TEXT_SELECT, Icons.Default.TextFields, "Translate")
+                        Triple(CanvasTool.TRANSLATE, Icons.Default.TextFields, "Translate")
                     ).forEach { (tool, icon, label) ->
                         val isSelected = currentTool == tool
                         Box(
@@ -694,9 +765,14 @@ fun ReaderScreen(
                                 .background(
                                     if (isSelected) Color(0xFF4F46E5) else Color.Transparent
                                 )
+                                .border(
+                                    width = if (isSelected) 1.5.dp else 0.dp,
+                                    color = if (isSelected) Color(0xFF818CF8) else Color.Transparent,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
                                 .clickable {
                                     currentTool = tool
-                                    inkCanvasView?.currentTool = tool
+                                    inkCanvasView?.activeTool = tool
                                 }
                                 .padding(horizontal = 10.dp, vertical = 6.dp),
                             contentAlignment = Alignment.Center
@@ -720,7 +796,7 @@ fun ReaderScreen(
                     }
 
                     // Stroke Intensity / Thickness Presets (Visible when Pen or Highlighter is active)
-                    if (currentTool == CanvasTool.PEN || currentTool == CanvasTool.HIGHLIGHTER) {
+                    if (currentTool == CanvasTool.PEN || currentTool == CanvasTool.HIGHLIGHT) {
                         Spacer(modifier = Modifier.width(3.dp))
                         Box(modifier = Modifier.width(1.dp).height(20.dp).background(Color(0xFF475569)))
                         Spacer(modifier = Modifier.width(3.dp))
