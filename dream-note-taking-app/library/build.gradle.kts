@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.security.crypto)
+    implementation(libs.play.services.auth)
     implementation("androidx.documentfile:documentfile:1.0.1")
 
     testImplementation(libs.junit)

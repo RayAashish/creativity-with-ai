@@ -26,6 +26,26 @@ class GoogleDriveAuthStorage(private val context: Context) {
 
     fun getAccessToken(): String? = prefs.getString(GoogleDriveConfig.PREF_ACCESS_TOKEN, null)
 
+    fun getFreshToken(): String? {
+        val email = getAccountEmail()
+        if (!email.isNullOrBlank()) {
+            try {
+                val fresh = com.google.android.gms.auth.GoogleAuthUtil.getToken(
+                    context,
+                    android.accounts.Account(email, "com.google"),
+                    "oauth2:https://www.googleapis.com/auth/drive.file"
+                )
+                if (!fresh.isNullOrBlank()) {
+                    saveAccessToken(fresh)
+                    return fresh
+                }
+            } catch (e: Exception) {
+                android.util.Log.d("GDriveBackup", "Silent token refresh check: ${e.message}")
+            }
+        }
+        return getAccessToken()
+    }
+
     fun saveAccessToken(token: String?) {
         prefs.edit().putString(GoogleDriveConfig.PREF_ACCESS_TOKEN, token).apply()
     }

@@ -20,4 +20,5 @@ object GoogleDriveConfig {
 
     const val DEFAULT_ACCOUNT_EMAIL = "2002raysi@gmail.com"
     const val DEFAULT_API_KEY = "AIzaSyC1S3Iu_iBJxO4dKCJYNVLuqkfsW_2_u2Y"
+    const val OAUTH_CLIENT_ID = "662174002466-r9dj2kh3buuqvik5nr0pnln5imdcqbgf.apps.googleusercontent.com"
 }

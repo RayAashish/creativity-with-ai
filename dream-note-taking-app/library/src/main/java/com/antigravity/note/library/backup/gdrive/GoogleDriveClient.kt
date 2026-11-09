@@ -34,7 +34,7 @@ class GoogleDriveClient(
 ) {
 
     private fun getAuthToken(): String {
-        return authStorage.getAccessToken()
+        return authStorage.getFreshToken()
             ?: throw IllegalStateException("Not authenticated with Google Drive. Please connect account first.")
     }
 

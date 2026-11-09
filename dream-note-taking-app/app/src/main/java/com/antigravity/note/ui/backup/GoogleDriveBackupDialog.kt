@@ -1,12 +1,16 @@
 package com.antigravity.note.ui.backup
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
@@ -30,6 +35,13 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Sync
+import com.google.android.gms.auth.GoogleAuthUtil
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.Scope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -99,6 +111,51 @@ fun GoogleDriveBackupDialog(
     val hasToken = authStorage.getAccessToken() != null
 
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy  hh:mm a", Locale.getDefault()) }
+
+    val signInLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                account?.let { acct ->
+                    val email = acct.email ?: "2002raysi@gmail.com"
+                    accountEmail = email
+                    authStorage.saveAccountEmail(email)
+                    scope.launch(Dispatchers.IO) {
+                        try {
+                            val token = GoogleAuthUtil.getToken(
+                                context,
+                                acct.account ?: android.accounts.Account(email, "com.google"),
+                                "oauth2:https://www.googleapis.com/auth/drive.file"
+                            )
+                            if (!token.isNullOrBlank()) {
+                                authStorage.saveAccessToken(token)
+                                authStorage.setUseVisibleFolder(true)
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, "Google Drive connected: $email", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } catch (e: Exception) {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Auth error: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                }
+            } catch (e: ApiException) {
+                Toast.makeText(context, "Sign in cancelled (${e.statusCode})", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val launchGoogleSignIn = {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+            .requestScopes(Scope("https://www.googleapis.com/auth/drive.file"))
+            .build()
+        val client = GoogleSignIn.getClient(context, gso)
+        signInLauncher.launch(client.signInIntent)
+    }
 
     Dialog(onDismissRequest = { if (!isBackingUp && !isRestoring) onDismiss() }) {
         Surface(
@@ -187,13 +244,28 @@ fun GoogleDriveBackupDialog(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
                             }
-                            OutlinedButton(
-                                onClick = { showTokenDialog = true },
-                                modifier = Modifier.height(34.dp)
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(if (hasToken) "Token" else "Connect", style = MaterialTheme.typography.labelSmall)
+                                Button(
+                                    onClick = launchGoogleSignIn,
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                    modifier = Modifier.height(34.dp)
+                                ) {
+                                    Icon(Icons.Default.AccountCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(if (hasToken) "Switch Account" else "Sign In", style = MaterialTheme.typography.labelSmall)
+                                }
+
+                                OutlinedButton(
+                                    onClick = { showTokenDialog = true },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                                    modifier = Modifier.height(34.dp)
+                                ) {
+                                    Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(14.dp))
+                                }
                             }
                         }
 
