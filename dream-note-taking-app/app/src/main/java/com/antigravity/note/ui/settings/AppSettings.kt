@@ -104,4 +104,12 @@ class AppSettings(context: Context) {
                 prefs.edit().putBoolean("is_floating_window_dark_mode", value).apply()
             }
         }
+
+    var lastActiveNotebookId: String?
+        get() = prefs.getString("last_active_notebook_id", null)
+        set(value) = prefs.edit().putString("last_active_notebook_id", value).apply()
+
+    var lastActivePageId: String?
+        get() = prefs.getString("last_active_page_id", null)
+        set(value) = prefs.edit().putString("last_active_page_id", value).apply()
 }

@@ -243,6 +243,13 @@ fun InkCanvasScreen(
 
     // Document Manager
     val docManager = remember { DocumentManager(pageRepo, "nb_two_pointers") }
+    remember(docManager, strokeJournalCompactor, appSettings) {
+        strokeJournalCompactor.activePageProvider = { docManager.currentPage.value }
+        docManager.onActivePageChanged = { nbId, pgId ->
+            appSettings.lastActiveNotebookId = nbId
+            appSettings.lastActivePageId = pgId
+        }
+    }
     val currentPage by docManager.currentPage.collectAsStateWithLifecycle()
     val pagesList by docManager.pagesList.collectAsStateWithLifecycle()
     val openLatency by docManager.lastOpenLatencyMs.collectAsStateWithLifecycle()
@@ -603,10 +610,19 @@ fun InkCanvasScreen(
         }
     }
 
-    // Seed DSA structure on launch if empty and load first problem
+    // Seed DSA structure on launch if empty and resume last active notebook/page
     LaunchedEffect(Unit) {
         val seededNotebookId = libraryRepo.seedDsaDreamTemplate()
-        docManager.initialize(seededNotebookId) {
+        val lastNotebookId = appSettings.lastActiveNotebookId
+        val lastPageId = appSettings.lastActivePageId
+
+        val targetNotebookId = if (!lastNotebookId.isNullOrEmpty() && libraryRepo.getNotebookById(lastNotebookId) != null) {
+            lastNotebookId
+        } else {
+            seededNotebookId
+        }
+
+        docManager.initialize(targetNotebookId, initialPageId = lastPageId) {
             val page = docManager.currentPage.value
             if (page != null) {
                 scope.launch {
@@ -642,14 +658,16 @@ fun InkCanvasScreen(
         }
         canvasView.onStrokeCommitted = { stroke ->
             val curPage = docManager.currentPage.value
+            val strokeId = java.util.UUID.randomUUID().toString()
             if (curPage != null) {
                 strokeJournalCompactor.recordStroke(
                     curPage.metadata.notebookId,
                     curPage.metadata.pageId,
-                    stroke
+                    stroke,
+                    strokeId
                 )
             }
-            docManager.onStrokeCommitted(stroke)
+            docManager.onStrokeCommitted(stroke, strokeId)
             scheduleSettledIdleGoogleDriveBackup()
             if (isRecordingAudio) {
                 audioRecorder.recordStrokeTiming(docManager.currentPage.value?.strokes?.size ?: 0)
@@ -682,11 +700,30 @@ fun InkCanvasScreen(
             scheduleSettledIdleGoogleDriveBackup()
         }
         canvasView.onClearCommitted = {
+            val curPage = docManager.currentPage.value
+            if (curPage != null) {
+                strokeJournalCompactor.recordPageCleared(
+                    curPage.metadata.notebookId,
+                    curPage.metadata.pageId,
+                    curPage
+                )
+            }
             docManager.onClearCommitted()
             scheduleSettledIdleGoogleDriveBackup()
         }
         canvasView.onStrokesReplaced = { oldStrokes, newStrokes ->
-            docManager.onStrokesReplaced(oldStrokes, newStrokes)
+            val curPage = docManager.currentPage.value
+            val (removedIds, addedIds) = docManager.onStrokesReplaced(oldStrokes, newStrokes)
+            if (curPage != null) {
+                val addedPairs = addedIds.zip(newStrokes)
+                strokeJournalCompactor.recordStrokesReplaced(
+                    curPage.metadata.notebookId,
+                    curPage.metadata.pageId,
+                    removedIds,
+                    addedPairs,
+                    curPage
+                )
+            }
             scheduleSettledIdleGoogleDriveBackup()
         }
         canvasView.onLassoSelectionChanged = { selected ->
@@ -726,9 +763,11 @@ fun InkCanvasScreen(
     DisposableEffect(lifecycleOwner, docManager) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
-                docManager.autoSaveCurrentPage()
                 val curPage = docManager.currentPage.value
                 if (curPage != null) {
+                    appSettings.lastActiveNotebookId = curPage.metadata.notebookId
+                    appSettings.lastActivePageId = curPage.metadata.pageId
+                    docManager.autoSaveCurrentPage()
                     scope.launch {
                         strokeJournalCompactor.flushImmediately(
                             curPage.metadata.notebookId,

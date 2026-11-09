@@ -17,6 +17,12 @@ interface StrokeJournalDao {
     @Query("SELECT * FROM stroke_journal WHERE note_id = :noteId AND page_id = :pageId AND is_compacted = 0 ORDER BY id ASC")
     suspend fun getUncompactedForPage(noteId: String, pageId: String): List<StrokeJournalEntity>
 
+    @Query("DELETE FROM stroke_journal WHERE note_id = :noteId AND page_id = :pageId AND stroke_id IN (:strokeIds)")
+    suspend fun deleteByStrokeIds(noteId: String, pageId: String, strokeIds: List<String>): Int
+
+    @Query("DELETE FROM stroke_journal WHERE note_id = :noteId AND page_id = :pageId")
+    suspend fun deleteForPage(noteId: String, pageId: String): Int
+
     @Query("UPDATE stroke_journal SET is_compacted = 1 WHERE note_id = :noteId AND page_id = :pageId AND id <= :lastId")
     suspend fun markCompacted(noteId: String, pageId: String, lastId: Long)
 

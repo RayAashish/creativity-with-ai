@@ -477,13 +477,7 @@ class InkCanvasView @JvmOverloads constructor(
         redoStack.clear()
         notifyUndoRedoState()
 
-        if (surviving.isNotEmpty()) {
-            onStrokesReplaced?.invoke(originals, surviving)
-        } else {
-            for (orig in originals) {
-                onUndoCommitted?.invoke(orig)
-            }
-        }
+        onStrokesReplaced?.invoke(originals, surviving)
     }
 
     // Gesture tracking for 2-finger pan & pinch-zoom
@@ -1329,16 +1323,12 @@ class InkCanvasView @JvmOverloads constructor(
             // Revert added strokes
             if (action.addedStrokes.isNotEmpty()) {
                 dryInkView.removeStrokes(action.addedStrokes)
-                for (s in action.addedStrokes) {
-                    onUndoCommitted?.invoke(s)
-                }
+                onStrokesReplaced?.invoke(action.addedStrokes, emptyList())
             }
             // Restore removed strokes
             if (action.removedStrokes.isNotEmpty()) {
                 dryInkView.addStrokes(action.removedStrokes)
-                for (s in action.removedStrokes) {
-                    onStrokeCommitted?.invoke(s)
-                }
+                onStrokesReplaced?.invoke(emptyList(), action.removedStrokes)
             }
         }
         redoStack.add(action)
@@ -1356,16 +1346,12 @@ class InkCanvasView @JvmOverloads constructor(
             // Re-apply added strokes
             if (action.addedStrokes.isNotEmpty()) {
                 dryInkView.addStrokes(action.addedStrokes)
-                for (s in action.addedStrokes) {
-                    onStrokeCommitted?.invoke(s)
-                }
+                onStrokesReplaced?.invoke(emptyList(), action.addedStrokes)
             }
             // Re-apply removals
             if (action.removedStrokes.isNotEmpty()) {
                 dryInkView.removeStrokes(action.removedStrokes)
-                for (s in action.removedStrokes) {
-                    onUndoCommitted?.invoke(s)
-                }
+                onStrokesReplaced?.invoke(action.removedStrokes, emptyList())
             }
         }
         undoStack.add(action)
@@ -1477,6 +1463,7 @@ class InkCanvasView @JvmOverloads constructor(
             lassoTool.clearSelection()
             dryInkView.invalidate()
             onLassoSelectionChanged?.invoke(false)
+            onStrokesReplaced?.invoke(toDelete, emptyList())
         }
     }
 

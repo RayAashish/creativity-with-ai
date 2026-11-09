@@ -196,10 +196,10 @@ graph TD
 ```
 
 ### Module Breakdown
-* `:app`: Application entry point, navigation, main canvas screen, floating DSA window, Google Drive backup dialog with native Google Sign-In, and settings.
-* `:ink-engine`: Front-buffered low-latency canvas, Google Ink stroke pipelines, palm rejection filters, motion predictor, and shape recognition.
-* `:document`: Immutable stroke models, binary append-only page serialization, undo/redo command stack, and spatial index.
-* `:library`: Hierarchical tree (Folders, Notebooks, Pages), Room database + FTS5 search, DSA Problem Page model, and Google Drive API v3 cloud backup engine.
+* `:app`: Application entry point, navigation, main canvas screen, floating DSA window, Google Drive backup dialog with native Google Sign-In, active note & page session resumption, and settings.
+* `:ink-engine`: Front-buffered low-latency canvas, Google Ink stroke pipelines, palm rejection filters, motion predictor, shape recognition, precision/stroke eraser with immediate stroke replacement synchronization, and lasso transform/delete.
+* `:document`: Immutable stroke models, binary append-only page serialization, geometric duplicate stroke protection, atomic disk save, undo/redo command stack, and spatial index.
+* `:library`: Hierarchical tree (Folders, Notebooks, Pages), Room database + FTS5 search, zero-latency SQLite WAL stroke persistence journal with erase synchronization and crash recovery, DSA Problem Page model, and Google Drive API v3 cloud backup engine.
 * `:design-system`: Material 3 theme, dark/light paper palettes, typography, and adaptive tablet tokens.
 
 ---

@@ -39,6 +39,8 @@ class StrokeJournalCompactor(
     val journalDao = database.strokeJournalDao()
     val notebookDao = database.notebookDao()
 
+    var activePageProvider: (() -> DocumentPage?)? = null
+
     /**
      * Non-blocking ingestion: immediately serializes single stroke and writes to SQLite WAL.
      * Completes off-thread in < 2ms execution budget.
@@ -68,6 +70,83 @@ class StrokeJournalCompactor(
         }
     }
 
+    /**
+     * Synchronizes stroke replacements (erasing, partial eraser splitting, lasso transformations).
+     * Deletes removed stroke entries from SQLite WAL and persists new strokes immediately.
+     */
+    fun recordStrokesReplaced(
+        noteId: String,
+        pageId: String,
+        removedStrokeIds: List<String>,
+        addedStrokes: List<Pair<String, Stroke>>,
+        activePage: DocumentPage? = null
+    ) {
+        scope.launch {
+            try {
+                if (removedStrokeIds.isNotEmpty()) {
+                    journalDao.deleteByStrokeIds(noteId, pageId, removedStrokeIds)
+                }
+                for ((strokeId, stroke) in addedStrokes) {
+                    val byteOut = ByteArrayOutputStream()
+                    PageSerializer.serializeSingleStroke(stroke, byteOut, strokeId)
+                    val blob = byteOut.toByteArray()
+                    val entry = StrokeJournalEntity(
+                        noteId = noteId,
+                        pageId = pageId,
+                        strokeId = strokeId,
+                        strokeBlob = blob,
+                        timestamp = System.currentTimeMillis(),
+                        isCompacted = false
+                    )
+                    journalDao.insert(entry)
+                }
+                notebookDao.setNotebookDirty(noteId, true)
+                if (activePage != null) {
+                    pageRepository.savePageAtomic(activePage)
+                    val uncompacted = journalDao.getUncompactedForPage(noteId, pageId)
+                    val maxId = uncompacted.maxOfOrNull { it.id }
+                    if (maxId != null && maxId > 0) {
+                        journalDao.markCompacted(noteId, pageId, maxId)
+                        journalDao.purgeCompacted()
+                    }
+                } else {
+                    scheduleDebounce(noteId, pageId)
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                android.util.Log.e("StrokeJournal", "Failed to record strokes replacement", e)
+            }
+        }
+    }
+
+    fun recordStrokesRemoved(
+        noteId: String,
+        pageId: String,
+        removedStrokeIds: List<String>,
+        activePage: DocumentPage? = null
+    ) {
+        recordStrokesReplaced(noteId, pageId, removedStrokeIds, emptyList(), activePage)
+    }
+
+    fun recordPageCleared(
+        noteId: String,
+        pageId: String,
+        activePage: DocumentPage? = null
+    ) {
+        scope.launch {
+            try {
+                journalDao.deleteForPage(noteId, pageId)
+                notebookDao.setNotebookDirty(noteId, true)
+                if (activePage != null) {
+                    pageRepository.savePageAtomic(activePage)
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                android.util.Log.e("StrokeJournal", "Failed to clear page journal", e)
+            }
+        }
+    }
+
     private fun scheduleDebounce(noteId: String, pageId: String, delayMs: Long = 3000L) {
         debounceJob?.cancel()
         debounceJob = scope.launch {
@@ -88,8 +167,12 @@ class StrokeJournalCompactor(
         compactionMutex.withLock {
             try {
                 val uncompacted = journalDao.getUncompactedForPage(noteId, pageId)
-                val targetPage: DocumentPage = if (activePage != null) {
-                    activePage
+                val liveActive = activePage ?: activePageProvider?.invoke()?.takeIf {
+                    it.metadata.notebookId == noteId && it.metadata.pageId == pageId
+                }
+
+                val targetPage: DocumentPage = if (liveActive != null) {
+                    liveActive
                 } else {
                     val (loaded, _) = try {
                         pageRepository.loadPage(noteId, pageId)
@@ -98,10 +181,14 @@ class StrokeJournalCompactor(
                     }
                     var changed = false
                     for (entry in uncompacted) {
+                        // Stale journal entries recorded before or at modifiedAt must not be resurrected
+                        if (entry.timestamp <= loaded.metadata.modifiedAt) continue
+
                         if (!loaded.strokeIds.contains(entry.strokeId)) {
                             val (_, stroke) = PageSerializer.deserializeSingleStroke(ByteArrayInputStream(entry.strokeBlob))
-                            loaded.addStroke(stroke, entry.strokeId)
-                            changed = true
+                            if (loaded.addStroke(stroke, entry.strokeId)) {
+                                changed = true
+                            }
                         }
                     }
                     loaded
@@ -125,6 +212,7 @@ class StrokeJournalCompactor(
     /**
      * Crash Recovery: inspects SQLite journal for any uncompacted records and plays them
      * on top of the document page, guaranteeing zero data loss even if process was killed.
+     * Prevents resurrected ghost strokes by filtering out entries preceding the page's modifiedAt.
      */
     suspend fun recoverUncompactedStrokes(noteId: String, page: DocumentPage): Int = withContext(ioDispatcher) {
         try {
@@ -133,20 +221,28 @@ class StrokeJournalCompactor(
 
             var recoveredCount = 0
             for (entry in uncompacted) {
+                // If entry timestamp is older than or equal to page modifiedAt,
+                // it was created before the last authoritative disk save and was already processed or erased.
+                if (entry.timestamp <= page.metadata.modifiedAt) {
+                    continue
+                }
                 if (!page.strokeIds.contains(entry.strokeId)) {
                     val (_, stroke) = PageSerializer.deserializeSingleStroke(ByteArrayInputStream(entry.strokeBlob))
-                    page.addStroke(stroke, entry.strokeId)
-                    recoveredCount++
+                    if (page.addStroke(stroke, entry.strokeId)) {
+                        recoveredCount++
+                    }
                 }
+            }
+
+            // Always mark all examined uncompacted entries as compacted & purge
+            val maxId = uncompacted.maxOfOrNull { it.id } ?: -1L
+            if (maxId > 0) {
+                journalDao.markCompacted(noteId, page.metadata.pageId, maxId)
+                journalDao.purgeCompacted()
             }
 
             if (recoveredCount > 0) {
                 pageRepository.savePageAtomic(page)
-                val maxId = uncompacted.maxOfOrNull { it.id } ?: -1L
-                if (maxId > 0) {
-                    journalDao.markCompacted(noteId, page.metadata.pageId, maxId)
-                    journalDao.purgeCompacted()
-                }
                 notebookDao.setNotebookDirty(noteId, true)
             }
             recoveredCount

@@ -30,6 +30,23 @@ data class DocumentPage(
         if (strokeIds.contains(id)) {
             return false // Deduplicate by unique stroke ID
         }
+        val sBox = stroke.shape.computeBoundingBox()
+        val isDuplicate = strokes.any { existing ->
+            if (existing.inputs.size != stroke.inputs.size || existing.brush.colorIntArgb != stroke.brush.colorIntArgb) {
+                false
+            } else {
+                val eBox = existing.shape.computeBoundingBox()
+                eBox != null && sBox != null &&
+                kotlin.math.abs(sBox.xMin - eBox.xMin) < 0.01f &&
+                kotlin.math.abs(sBox.yMin - eBox.yMin) < 0.01f &&
+                kotlin.math.abs(sBox.xMax - eBox.xMax) < 0.01f &&
+                kotlin.math.abs(sBox.yMax - eBox.yMax) < 0.01f
+            }
+        }
+        if (isDuplicate) {
+            return false
+        }
+
         strokes.add(stroke)
         strokeIds.add(id)
         metadata = metadata.copy(
@@ -39,22 +56,38 @@ data class DocumentPage(
         return true
     }
 
-    fun removeStrokes(strokesToRemove: List<Stroke>) {
+    fun removeStrokes(strokesToRemove: List<Stroke>): List<String> {
+        val removedIds = mutableListOf<String>()
         val toRemoveIndices = strokesToRemove.mapNotNull { s ->
-            val idx = strokes.indexOf(s)
+            var idx = strokes.indexOf(s)
+            if (idx < 0) {
+                val sBox = s.shape.computeBoundingBox()
+                idx = strokes.indexOfFirst { cand ->
+                    if (cand.inputs.size != s.inputs.size || cand.brush.colorIntArgb != s.brush.colorIntArgb) false
+                    else {
+                        val cBox = cand.shape.computeBoundingBox()
+                        cBox != null && sBox != null &&
+                        kotlin.math.abs(sBox.xMin - cBox.xMin) < 0.01f &&
+                        kotlin.math.abs(sBox.yMin - cBox.yMin) < 0.01f &&
+                        kotlin.math.abs(sBox.xMax - cBox.xMax) < 0.01f &&
+                        kotlin.math.abs(sBox.yMax - cBox.yMax) < 0.01f
+                    }
+                }
+            }
             if (idx >= 0) idx else null
-        }.sortedDescending()
+        }.distinct().sortedDescending()
 
         for (idx in toRemoveIndices) {
             strokes.removeAt(idx)
             if (idx < strokeIds.size) {
-                strokeIds.removeAt(idx)
+                removedIds.add(strokeIds.removeAt(idx))
             }
         }
         metadata = metadata.copy(
             strokeCount = strokes.size,
             modifiedAt = System.currentTimeMillis()
         )
+        return removedIds
     }
 
     fun removeStrokeById(id: String): Boolean {
@@ -80,13 +113,21 @@ data class DocumentPage(
         )
     }
 
-    fun replaceStrokes(oldStrokes: List<Stroke>, newStrokes: List<Stroke>, newIds: List<String>? = null) {
-        removeStrokes(oldStrokes)
+    fun replaceStrokes(
+        oldStrokes: List<Stroke>,
+        newStrokes: List<Stroke>,
+        newIds: List<String>? = null
+    ): Pair<List<String>, List<String>> {
+        val removedIds = removeStrokes(oldStrokes)
+        val addedIds = mutableListOf<String>()
         for (i in newStrokes.indices) {
             val stroke = newStrokes[i]
             val id = newIds?.getOrNull(i) ?: UUID.randomUUID().toString()
-            addStroke(stroke, id)
+            if (addStroke(stroke, id)) {
+                addedIds.add(id)
+            }
         }
+        return Pair(removedIds, addedIds)
     }
 
     fun computeContentBounds(): FloatArray? {

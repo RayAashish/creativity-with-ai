@@ -32,9 +32,11 @@ class DocumentManager(
 
     private var activeNotebookId: String = defaultNotebookId
 
+    var onActivePageChanged: ((notebookId: String, pageId: String) -> Unit)? = null
+
     fun getActiveNotebookId(): String = activeNotebookId
 
-    fun initialize(notebookId: String = defaultNotebookId, onReady: (() -> Unit)? = null) {
+    fun initialize(notebookId: String = defaultNotebookId, initialPageId: String? = null, onReady: (() -> Unit)? = null) {
         activeNotebookId = notebookId
         scope.launch {
             val pages = repository.listPages(activeNotebookId)
@@ -43,12 +45,18 @@ class DocumentManager(
                 repository.savePageAtomic(newPage)
                 _pagesList.value = listOf(newPage.metadata)
                 _currentPage.value = newPage
+                onActivePageChanged?.invoke(newPage.metadata.notebookId, newPage.metadata.pageId)
             } else {
                 _pagesList.value = pages
-                val firstMeta = pages.first()
-                val (page, latency) = repository.loadPage(activeNotebookId, firstMeta.pageId)
+                val targetMeta = if (!initialPageId.isNullOrEmpty()) {
+                    pages.firstOrNull { it.pageId == initialPageId } ?: pages.first()
+                } else {
+                    pages.first()
+                }
+                val (page, latency) = repository.loadPage(activeNotebookId, targetMeta.pageId)
                 _lastOpenLatencyMs.value = latency
                 _currentPage.value = page
+                onActivePageChanged?.invoke(page.metadata.notebookId, page.metadata.pageId)
             }
             onReady?.invoke()
         }
@@ -68,18 +76,21 @@ class DocumentManager(
             page.removeStrokes(listOf(revertedStroke))
         }
         repository.appendUndoAsync(page.metadata.notebookId, page.metadata.pageId)
+        autoSaveCurrentPage()
     }
 
     fun onClearCommitted() {
         val page = _currentPage.value ?: return
         page.clearAllStrokes()
         repository.appendClearAsync(page.metadata.notebookId, page.metadata.pageId)
+        autoSaveCurrentPage()
     }
 
-    fun onStrokesReplaced(oldStrokes: List<Stroke>, newStrokes: List<Stroke>) {
-        val page = _currentPage.value ?: return
-        page.replaceStrokes(oldStrokes, newStrokes)
+    fun onStrokesReplaced(oldStrokes: List<Stroke>, newStrokes: List<Stroke>): Pair<List<String>, List<String>> {
+        val page = _currentPage.value ?: return Pair(emptyList(), emptyList())
+        val (removedIds, addedIds) = page.replaceStrokes(oldStrokes, newStrokes)
         autoSaveCurrentPage()
+        return Pair(removedIds, addedIds)
     }
 
     fun setPaperTemplate(template: PaperTemplate) {
@@ -134,6 +145,7 @@ class DocumentManager(
             val (page, latency) = repository.loadPage(activeNotebookId, pageId)
             _lastOpenLatencyMs.value = latency
             _currentPage.value = page
+            onActivePageChanged?.invoke(page.metadata.notebookId, page.metadata.pageId)
             onLoaded?.invoke(page)
         }
     }
@@ -150,6 +162,7 @@ class DocumentManager(
             val (page, latency) = repository.loadPage(activeNotebookId, pageId)
             _lastOpenLatencyMs.value = latency
             _currentPage.value = page
+            onActivePageChanged?.invoke(page.metadata.notebookId, page.metadata.pageId)
             onLoaded?.invoke(page)
         }
     }
@@ -172,6 +185,7 @@ class DocumentManager(
             val updatedList = repository.listPages(activeNotebookId)
             _pagesList.value = updatedList
             _currentPage.value = newPage
+            onActivePageChanged?.invoke(newPage.metadata.notebookId, newPage.metadata.pageId)
             onLoaded?.invoke(newPage)
         }
     }
@@ -198,6 +212,7 @@ class DocumentManager(
             val (page, latency) = repository.loadPage(activeNotebookId, targetMeta.pageId)
             _lastOpenLatencyMs.value = latency
             _currentPage.value = page
+            onActivePageChanged?.invoke(page.metadata.notebookId, page.metadata.pageId)
             onLoaded?.invoke(page)
         }
     }

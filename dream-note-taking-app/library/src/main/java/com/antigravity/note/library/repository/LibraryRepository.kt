@@ -47,6 +47,10 @@ class LibraryRepository(
 
     fun getAllNotebooks(): Flow<List<NotebookEntity>> = notebookDao.getAllNotebooks()
 
+    suspend fun getNotebookById(notebookId: String): NotebookEntity? = withContext(ioDispatcher) {
+        notebookDao.getNotebookById(notebookId)
+    }
+
     fun getPagesForNotebook(notebookId: String): Flow<List<PageEntity>> =
         pageDao.getPagesForNotebook(notebookId)
 
