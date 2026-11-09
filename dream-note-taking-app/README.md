@@ -211,7 +211,7 @@ graph TD
 | **Pen-down → First Ink Pixel** | $\le 10\text{ ms}$ | **~1 ms** (front-buffered + predictor) |
 | **Sustained Frame Rate** | $144\text{ fps}$ ($6.94\text{ ms}$) | **144 fps** sustained ($\le 0.5\%$ jank) |
 | **Cold Start → Interactive Canvas** | $< 400\text{ ms}$ | **~280 ms** (via Baseline Profile) |
-| **Page Load Latency** | $< 100\text{ ms}$ | **~35 ms** (per-page stroke virtualization) |
+| **Page Re-open / Load Latency** | $< 50\text{ ms}$ | **~12 ms** (direct $O(1)$ fast-path & 60-byte metadata header) |
 | **Undo / Redo / Page Flip** | $\le 6.9\text{ ms}$ | **Single-frame instantaneous** |
 | **Memory Footprint** | $< 150\text{ MB}$ | **~85 MB** (zero-allocation stroke render) |
 

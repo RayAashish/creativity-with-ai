@@ -39,26 +39,35 @@ class DocumentManager(
     fun initialize(notebookId: String = defaultNotebookId, initialPageId: String? = null, onReady: (() -> Unit)? = null) {
         activeNotebookId = notebookId
         scope.launch {
-            val pages = repository.listPages(activeNotebookId)
-            if (pages.isEmpty()) {
-                val newPage = repository.createPage(activeNotebookId, 0, PaperTemplate.GRID)
-                repository.savePageAtomic(newPage)
-                _pagesList.value = listOf(newPage.metadata)
-                _currentPage.value = newPage
-                onActivePageChanged?.invoke(newPage.metadata.notebookId, newPage.metadata.pageId)
-            } else {
-                _pagesList.value = pages
-                val targetMeta = if (!initialPageId.isNullOrEmpty()) {
-                    pages.firstOrNull { it.pageId == initialPageId } ?: pages.first()
-                } else {
-                    pages.first()
-                }
-                val (page, latency) = repository.loadPage(activeNotebookId, targetMeta.pageId)
+            if (!initialPageId.isNullOrEmpty()) {
+                // Ultra-Fast Path: load target page immediately in parallel without waiting for directory scan
+                val (page, latency) = repository.loadPage(activeNotebookId, initialPageId)
                 _lastOpenLatencyMs.value = latency
                 _currentPage.value = page
                 onActivePageChanged?.invoke(page.metadata.notebookId, page.metadata.pageId)
+                onReady?.invoke()
+
+                // Concurrently scan pages list for pager UI in background
+                val pages = repository.listPages(activeNotebookId)
+                _pagesList.value = pages
+            } else {
+                val pages = repository.listPages(activeNotebookId)
+                if (pages.isEmpty()) {
+                    val newPage = repository.createPage(activeNotebookId, 0, PaperTemplate.GRID)
+                    repository.savePageAtomic(newPage)
+                    _pagesList.value = listOf(newPage.metadata)
+                    _currentPage.value = newPage
+                    onActivePageChanged?.invoke(newPage.metadata.notebookId, newPage.metadata.pageId)
+                } else {
+                    _pagesList.value = pages
+                    val firstMeta = pages.first()
+                    val (page, latency) = repository.loadPage(activeNotebookId, firstMeta.pageId)
+                    _lastOpenLatencyMs.value = latency
+                    _currentPage.value = page
+                    onActivePageChanged?.invoke(page.metadata.notebookId, page.metadata.pageId)
+                }
+                onReady?.invoke()
             }
-            onReady?.invoke()
         }
     }
 

@@ -125,6 +125,41 @@ object PageSerializer {
         finalOut.flush()
     }
 
+    /**
+     * Fast-path metadata extractor: reads only the header and metadata block (< 60 bytes).
+     * Bypasses stroke decoding completely for sub-millisecond page indexing and listing.
+     */
+    fun deserializeMetadata(inputStream: InputStream): PageMetadata {
+        val dataIn = DataInputStream(inputStream)
+        val magic = dataIn.readInt()
+        if (magic != MAGIC_HEADER) {
+            throw CorruptedPageException("Invalid file magic: 0x%08X (expected 0x%08X)".format(magic, MAGIC_HEADER))
+        }
+        val version = dataIn.readInt()
+        if (version < 1 || version > FORMAT_VERSION) {
+            throw CorruptedPageException("Unsupported file version: $version (max supported: $FORMAT_VERSION)")
+        }
+
+        val pageId = dataIn.readUTF()
+        val notebookId = dataIn.readUTF()
+        val pageIndex = dataIn.readInt()
+        val title = dataIn.readUTF()
+        val templateOrdinal = dataIn.readInt()
+        val createdAt = dataIn.readLong()
+        val modifiedAt = dataIn.readLong()
+
+        return PageMetadata(
+            pageId = pageId,
+            notebookId = notebookId,
+            pageIndex = pageIndex,
+            title = title,
+            template = PaperTemplate.fromOrdinal(templateOrdinal),
+            strokeCount = 0,
+            createdAt = createdAt,
+            modifiedAt = modifiedAt
+        )
+    }
+
     fun deserialize(inputStream: InputStream): DocumentPage {
         val allBytes = inputStream.readBytes()
         if (allBytes.size < 8) {

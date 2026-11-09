@@ -30,23 +30,6 @@ data class DocumentPage(
         if (strokeIds.contains(id)) {
             return false // Deduplicate by unique stroke ID
         }
-        val sBox = stroke.shape.computeBoundingBox()
-        val isDuplicate = strokes.any { existing ->
-            if (existing.inputs.size != stroke.inputs.size || existing.brush.colorIntArgb != stroke.brush.colorIntArgb) {
-                false
-            } else {
-                val eBox = existing.shape.computeBoundingBox()
-                eBox != null && sBox != null &&
-                kotlin.math.abs(sBox.xMin - eBox.xMin) < 0.01f &&
-                kotlin.math.abs(sBox.yMin - eBox.yMin) < 0.01f &&
-                kotlin.math.abs(sBox.xMax - eBox.xMax) < 0.01f &&
-                kotlin.math.abs(sBox.yMax - eBox.yMax) < 0.01f
-            }
-        }
-        if (isDuplicate) {
-            return false
-        }
-
         strokes.add(stroke)
         strokeIds.add(id)
         metadata = metadata.copy(

@@ -245,8 +245,8 @@ class PageRepository(
             try {
                 FileInputStream(file).use { fis ->
                     BufferedInputStream(fis).use { bis ->
-                        val page = PageSerializer.deserialize(bis)
-                        list.add(page.metadata)
+                        val meta = PageSerializer.deserializeMetadata(bis)
+                        list.add(meta)
                     }
                 }
             } catch (e: Exception) {

@@ -610,32 +610,44 @@ fun InkCanvasScreen(
         }
     }
 
-    // Seed DSA structure on launch if empty and resume last active notebook/page
+    // Resume last active notebook/page with ultra-fast path (< 10ms)
     LaunchedEffect(Unit) {
-        val seededNotebookId = libraryRepo.seedDsaDreamTemplate()
         val lastNotebookId = appSettings.lastActiveNotebookId
         val lastPageId = appSettings.lastActivePageId
 
-        val targetNotebookId = if (!lastNotebookId.isNullOrEmpty() && libraryRepo.getNotebookById(lastNotebookId) != null) {
+        val targetNotebookId = if (!lastNotebookId.isNullOrEmpty()) {
             lastNotebookId
         } else {
-            seededNotebookId
+            libraryRepo.seedDsaDreamTemplate()
         }
 
         docManager.initialize(targetNotebookId, initialPageId = lastPageId) {
             val page = docManager.currentPage.value
             if (page != null) {
+                // Instantly load the page into canvasView without waiting
+                canvasView.loadPage(page, docManager.lastOpenLatencyMs.value, pageRepo.getAssetsDir(page.metadata.notebookId))
+
+                // Asynchronously verify SQLite WAL journal in background without blocking canvas render
                 scope.launch {
                     val recovered = strokeJournalCompactor.recoverUncompactedStrokes(page.metadata.notebookId, page)
                     if (recovered > 0) {
-                        Toast.makeText(context, "Recovered $recovered unsaved stroke(s) from journal", Toast.LENGTH_SHORT).show()
+                        canvasView.loadPage(page, docManager.lastOpenLatencyMs.value, pageRepo.getAssetsDir(page.metadata.notebookId))
                     }
-                    canvasView.loadPage(page, docManager.lastOpenLatencyMs.value, pageRepo.getAssetsDir(page.metadata.notebookId))
                 }
             }
         }
+
+        // Run background seeding if resuming a saved note
+        if (!lastNotebookId.isNullOrEmpty()) {
+            scope.launch {
+                libraryRepo.seedDsaDreamTemplate()
+            }
+        }
+
         if (!canvasView.digitalInkManager.isModelDownloaded()) {
-            canvasView.digitalInkManager.downloadModelIfNeeded()
+            scope.launch {
+                canvasView.digitalInkManager.downloadModelIfNeeded()
+            }
         }
     }
 

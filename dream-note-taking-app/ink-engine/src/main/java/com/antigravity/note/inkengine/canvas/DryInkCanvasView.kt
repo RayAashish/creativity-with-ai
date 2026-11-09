@@ -472,22 +472,7 @@ class DryInkCanvasView @JvmOverloads constructor(
         strokes.clear()
         darkStrokeCache.clear()
         lightStrokeCache.clear()
-        val unique = mutableListOf<Stroke>()
-        for (s in newStrokes) {
-            val sBox = s.shape.computeBoundingBox()
-            val isDup = unique.any { u ->
-                val uBox = u.shape.computeBoundingBox()
-                u.inputs.size == s.inputs.size &&
-                u.brush.colorIntArgb == s.brush.colorIntArgb &&
-                sBox != null && uBox != null &&
-                kotlin.math.abs(sBox.xMin - uBox.xMin) < 0.01f &&
-                kotlin.math.abs(sBox.yMin - uBox.yMin) < 0.01f &&
-                kotlin.math.abs(sBox.xMax - uBox.xMax) < 0.01f &&
-                kotlin.math.abs(sBox.yMax - uBox.yMax) < 0.01f
-            }
-            if (!isDup) unique.add(s)
-        }
-        strokes.addAll(unique)
+        strokes.addAll(newStrokes)
         spatialIndex.rebuild(strokes)
         invalidate()
     }
