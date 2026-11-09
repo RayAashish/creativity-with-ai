@@ -121,22 +121,6 @@ class PalmRejectionFilter(
             return FilteredResult.StylusAction(pointerIndex, isEraser)
         }
 
-        // --- FINGER / PALM HANDLING ---
-        if (config.inputMode == InputMode.PEN_ONLY) {
-            palmsRejectedCount++
-            pointerClassifications.put(pointerId, PointerStatus.REJECTED_PALM_PEN_PRIORITY)
-            updateDebugInfo(pointerId, toolType, x, y, touchMajor, touchMinor, PointerStatus.REJECTED_PALM_PEN_PRIORITY, now)
-            return FilteredResult.RejectedPalm
-        }
-
-        // Layer 1: Stylus Priority - ignore all touches if pen is down or hovering
-        if (isStylusDown || isStylusHovering) {
-            palmsRejectedCount++
-            pointerClassifications.put(pointerId, PointerStatus.REJECTED_PALM_PEN_PRIORITY)
-            updateDebugInfo(pointerId, toolType, x, y, touchMajor, touchMinor, PointerStatus.REJECTED_PALM_PEN_PRIORITY, now)
-            return FilteredResult.RejectedPalm
-        }
-
         // Clean up pointer origin tracking on lift
         if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
             pointerClassifications.remove(pointerId)
@@ -145,13 +129,31 @@ class PalmRejectionFilter(
         }
 
         // PRIORITY CHECK: Multi-finger gestures (2-finger scroll, pan, pinch-zoom, 2-finger tap)
-        // If 2 or more fingers are touching the screen and stylus is not down,
-        // this is definitively a navigation gesture. It must NEVER be dropped by the
-        // single-finger grace window, contact size (touchMajor), or bezel edge zone rejection!
-        if (event.pointerCount >= 2) {
+        // If 2 or more fingers are touching the screen and stylus is not actively pressed down,
+        // this is definitively a navigation gesture. It must NEVER be blocked by:
+        // - Stylus hover signals (e.g. holding stylus in hand while scrolling)
+        // - Single-finger grace window / hysteresis
+        // - Contact size (touchMajor) or edge zone margins
+        // - PEN_ONLY mode (users still expect 2-finger pan/zoom in pen-only drawing mode)
+        if (event.pointerCount >= 2 && !isStylusDown) {
             pointerClassifications.put(pointerId, PointerStatus.ACCEPTED_GESTURE)
             updateDebugInfo(pointerId, toolType, x, y, touchMajor, touchMinor, PointerStatus.ACCEPTED_GESTURE, now)
             return FilteredResult.MultiFingerGesture(event.pointerCount)
+        }
+
+        if (config.inputMode == InputMode.PEN_ONLY) {
+            palmsRejectedCount++
+            pointerClassifications.put(pointerId, PointerStatus.REJECTED_PALM_PEN_PRIORITY)
+            updateDebugInfo(pointerId, toolType, x, y, touchMajor, touchMinor, PointerStatus.REJECTED_PALM_PEN_PRIORITY, now)
+            return FilteredResult.RejectedPalm
+        }
+
+        // Layer 1: Stylus Priority - ignore single touches if pen is down or hovering
+        if (isStylusDown || isStylusHovering) {
+            palmsRejectedCount++
+            pointerClassifications.put(pointerId, PointerStatus.REJECTED_PALM_PEN_PRIORITY)
+            updateDebugInfo(pointerId, toolType, x, y, touchMajor, touchMinor, PointerStatus.REJECTED_PALM_PEN_PRIORITY, now)
+            return FilteredResult.RejectedPalm
         }
 
         // Layer 1: Hysteresis Grace Window after pen lift (applies only to single-finger palm touches)

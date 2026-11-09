@@ -39,10 +39,12 @@ class GoogleDriveClient(
     suspend fun queryLatestBackup(useVisibleFolder: Boolean): Result<DriveFileItem?> = withContext(ioDispatcher) {
         try {
             val token = getAuthToken()
+            val apiKey = authStorage.getApiKey().trim()
+            val keyParam = if (apiKey.isNotEmpty()) "&key=$apiKey" else ""
             val url = if (!useVisibleFolder) {
-                "${GoogleDriveConfig.FILES_ENDPOINT}?spaces=appDataFolder&q=name='${GoogleDriveConfig.BACKUP_FILENAME}' and trashed=false&fields=files(id,name,modifiedTime,size)&orderBy=modifiedTime desc"
+                "${GoogleDriveConfig.FILES_ENDPOINT}?spaces=appDataFolder&q=name='${GoogleDriveConfig.BACKUP_FILENAME}' and trashed=false&fields=files(id,name,modifiedTime,size)&orderBy=modifiedTime desc$keyParam"
             } else {
-                "${GoogleDriveConfig.FILES_ENDPOINT}?q=name='${GoogleDriveConfig.BACKUP_FILENAME}' and trashed=false&fields=files(id,name,modifiedTime,size)&orderBy=modifiedTime desc"
+                "${GoogleDriveConfig.FILES_ENDPOINT}?q=name='${GoogleDriveConfig.BACKUP_FILENAME}' and trashed=false&fields=files(id,name,modifiedTime,size)&orderBy=modifiedTime desc$keyParam"
             }
 
             val request = Request.Builder()
@@ -106,11 +108,15 @@ class GoogleDriveClient(
             val requestBuilder = Request.Builder()
                 .header("Authorization", "Bearer $token")
 
+            val apiKey = authStorage.getApiKey().trim()
+            val keyParam = if (apiKey.isNotEmpty()) "&key=$apiKey" else ""
+
             if (existingFileId != null) {
-                requestBuilder.url("https://www.googleapis.com/upload/drive/v3/files/$existingFileId?uploadType=multipart")
+                requestBuilder.url("https://www.googleapis.com/upload/drive/v3/files/$existingFileId?uploadType=multipart$keyParam")
                 requestBuilder.patch(multipartBody)
             } else {
-                requestBuilder.url(GoogleDriveConfig.UPLOAD_ENDPOINT)
+                val uploadEndpoint = if (keyParam.isNotEmpty()) "${GoogleDriveConfig.UPLOAD_ENDPOINT}$keyParam" else GoogleDriveConfig.UPLOAD_ENDPOINT
+                requestBuilder.url(uploadEndpoint)
                 requestBuilder.post(multipartBody)
             }
 
@@ -135,7 +141,9 @@ class GoogleDriveClient(
     suspend fun downloadBackup(fileId: String, destinationFile: File): Result<File> = withContext(ioDispatcher) {
         try {
             val token = getAuthToken()
-            val url = "${GoogleDriveConfig.FILES_ENDPOINT}/$fileId?alt=media"
+            val apiKey = authStorage.getApiKey().trim()
+            val keyParam = if (apiKey.isNotEmpty()) "&key=$apiKey" else ""
+            val url = "${GoogleDriveConfig.FILES_ENDPOINT}/$fileId?alt=media$keyParam"
 
             val request = Request.Builder()
                 .url(url)

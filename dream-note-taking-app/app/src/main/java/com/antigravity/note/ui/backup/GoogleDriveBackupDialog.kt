@@ -465,6 +465,22 @@ fun GoogleDriveBackupDialog(
                         onValueChange = { tokenInput = it },
                         label = { Text("OAuth Bearer Token") },
                         placeholder = { Text("ya29.a0...") },
+                        trailingIcon = {
+                            TextButton(
+                                onClick = {
+                                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                                    val clip = clipboard?.primaryClip?.getItemAt(0)?.text?.toString()
+                                    if (!clip.isNullOrBlank()) {
+                                        tokenInput = clip.trim()
+                                        Toast.makeText(context, "Pasted token from clipboard", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Clipboard is empty", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            ) {
+                                Text("Paste", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

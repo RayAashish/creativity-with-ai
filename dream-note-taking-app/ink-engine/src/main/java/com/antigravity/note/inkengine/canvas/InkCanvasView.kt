@@ -722,6 +722,24 @@ class InkCanvasView @JvmOverloads constructor(
 
         // Allow finger/stylus touch to resize/move active image selection handles!
         val selImg = selectedImage
+        if (event.pointerCount == 1 && selImg == null && event.getToolType(pointerIndex) == MotionEvent.TOOL_TYPE_FINGER && currentTool != CanvasTool.STROKE_ERASER) {
+            val screenX = event.getX(pointerIndex)
+            val screenY = event.getY(pointerIndex)
+            dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                val hit = dryInkView.findImageAt(tempPoint.x, tempPoint.y)
+                if (hit != null) {
+                    selectImage(hit)
+                    isTransformingImage = true
+                    activeImageHandle = ImageHandle.BODY
+                    imageTransformStartBounds.set(hit.x, hit.y, hit.x + hit.width, hit.y + hit.height)
+                    imageTransformDownX = tempPoint.x
+                    imageTransformDownY = tempPoint.y
+                    dryInkView.invalidate()
+                    return true
+                }
+            }
+        }
         if (event.pointerCount == 1 && selImg != null) {
             val screenX = event.getX(pointerIndex)
             val screenY = event.getY(pointerIndex)
@@ -1220,6 +1238,18 @@ class InkCanvasView @JvmOverloads constructor(
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_DOWN -> {
+                    // Instantly cancel any accidental in-progress stroke started by the first finger contact
+                    if (activeStrokeIds.isNotEmpty()) {
+                        for ((_, sId) in activeStrokeIds) {
+                            try {
+                                inProgressStrokesView.cancelStroke(sId, event)
+                            } catch (_: Exception) {}
+                        }
+                        activeStrokeIds.clear()
+                        strokePoints.clear()
+                        removeCallbacks(holdToSnapRunnable)
+                        removeCallbacks(holdToEraseRunnable)
+                    }
                     isGestureActive = true
                     lastGestureDistance = currentDist
                     lastGestureCenterX = centerX
@@ -1232,6 +1262,17 @@ class InkCanvasView @JvmOverloads constructor(
                         // Resilient gesture recovery:
                         // If POINTER_DOWN was missed or merged by Android OS,
                         // activate gesture tracking immediately on first MOVE!
+                        if (activeStrokeIds.isNotEmpty()) {
+                            for ((_, sId) in activeStrokeIds) {
+                                try {
+                                    inProgressStrokesView.cancelStroke(sId, event)
+                                } catch (_: Exception) {}
+                            }
+                            activeStrokeIds.clear()
+                            strokePoints.clear()
+                            removeCallbacks(holdToSnapRunnable)
+                            removeCallbacks(holdToEraseRunnable)
+                        }
                         isGestureActive = true
                         lastGestureDistance = currentDist
                         lastGestureCenterX = centerX

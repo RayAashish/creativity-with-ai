@@ -11,13 +11,10 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.antigravity.note.document.storage.PageRepository
-import com.antigravity.note.library.backup.api.SafeLoggingInterceptor
-import com.antigravity.note.library.backup.auth.EncryptedTokenStorage
-import com.antigravity.note.library.backup.engine.BackupEngine
-import com.antigravity.note.library.backup.engine.BackupResult
-import com.antigravity.note.library.backup.engine.GitHubGitDataClient
+import com.antigravity.note.library.backup.gdrive.GoogleDriveAuthStorage
+import com.antigravity.note.library.backup.gdrive.GoogleDriveBackupEngine
+import com.antigravity.note.library.backup.gdrive.GoogleDriveClient
 import com.antigravity.note.library.db.NoteDatabase
-import okhttp3.OkHttpClient
 import java.io.File
 import java.util.concurrent.TimeUnit
 
@@ -30,47 +27,44 @@ class BackupWorker(
         val database = NoteDatabase.getInstance(applicationContext)
         val rootDir = File(applicationContext.filesDir, "notebooks")
         val pageRepository = PageRepository(rootDir)
-        val tokenStorage = EncryptedTokenStorage(applicationContext)
+        val authStorage = GoogleDriveAuthStorage(applicationContext)
 
-        val okHttpClient = OkHttpClient.Builder()
-            .addInterceptor(SafeLoggingInterceptor())
-            .build()
-        val gitDataClient = GitHubGitDataClient(tokenStorage, okHttpClient)
+        if (authStorage.getAccessToken() == null) {
+            // No Google Drive token configured yet; finish cleanly without failing
+            return Result.success()
+        }
 
-        val engine = BackupEngine(
+        val driveClient = GoogleDriveClient(authStorage)
+        val engine = GoogleDriveBackupEngine(
             database = database,
             pageRepository = pageRepository,
-            tokenStorage = tokenStorage,
-            gitDataClient = gitDataClient
+            authStorage = authStorage,
+            driveClient = driveClient
         )
 
         val isManual = inputData.getBoolean("is_manual", false)
-        return when (val result = engine.performBackup(isManualExpedited = isManual)) {
-            is BackupResult.Success, is BackupResult.UpToDate, is BackupResult.Conflicted -> {
-                Result.success()
-            }
-            is BackupResult.Failure -> {
-                if (runAttemptCount < 3) {
-                    Result.retry()
-                } else {
-                    Result.failure()
-                }
+        val backupResult = engine.uploadBackup(forceFullSnapshot = isManual)
+
+        return if (backupResult.isSuccess) {
+            Result.success()
+        } else {
+            val exception = backupResult.exceptionOrNull()
+            android.util.Log.e("BackupWorker", "Google Drive backup failed in worker", exception)
+            if (runAttemptCount < 3) {
+                Result.retry()
+            } else {
+                Result.failure()
             }
         }
     }
 
     companion object {
-        private const val UNIQUE_PERIODIC_WORK_NAME = "inkflow_periodic_github_backup"
-        private const val UNIQUE_ONE_TIME_WORK_NAME = "inkflow_immediate_github_backup"
+        private const val UNIQUE_PERIODIC_WORK_NAME = "inkflow_periodic_gdrive_backup"
+        private const val UNIQUE_ONE_TIME_WORK_NAME = "inkflow_immediate_gdrive_backup"
 
         fun schedulePeriodic(context: Context) {
-            val tokenStorage = EncryptedTokenStorage(context)
-            val networkType = if (tokenStorage.isWifiOnly()) NetworkType.UNMETERED else NetworkType.CONNECTED
-            val requiresCharging = tokenStorage.isChargingOnly()
-
             val constraints = Constraints.Builder()
-                .setRequiredNetworkType(networkType)
-                .setRequiresCharging(requiresCharging)
+                .setRequiredNetworkType(NetworkType.CONNECTED)
                 .setRequiresBatteryNotLow(true)
                 .build()
 

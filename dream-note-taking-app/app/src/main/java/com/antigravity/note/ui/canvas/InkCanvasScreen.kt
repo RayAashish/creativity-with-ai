@@ -161,20 +161,13 @@ import com.antigravity.note.document.storage.PageRepository
 import com.antigravity.note.inkengine.canvas.CanvasTool
 import com.antigravity.note.inkengine.canvas.InkCanvasView
 import com.antigravity.note.inkengine.palm.InputMode
-import com.antigravity.note.library.backup.api.SafeLoggingInterceptor
-import com.antigravity.note.library.backup.auth.AuthState
-import com.antigravity.note.library.backup.auth.EncryptedTokenStorage
-import com.antigravity.note.library.backup.auth.GitHubDeviceFlowClient
-import com.antigravity.note.library.backup.repo.GitHubRepoManager
 import com.antigravity.note.library.backup.worker.BackupWorker
-import com.antigravity.note.ui.backup.BackupStatusChip
-import com.antigravity.note.ui.backup.BackupSyncStatus
-import com.antigravity.note.ui.backup.GitHubBackupDialog
 import com.antigravity.note.ui.backup.GoogleDriveBackupDialog
 import com.antigravity.note.library.backup.gdrive.GoogleDriveAuthStorage
 import com.antigravity.note.library.backup.gdrive.GoogleDriveBackupEngine
 import com.antigravity.note.library.backup.gdrive.GoogleDriveClient
 import com.antigravity.note.library.backup.gdrive.GoogleDriveRestoreEngine
+import androidx.compose.material.icons.filled.CloudDone
 import com.antigravity.note.library.journal.StrokeJournalCompactor
 import com.antigravity.note.document.storage.ImageProcessor
 import androidx.compose.material.icons.filled.Image
@@ -460,34 +453,26 @@ fun InkCanvasScreen(
             val screenW = context.resources.displayMetrics.widthPixels.toFloat()
             val screenH = context.resources.displayMetrics.heightPixels.toFloat()
             val density = context.resources.displayMetrics.density
-            val toolbarW = if (lassoCardWidthPx > 50f) lassoCardWidthPx else 560f * density
-            val toolbarH = if (lassoCardHeightPx > 20f) lassoCardHeightPx else 64f * density
-            val margin = 20f * density
+            val toolbarW = if (lassoCardWidthPx > 50f) lassoCardWidthPx else 420f * density
+            val toolbarH = if (lassoCardHeightPx > 20f) lassoCardHeightPx else 56f * density
+            val margin = 16f * density
             val minX = margin
             val maxX = (screenW - toolbarW - margin).coerceAtLeast(minX)
-            val minY = 100f * density
-            val maxY = (screenH - toolbarH - 90f * density).coerceAtLeast(minY)
+            val minY = 90f * density
+            val maxY = (screenH - toolbarH - 80f * density).coerceAtLeast(minY)
 
             if (screenBounds != null) {
-                val canFitRight = (screenBounds.right + toolbarW + margin) <= screenW
-                val canFitLeft = (screenBounds.left - toolbarW - margin) >= 0f
-
-                val (targetX, targetY) = when {
-                    canFitRight -> {
-                        Pair(screenBounds.right + 16f, screenBounds.top)
-                    }
-                    canFitLeft -> {
-                        Pair(screenBounds.left - toolbarW - 16f, screenBounds.top)
-                    }
-                    screenBounds.top - toolbarH - 16f >= minY -> {
-                        Pair(screenBounds.centerX() - toolbarW / 2f, screenBounds.top - toolbarH - 16f)
-                    }
-                    screenBounds.bottom + toolbarH + 16f <= maxY -> {
-                        Pair(screenBounds.centerX() - toolbarW / 2f, screenBounds.bottom + 16f)
-                    }
-                    else -> {
-                        Pair((screenW - toolbarW) / 2f, minY + 16f)
-                    }
+                // Center horizontally on the selection so it never goes off either side
+                val targetX = (screenBounds.centerX() - toolbarW / 2f).coerceIn(minX, maxX)
+                // Prefer placing above selection
+                var targetY = screenBounds.top - toolbarH - 12f * density
+                // If above hits top chrome, place below selection
+                if (targetY < minY) {
+                    targetY = screenBounds.bottom + 12f * density
+                }
+                // If below exceeds bottom chrome, clamp inside safe viewport
+                if (targetY > maxY) {
+                    targetY = (screenBounds.top - toolbarH - 8f * density).coerceIn(minY, maxY)
                 }
 
                 lassoToolbarOffset = Offset(
@@ -495,7 +480,10 @@ fun InkCanvasScreen(
                     targetY.coerceIn(minY, maxY)
                 )
             } else {
-                lassoToolbarOffset = Offset((screenW - toolbarW) / 2f, maxY - 30f)
+                lassoToolbarOffset = Offset(
+                    ((screenW - toolbarW) / 2f).coerceIn(minX, maxX),
+                    (screenH * 0.45f).coerceIn(minY, maxY)
+                )
             }
         } else {
             lassoToolbarOffset = null
@@ -508,24 +496,22 @@ fun InkCanvasScreen(
             val screenW = context.resources.displayMetrics.widthPixels.toFloat()
             val screenH = context.resources.displayMetrics.heightPixels.toFloat()
             val density = context.resources.displayMetrics.density
-            val toolbarW = if (imageCardWidthPx > 50f) imageCardWidthPx else 420f * density
-            val toolbarH = if (imageCardHeightPx > 20f) imageCardHeightPx else 64f * density
-            val margin = 20f * density
+            val toolbarW = if (imageCardWidthPx > 50f) imageCardWidthPx else 380f * density
+            val toolbarH = if (imageCardHeightPx > 20f) imageCardHeightPx else 56f * density
+            val margin = 16f * density
             val minX = margin
             val maxX = (screenW - toolbarW - margin).coerceAtLeast(minX)
-            val minY = 100f * density
-            val maxY = (screenH - toolbarH - 90f * density).coerceAtLeast(minY)
+            val minY = 90f * density
+            val maxY = (screenH - toolbarH - 80f * density).coerceAtLeast(minY)
 
             if (screenBounds != null) {
-                val canFitRight = (screenBounds.right + toolbarW + margin) <= screenW
-                val canFitLeft = (screenBounds.left - toolbarW - margin) >= 0f
-
-                val (targetX, targetY) = when {
-                    canFitRight -> Pair(screenBounds.right + 16f, screenBounds.top)
-                    canFitLeft -> Pair(screenBounds.left - toolbarW - 16f, screenBounds.top)
-                    screenBounds.top - toolbarH - 16f >= minY -> Pair(screenBounds.centerX() - toolbarW / 2f, screenBounds.top - toolbarH - 16f)
-                    screenBounds.bottom + toolbarH + 16f <= maxY -> Pair(screenBounds.centerX() - toolbarW / 2f, screenBounds.bottom + 16f)
-                    else -> Pair((screenW - toolbarW) / 2f, minY + 16f)
+                val targetX = (screenBounds.centerX() - toolbarW / 2f).coerceIn(minX, maxX)
+                var targetY = screenBounds.top - toolbarH - 12f * density
+                if (targetY < minY) {
+                    targetY = screenBounds.bottom + 12f * density
+                }
+                if (targetY > maxY) {
+                    targetY = (screenBounds.top - toolbarH - 8f * density).coerceIn(minY, maxY)
                 }
 
                 imageToolbarOffset = Offset(
@@ -533,7 +519,10 @@ fun InkCanvasScreen(
                     targetY.coerceIn(minY, maxY)
                 )
             } else {
-                imageToolbarOffset = Offset((screenW - toolbarW) / 2f, maxY - 30f)
+                imageToolbarOffset = Offset(
+                    ((screenW - toolbarW) / 2f).coerceIn(minX, maxX),
+                    (screenH * 0.45f).coerceIn(minY, maxY)
+                )
             }
         } else {
             imageToolbarOffset = null
@@ -569,37 +558,13 @@ fun InkCanvasScreen(
     var isExporting by remember { mutableStateOf(false) }
     var exportSuccessMessage by remember { mutableStateOf<String?>(null) }
 
-    // GitHub Backup State
-    var isBackupDialogOpen by remember { mutableStateOf(false) }
-    var backupSyncStatus by remember { mutableStateOf(BackupSyncStatus.OFFLINE) }
-
     // Page Repair State
     var isRepairDialogOpen by remember { mutableStateOf(false) }
     var repairScanResult by remember { mutableStateOf<com.antigravity.note.document.repair.PageRepairTool.RepairScanResult?>(null) }
     var isTopToolbarMinimized by remember { mutableStateOf(false) }
 
-    val tokenStorage = remember { EncryptedTokenStorage(context) }
-    val backupOkHttpClient = remember {
-        OkHttpClient.Builder()
-            .addInterceptor(SafeLoggingInterceptor())
-            .build()
-    }
-    val deviceFlowClient = remember {
-        GitHubDeviceFlowClient(tokenStorage, backupOkHttpClient)
-    }
-    val repoManager = remember {
-        GitHubRepoManager(tokenStorage, backupOkHttpClient)
-    }
-
     LaunchedEffect(Unit) {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            val auth = deviceFlowClient.getCurrentAuthState()
-            val repo = tokenStorage.getSelectedRepo()
-            backupSyncStatus = when {
-                auth is AuthState.Authenticated && repo != null -> BackupSyncStatus.SYNCED
-                auth is AuthState.ReconnectionRequired -> BackupSyncStatus.NEEDS_ATTENTION
-                else -> BackupSyncStatus.OFFLINE
-            }
             try {
                 BackupWorker.schedulePeriodic(context)
             } catch (_: Exception) {}
@@ -658,13 +623,13 @@ fun InkCanvasScreen(
         }
     }
 
-    var githubBackupIdleJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
-    val scheduleSettledIdleGitHubBackup: () -> Unit = {
-        if (tokenStorage.getSelectedRepo() != null) {
-            githubBackupIdleJob?.cancel()
-            githubBackupIdleJob = scope.launch {
-                kotlinx.coroutines.delay(120_000L) // 2 minutes settled idle
-                com.antigravity.note.library.backup.worker.BackupWorker.enqueueImmediate(context)
+    var gdriveBackupIdleJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    val scheduleSettledIdleGoogleDriveBackup: () -> Unit = {
+        if (googleDriveAuthStorage.getAccessToken() != null) {
+            gdriveBackupIdleJob?.cancel()
+            gdriveBackupIdleJob = scope.launch {
+                kotlinx.coroutines.delay(60_000L) // 1 minute settled idle auto-sync
+                BackupWorker.enqueueImmediate(context)
             }
         }
     }
@@ -685,7 +650,7 @@ fun InkCanvasScreen(
                 )
             }
             docManager.onStrokeCommitted(stroke)
-            scheduleSettledIdleGitHubBackup()
+            scheduleSettledIdleGoogleDriveBackup()
             if (isRecordingAudio) {
                 audioRecorder.recordStrokeTiming(docManager.currentPage.value?.strokes?.size ?: 0)
             }
@@ -704,23 +669,25 @@ fun InkCanvasScreen(
                 if (canvasImg != null) {
                     curPage.addImage(canvasImg)
                     canvasView.dryInkView.addImage(canvasImg)
+                    canvasView.selectImage(canvasImg)
                     pageRepo.savePageAtomic(curPage)
                     database.notebookDao().setNotebookDirty(curPage.metadata.notebookId, true)
+                    scheduleSettledIdleGoogleDriveBackup()
                     Toast.makeText(context, "Image added", Toast.LENGTH_SHORT).show()
                 }
             }
         }
         canvasView.onUndoCommitted = { stroke ->
             docManager.onUndoCommitted(stroke)
-            scheduleSettledIdleGitHubBackup()
+            scheduleSettledIdleGoogleDriveBackup()
         }
         canvasView.onClearCommitted = {
             docManager.onClearCommitted()
-            scheduleSettledIdleGitHubBackup()
+            scheduleSettledIdleGoogleDriveBackup()
         }
         canvasView.onStrokesReplaced = { oldStrokes, newStrokes ->
             docManager.onStrokesReplaced(oldStrokes, newStrokes)
-            scheduleSettledIdleGitHubBackup()
+            scheduleSettledIdleGoogleDriveBackup()
         }
         canvasView.onLassoSelectionChanged = { selected ->
             hasLassoSelection = selected
@@ -774,7 +741,7 @@ fun InkCanvasScreen(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
-            githubBackupIdleJob?.cancel()
+            gdriveBackupIdleJob?.cancel()
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
@@ -868,6 +835,7 @@ fun InkCanvasScreen(
                                         if (canvasImg != null) {
                                             curPage.addImage(canvasImg)
                                             canvasView.dryInkView.addImage(canvasImg)
+                                            canvasView.selectImage(canvasImg)
                                             pageRepo.savePageAtomic(curPage)
                                             database.notebookDao().setNotebookDirty(curPage.metadata.notebookId, true)
                                             Toast.makeText(context, "Image pasted from clipboard", Toast.LENGTH_SHORT).show()
@@ -1012,13 +980,18 @@ fun InkCanvasScreen(
                         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                         shape = RoundedCornerShape(22.dp)
                     ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 6.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 6.dp, end = 4.dp, top = 3.dp, bottom = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .horizontalScroll(rememberScrollState()),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                     // --- 1. Left: Navigation & Document Utilities ---
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -1056,20 +1029,50 @@ fun InkCanvasScreen(
                                 modifier = Modifier.size(22.dp)
                             )
                         }
-                        BackupStatusChip(
-                            status = backupSyncStatus,
-                            onClick = { isBackupDialogOpen = true }
-                        )
-                        IconButton(
-                            onClick = { isGoogleDriveDialogOpen = true },
-                            modifier = Modifier.size(36.dp)
+                        // Google Drive Cloud Backup Status Pill
+                        val hasGDriveToken = googleDriveAuthStorage.getAccessToken() != null
+                        val gdriveLastBackup = googleDriveAuthStorage.getLastBackupTime()
+                        val gdriveLabel = when {
+                            !hasGDriveToken -> "Connect Drive"
+                            gdriveLastBackup > 0L -> "Drive Synced"
+                            else -> "Drive Ready"
+                        }
+                        val gdriveContainerColor = when {
+                            !hasGDriveToken -> MaterialTheme.colorScheme.surfaceVariant
+                            gdriveLastBackup > 0L -> Color(0xFFE8F5E9)
+                            else -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                        }
+                        val gdriveContentColor = when {
+                            !hasGDriveToken -> MaterialTheme.colorScheme.onSurfaceVariant
+                            gdriveLastBackup > 0L -> Color(0xFF2E7D32)
+                            else -> MaterialTheme.colorScheme.primary
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = gdriveContainerColor,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { isGoogleDriveDialogOpen = true }
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Cloud,
-                                contentDescription = "Google Drive Cloud Backup",
-                                tint = Color(0xFF2E7D32),
-                                modifier = Modifier.size(22.dp)
-                            )
+                            Row(
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (gdriveLastBackup > 0L) Icons.Default.CloudDone else Icons.Default.Cloud,
+                                    contentDescription = "Google Drive Cloud Backup",
+                                    tint = gdriveContentColor,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = gdriveLabel,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = gdriveContentColor
+                                )
+                            }
                         }
                         if (isNoteLocked) {
                             Surface(
@@ -1762,9 +1765,23 @@ fun InkCanvasScreen(
                                 )
                             }
                         }
+                    } // close scrollable tools Row
+
+                    // Pinned Minimize Toolbar Button (Always visible on far right of card)
+                    IconButton(
+                        onClick = { isTopToolbarMinimized = true },
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ExpandLess,
+                            contentDescription = "Minimize Toolbar",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp)
+                        )
                     }
-                }
+                } // close outer Row inside Card
             }
+        }
 
             // Audio Active Recording Pill / Playback Bar
             if (isRecordingAudio) {
@@ -1877,19 +1894,6 @@ fun InkCanvasScreen(
                         ) {
                             Icon(Icons.Default.Close, contentDescription = "Close Audio", modifier = Modifier.size(16.dp))
                         }
-                    }
-
-                    Spacer(modifier = Modifier.width(4.dp))
-                    IconButton(
-                        onClick = { isTopToolbarMinimized = true },
-                        modifier = Modifier.size(38.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ExpandLess,
-                            contentDescription = "Minimize Toolbar",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp)
-                        )
                     }
                 }
             }
@@ -2474,7 +2478,7 @@ fun InkCanvasScreen(
                     isSidebarOpen = false
                 },
                 onOpenBackupSettings = {
-                    isBackupDialogOpen = true
+                    isGoogleDriveDialogOpen = true
                 },
                 onOpenLocalBackupSettings = {
                     isLocalBackupDialogOpen = true
@@ -2645,25 +2649,6 @@ fun InkCanvasScreen(
                                 lassoToolbarOffset = Offset(clampedX, clampedY)
                             }
                         }
-                    }
-                    .pointerInput(Unit) {
-                        detectDragGestures { change, dragAmount ->
-                            change.consume()
-                            val cur = lassoToolbarOffset ?: Offset(60f, 180f)
-                            val screenW = context.resources.displayMetrics.widthPixels.toFloat()
-                            val screenH = context.resources.displayMetrics.heightPixels.toFloat()
-                            val density = context.resources.displayMetrics.density
-                            val toolbarW = if (lassoCardWidthPx > 50f) lassoCardWidthPx else 560f * density
-                            val toolbarH = if (lassoCardHeightPx > 20f) lassoCardHeightPx else 64f * density
-                            val margin = 16f * density
-                            val minX = margin
-                            val maxX = (screenW - toolbarW - margin).coerceAtLeast(minX)
-                            val minY = 100f * density
-                            val maxY = (screenH - toolbarH - 90f * density).coerceAtLeast(minY)
-                            val newX = (cur.x + dragAmount.x).coerceIn(minX, maxX)
-                            val newY = (cur.y + dragAmount.y).coerceIn(minY, maxY)
-                            lassoToolbarOffset = Offset(newX, newY)
-                        }
                     },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
@@ -2675,19 +2660,45 @@ fun InkCanvasScreen(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     // Draggable Grip Handle
-                    Icon(
-                        imageVector = Icons.Default.DragHandle,
-                        contentDescription = "Drag to Reposition Toolbar",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Row(
+                        modifier = Modifier
+                            .pointerInput(Unit) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consume()
+                                    val cur = lassoToolbarOffset ?: Offset(60f, 180f)
+                                    val screenW = context.resources.displayMetrics.widthPixels.toFloat()
+                                    val screenH = context.resources.displayMetrics.heightPixels.toFloat()
+                                    val density = context.resources.displayMetrics.density
+                                    val toolbarW = if (lassoCardWidthPx > 50f) lassoCardWidthPx else 420f * density
+                                    val toolbarH = if (lassoCardHeightPx > 20f) lassoCardHeightPx else 56f * density
+                                    val margin = 16f * density
+                                    val minX = margin
+                                    val maxX = (screenW - toolbarW - margin).coerceAtLeast(minX)
+                                    val minY = 90f * density
+                                    val maxY = (screenH - toolbarH - 80f * density).coerceAtLeast(minY)
+                                    val newX = (cur.x + dragAmount.x).coerceIn(minX, maxX)
+                                    val newY = (cur.y + dragAmount.y).coerceIn(minY, maxY)
+                                    lassoToolbarOffset = Offset(newX, newY)
+                                }
+                            }
+                            .padding(end = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DragHandle,
+                            contentDescription = "Drag to Reposition Toolbar",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.size(20.dp)
+                        )
 
-                    Text(
-                        text = "Lasso (${canvasView.lassoTool.selectedStrokes.size})",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                        Text(
+                            text = "Lasso (${canvasView.lassoTool.selectedStrokes.size})",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
 
                     // Copy
                     IconButton(
@@ -2695,9 +2706,10 @@ fun InkCanvasScreen(
                             val count = canvasView.copyLassoSelection()
                             lassoHasClipboard = count > 0
                             Toast.makeText(context, "Copied $count strokes", Toast.LENGTH_SHORT).show()
-                        }
+                        },
+                        modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(18.dp))
                     }
 
                     // Paste
@@ -2706,13 +2718,14 @@ fun InkCanvasScreen(
                             val pasted = canvasView.pasteLassoClipboard()
                             Toast.makeText(context, "Pasted ${pasted.size} strokes", Toast.LENGTH_SHORT).show()
                         },
-                        enabled = lassoHasClipboard
+                        enabled = lassoHasClipboard,
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             Icons.Default.ContentPaste,
                             contentDescription = "Paste",
                             tint = if (lassoHasClipboard) MaterialTheme.colorScheme.onSurfaceVariant else Color.LightGray,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
@@ -2721,9 +2734,10 @@ fun InkCanvasScreen(
                         onClick = {
                             canvasView.duplicateLassoSelection()
                             Toast.makeText(context, "Duplicated selection", Toast.LENGTH_SHORT).show()
-                        }
+                        },
+                        modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(Icons.Default.CopyAll, contentDescription = "Duplicate", modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.CopyAll, contentDescription = "Duplicate", modifier = Modifier.size(18.dp))
                     }
 
                     // Convert to Typed Text via On-Device ML Kit
@@ -2742,9 +2756,10 @@ fun InkCanvasScreen(
                                     Toast.makeText(context, "No text recognized. Ensure clear handwriting or connected to network for first-time model setup.", Toast.LENGTH_LONG).show()
                                 }
                             }
-                        }
+                        },
+                        modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(Icons.Default.TextFields, contentDescription = "Convert to Text", modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.TextFields, contentDescription = "Convert to Text", modifier = Modifier.size(18.dp))
                     }
 
                     // Recolor quick dots & Full RGB Grid Palette Picker
@@ -2759,7 +2774,7 @@ fun InkCanvasScreen(
                     ).forEach { color ->
                         Box(
                             modifier = Modifier
-                                .size(22.dp)
+                                .size(20.dp)
                                 .clip(CircleShape)
                                 .background(color)
                                 .border(1.dp, if (color == Color.White) Color.Gray else Color.White, CircleShape)
@@ -2779,13 +2794,13 @@ fun InkCanvasScreen(
                     Box {
                         IconButton(
                             onClick = { showLassoColorPickerMenu = !showLassoColorPickerMenu },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Palette,
                                 contentDescription = "Full Color Palette",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
 
@@ -2811,8 +2826,11 @@ fun InkCanvasScreen(
                     }
 
                     // Delete selection
-                    IconButton(onClick = { canvasView.deleteLassoSelection() }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                    IconButton(
+                        onClick = { canvasView.deleteLassoSelection() },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                     }
 
                     // Done / Clear selection
@@ -2820,9 +2838,10 @@ fun InkCanvasScreen(
                         onClick = {
                             canvasView.clearLassoSelection()
                             switchToTool(CanvasTool.PRESSURE_PEN)
-                        }
+                        },
+                        modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = "Done", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Check, contentDescription = "Done", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -2890,26 +2909,6 @@ fun InkCanvasScreen(
                                 imageToolbarOffset = Offset(clampedX, clampedY)
                             }
                         }
-                    }
-                    .pointerInput(Unit) {
-                        detectDragGestures { change, dragAmount ->
-                            change.consume()
-                            val cur = imageToolbarOffset ?: Offset(60f, 180f)
-                            val screenW = context.resources.displayMetrics.widthPixels.toFloat()
-                            val screenH = context.resources.displayMetrics.heightPixels.toFloat()
-                            val density = context.resources.displayMetrics.density
-                            val margin = 20f * density
-                            val w = if (imageCardWidthPx > 50f) imageCardWidthPx else 420f * density
-                            val h = if (imageCardHeightPx > 20f) imageCardHeightPx else 64f * density
-                            val minX = margin
-                            val maxX = (screenW - w - margin).coerceAtLeast(minX)
-                            val minY = 100f * density
-                            val maxY = (screenH - h - 90f * density).coerceAtLeast(minY)
-
-                            val newX = (cur.x + dragAmount.x).coerceIn(minX, maxX)
-                            val newY = (cur.y + dragAmount.y).coerceIn(minY, maxY)
-                            imageToolbarOffset = Offset(newX, newY)
-                        }
                     },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
@@ -2920,32 +2919,62 @@ fun InkCanvasScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.DragHandle,
-                        contentDescription = "Drag Toolbar",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.size(20.dp)
-                    )
+                    // Draggable Grip Handle
+                    Row(
+                        modifier = Modifier
+                            .pointerInput(Unit) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consume()
+                                    val cur = imageToolbarOffset ?: Offset(60f, 180f)
+                                    val screenW = context.resources.displayMetrics.widthPixels.toFloat()
+                                    val screenH = context.resources.displayMetrics.heightPixels.toFloat()
+                                    val density = context.resources.displayMetrics.density
+                                    val margin = 20f * density
+                                    val w = if (imageCardWidthPx > 50f) imageCardWidthPx else 420f * density
+                                    val h = if (imageCardHeightPx > 20f) imageCardHeightPx else 64f * density
+                                    val minX = margin
+                                    val maxX = (screenW - w - margin).coerceAtLeast(minX)
+                                    val minY = 100f * density
+                                    val maxY = (screenH - h - 90f * density).coerceAtLeast(minY)
 
-                    Text(
-                        text = "Image",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                                    val newX = (cur.x + dragAmount.x).coerceIn(minX, maxX)
+                                    val newY = (cur.y + dragAmount.y).coerceIn(minY, maxY)
+                                    imageToolbarOffset = Offset(newX, newY)
+                                }
+                            }
+                            .padding(end = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DragHandle,
+                            contentDescription = "Drag Toolbar",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.size(20.dp)
+                        )
+
+                        Text(
+                            text = "Image",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
 
                     // Crop Button
                     IconButton(
-                        onClick = { imageBeingCropped = selectedCanvasImage }
+                        onClick = { imageBeingCropped = selectedCanvasImage },
+                        modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(Icons.Default.Crop, contentDescription = "Crop Image", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Crop, contentDescription = "Crop Image", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     }
 
                     // Rotate 90 Button
                     IconButton(
-                        onClick = { canvasView.rotateSelectedImage(90f) }
+                        onClick = { canvasView.rotateSelectedImage(90f) },
+                        modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(Icons.Default.RotateRight, contentDescription = "Rotate 90", modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.RotateRight, contentDescription = "Rotate 90", modifier = Modifier.size(18.dp))
                     }
 
                     // Fit Width
@@ -2953,9 +2982,10 @@ fun InkCanvasScreen(
                         onClick = {
                             canvasView.fitSelectedImageToWidth()
                             Toast.makeText(context, "Fitted to page width", Toast.LENGTH_SHORT).show()
-                        }
+                        },
+                        modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(Icons.Default.AspectRatio, contentDescription = "Fit Page Width", modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.AspectRatio, contentDescription = "Fit Page Width", modifier = Modifier.size(18.dp))
                     }
 
                     // Duplicate
@@ -2973,9 +3003,10 @@ fun InkCanvasScreen(
                                 }
                                 Toast.makeText(context, "Duplicated image", Toast.LENGTH_SHORT).show()
                             }
-                        }
+                        },
+                        modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(Icons.Default.CopyAll, contentDescription = "Duplicate Image", modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.CopyAll, contentDescription = "Duplicate Image", modifier = Modifier.size(18.dp))
                     }
 
                     // Delete
@@ -2983,18 +3014,20 @@ fun InkCanvasScreen(
                         onClick = {
                             canvasView.deleteSelectedImage()
                             Toast.makeText(context, "Deleted image", Toast.LENGTH_SHORT).show()
-                        }
+                        },
+                        modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete Image", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Delete, contentDescription = "Delete Image", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                     }
 
                     // Done / Clear selection
                     IconButton(
                         onClick = {
                             canvasView.clearImageSelection()
-                        }
+                        },
+                        modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = "Done Editing Image", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Check, contentDescription = "Done Editing Image", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -3378,31 +3411,6 @@ fun InkCanvasScreen(
                     OutlinedButton(onClick = { detectedNotesPrompt = null }) {
                         Text("Start Fresh")
                     }
-                }
-            )
-        }
-
-        // GitHub Backup & Restore Dialog
-        if (isBackupDialogOpen) {
-            GitHubBackupDialog(
-                tokenStorage = tokenStorage,
-                deviceFlowClient = deviceFlowClient,
-                repoManager = repoManager,
-                onDismiss = {
-                    isBackupDialogOpen = false
-                    scope.launch {
-                        val auth = deviceFlowClient.getCurrentAuthState()
-                        val repo = tokenStorage.getSelectedRepo()
-                        backupSyncStatus = when {
-                            auth is AuthState.Authenticated && repo != null -> BackupSyncStatus.SYNCED
-                            auth is AuthState.ReconnectionRequired -> BackupSyncStatus.NEEDS_ATTENTION
-                            else -> BackupSyncStatus.OFFLINE
-                        }
-                    }
-                },
-                onTriggerBackupNow = {
-                    BackupWorker.enqueueImmediate(context)
-                    backupSyncStatus = BackupSyncStatus.BACKING_UP
                 }
             )
         }

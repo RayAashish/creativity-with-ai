@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
@@ -284,7 +285,12 @@ fun LibrarySidebarDrawer(
                         Icon(Icons.Default.Storage, contentDescription = "Local Persistent Backup", modifier = Modifier.size(20.dp))
                     }
                     IconButton(onClick = onOpenBackupSettings, modifier = Modifier.size(36.dp)) {
-                        Icon(Icons.Default.CloudSync, contentDescription = "GitHub Backup & Sync", modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Default.Cloud,
+                            contentDescription = "Google Drive Cloud Backup",
+                            tint = Color(0xFF2E7D32),
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                     IconButton(onClick = onCloseSidebar, modifier = Modifier.size(36.dp)) {
                         Icon(Icons.Default.Close, contentDescription = "Close Sidebar", modifier = Modifier.size(20.dp))
