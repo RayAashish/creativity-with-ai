@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-sidebar: #f1f5f9;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --border-color: #e2e8f0;
+  }
+
+  [data-theme="dark"], .theme-dark {
+    --bg-primary: #121214;
+    --bg-secondary: #1a1a1e;
+    --bg-sidebar: #18181b;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --border-color: #27272a;
+  }
+
+  [data-theme="sepia"], .theme-sepia {
+    --bg-primary: #fbf0d9;
+    --bg-secondary: #f5e7c8;
+    --bg-sidebar: #f0deb9;
+    --text-primary: #433422;
+    --text-secondary: #745b41;
+    --border-color: #dfceb0;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    touch-action: manipulation;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Safe area padding for Android tablets and notched devices */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Custom PDF TextLayer Styling */
+.pdf-page-container {
+  position: relative;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.1), 0 2px 6px -1px rgba(0, 0, 0, 0.06);
+  margin-left: auto;
+  margin-right: auto;
+  background-color: #ffffff;
+}
+
+[data-theme="dark"] .pdf-page-container {
+  box-shadow: 0 4px 25px -2px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="sepia"] .pdf-page-container {
+  filter: sepia(0.2) contrast(0.95);
+}
+
+/* PDF.js Text Layer */
+.textLayer {
+  position: absolute;
+  text-align: initial;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  opacity: 1 !important;
+  line-height: 1;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  z-index: 2 !important;
+  pointer-events: auto !important;
+}
+
+.textLayer :is(span, br) {
+  color: transparent !important;
+  position: absolute;
+  white-space: pre;
+  cursor: text !important;
+  transform-origin: 0% 0%;
+  pointer-events: auto !important;
+}
+
+.textLayer ::selection {
+  background: rgba(245, 158, 11, 0.45) !important;
+  color: transparent !important;
+}
+
+/* Syntax Highlighting */
+pre code.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst {
+  color: #d73a49;
+}
+
+.hljs-string,
+.hljs-title,
+.hljs-section,
+.hljs-attribute,
+.hljs-literal,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-addition {
+  color: #032f62;
+}
+
+[data-theme="dark"] .hljs-keyword {
+  color: #ff7b72;
+}
+
+[data-theme="dark"] .hljs-string {
+  color: #a5d6ff;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7);
+}
