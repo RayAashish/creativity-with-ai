@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,18 +32,24 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FirstPage
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Style
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.Button
@@ -50,7 +57,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -113,27 +119,50 @@ fun LibraryScreen(
     val folders by folderDao.getAllFolders().collectAsState(initial = emptyList())
     val vocabList by vocabularyDao.getAllVocabulary().collectAsState(initial = emptyList())
 
-    // Active Folder drill-down state (null means Main Library View)
-    var selectedFolderId by remember { mutableStateOf<String?>(null) }
-
-    // Intercept back button when inside a folder drill-down view
-    BackHandler(enabled = selectedFolderId != null) {
-        selectedFolderId = null
+    val prefs = remember { context.getSharedPreferences("lipi_reading_prefs", Context.MODE_PRIVATE) }
+    var isResumeEnabled by remember {
+        mutableStateOf(prefs.getBoolean("pref_resume_reading_enabled", true))
     }
 
-    // Dialog state
+    // Hierarchical Folder Navigation Stack (Persisted so reopening app returns directly to last viewed folder)
+    val initialFolderStack = remember {
+        val raw = prefs.getString("folder_navigation_stack", "") ?: ""
+        if (raw.isBlank()) emptyList<String>() else raw.split(",").filter { it.isNotBlank() }
+    }
+    var folderNavigationStack by remember { mutableStateOf(initialFolderStack) }
+
+    LaunchedEffect(folderNavigationStack) {
+        prefs.edit().putString("folder_navigation_stack", folderNavigationStack.joinToString(",")).apply()
+    }
+
+    LaunchedEffect(folders) {
+        if (folders.isNotEmpty() && folderNavigationStack.isNotEmpty()) {
+            val valid = folderNavigationStack.filter { id -> folders.any { it.id == id } }
+            if (valid != folderNavigationStack) {
+                folderNavigationStack = valid
+            }
+        }
+    }
+
+    val currentFolderId = folderNavigationStack.lastOrNull()
+    val currentActiveFolder = remember(folders, currentFolderId) {
+        folders.firstOrNull { it.id == currentFolderId }
+    }
+
+    // Intercept back button when inside nested folders
+    BackHandler(enabled = folderNavigationStack.isNotEmpty()) {
+        folderNavigationStack = folderNavigationStack.dropLast(1)
+    }
+
+    // Dialog states
     var showNotebookDialog by remember { mutableStateOf(false) }
     var showFlashcardDialog by remember { mutableStateOf(false) }
     var showCreateFolderDialog by remember { mutableStateOf(false) }
+    var creatingSubfolderIn by remember { mutableStateOf<FolderEntity?>(null) }
     var editingFolder by remember { mutableStateOf<FolderEntity?>(null) }
     var movingDocument by remember { mutableStateOf<DocumentEntity?>(null) }
 
-    // Current active folder entity when inside a folder
-    val currentActiveFolder = remember(folders, selectedFolderId) {
-        folders.firstOrNull { it.id == selectedFolderId }
-    }
-
-    // Seed default folders & sample document
+    // Seed default root folders & standard subfolders
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             val existingFolders = folderDao.getAllFolders().first()
@@ -146,6 +175,30 @@ fun LibraryScreen(
                     FolderEntity(id = "folder_dsa", name = "DSA & Algorithms", iconKey = "dsa", colorHex = "#3B82F6")
                 )
                 defaultFolders.forEach { folderDao.insert(it) }
+            }
+
+            // Seed Java subtopics if Java exists and has no subfolders
+            val javaSubfolders = folderDao.getSubfolders("folder_java").first()
+            if (javaSubfolders.isEmpty()) {
+                val defaultJavaSubfolders = listOf(
+                    FolderEntity(id = "folder_java_jdbc", name = "JDBC", iconKey = "jdbc", colorHex = "#EA580C", parentFolderId = "folder_java"),
+                    FolderEntity(id = "folder_java_threads", name = "Multithreading", iconKey = "multithreading", colorHex = "#EA580C", parentFolderId = "folder_java"),
+                    FolderEntity(id = "folder_java_exceptions", name = "Exception Handling", iconKey = "exception_handling", colorHex = "#EA580C", parentFolderId = "folder_java"),
+                    FolderEntity(id = "folder_java_networking", name = "Networking", iconKey = "networking_sockets", colorHex = "#EA580C", parentFolderId = "folder_java")
+                )
+                defaultJavaSubfolders.forEach { folderDao.insert(it) }
+            }
+
+            // Seed Spring Boot subtopics if Spring Boot exists and has no subfolders
+            val springSubfolders = folderDao.getSubfolders("folder_spring_boot").first()
+            if (springSubfolders.isEmpty()) {
+                val defaultSpringSubfolders = listOf(
+                    FolderEntity(id = "folder_spring_core", name = "Spring Core", iconKey = "spring_core", colorHex = "#22C55E", parentFolderId = "folder_spring_boot"),
+                    FolderEntity(id = "folder_spring_jpa", name = "Data JPA", iconKey = "spring_jpa", colorHex = "#22C55E", parentFolderId = "folder_spring_boot"),
+                    FolderEntity(id = "folder_spring_security", name = "Security", iconKey = "spring_security", colorHex = "#22C55E", parentFolderId = "folder_spring_boot"),
+                    FolderEntity(id = "folder_spring_aop", name = "AOP", iconKey = "spring_aop", colorHex = "#22C55E", parentFolderId = "folder_spring_boot")
+                )
+                defaultSpringSubfolders.forEach { folderDao.insert(it) }
             }
 
             // Seed sample document if library is completely empty
@@ -192,7 +245,7 @@ fun LibraryScreen(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         if (uri != null) {
-            val targetFolder = selectedFolderId // Capture folder at time of import
+            val targetFolder = currentFolderId // Placed into currently active folder/subfolder!
             scope.launch(Dispatchers.IO) {
                 try {
                     try {
@@ -228,7 +281,7 @@ fun LibraryScreen(
                         pageCount = pageCount,
                         lastPage = 0,
                         fileSize = fileSize,
-                        folderId = targetFolder // Directly places into current folder!
+                        folderId = targetFolder // Correctly assigned to active folder!
                     )
                     documentDao.insert(newDoc)
 
@@ -240,6 +293,12 @@ fun LibraryScreen(
                 }
             }
         }
+    }
+
+    // Helper to calculate total books including all descendants
+    fun getTotalBooksInFolder(folderId: String): Int {
+        val allIds = getDescendantFolderIds(folderId, folders) + folderId
+        return documents.count { it.folderId in allIds }
     }
 
     Scaffold(
@@ -281,7 +340,7 @@ fun LibraryScreen(
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
-                                    text = "$folderDocCount Documents • Lipi Study Folder",
+                                    text = "$folderDocCount direct books • Lipi Study Folder",
                                     fontSize = 11.sp,
                                     color = Color.Gray
                                 )
@@ -331,11 +390,11 @@ fun LibraryScreen(
                     }
                 },
                 navigationIcon = {
-                    if (currentActiveFolder != null) {
-                        IconButton(onClick = { selectedFolderId = null }) {
+                    if (folderNavigationStack.isNotEmpty()) {
+                        IconButton(onClick = { folderNavigationStack = folderNavigationStack.dropLast(1) }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back to Library",
+                                contentDescription = "Back",
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -396,6 +455,48 @@ fun LibraryScreen(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
+                    // Resume Reading Mode Toggle Pill
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isResumeEnabled) Color(0xFFDCFCE7) else Color(0xFFF1F5F9))
+                            .border(
+                                1.dp,
+                                if (isResumeEnabled) Color(0xFF86EFAC) else Color(0xFFCBD5E1),
+                                RoundedCornerShape(10.dp)
+                            )
+                            .clickable {
+                                val newSetting = !isResumeEnabled
+                                isResumeEnabled = newSetting
+                                prefs.edit().putBoolean("pref_resume_reading_enabled", newSetting).apply()
+                                android.widget.Toast.makeText(
+                                    context,
+                                    if (newSetting) "Resume mode ON: PDFs will open from your last read page"
+                                    else "Start Over mode: PDFs will start from Page 1",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = if (isResumeEnabled) Icons.Default.AutoStories else Icons.Default.FirstPage,
+                                contentDescription = "Resume Mode",
+                                tint = if (isResumeEnabled) Color(0xFF16A34A) else Color(0xFF64748B),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = if (isResumeEnabled) "Resume: Last Page" else "Start: Page 1",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isResumeEnabled) Color(0xFF15803D) else Color(0xFF475569)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
                     // Open / Import PDF Button
                     Button(
                         onClick = { filePickerLauncher.launch(arrayOf("application/pdf")) },
@@ -432,9 +533,19 @@ fun LibraryScreen(
         ) {
             if (currentActiveFolder != null) {
                 // ==========================================
-                // 📂 VIEW 1: INSIDE FOLDER (Drill-Down View)
+                // 📂 VIEW 1: INSIDE FOLDER (Hierarchical Drill-Down)
                 // ==========================================
-                val folderDocs = documents.filter { it.folderId == currentActiveFolder.id }
+                val directFolderDocs = documents.filter { it.folderId == currentActiveFolder.id }
+                val descendantIds = remember(folders, currentActiveFolder.id) {
+                    getDescendantFolderIds(currentActiveFolder.id, folders)
+                }
+                val allNestedDocs = remember(documents, descendantIds, currentActiveFolder.id) {
+                    documents.filter { it.folderId == currentActiveFolder.id || it.folderId in descendantIds }
+                }
+
+                // Subfolders inside this active folder
+                val directSubfolders = folders.filter { it.parentFolderId == currentActiveFolder.id }
+
                 val icon = FolderIconsCatalog.findIcon(currentActiveFolder.iconKey)
                 val folderColor = try {
                     Color(android.graphics.Color.parseColor(currentActiveFolder.colorHex))
@@ -443,13 +554,80 @@ fun LibraryScreen(
                 }
 
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 280.dp),
+                    columns = GridCells.Adaptive(minSize = 160.dp),
                     contentPadding = PaddingValues(20.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    // Full-width Folder Banner with direct Import action
+                    // 1. Breadcrumb Bar
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Home pill
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { folderNavigationStack = emptyList() }
+                                    .background(Color.White)
+                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Home,
+                                    contentDescription = "Home",
+                                    tint = Color(0xFF64748B),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Library", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color(0xFF475569))
+                            }
+
+                            // Trailing crumbs
+                            folderNavigationStack.forEachIndexed { index, id ->
+                                val crumbFolder = folders.firstOrNull { it.id == id }
+                                if (crumbFolder != null) {
+                                    Icon(
+                                        imageVector = Icons.Default.ChevronRight,
+                                        contentDescription = null,
+                                        tint = Color(0xFF94A3B8),
+                                        modifier = Modifier.size(16.dp).padding(horizontal = 2.dp)
+                                    )
+                                    val isLast = index == folderNavigationStack.lastIndex
+                                    val crumbIcon = FolderIconsCatalog.findIcon(crumbFolder.iconKey)
+                                    Row(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable { folderNavigationStack = folderNavigationStack.take(index + 1) }
+                                            .background(if (isLast) folderColor.copy(alpha = 0.12f) else Color.White)
+                                            .border(
+                                                1.dp,
+                                                if (isLast) folderColor.copy(alpha = 0.4f) else Color(0xFFE2E8F0),
+                                                RoundedCornerShape(8.dp)
+                                            )
+                                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(crumbIcon.symbol, fontSize = 12.sp)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = crumbFolder.name,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isLast) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isLast) folderColor else Color(0xFF475569)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 2. Folder Banner Card
                     item(span = { GridItemSpan(maxLineSpan) }) {
                         Card(
                             shape = RoundedCornerShape(20.dp),
@@ -483,7 +661,7 @@ fun LibraryScreen(
                                             color = Color(0xFF1E293B)
                                         )
                                         Text(
-                                            text = "${folderDocs.size} books stored in this folder",
+                                            text = "${directFolderDocs.size} direct books • ${directSubfolders.size} subtopics • ${allNestedDocs.size} total in topic tree",
                                             fontSize = 13.sp,
                                             color = Color(0xFF64748B)
                                         )
@@ -522,8 +700,215 @@ fun LibraryScreen(
                         }
                     }
 
-                    // Stylish "+ Import PDF" card in grid
+                    // 3. Subfolders Section Header
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Subtopics & Subfolders (${directSubfolders.size})",
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F172A)
+                                )
+                                Text(
+                                    text = "Organize chapters, frameworks, and specific modules",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF64748B)
+                                )
+                            }
+
+                            Button(
+                                onClick = {
+                                    creatingSubfolderIn = currentActiveFolder
+                                    showCreateFolderDialog = true
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = folderColor),
+                                modifier = Modifier.height(34.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CreateNewFolder,
+                                    contentDescription = "New Subfolder",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("New Subfolder", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    // 4. "+ Add Subfolder" square card
                     item {
+                        Card(
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)),
+                            border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFCBD5E1)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(1f)
+                                .clickable {
+                                    creatingSubfolderIn = currentActiveFolder
+                                    showCreateFolderDialog = true
+                                }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(14.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(50.dp)
+                                            .clip(CircleShape)
+                                            .background(folderColor),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = "New Subfolder",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(26.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Text(
+                                        text = "+ Subfolder",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = folderColor,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Text(
+                                        text = "Custom Logos & Colors",
+                                        fontSize = 10.sp,
+                                        color = Color(0xFF64748B),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // 5. Direct Subfolders Cards
+                    items(directSubfolders, key = { it.id }) { subfolder ->
+                        val subIcon = FolderIconsCatalog.findIcon(subfolder.iconKey)
+                        val subColor = try {
+                            Color(android.graphics.Color.parseColor(subfolder.colorHex))
+                        } catch (_: Exception) {
+                            Color(0xFF4F46E5)
+                        }
+                        val subTotalBooks = getTotalBooksInFolder(subfolder.id)
+
+                        Card(
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, subColor.copy(alpha = 0.35f)),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(1f)
+                                .clickable {
+                                    folderNavigationStack = folderNavigationStack + subfolder.id
+                                }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(12.dp)
+                            ) {
+                                // Top right: Edit folder button
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .size(26.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFF1F5F9))
+                                        .clickable { editingFolder = subfolder },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Edit",
+                                        tint = Color(0xFF64748B),
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                }
+
+                                // Center Content: Logo, Name, Document Count
+                                Column(
+                                    modifier = Modifier.align(Alignment.Center),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(50.dp)
+                                            .clip(RoundedCornerShape(14.dp))
+                                            .background(subColor.copy(alpha = 0.15f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(subIcon.symbol, fontSize = 26.sp)
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = subfolder.name,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF1E293B),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(subColor.copy(alpha = 0.1f))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = "$subTotalBooks Books",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = subColor
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 6. Section Header: Books in this folder
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Books in ${currentActiveFolder.name} (${directFolderDocs.size})",
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F172A)
+                                )
+                                Text(
+                                    text = "Documents assigned directly to this folder",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF64748B)
+                                )
+                            }
+                        }
+                    }
+
+                    // 7. "+ Import PDF" card in grid
+                    item(span = { GridItemSpan(if (maxLineSpan > 1) 2 else 1) }) {
                         Card(
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -562,7 +947,7 @@ fun LibraryScreen(
                                         color = folderColor
                                     )
                                     Text(
-                                        text = "Add documents directly here",
+                                        text = "Add directly into ${currentActiveFolder.name}",
                                         fontSize = 11.sp,
                                         color = Color.Gray
                                     )
@@ -571,12 +956,21 @@ fun LibraryScreen(
                         }
                     }
 
-                    // Documents inside this folder
-                    items(folderDocs, key = { it.id }) { doc ->
+                    // 8. Documents inside this folder
+                    items(directFolderDocs, key = { it.id }, span = { GridItemSpan(if (maxLineSpan > 1) 2 else 1) }) { doc ->
                         DocumentCard(
                             doc = doc,
                             folder = currentActiveFolder,
+                            parentFolder = folders.firstOrNull { it.id == currentActiveFolder.parentFolderId },
+                            isResumeEnabled = isResumeEnabled,
                             onOpen = { onOpenDocument(doc) },
+                            onRestart = {
+                                prefs.edit().putInt("last_page_${doc.id}", 0).apply()
+                                scope.launch(Dispatchers.IO) {
+                                    documentDao.updatePageProgress(doc.id, 0, System.currentTimeMillis())
+                                }
+                                onOpenDocument(doc.copy(lastPage = 0))
+                            },
                             onMove = { movingDocument = doc },
                             onDelete = {
                                 scope.launch(Dispatchers.IO) {
@@ -588,8 +982,10 @@ fun LibraryScreen(
                 }
             } else {
                 // ==========================================
-                // 📚 VIEW 2: MAIN LIBRARY (Square Folders Grid + All Books)
+                // 📚 VIEW 2: MAIN LIBRARY (Root Folders Grid + All Books)
                 // ==========================================
+                val rootFolders = folders.filter { it.parentFolderId == null }
+
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 160.dp),
                     contentPadding = PaddingValues(20.dp),
@@ -612,7 +1008,7 @@ fun LibraryScreen(
                                     color = Color(0xFF0F172A)
                                 )
                                 Text(
-                                    text = "Tap a folder to open and add files directly inside",
+                                    text = "Tap a folder to open topics, subfolders and add files directly",
                                     fontSize = 12.sp,
                                     color = Color(0xFF64748B)
                                 )
@@ -620,7 +1016,10 @@ fun LibraryScreen(
 
                             // Stylish "+ Add Folder" button
                             Button(
-                                onClick = { showCreateFolderDialog = true },
+                                onClick = {
+                                    creatingSubfolderIn = null
+                                    showCreateFolderDialog = true
+                                },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
                                 modifier = Modifier.height(34.dp)
@@ -645,7 +1044,10 @@ fun LibraryScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(1f)
-                                .clickable { showCreateFolderDialog = true }
+                                .clickable {
+                                    creatingSubfolderIn = null
+                                    showCreateFolderDialog = true
+                                }
                         ) {
                             Box(
                                 modifier = Modifier
@@ -687,15 +1089,16 @@ fun LibraryScreen(
                         }
                     }
 
-                    // 2. FOLDERS SQUARE CARDS IN GRID
-                    items(folders, key = { it.id }) { folder ->
+                    // 2. ROOT FOLDERS SQUARE CARDS IN GRID
+                    items(rootFolders, key = { it.id }) { folder ->
                         val icon = FolderIconsCatalog.findIcon(folder.iconKey)
                         val folderColor = try {
                             Color(android.graphics.Color.parseColor(folder.colorHex))
                         } catch (_: Exception) {
                             Color(0xFF4F46E5)
                         }
-                        val docCount = documents.count { it.folderId == folder.id }
+                        val totalDocCount = getTotalBooksInFolder(folder.id)
+                        val subfolderCount = folders.count { it.parentFolderId == folder.id }
 
                         Card(
                             shape = RoundedCornerShape(20.dp),
@@ -705,7 +1108,9 @@ fun LibraryScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(1f)
-                                .clickable { selectedFolderId = folder.id }
+                                .clickable {
+                                    folderNavigationStack = listOf(folder.id)
+                                }
                         ) {
                             Box(
                                 modifier = Modifier
@@ -730,7 +1135,7 @@ fun LibraryScreen(
                                     )
                                 }
 
-                                // Center Content: Logo, Name, Document Count
+                                // Center Content: Logo, Name, Document & Subfolder Count
                                 Column(
                                     modifier = Modifier.align(Alignment.Center),
                                     horizontalAlignment = Alignment.CenterHorizontally
@@ -754,19 +1159,40 @@ fun LibraryScreen(
                                         overflow = TextOverflow.Ellipsis,
                                         textAlign = TextAlign.Center
                                     )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(folderColor.copy(alpha = 0.1f))
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    Spacer(modifier = Modifier.height(3.dp))
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text(
-                                            text = "$docCount Books",
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = folderColor
-                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(folderColor.copy(alpha = 0.1f))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = "$totalDocCount Books",
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = folderColor
+                                            )
+                                        }
+
+                                        if (subfolderCount > 0) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .background(Color(0xFFF1F5F9))
+                                                    .padding(horizontal = 5.dp, vertical = 2.dp)
+                                            ) {
+                                                Text(
+                                                    text = "$subfolderCount topics",
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = Color(0xFF64748B)
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -833,10 +1259,23 @@ fun LibraryScreen(
                     } else {
                         items(documents, key = { it.id }, span = { GridItemSpan(if (maxLineSpan > 1) 2 else 1) }) { doc ->
                             val assignedFolder = folders.firstOrNull { it.id == doc.folderId }
+                            val parentOfAssigned = assignedFolder?.parentFolderId?.let { pId ->
+                                folders.firstOrNull { it.id == pId }
+                            }
+
                             DocumentCard(
                                 doc = doc,
                                 folder = assignedFolder,
+                                parentFolder = parentOfAssigned,
+                                isResumeEnabled = isResumeEnabled,
                                 onOpen = { onOpenDocument(doc) },
+                                onRestart = {
+                                    prefs.edit().putInt("last_page_${doc.id}", 0).apply()
+                                    scope.launch(Dispatchers.IO) {
+                                        documentDao.updatePageProgress(doc.id, 0, System.currentTimeMillis())
+                                    }
+                                    onOpenDocument(doc.copy(lastPage = 0))
+                                },
                                 onMove = { movingDocument = doc },
                                 onDelete = {
                                     scope.launch(Dispatchers.IO) {
@@ -851,29 +1290,53 @@ fun LibraryScreen(
         }
     }
 
-    // Create New Folder Dialog (with 100+ curated logos catalog & custom accent color)
+    // Create New Folder / Subfolder Dialog
     if (showCreateFolderDialog) {
         CreateOrEditFolderDialog(
             initialFolder = null,
+            parentFolder = creatingSubfolderIn,
             onSaveFolder = { newFolder ->
                 scope.launch(Dispatchers.IO) {
                     folderDao.insert(newFolder)
                     withContext(Dispatchers.Main) {
-                        selectedFolderId = newFolder.id // Directly enter newly created folder!
+                        // Enter newly created folder/subfolder!
+                        folderNavigationStack = if (newFolder.parentFolderId != null) {
+                            folderNavigationStack + newFolder.id
+                        } else {
+                            listOf(newFolder.id)
+                        }
                     }
                 }
             },
-            onDismiss = { showCreateFolderDialog = false }
+            onDismiss = {
+                showCreateFolderDialog = false
+                creatingSubfolderIn = null
+            }
         )
     }
 
-    // Edit Folder Dialog
+    // Edit Folder Dialog (Includes Delete Folder Option!)
     editingFolder?.let { folderToEdit ->
         CreateOrEditFolderDialog(
             initialFolder = folderToEdit,
+            parentFolder = folders.firstOrNull { it.id == folderToEdit.parentFolderId },
             onSaveFolder = { updatedFolder ->
                 scope.launch(Dispatchers.IO) {
                     folderDao.update(updatedFolder)
+                }
+            },
+            onDeleteFolder = { deletedFolder ->
+                scope.launch(Dispatchers.IO) {
+                    // Cleanly reassign documents and subfolders to parent
+                    folderDao.reassignDocuments(deletedFolder.id, deletedFolder.parentFolderId)
+                    folderDao.reassignSubfolders(deletedFolder.id, deletedFolder.parentFolderId)
+                    folderDao.delete(deletedFolder)
+                    withContext(Dispatchers.Main) {
+                        if (folderNavigationStack.contains(deletedFolder.id)) {
+                            val idx = folderNavigationStack.indexOf(deletedFolder.id)
+                            folderNavigationStack = folderNavigationStack.take(idx)
+                        }
+                    }
                 }
             },
             onDismiss = { editingFolder = null }
@@ -885,6 +1348,7 @@ fun LibraryScreen(
         MoveDocumentFolderDialog(
             document = docToMove,
             folders = folders,
+            documents = documents,
             onSelectFolder = { targetFolderId ->
                 scope.launch(Dispatchers.IO) {
                     documentDao.setDocumentFolder(docToMove.id, targetFolderId)
@@ -934,11 +1398,27 @@ fun LibraryScreen(
     }
 }
 
+// Helper to gather all descendant folder IDs
+private fun getDescendantFolderIds(folderId: String, allFolders: List<FolderEntity>): Set<String> {
+    val descendants = mutableSetOf<String>()
+    fun dfs(currentId: String) {
+        allFolders.filter { it.parentFolderId == currentId }.forEach { child ->
+            descendants.add(child.id)
+            dfs(child.id)
+        }
+    }
+    dfs(folderId)
+    return descendants
+}
+
 @Composable
 fun DocumentCard(
     doc: DocumentEntity,
     folder: FolderEntity?,
+    parentFolder: FolderEntity? = null,
+    isResumeEnabled: Boolean = true,
     onOpen: () -> Unit,
+    onRestart: (() -> Unit)? = null,
     onMove: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -977,6 +1457,21 @@ fun DocumentCard(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Quick Restart from Page 1 (if book has read progress)
+                    if (doc.lastPage > 0 && onRestart != null) {
+                        IconButton(
+                            onClick = onRestart,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.RestartAlt,
+                                contentDescription = "Restart from Page 1",
+                                tint = Color(0xFFF59E0B),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
                     // Move Folder Button
                     IconButton(
                         onClick = onMove,
@@ -1007,7 +1502,7 @@ fun DocumentCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Folder Badge
+            // Hierarchical Folder Badge (e.g. Java › Multithreading)
             if (folder != null && folderIcon != null && folderColor != null) {
                 Box(
                     modifier = Modifier
@@ -1018,6 +1513,14 @@ fun DocumentCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(folderIcon.symbol, fontSize = 12.sp)
                         Spacer(modifier = Modifier.width(4.dp))
+                        if (parentFolder != null) {
+                            Text(
+                                text = "${parentFolder.name} › ",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = folderColor.copy(alpha = 0.8f)
+                            )
+                        }
                         Text(
                             text = folder.name,
                             fontSize = 11.sp,
@@ -1058,10 +1561,13 @@ fun DocumentCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Page ${doc.lastPage + 1} of ${doc.pageCount}",
+                    text = if (isResumeEnabled && doc.lastPage > 0) "Resume: Page ${doc.lastPage + 1} of ${doc.pageCount}"
+                    else if (!isResumeEnabled && doc.lastPage > 0) "Start: Page 1 (Read: ${doc.lastPage + 1})"
+                    else "Page 1 of ${doc.pageCount}",
                     fontSize = 12.sp,
                     color = Color(0xFF64748B)
                 )

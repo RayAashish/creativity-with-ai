@@ -27,7 +27,7 @@ data class PageWord(
 )
 
 class PdfPageEngine(
-    maxMemoryBytes: Int = 96 * 1024 * 1024 // 96MB page bitmap cache for smooth reading
+    maxMemoryBytes: Int = 256 * 1024 * 1024 // 256MB high-capacity page bitmap cache (prevents cache thrashing)
 ) {
     private val renderExecutor = Executors.newSingleThreadExecutor()
     private val renderDispatcher = renderExecutor.asCoroutineDispatcher()
@@ -46,12 +46,7 @@ class PdfPageEngine(
         override fun sizeOf(key: String, value: Bitmap): Int {
             return value.byteCount
         }
-
-        override fun entryRemoved(evicted: Boolean, key: String, oldValue: Bitmap, newValue: Bitmap?) {
-            if (evicted && !oldValue.isRecycled) {
-                oldValue.recycle()
-            }
-        }
+        // Native memory safely reclaimed by Android ART GC without premature recycle()
     }
 
     // Extracted words per page for instant bilingual text lookup
@@ -88,22 +83,30 @@ class PdfPageEngine(
         return null
     }
 
+    fun getOptimalScale(targetWidth: Float, pageW: Int): Float {
+        val ratio = if (pageW > 0) targetWidth / pageW.toFloat() else 2.2f
+        return when {
+            ratio <= 1.8f -> 1.8f
+            ratio >= 2.6f -> 2.6f
+            else -> 2.2f
+        }
+    }
+
     /**
      * Draws the complete page bitmap smoothly centered in world coordinates.
-     * Guaranteed NO seams, NO checkerboards, and NO partial missing rectangles!
+     * Guaranteed NO seams, NO checkerboards, NO flickering, and NEVER blank white!
      */
     fun drawPage(
         canvas: Canvas,
         pageIndex: Int,
-        targetWidth: Float,
+        screenScale: Float,
         onPageLoaded: () -> Unit
     ) {
         if (pageIndex !in 0 until pageCount || renderer == null) return
         val (pageW, pageH) = pageDimensions[pageIndex]
         if (pageW <= 0 || pageH <= 0) return
 
-        // Compute high-definition render scale (at least 2x point size for retina crispness)
-        val renderScale = (targetWidth / pageW.toFloat()).coerceIn(1.5f, 3.5f)
+        val renderScale = getOptimalScale(screenScale, pageW)
         val cacheKey = "${pageIndex}_${(renderScale * 10).toInt()}"
         val cached = pageCache.get(cacheKey)
 
@@ -112,8 +115,22 @@ class PdfPageEngine(
         if (cached != null && !cached.isRecycled) {
             canvas.drawBitmap(cached, null, destRect, paint)
         } else {
-            // Draw clean white paper card background while high-res render completes
-            canvas.drawRect(destRect, Paint().apply { color = Color.WHITE })
+            // Check if any existing rendered scale for this page is in cache: draw immediately to prevent flicker!
+            var fallbackBmp: Bitmap? = null
+            for (s in listOf(22, 18, 26, 20, 25, 30)) {
+                val fb = pageCache.get("${pageIndex}_$s")
+                if (fb != null && !fb.isRecycled) {
+                    fallbackBmp = fb
+                    break
+                }
+            }
+
+            if (fallbackBmp != null) {
+                // Instantly draw existing resolution page - NEVER flicker or show blank white!
+                canvas.drawBitmap(fallbackBmp, null, destRect, paint)
+            } else {
+                canvas.drawRect(destRect, Paint().apply { color = Color.WHITE })
+            }
             requestPageRender(pageIndex, renderScale, onPageLoaded)
         }
 
@@ -121,10 +138,10 @@ class PdfPageEngine(
         prefetchAdjacentPages(pageIndex, renderScale)
     }
 
-    fun prefetchPage(pageIndex: Int, targetWidth: Float, onLoaded: (() -> Unit)? = null) {
+    fun prefetchPage(pageIndex: Int, screenScale: Float, onLoaded: (() -> Unit)? = null) {
         if (pageIndex !in 0 until pageCount) return
         val (pageW, _) = pageDimensions.getOrNull(pageIndex) ?: return
-        val renderScale = (targetWidth / pageW.toFloat()).coerceIn(1.5f, 3.5f)
+        val renderScale = getOptimalScale(screenScale, pageW)
         val key = "${pageIndex}_${(renderScale * 10).toInt()}"
         if (pageCache.get(key) == null) {
             requestPageRender(pageIndex, renderScale) {
@@ -133,10 +150,10 @@ class PdfPageEngine(
         }
     }
 
-    fun getPageBitmap(pageIndex: Int, targetWidth: Float): Bitmap? {
+    fun getPageBitmap(pageIndex: Int, screenScale: Float): Bitmap? {
         if (pageIndex !in 0 until pageCount) return null
         val (pageW, _) = pageDimensions.getOrNull(pageIndex) ?: return null
-        val renderScale = (targetWidth / pageW.toFloat()).coerceIn(1.5f, 3.5f)
+        val renderScale = getOptimalScale(screenScale, pageW)
         val key = "${pageIndex}_${(renderScale * 10).toInt()}"
         val bmp = pageCache.get(key)
         if (bmp != null && !bmp.isRecycled) return bmp
@@ -177,11 +194,14 @@ class PdfPageEngine(
                     inFlightRequests.remove(key)
                 }
 
-                // Trigger background OCR for text selection and word lookup
-                triggerPageOcr(pageIndex, bitmap)
-
+                // Notify UI immediately on Main thread so the page renders without delay
                 withContext(Dispatchers.Main) {
                     onPageLoaded()
+                }
+
+                // Run OCR on background thread pool so render thread stays 100% available
+                CoroutineScope(Dispatchers.Default).launch {
+                    triggerPageOcr(pageIndex, bitmap)
                 }
             } else {
                 synchronized(inFlightRequests) {

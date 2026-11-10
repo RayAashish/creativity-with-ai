@@ -80,15 +80,23 @@ fun ReadMasterApp(
     val folderDao = database.folderDao()
     val vocabDao = database.vocabularyDao()
 
-    // Auto-restore reading session if user closed the app while reading a book
+    // Auto-restore reading session ONLY IF user was actively reading in the reader when app was closed/minimized
+    // (If the user turned back to a folder or the library, app starts in that folder/library!)
     LaunchedEffect(Unit) {
+        val lastScreen = prefs.getString("last_active_screen", "LIBRARY")
         val lastOpenedId = prefs.getString("last_opened_doc_id", null)
-        if (lastOpenedId != null && currentDocument == null) {
+        if (lastScreen == "READER" && lastOpenedId != null && currentDocument == null) {
             withContext(Dispatchers.IO) {
                 val savedDoc = docDao.getDocumentById(lastOpenedId)
                 if (savedDoc != null) {
-                    val savedPage = prefs.getInt("last_page_${savedDoc.id}", savedDoc.lastPage)
-                    val syncedDoc = savedDoc.copy(lastPage = savedPage)
+                    val isResumeEnabled = prefs.getBoolean("pref_resume_reading_enabled", true)
+                    val targetPage = if (isResumeEnabled) {
+                        val savedPage = prefs.getInt("last_page_${savedDoc.id}", savedDoc.lastPage)
+                        savedPage.coerceIn(0, (savedDoc.pageCount - 1).coerceAtLeast(0))
+                    } else {
+                        0
+                    }
+                    val syncedDoc = savedDoc.copy(lastPage = targetPage)
                     withContext(Dispatchers.Main) {
                         currentDocument = syncedDoc
                     }
@@ -108,9 +116,18 @@ fun ReadMasterApp(
                 scope.launch(Dispatchers.IO) {
                     // Fetch latest persisted state from DB & Prefs
                     val freshDoc = docDao.getDocumentById(openedDoc.id) ?: openedDoc
-                    val savedPage = prefs.getInt("last_page_${freshDoc.id}", freshDoc.lastPage)
-                    val targetDoc = freshDoc.copy(lastPage = savedPage)
-                    prefs.edit().putString("last_opened_doc_id", targetDoc.id).apply()
+                    val isResumeEnabled = prefs.getBoolean("pref_resume_reading_enabled", true)
+                    val targetPage = if (isResumeEnabled) {
+                        val savedPage = prefs.getInt("last_page_${freshDoc.id}", freshDoc.lastPage)
+                        savedPage.coerceIn(0, (freshDoc.pageCount - 1).coerceAtLeast(0))
+                    } else {
+                        0
+                    }
+                    val targetDoc = freshDoc.copy(lastPage = targetPage)
+                    prefs.edit()
+                        .putString("last_opened_doc_id", targetDoc.id)
+                        .putString("last_active_screen", "READER")
+                        .apply()
                     withContext(Dispatchers.Main) {
                         currentDocument = targetDoc
                     }
@@ -129,7 +146,6 @@ fun ReadMasterApp(
             onUpdateDocProgress = { page ->
                 currentDocument = currentDocument?.copy(lastPage = page, lastReadTime = System.currentTimeMillis())
                 prefs.edit()
-                    .putString("last_opened_doc_id", doc.id)
                     .putInt("last_page_${doc.id}", page)
                     .apply()
                 scope.launch(Dispatchers.IO) {
@@ -137,8 +153,11 @@ fun ReadMasterApp(
                 }
             },
             onBackClick = {
-                // Clear active reader session when user explicitly navigates back to library
-                prefs.edit().remove("last_opened_doc_id").apply()
+                // Clear active reader session when user explicitly navigates back to library/folder
+                prefs.edit()
+                    .remove("last_opened_doc_id")
+                    .putString("last_active_screen", "LIBRARY")
+                    .apply()
                 currentDocument = null
             }
         )

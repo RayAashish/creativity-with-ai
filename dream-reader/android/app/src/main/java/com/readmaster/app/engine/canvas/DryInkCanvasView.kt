@@ -1,6 +1,7 @@
 package com.readmaster.app.engine.canvas
 
 import android.content.Context
+import android.graphics.BlendMode
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
@@ -11,13 +12,16 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
 import android.graphics.RectF
 import android.graphics.Shader
+import android.os.Build
 import android.util.AttributeSet
 import android.view.View
+import androidx.ink.brush.StockBrushes
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.Stroke
 import com.readmaster.app.engine.eraser.EraserMode
 import com.readmaster.app.engine.eraser.PrecisionEraser
 import com.readmaster.app.engine.eraser.SpatialStrokeIndex
+import com.readmaster.app.engine.lasso.LassoMode
 import com.readmaster.app.engine.lasso.LassoTool
 import com.readmaster.app.engine.pdf.PdfPageEngine
 
@@ -103,21 +107,37 @@ class DryInkCanvasView @JvmOverloads constructor(
     }
 
     private val identityMatrix = Matrix()
+    private val scratchPageToScreenMatrix = Matrix()
 
-    private val deskBackgroundPaint = Paint().apply {
+    init {
+        // Explicitly enable GPU hardware acceleration layer for retina-sharp anti-aliasing
+        setLayerType(LAYER_TYPE_HARDWARE, null)
+    }
+
+    private val deskBackgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#EBECEF") // Soft reading desk background
         style = Paint.Style.FILL
     }
 
-    private val paperPaint = Paint().apply {
+    private val paperPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
         style = Paint.Style.FILL
     }
 
-    private val pageShadowPaint = Paint().apply {
+    private val pageShadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#25000000") // Realistic page shadow
         style = Paint.Style.FILL
     }
+
+    // Dedicated Highlighter Layer Paint: Multiplies translucent ink with paper so printed text is NEVER occluded
+    private val highlighterLayerPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            blendMode = BlendMode.MULTIPLY
+        } else {
+            xfermode = PorterDuffXfermode(PorterDuff.Mode.MULTIPLY)
+        }
+    }
+    private val highlighterBounds = RectF()
 
     // Realistic Page-Curl state & cached path buffers
     var curlDirection: CurlDirection = CurlDirection.NONE
@@ -188,7 +208,10 @@ class DryInkCanvasView @JvmOverloads constructor(
         return pageOffsetsY.getOrElse(pageIndex) { 0f }
     }
 
-    private fun isHighlighterStroke(stroke: Stroke): Boolean {
+    fun isHighlighterStroke(stroke: Stroke): Boolean {
+        if (stroke.brush.family == StockBrushes.highlighter()) return true
+        val familyId = stroke.brush.family.clientBrushFamilyId
+        if (familyId.contains("highlighter", ignoreCase = true)) return true
         val alpha = (stroke.brush.colorIntArgb ushr 24) and 0xFF
         return alpha <= 0x99
     }
@@ -322,14 +345,15 @@ class DryInkCanvasView @JvmOverloads constructor(
 
         val engine = pageEngine
         if (engine != null && engine.pageCount > 0) {
-            val targetWidth = width.toFloat() * transform.scale
-
             if (readingMode == ReadingMode.CONTINUOUS_SCROLL) {
                 if (pageOffsetsY.isEmpty()) updatePageLayout()
                 val visibleRect = RectF(0f, 0f, width.toFloat(), height.toFloat())
                 transform.screenToWorld(visibleRect)
 
-                for (i in 0 until engine.pageCount) {
+                val startPage = (findPageIndexAtWorldY(visibleRect.top) - 1).coerceAtLeast(0)
+                val endPage = (findPageIndexAtWorldY(visibleRect.bottom) + 1).coerceAtMost(engine.pageCount - 1)
+
+                for (i in startPage..endPage) {
                     val pageTop = pageOffsetsY.getOrElse(i) { 0f }
                     val pageSize = engine.getPageSize(i) ?: continue
                     val (pw, ph) = pageSize
@@ -345,10 +369,11 @@ class DryInkCanvasView @JvmOverloads constructor(
                         canvas.drawRoundRect(4f, 6f, pwF + 8f, phF + 10f, 6f, 6f, pageShadowPaint)
                         canvas.drawRect(0f, 0f, pwF, phF, paperPaint)
 
+                        val pageTargetWidth = pwF * transform.scale
                         engine.drawPage(
                             canvas = canvas,
                             pageIndex = i,
-                            targetWidth = targetWidth,
+                            screenScale = pageTargetWidth,
                             onPageLoaded = { postInvalidateOnAnimation() }
                         )
 
@@ -360,15 +385,15 @@ class DryInkCanvasView @JvmOverloads constructor(
                 }
             } else {
                 // BOOK_FLIP mode: Realistic Page Curl or Static Single Page
-                if (curlDirection != CurlDirection.NONE && curlProgress > 0.001f) {
-                    drawPageCurl(canvas, engine, targetWidth)
-                } else {
-                    val pageSize = engine.getPageSize(currentPdfPageIndex)
-                    if (pageSize != null) {
-                        val (pw, ph) = pageSize
-                        val pwF = pw.toFloat()
-                        val phF = ph.toFloat()
+                val pageSize = engine.getPageSize(currentPdfPageIndex)
+                val pwF = pageSize?.first?.toFloat() ?: 612f
+                val phF = pageSize?.second?.toFloat() ?: 792f
+                val pageTargetWidth = pwF * transform.scale
 
+                if (curlDirection != CurlDirection.NONE && curlProgress > 0.001f) {
+                    drawPageCurl(canvas, engine, pageTargetWidth)
+                } else {
+                    if (pageSize != null) {
                         // Realistic book page drop shadow
                         canvas.drawRoundRect(4f, 6f, pwF + 8f, phF + 10f, 6f, 6f, pageShadowPaint)
                         canvas.drawRect(0f, 0f, pwF, phF, paperPaint)
@@ -377,7 +402,7 @@ class DryInkCanvasView @JvmOverloads constructor(
                         engine.drawPage(
                             canvas = canvas,
                             pageIndex = currentPdfPageIndex,
-                            targetWidth = targetWidth,
+                            screenScale = pageTargetWidth,
                             onPageLoaded = { postInvalidateOnAnimation() }
                         )
 
@@ -394,8 +419,16 @@ class DryInkCanvasView @JvmOverloads constructor(
             }
         }
 
-        // Draw lasso selection overlay if active
-        lassoTool?.draw(canvas)
+        // Draw lasso selection overlay if active (translated by activePageTop in scroll mode)
+        val lasso = lassoTool
+        if (lasso != null && lasso.mode != LassoMode.IDLE) {
+            canvas.save()
+            if (readingMode == ReadingMode.CONTINUOUS_SCROLL) {
+                canvas.translate(0f, lasso.activePageTop)
+            }
+            lasso.draw(canvas)
+            canvas.restore()
+        }
 
         canvas.restore()
     }
@@ -661,18 +694,43 @@ class DryInkCanvasView @JvmOverloads constructor(
 
     /**
      * Draws vector strokes belonging strictly to [pageIndex] in page-local coordinates.
-     * Highlighters are drawn with hardware anti-aliasing directly onto the paper (NO saveLayer black screen glitch!).
+     * Highlighters are drawn onto a bounded layer with BlendMode.MULTIPLY so printed black text stays 100% crisp & visible.
      */
     private fun drawPageStrokes(canvas: Canvas, pageIndex: Int) {
         val pageStrokes = pageStrokesMap[pageIndex] ?: return
         if (pageStrokes.isEmpty()) return
 
-        // 1. Highlighters drawn first: translucent, blending over white paper and keeping black text sharp
+        // 1. Highlighters drawn with MULTIPLY blend mode so underlying printed text stays 100% crisp & legible
+        var hasHighlighters = false
+        highlighterBounds.setEmpty()
         for (i in 0 until pageStrokes.size) {
             val stroke = pageStrokes[i]
             if (isHighlighterStroke(stroke)) {
-                strokeRenderer.draw(canvas, stroke, identityMatrix)
+                hasHighlighters = true
+                val box = stroke.shape.computeBoundingBox()
+                if (box != null) {
+                    if (highlighterBounds.isEmpty) {
+                        highlighterBounds.set(box.xMin - 12f, box.yMin - 12f, box.xMax + 12f, box.yMax + 12f)
+                    } else {
+                        highlighterBounds.union(box.xMin - 12f, box.yMin - 12f, box.xMax + 12f, box.yMax + 12f)
+                    }
+                }
             }
+        }
+
+        if (hasHighlighters) {
+            val saveCount = if (!highlighterBounds.isEmpty) {
+                canvas.saveLayer(highlighterBounds, highlighterLayerPaint)
+            } else {
+                canvas.saveLayer(null, highlighterLayerPaint)
+            }
+            for (i in 0 until pageStrokes.size) {
+                val stroke = pageStrokes[i]
+                if (isHighlighterStroke(stroke)) {
+                    strokeRenderer.draw(canvas, stroke, identityMatrix)
+                }
+            }
+            canvas.restoreToCount(saveCount)
         }
 
         // 2. Opaque Pen / Marker strokes on top

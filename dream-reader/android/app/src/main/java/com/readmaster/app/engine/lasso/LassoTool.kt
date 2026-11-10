@@ -39,6 +39,10 @@ class LassoTool {
     var mode: LassoMode = LassoMode.IDLE
         private set
 
+    // Active page and scroll offset tracking for Scroll & Book mode parity
+    var activePageIndex: Int = 0
+    var activePageTop: Float = 0f
+
     val lassoPoints = mutableListOf<PointF>()
     private val lassoPath by lazy { Path() }
 
@@ -62,8 +66,8 @@ class LassoTool {
     private val lassoPathPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = 3f
-            color = Color.parseColor("#1E88E5")
+            strokeWidth = 2.5f
+            color = Color.parseColor("#2563EB") // Sharp high-contrast blue dotted line
             pathEffect = DashPathEffect(floatArrayOf(12f, 8f), 0f)
         }
     }
@@ -98,7 +102,9 @@ class LassoTool {
         }
     }
 
-    fun startLasso(worldX: Float, worldY: Float) {
+    fun startLasso(worldX: Float, worldY: Float, pageIndex: Int = 0, pageTop: Float = 0f) {
+        activePageIndex = pageIndex
+        activePageTop = pageTop
         if (mode == LassoMode.TRANSFORMING && selectedStrokes.isNotEmpty()) {
             val handle = hitTestHandle(worldX, worldY)
             if (handle != TransformHandle.NONE) {

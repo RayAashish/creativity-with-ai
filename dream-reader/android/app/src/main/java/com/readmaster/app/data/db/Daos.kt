@@ -16,6 +16,12 @@ interface FolderDao {
     @Query("SELECT * FROM folders ORDER BY createdAt ASC")
     fun getAllFolders(): Flow<List<FolderEntity>>
 
+    @Query("SELECT * FROM folders WHERE parentFolderId IS NULL ORDER BY createdAt ASC")
+    fun getRootFolders(): Flow<List<FolderEntity>>
+
+    @Query("SELECT * FROM folders WHERE parentFolderId = :parentId ORDER BY createdAt ASC")
+    fun getSubfolders(parentId: String): Flow<List<FolderEntity>>
+
     @Query("SELECT * FROM folders WHERE id = :id LIMIT 1")
     suspend fun getFolderById(id: String): FolderEntity?
 
@@ -30,6 +36,12 @@ interface FolderDao {
 
     @Query("UPDATE documents SET folderId = NULL WHERE folderId = :folderId")
     suspend fun unassignDocuments(folderId: String)
+
+    @Query("UPDATE documents SET folderId = :newFolderId WHERE folderId = :oldFolderId")
+    suspend fun reassignDocuments(oldFolderId: String, newFolderId: String?)
+
+    @Query("UPDATE folders SET parentFolderId = :newParentId WHERE parentFolderId = :oldParentId")
+    suspend fun reassignSubfolders(oldParentId: String, newParentId: String?)
 }
 
 @Dao

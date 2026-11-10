@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.CropFree
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FirstPage
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Highlight
@@ -74,6 +75,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -120,18 +122,26 @@ fun ReaderScreen(
     // Canvas view reference
     var inkCanvasView: InkCanvasView? by remember { mutableStateOf(null) }
 
-    // Persistent reading progress initialization (restore exact last page from Prefs or Room)
+    val readingPrefs = remember { context.getSharedPreferences("lipi_reading_prefs", Context.MODE_PRIVATE) }
+    var isResumeEnabled by remember {
+        mutableStateOf(readingPrefs.getBoolean("pref_resume_reading_enabled", true))
+    }
+
+    // Persistent reading progress initialization (honoring the Resume vs Start from Page 1 setting)
     val savedPage = remember(document.id) {
-        val prefs = context.getSharedPreferences("lipi_reading_prefs", Context.MODE_PRIVATE)
-        val prefPage = prefs.getInt("last_page_${document.id}", -1)
-        if (prefPage in 0 until document.pageCount) prefPage else document.lastPage
+        if (isResumeEnabled) {
+            val prefPage = readingPrefs.getInt("last_page_${document.id}", -1)
+            if (prefPage in 0 until document.pageCount) prefPage else document.lastPage
+        } else {
+            0
+        }
     }
 
     var currentPage by remember(document.id) { mutableIntStateOf(savedPage) }
     var totalPages by remember { mutableIntStateOf(document.pageCount.coerceAtLeast(1)) }
     var currentTool by remember { mutableStateOf(CanvasTool.BOOK) }
     var currentColor by remember { mutableIntStateOf(AndroidColor.parseColor("#111318")) }
-    var currentWidth by remember { mutableStateOf(4.0f) }
+    var currentWidth by remember { mutableFloatStateOf(0.6f) }
     var canUndo by remember { mutableStateOf(false) }
     var canRedo by remember { mutableStateOf(false) }
     var isZenMode by remember { mutableStateOf(false) }
@@ -143,7 +153,6 @@ fun ReaderScreen(
     var lastBackPressTime by remember { mutableStateOf(0L) }
 
     // One-time Book Mode Reading Hint
-    val readingPrefs = remember { context.getSharedPreferences("lipi_reading_prefs", Context.MODE_PRIVATE) }
     var hasShownBookHint by rememberSaveable {
         mutableStateOf(readingPrefs.getBoolean("has_shown_book_mode_hint", false))
     }
@@ -160,13 +169,11 @@ fun ReaderScreen(
         }
     }
 
-    // Lifecycle monitoring: immediately save page on app pause or stop
+    // Lifecycle monitoring: save page on pause/stop without overriding back-navigation state
     DisposableEffect(lifecycleOwner, document.id) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
-                context.getSharedPreferences("lipi_reading_prefs", Context.MODE_PRIVATE)
-                    .edit()
-                    .putString("last_opened_doc_id", document.id)
+                readingPrefs.edit()
                     .putInt("last_page_${document.id}", currentPage)
                     .apply()
                 onUpdateDocProgress(currentPage)
@@ -175,12 +182,10 @@ fun ReaderScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            context.getSharedPreferences("lipi_reading_prefs", Context.MODE_PRIVATE)
-                .edit()
-                .putString("last_opened_doc_id", document.id)
+            readingPrefs.edit()
                 .putInt("last_page_${document.id}", currentPage)
                 .apply()
-            onUpdateDocProgress(currentPage)
+            // Do NOT write "last_opened_doc_id" here so exiting to library/folders stays in library/folders
         }
     }
 
@@ -213,6 +218,7 @@ fun ReaderScreen(
 
     // Palette
     val colors = listOf(
+        "#FFD600" to "Yellow",
         "#111318" to "Black",
         "#1E88E5" to "Blue",
         "#E53935" to "Red",
@@ -262,6 +268,44 @@ fun ReaderScreen(
                                 }
                             },
                             actions = {
+                                // Resume Reading Mode Toggle Pill (Resume from last page vs Start over from Page 1)
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (isResumeEnabled) Color(0xFFDCFCE7) else Color(0xFFF1F5F9))
+                                        .border(1.dp, if (isResumeEnabled) Color(0xFF86EFAC) else Color(0xFFCBD5E1), RoundedCornerShape(8.dp))
+                                        .clickable {
+                                            val newSetting = !isResumeEnabled
+                                            isResumeEnabled = newSetting
+                                            readingPrefs.edit().putBoolean("pref_resume_reading_enabled", newSetting).apply()
+                                            android.widget.Toast.makeText(
+                                                context,
+                                                if (newSetting) "Resume mode ON: PDFs will open from your last read page"
+                                                else "Start Over mode: PDFs will start from Page 1",
+                                                android.widget.Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                        .padding(horizontal = 8.dp, vertical = 5.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = if (isResumeEnabled) Icons.Default.AutoStories else Icons.Default.FirstPage,
+                                            contentDescription = "Resume Mode",
+                                            tint = if (isResumeEnabled) Color(0xFF15803D) else Color(0xFF64748B),
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = if (isResumeEnabled) "Resume: ON" else "Start: Page 1",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (isResumeEnabled) Color(0xFF15803D) else Color(0xFF475569)
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(6.dp))
+
                                 // Manual Word Lookup Button
                                 IconButton(onClick = { showManualLookupDialog = true }) {
                                     Icon(
@@ -771,6 +815,25 @@ fun ReaderScreen(
                                     shape = RoundedCornerShape(12.dp)
                                 )
                                 .clickable {
+                                    if (tool == CanvasTool.HIGHLIGHT) {
+                                        if (currentColor == AndroidColor.parseColor("#111318")) {
+                                            currentColor = AndroidColor.parseColor("#FFD600")
+                                            inkCanvasView?.strokeColor = currentColor
+                                        }
+                                        if (currentWidth < 8.0f) {
+                                            currentWidth = 16.0f
+                                            inkCanvasView?.strokeWidth = 16.0f
+                                        }
+                                    } else if (tool == CanvasTool.PEN) {
+                                        if (currentColor == AndroidColor.parseColor("#FFD600")) {
+                                            currentColor = AndroidColor.parseColor("#111318")
+                                            inkCanvasView?.strokeColor = currentColor
+                                        }
+                                        if (currentWidth >= 8.0f) {
+                                            currentWidth = 0.6f
+                                            inkCanvasView?.strokeWidth = 0.6f
+                                        }
+                                    }
                                     currentTool = tool
                                     inkCanvasView?.activeTool = tool
                                 }
@@ -801,13 +864,25 @@ fun ReaderScreen(
                         Box(modifier = Modifier.width(1.dp).height(20.dp).background(Color(0xFF475569)))
                         Spacer(modifier = Modifier.width(3.dp))
 
-                        listOf(
-                            1.5f to "Fine",
-                            3.5f to "Med",
-                            6.0f to "Bold",
-                            12.0f to "Thick"
-                        ).forEach { (size, label) ->
-                            val isSizeSelected = kotlin.math.abs(currentWidth - size) < 0.6f
+                        val widthPresets = if (currentTool == CanvasTool.HIGHLIGHT) {
+                            listOf(
+                                12.0f to "Fine",
+                                16.0f to "Med",
+                                22.0f to "Bold",
+                                30.0f to "Thick"
+                            )
+                        } else {
+                            listOf(
+                                0.6f to "Fine",
+                                1.2f to "Med",
+                                2.2f to "Bold",
+                                4.0f to "Thick"
+                            )
+                        }
+
+                        widthPresets.forEach { (size, label) ->
+                            val tolerance = if (currentTool == CanvasTool.HIGHLIGHT) 3.0f else 0.25f
+                            val isSizeSelected = kotlin.math.abs(currentWidth - size) < tolerance
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))

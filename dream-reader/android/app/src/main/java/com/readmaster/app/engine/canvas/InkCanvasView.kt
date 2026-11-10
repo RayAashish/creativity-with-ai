@@ -114,7 +114,7 @@ class InkCanvasView @JvmOverloads constructor(
             activeBrush = createBrushForTool(activeTool, value, strokeWidth)
         }
 
-    var strokeWidth: Float = 4.0f
+    var strokeWidth: Float = 0.6f
         set(value) {
             field = value
             activeBrush = createBrushForTool(activeTool, strokeColor, value)
@@ -213,11 +213,12 @@ class InkCanvasView @JvmOverloads constructor(
         dryInkView.pageEngine = pageEngine
 
         lassoTool.onStrokesTransformPreview = { oldStrokes, newStrokes ->
-            dryInkView.replacePageStrokes(dryInkView.currentPdfPageIndex, oldStrokes, newStrokes)
+            dryInkView.replacePageStrokes(lassoTool.activePageIndex, oldStrokes, newStrokes)
         }
 
         lassoTool.onStrokesTransformCommitted = { oldStrokes, newStrokes ->
-            undoStack.add(StrokeAction(pageIndex = dryInkView.currentPdfPageIndex, addedStrokes = newStrokes, removedStrokes = oldStrokes))
+            val page = lassoTool.activePageIndex
+            undoStack.add(StrokeAction(pageIndex = page, addedStrokes = newStrokes, removedStrokes = oldStrokes))
             redoStack.clear()
             notifyUndoRedoState()
             dryInkView.invalidate()
@@ -309,8 +310,10 @@ class InkCanvasView @JvmOverloads constructor(
                 Brush.createWithColorIntArgb(StockBrushes.pressurePen(), color, size, 0.01f)
             }
             CanvasTool.HIGHLIGHT -> {
-                val highlighterSize = (size * 3.5f).coerceAtLeast(18f)
-                val translucentColor = (color and 0x00FFFFFF) or (0x4D shl 24) // ~30% alpha for clean highlighting
+                // In PDF points: standard text line height in printed books is ~14-18 pt.
+                // Size directly specifies the highlighter height in PDF points.
+                val highlighterSize = size.coerceIn(10f, 36f)
+                val translucentColor = (color and 0x00FFFFFF) or (0x55 shl 24) // 33% alpha matching note engine
                 Brush.createWithColorIntArgb(StockBrushes.highlighter(), translucentColor, highlighterSize, 0.01f)
             }
             CanvasTool.ERASER, CanvasTool.LASSO, CanvasTool.TRANSLATE, CanvasTool.BOOK -> {
@@ -325,10 +328,25 @@ class InkCanvasView @JvmOverloads constructor(
             notifyUndoRedoState()
             onPageChanged?.invoke(pageIndex)
 
-            if (fitToScreen && width > 0 && height > 0) {
-                autoFitPage(width.toFloat(), height.toFloat())
-            } else {
+            if (readingMode == ReadingMode.CONTINUOUS_SCROLL) {
+                val pageTop = dryInkView.getPageTopOffset(pageIndex)
+                val targetTy = -pageTop * dryInkView.transform.scale + 16f
+                val targetTx = if (isFixedScreen && width > 0) {
+                    val pageSize = pageEngine.getPageSize(pageIndex)
+                    val pw = pageSize?.first?.toFloat() ?: 612f
+                    (width.toFloat() - pw * dryInkView.transform.scale) / 2f
+                } else {
+                    dryInkView.transform.translationX
+                }
+                dryInkView.transform.setTransform(dryInkView.transform.scale, targetTx, targetTy)
+                clampScrollBounds()
                 dryInkView.invalidate()
+            } else {
+                if (fitToScreen && width > 0 && height > 0) {
+                    autoFitPage(width.toFloat(), height.toFloat())
+                } else {
+                    dryInkView.invalidate()
+                }
             }
         }
     }
@@ -350,7 +368,7 @@ class InkCanvasView @JvmOverloads constructor(
     fun deleteLassoSelection() {
         val removed = lassoTool.deleteSelected()
         if (removed.isNotEmpty()) {
-            val page = dryInkView.currentPdfPageIndex
+            val page = lassoTool.activePageIndex
             dryInkView.removePageStrokes(page, removed)
             undoStack.add(StrokeAction(pageIndex = page, removedStrokes = removed))
             redoStack.clear()
@@ -363,7 +381,7 @@ class InkCanvasView @JvmOverloads constructor(
     fun changeLassoSelectionColor(newColor: Int) {
         val (oldStrokes, newStrokes) = lassoTool.changeColor(newColor)
         if (oldStrokes.isNotEmpty()) {
-            val page = dryInkView.currentPdfPageIndex
+            val page = lassoTool.activePageIndex
             dryInkView.replacePageStrokes(page, oldStrokes, newStrokes)
             undoStack.add(StrokeAction(pageIndex = page, addedStrokes = newStrokes, removedStrokes = oldStrokes))
             redoStack.clear()
@@ -375,7 +393,7 @@ class InkCanvasView @JvmOverloads constructor(
     fun duplicateLassoSelection() {
         val duplicates = lassoTool.duplicateSelected(40f, 40f)
         if (duplicates.isNotEmpty()) {
-            val page = dryInkView.currentPdfPageIndex
+            val page = lassoTool.activePageIndex
             dryInkView.addPageStrokes(page, duplicates)
             undoStack.add(StrokeAction(pageIndex = page, addedStrokes = duplicates))
             redoStack.clear()
@@ -418,7 +436,12 @@ class InkCanvasView @JvmOverloads constructor(
         val targetScale = minOf(scaleX, scaleY).coerceIn(0.5f, 6.0f)
 
         val tx = (viewWidth - pw * targetScale) / 2f
-        val ty = (viewHeight - ph * targetScale) / 2f
+        val ty = if (readingMode == ReadingMode.CONTINUOUS_SCROLL) {
+            val pageTop = dryInkView.getPageTopOffset(dryInkView.currentPdfPageIndex)
+            -pageTop * targetScale + 16f
+        } else {
+            (viewHeight - ph * targetScale) / 2f
+        }
 
         baseFitScale = targetScale
         dryInkView.transform.setTransform(targetScale, tx, ty)
@@ -775,7 +798,7 @@ class InkCanvasView @JvmOverloads constructor(
         if (currentTool == CanvasTool.LASSO) {
             when (action) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
-                    lassoTool.startLasso(localX, localY)
+                    lassoTool.startLasso(localX, localY, targetPageIndex, pageTop)
                     dryInkView.invalidate()
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -800,6 +823,7 @@ class InkCanvasView @JvmOverloads constructor(
                 lastActiveStrokeTargetPage = targetPageIndex
 
                 // Map touch events to page coordinates
+                val pageTop = if (readingMode == ReadingMode.BOOK_FLIP) 0f else dryInkView.getPageTopOffset(targetPageIndex)
                 val screenToPage = Matrix(dryInkView.transform.screenToWorldMatrix).apply {
                     postTranslate(0f, -pageTop)
                 }
@@ -821,6 +845,7 @@ class InkCanvasView @JvmOverloads constructor(
                 predictedEvent?.recycle()
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
+                predictor.record(event)
                 val strokeId = activeStrokeIds.remove(pointerId) ?: return
                 activeStrokePages.remove(pointerId)
                 inProgressStrokesView.finishStroke(event, pointerId, strokeId)

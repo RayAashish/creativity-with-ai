@@ -10,6 +10,7 @@ data class FolderEntity(
     val name: String,
     val iconKey: String = "folder",
     val colorHex: String = "#4F46E5",
+    val parentFolderId: String? = null,
     val createdAt: Long = System.currentTimeMillis()
 )
 

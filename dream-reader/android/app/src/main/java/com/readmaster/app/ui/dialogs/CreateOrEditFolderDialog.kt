@@ -7,7 +7,6 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,10 +23,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -50,38 +52,79 @@ import com.readmaster.app.data.model.FolderEntity
 import com.readmaster.app.data.model.FolderIconsCatalog
 import java.util.UUID
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CreateOrEditFolderDialog(
     initialFolder: FolderEntity? = null,
+    parentFolder: FolderEntity? = null,
     onSaveFolder: (FolderEntity) -> Unit,
+    onDeleteFolder: ((FolderEntity) -> Unit)? = null,
     onDismiss: () -> Unit
 ) {
     var name by remember { mutableStateOf(initialFolder?.name ?: "") }
-    var selectedIconKey by remember { mutableStateOf(initialFolder?.iconKey ?: "personal_dev") }
-    var selectedColorHex by remember { mutableStateOf(initialFolder?.colorHex ?: "#4F46E5") }
+    var selectedIconKey by remember {
+        mutableStateOf(
+            initialFolder?.iconKey
+                ?: (if (parentFolder?.name?.contains("Java", ignoreCase = true) == true) "jdbc"
+                else if (parentFolder?.name?.contains("Spring", ignoreCase = true) == true) "spring_core"
+                else "personal_dev")
+        )
+    }
+    var selectedColorHex by remember {
+        mutableStateOf(initialFolder?.colorHex ?: parentFolder?.colorHex ?: "#4F46E5")
+    }
     var selectedCategory by remember { mutableStateOf("All") }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
-    val presetNames = listOf(
-        "Personal Development" to "personal_dev",
-        "Spring Boot" to "spring_boot",
-        "Java" to "java",
-        "System Design" to "system_design",
-        "DSA & Algorithms" to "dsa",
-        "Machine Learning" to "machine_learning"
-    )
+    // Smart context-aware presets based on parent folder
+    val presetNames = remember(parentFolder) {
+        val parentName = parentFolder?.name?.lowercase() ?: ""
+        when {
+            parentName.contains("java") -> listOf(
+                "JDBC" to "jdbc",
+                "Multithreading" to "multithreading",
+                "Exception Handling" to "exception_handling",
+                "Networking" to "networking_sockets",
+                "Collections & Streams" to "collections",
+                "JVM Internals" to "jvm_internals"
+            )
+            parentName.contains("spring") -> listOf(
+                "Spring Core" to "spring_core",
+                "Data JPA" to "spring_jpa",
+                "Security" to "spring_security",
+                "AOP" to "spring_aop",
+                "Microservices" to "microservices",
+                "REST APIs" to "api_rest"
+            )
+            parentName.contains("system") || parentName.contains("design") -> listOf(
+                "HLD" to "hld",
+                "LLD" to "lld",
+                "Microservices" to "microservices",
+                "Distributed Systems" to "distributed_systems",
+                "Databases & Cache" to "database_sql",
+                "Kafka & Queues" to "kafka"
+            )
+            else -> listOf(
+                "Personal Development" to "personal_dev",
+                "Spring Boot" to "spring_boot",
+                "Java" to "java",
+                "System Design" to "system_design",
+                "DSA & Algorithms" to "dsa",
+                "Machine Learning" to "machine_learning"
+            )
+        }
+    }
 
     val colorOptions = listOf(
         "#4F46E5", // Indigo
         "#10B981", // Emerald
         "#EA580C", // Orange
+        "#22C55E", // Green
         "#3B82F6", // Blue
         "#8B5CF6", // Violet
         "#EC4899", // Pink
         "#06B6D4", // Cyan
         "#EF4444", // Red
-        "#F59E0B", // Amber
-        "#374151"  // Slate
+        "#F59E0B"  // Amber
     )
 
     val filteredIcons = remember(selectedCategory) {
@@ -93,6 +136,33 @@ fun CreateOrEditFolderDialog(
     }
 
     val currentIcon = FolderIconsCatalog.findIcon(selectedIconKey)
+
+    if (showDeleteConfirmDialog && initialFolder != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text("Delete Folder?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text("Are you sure you want to delete \"${initialFolder.name}\"? Any books inside will be kept in the parent folder or unassigned.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDeleteFolder?.invoke(initialFolder)
+                        onDismiss()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+                ) {
+                    Text("Delete", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -129,15 +199,19 @@ fun CreateOrEditFolderDialog(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = if (initialFolder == null) "New Study Folder" else "Edit Folder",
+                                text = when {
+                                    initialFolder != null -> "Edit Folder"
+                                    parentFolder != null -> "New Subfolder"
+                                    else -> "New Study Folder"
+                                },
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
                             Text(
-                                text = "${FolderIconsCatalog.allIcons.size}+ Curated Tech & Study Logos",
+                                text = if (parentFolder != null) "Inside: ${parentFolder.name}" else "${FolderIconsCatalog.allIcons.size}+ Curated Tech Logos",
                                 fontSize = 11.sp,
-                                color = Color(0xFF94A3B8)
+                                color = if (parentFolder != null) Color(0xFF818CF8) else Color(0xFF94A3B8)
                             )
                         }
                     }
@@ -153,8 +227,13 @@ fun CreateOrEditFolderDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Folder Name", color = Color(0xFF94A3B8)) },
-                    placeholder = { Text("e.g. System Design, Spring Boot, Java", color = Color(0xFF64748B)) },
+                    label = { Text(if (parentFolder != null) "Subfolder Name" else "Folder Name", color = Color(0xFF94A3B8)) },
+                    placeholder = {
+                        Text(
+                            text = if (parentFolder != null) "e.g. Multithreading, JDBC, Data JPA" else "e.g. System Design, Spring Boot, Java",
+                            color = Color(0xFF64748B)
+                        )
+                    },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
@@ -276,7 +355,7 @@ fun CreateOrEditFolderDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 100+ Icons Grid (Clean dark background with vibrant symbols)
+                // 100+ Icons Grid
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 64.dp),
                     modifier = Modifier
@@ -320,41 +399,59 @@ fun CreateOrEditFolderDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Actions
+                // Actions: Delete Button on left if editing, Cancel & Save on right
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Cancel", color = Color(0xFF94A3B8))
+                    if (initialFolder != null && onDeleteFolder != null) {
+                        OutlinedButton(
+                            onClick = { showDeleteConfirmDialog = true },
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444)),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Delete Folder", fontSize = 12.sp)
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.width(1.dp))
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            if (name.isNotBlank()) {
-                                val folder = initialFolder?.copy(
-                                    name = name.trim(),
-                                    iconKey = selectedIconKey,
-                                    colorHex = selectedColorHex
-                                ) ?: FolderEntity(
-                                    id = UUID.randomUUID().toString(),
-                                    name = name.trim(),
-                                    iconKey = selectedIconKey,
-                                    colorHex = selectedColorHex
-                                )
-                                onSaveFolder(folder)
-                                onDismiss()
-                            }
-                        },
-                        enabled = name.isNotBlank(),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text(
-                            text = if (initialFolder == null) "Create Folder" else "Save Changes",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = onDismiss) {
+                            Text("Cancel", color = Color(0xFF94A3B8))
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                if (name.isNotBlank()) {
+                                    val folder = initialFolder?.copy(
+                                        name = name.trim(),
+                                        iconKey = selectedIconKey,
+                                        colorHex = selectedColorHex
+                                    ) ?: FolderEntity(
+                                        id = UUID.randomUUID().toString(),
+                                        name = name.trim(),
+                                        iconKey = selectedIconKey,
+                                        colorHex = selectedColorHex,
+                                        parentFolderId = parentFolder?.id
+                                    )
+                                    onSaveFolder(folder)
+                                    onDismiss()
+                                }
+                            },
+                            enabled = name.isNotBlank(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(
+                                text = if (initialFolder == null) "Create Folder" else "Save Changes",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
