@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Build Outputs & Bundles
+dist/
+build/
+out/
+tsconfig.tsbuildinfo
+
+# Binary Distributions (use GitHub Releases)
+apk/
+*.apk
+*.aab
+
+# Environment & Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.jks
+*.keystore
+*.p12
+*.pem
+credentials.json
+google-services.json
+
+# Android Studio & Gradle
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/capacitor-cordova-android-plugins/
+.gradle/
+*.iml
+.idea/
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

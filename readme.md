@@ -1,209 +1,124 @@
-# Creativity Suite (Creativity with AI)
+# Creativity with AI
 
 <p align="center">
-  <em>A high-performance monorepo suite of native Android and modern web applications built for zero-latency creative computing, on-device intelligence, and privacy-first local workflows.</em>
+  <em>A high-performance monorepo of native, privacy-first mobile and intelligent applications engineered with Kotlin, Jetpack Compose, Web, and AI systems.</em>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Active-emerald?style=for-the-badge" alt="Status" />
-  <img src="https://img.shields.io/badge/Architecture-Hybrid%20Monorepo-indigo?style=for-the-badge" alt="Monorepo" />
-  <img src="https://img.shields.io/badge/Kotlin-2.0+-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin" />
-  <img src="https://img.shields.io/badge/Jetpack_Compose-Material_3-4285F4?style=for-the-badge&logo=android&logoColor=white" alt="Compose" />
-  <img src="https://img.shields.io/badge/Rust-Native_Core-DEA584?style=for-the-badge&logo=rust&logoColor=white" alt="Rust" />
-  <img src="https://img.shields.io/badge/React_19-TypeScript_5-3178C6?style=for-the-badge&logo=react&logoColor=white" alt="React" />
-  <img src="https://img.shields.io/badge/Vite_6-Bundler-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/Platform-Android_%7C_Web-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Platform" />
+  <img src="https://img.shields.io/badge/Language-Kotlin_•_TypeScript-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Languages" />
+  <img src="https://img.shields.io/badge/UI-Jetpack_Compose_%26_React-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white" alt="UI" />
   <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License" />
 </p>
 
+---
+
+## Featured Application: MindForge (Brain Games)
+
 <p align="center">
-  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/app-debug.apk">
-    <img src="https://img.shields.io/badge/Download-APK-25D366?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+  <!-- PRIMARY ACTION BUTTONS -->
+  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/MindForge-release.apk">
+    <img src="https://img.shields.io/badge/Download_MindForge-Release_APK_(2.2MB)-25D366?style=for-the-badge&logo=android&logoColor=white" alt="Download Release APK" />
   </a>
-  <a href="https://github.com/RayAashish/creativity-with-ai">
-    <img src="https://img.shields.io/badge/Live-Demo-blue?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Demo" />
+  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/MindForge-debug.apk">
+    <img src="https://img.shields.io/badge/Download_MindForge-Debug_APK_(20MB)-007ACC?style=for-the-badge&logo=android&logoColor=white" alt="Download Debug APK" />
   </a>
 </p>
 
----
+### Overview & Key Highlights
+- **Problem Statement:** Students, competitive exam candidates, and professionals need rapid 30–120 second daily cognitive warm-ups, but mainstream apps are laden with subscriptions, cloud accounts, slow loading screens, and ad trackers.
+- **Core Value Proposition:** **MindForge** is an offline-first cognitive conditioning suite with zero internet permission, sub-millisecond on-device problem generation, Matiks-style auto-submit, horizontal spring shake feedback on errors, and 50 data-driven difficulty tiers across 25 games.
+- **Feature Matrix:**
+  - **25 Mini-Games** across Mental Math (9), Memory (5), Focus & Speed (5), Logic (4), and Language (2).
+  - **50 Scaled Algorithmic Levels** per game (1,250 total progressions).
+  - **Tactile Fast Keypad:** Instant auto-submission on correct match; prefix-guarded multi-digit input; 350ms spring shake and 2-beat error vibration on wrong inputs with automatic clearing.
+  - **100% On-Device:** Zero cloud telemetry, SQLite Room database, Jetpack DataStore preferences, SAF JSON backup/restore, and anti-clock-tamper streak engine.
 
-## Overview & Key Highlights
-
-### Problem Statement
-Modern creative and productivity software increasingly relies on continuous cloud connectivity, heavy remote subscriptions, and remote data ingestion. This creates significant latency, security compromises, and single-point-of-failure risks for sensitive user workflows such as personal document analysis, low-latency stylus drawing, air-gapped PDF operations, and text extraction.
-
-### Core Value Proposition
-**Creativity Suite** delivers an offline-first, client-side engineering stack combining native Android performance and modular web applications:
-- **100% On-Device Execution:** All image OCR, stylus canvas rendering, PDF compilation, and data persistence operate strictly on the user machine or mobile device without external cloud dependencies.
-- **Sub-20ms Reactive Pipelines:** Direct hardware-accelerated drawing surfaces and WebAssembly engines eliminate network roundtrips.
-- **Zero Cloud Leakage:** Strict air-gapped sandboxing, Android Scoped Storage integration, and local SQLite/Room data stores.
-
-### Feature Matrix
-- **In-Image Text Replacement (`edit_image_text`):** Browser-native optical character recognition (WebAssembly Tesseract engine), automatic background color boundary sampling, non-destructive background patch blending, 8-point bounding box transforms, and multi-format export (PNG, JPEG, WebP, vector PDF).
-- **Stylus Note Engine (`dream-note-taking-app`):** Sub-millisecond latency freehand digital ink, low-overhead curve interpolation, pressure-sensitive strokes, realistic page curl shaders, and local notebook hierarchy.
-- **Air-Gapped PDF Toolkit (`pdf-offline-toolkit`):** Native Android document scanner, local page re-ordering, lossless merging, offline OCR indexing, and scoped storage exports.
-- **Distraction-Free Focus Launcher (`anti-addication-launcher`):** Accessibility-level application boundary enforcement, system grayscale automation, minimalist typography, and Rust-accelerated intent lookup.
-- **Hardware-Accelerated Vector Engine (`infintely-zoomable-svg`):** Rust native engine combined with Android NDK for arbitrary precision vector zoom without raster artifacts.
-- **Markdown Document Processor (`markdown-to-pdf`):** Offline AST parsing, KaTeX mathematical typesetting, Mermaid diagram rendering, and print-ready PDF compilation.
-
----
-
-## System Architecture & Workflow
-
-### High-Level Architecture Diagram
+### MindForge System Architecture
 
 ```mermaid
 graph TD
-    subgraph ClientPresentation["Presentation & UI Layer"]
-        A1["Jetpack Compose UI (Android 14+)"]
-        A2["React 19 + TypeScript SPA (Web)"]
-        A3["Gesture Systems & Stylus Motion Events"]
+    subgraph UI ["Presentation Layer (Jetpack Compose M3)"]
+        NavHost["MindForgeNavGraph (Type-Safe Navigation Compose)"]
+        HomeScreen["HomeScreen (Streak Ring, Daily Hero, 25 Game Cards)"]
+        InstructionScreen["GameInstructionsScreen (50-Level Carousel, Rules, Tips)"]
+        PlayScreen["GamePlayScreen (Center Stage, Tactile Shake, Fast Keypad)"]
+        ResultsScreen["GameResultsScreen (Star Breakdown, XP, Leaderboard)"]
     end
 
-    subgraph ProcessingEngines["Core Processing & Engine Layer"]
-        B1["Rust JNI / Native C++ Accelerated Pipelines"]
-        B2["WASM Optical Character Recognition Engine"]
-        B3["Mathematical & AST Document Parsers"]
-        B4["Local Color Sampling & Inpaint Patch Generators"]
+    subgraph Core ["Engine & Algorithmic Domain"]
+        Registry["GameRegistry (Hilt Multi-Binding)"]
+        Engines["25 GameEngine Implementations (Math, Memory, Focus, Logic, Language)"]
+        PrefixGuard["Prefix-Guard Input Controller (Auto-Submit / Shake)"]
+        StreakEng["Anti-Tamper Streak Engine (Monotonic Clock Guards)"]
     end
 
-    subgraph StorageLayer["Data & Persistence Layer"]
-        C1["Android Scoped Storage & Room SQL DB"]
-        C2["Client-Side IndexedDB & LocalStorage"]
-        C3["Zero-Network Local File System I/O"]
+    subgraph Data ["Local-First Persistence (No Network)"]
+        RoomDB[("MindForgeDatabase (SQLite Room)")]
+        DataStore["Jetpack DataStore Preferences (Theme, Sound, Haptics, Profile)"]
+        SAF["Storage Access Framework (JSON Backup & Restore)"]
     end
 
-    A1 -->|Motion Events & State| B1
-    A1 -->|Local Queries| C1
-    A2 -->|Offscreen Canvas Buffers| B2
-    A2 -->|Markdown Tokens| B3
-    B2 -->|Sample Coordinates| B4
-    B4 -->|Composited Surface| A2
-    B1 -->|Persisted Snapshots| C1
-    B3 -->|Binary PDF Stream| C2
-```
+    HomeScreen --> NavHost
+    NavHost --> InstructionScreen
+    InstructionScreen --> PlayScreen
+    PlayScreen --> ResultsScreen
 
-### Component Breakdown
-
-#### ⚬ Presentation Layer
-- **Android Applications:** Implemented with declarative Jetpack Compose, Material 3 design system, custom hardware canvas draw scopes, and edge-to-edge system bar integration. ViewModels manage immutable `StateFlow` streams with unidirectional data flow (UDF).
-- **Web Applications:** Built using React 19 and TypeScript, styled with Tailwind CSS utility architecture, featuring responsive canvas viewports, multi-touch pinch-to-zoom, pan matrices, and keyboard shortcut event listeners.
-
-#### ⚬ Core Engine / Processing
-- **Native Acceleration:** High-throughput mathematical calculations, vector path parsing, and string search indexing leverage Rust native libraries compiled through Cargo NDK for ARM64 and x86_64 targets.
-- **In-Browser OCR Processing:** Runs inside dedicated Web Workers using compiled WebAssembly modules, ensuring the browser main thread remains at 60+ FPS during document analysis.
-- **Color Matching & Background Patching:** Analyzes boundary perimeter pixels adjacent to detected bounding boxes, computing median chromaticity vectors to erase original text layers seamlessly.
-
-#### ⚬ Data & I/O
-- **Storage Boundaries:** Zero external analytics or telemetry endpoints. Storage is confined to Android Private App Storage, Scoped MediaStores, or web browser origin-isolated IndexedDB stores.
-- **Export Pipelines:** Native PDF byte generation, standard image format encoders (PNG, JPEG, WebP), and clipboard binary data integration.
-
----
-
-## Project Structure
-
-```text
-creativity-with-ai/
-├── .github/                           # GitHub Actions CI workflows & issue templates
-├── .gitignore                         # Universal monorepo exclusion rules
-├── README.md                          # Primary suite architecture & documentation
-│
-├── anti-addication-launcher/          # Android: Minimalist focus launcher with Rust search core
-│   ├── app/                           # Compose UI, Accessibility services, Settings
-│   └── native/focus_search/           # Rust native search engine (Cargo NDK)
-│
-├── brain-games/                       # Android: Offline cognitive training modules
-│   └── app/                           # Game loops, state machines, high score persistence
-│
-├── dream-note-taking-app/             # Android: Low-latency stylus note taking & sketchbook
-│   └── app/                           # Pressure-sensitive canvas, stroke smoothing, PDF engine
-│
-├── edit_image_text/                   # Web: In-image text OCR detection and replacement studio
-│   ├── src/
-│   │   ├── components/                # Header, CanvasArea, Toolbar, Sidebar, Modals
-│   │   ├── utils/                     # OCR engine, canvas renderer, color sampler, exporters
-│   │   └── types/                     # TypeScript data contracts & models
-│   ├── index.html                     # HTML5 entry with preconnected Google Fonts
-│   └── vite.config.ts                 # Vite bundler configuration
-│
-├── infintely-zoomable-svg/            # Android: Arbitrary precision vector zoom canvas
-│   ├── app/                           # SurfaceView render loop
-│   └── rust_engine/                   # C++/Rust bezier curve subdivider
-│
-├── markdown-to-pdf/                   # Web & Capacitor: High-fidelity document compiler
-│   └── src/                           # Markdown parser, KaTeX, Mermaid renderer
-│
-├── pdf-offline-toolkit/               # Android: Secure air-gapped PDF operations
-│   └── app/                           # Document scanning, page reorganizer, offline merger
-│
-└── private-clipboard-manager/         # Android: Encrypted local clipboard vault
-    └── app/                           # Room database, clipboard listener, biometric lock
+    PlayScreen --> PrefixGuard
+    PrefixGuard --> Registry
+    Registry --> Engines
+    PlayScreen --> RoomDB
+    PlayScreen --> DataStore
+    ResultsScreen --> StreakEng
+    StreakEng --> RoomDB
 ```
 
 ---
 
-## Getting Started & Local Setup
+## Monorepo Project Directory
 
-### Prerequisites
-- **Android Development:**
-  - Android Studio Ladybug (2024.2+) or newer
-  - JDK 17 or JDK 21 (`JAVA_HOME` configured)
-  - Android SDK (API 34 / 35), NDK (r26+ for native Rust builds)
-- **Web Development:**
-  - Node.js 18.x or 20.x+
-  - npm 9+ or pnpm 8+
+| Project Module | Architecture | Stack | Description |
+| :--- | :--- | :--- | :--- |
+| **`brain-games/`** | Android Native | Kotlin 2.0, Compose M3, Room, Hilt, DataStore | MindForge: Offline cognitive training suite (25 games, 50 levels). |
+| **`dream-reader-for-all-devices/`** | Hybrid / Responsive | Capacitor, React, TypeScript, PDF.js, Tailwind | Universal digital reading environment optimized for 5.0" to 14.6" screens. |
+| **`dream-note-taking-app/`** | Android Native | Kotlin, Jetpack Compose, Room, Ink Engine | High-precision vector stylus note-taking system. |
+| **`anti-addication-launcher/`** | Android Native | Kotlin, AccessibilityService, Compose, Rust JNI | Focus and anti-distraction launcher with grayscale mode and stealth sessions. |
+| **`private-clipboard-manager/`** | Android Native | Kotlin, Room, SQLCipher, Jetpack Compose | Air-gapped, encrypted clipboard history vault. |
+| **`pdf-offline-toolkit/`** | Android Native | Kotlin, PdfDocument, Compose | Offline PDF merge, split, compress, and watermark tools. |
+| **`dream-wallpaper/`** | Web Application | Next.js, React, Tailwind CSS | Curated aesthetic dynamic wallpaper platform. |
 
-### Installation & Run
+---
 
-#### 1. Clone the Repository
+## Security Scrubbing & Credential Audit
+
+- **Zero Sensitive Tokens:** Audited all source trees; zero API keys, private credentials, or secrets committed.
+- **Air-Gapped Android Architecture:** MindForge strictly excludes `android.permission.INTERNET`.
+- **Git Hygiene:** Build caches, `.gradle`, `**/build/`, `local.properties`, and keystores are strictly excluded via `.gitignore`.
+
+---
+
+## Getting Started
+
+### Clone & Build MindForge
+
 ```bash
+# 1. Clone the monorepo
 git clone https://github.com/RayAashish/creativity-with-ai.git
-cd creativity-with-ai
-```
+cd creativity-with-ai/brain-games
 
-#### 2. Running an Android Subproject (e.g., Note Taking or Focus Launcher)
-```bash
-# Navigate to the chosen subproject
-cd dream-note-taking-app
+# 2. Run unit tests across all 50 levels
+./gradlew testDebugUnitTest
 
-# Build debug APK
-./gradlew assembleDebug
+# 3. Build optimized release APK (2.2MB via R8)
+./gradlew assembleRelease
 
-# Install on connected device/emulator
-./gradlew installDebug
-```
-
-#### 3. Running a Web Subproject (e.g., In-Image Text Studio)
-```bash
-# Navigate to the web application directory
-cd edit_image_text
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-Open your browser at `http://localhost:5173/`.
-
-#### 4. Production Web Build
-```bash
-npm run build
-npm run preview
+# 4. Install onto connected Android device
+adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
 ---
 
-## Privacy, Permissions & Security
+## License
 
-- **Zero Remote Logging:** No user text, scanned images, handwritten strokes, or clipboard entries are uploaded to third-party endpoints.
-- **Air-Gapped Operation:** All applications are designed to function in full Airplane Mode with network interfaces disabled.
-- **Android Permission Minimization:** Network permissions are omitted where not required. Accessibility permissions in the focus launcher are restricted solely to foreground package detection.
-- **Biometric Protection:** Vault and clipboard modules leverage Android Keystore system with hardware-backed StrongBox / TEE cryptographic keys.
-
----
-
-## License & Attribution
-
-Distributed under the **MIT License**. See `LICENSE` for additional details.
-
-Developed by [RayAashish](https://github.com/RayAashish) with assisted design and implementation workflows.
+Distributed under the **MIT License**. Created by [Aashish Kumar Ray](https://github.com/RayAashish).

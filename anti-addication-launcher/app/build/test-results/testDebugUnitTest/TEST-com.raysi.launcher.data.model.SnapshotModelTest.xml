@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.raysi.launcher.data.model.SnapshotModelTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-08T14:56:58.576Z" hostname="Aashishs-MacBook-Air.local" time="0.011">
-  <properties/>
-  <testcase name="pinnedAppEntry_and_activeSessionEntry_modelsAreImmutable" classname="com.raysi.launcher.data.model.SnapshotModelTest" time="0.002"/>
-  <testcase name="defaultSnapshot_hasExpectedDefaults" classname="com.raysi.launcher.data.model.SnapshotModelTest" time="0.009"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

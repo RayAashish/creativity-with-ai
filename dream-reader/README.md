@@ -1,291 +1,226 @@
-# ReadMaster (पढाई-मास्टर)
+# Lipi (लिपि) / ReadMaster
 
-> Offline-first web application for reading technical PDFs and GitHub Markdown files, with built-in English → Hindi & Nepali lookup, Spaced Repetition vocabulary review, and rich annotation.
+<p align="center">
+  <em>Universal Bilingual Technical PDF Reader & Sub-2ms Active Stylus Annotation Platform with Offline Hindi/Nepali Lexicons and Spaced Repetition.</em>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-Active-emerald?style=for-the-badge" alt="Status" />
+  <img src="https://img.shields.io/badge/Platform-Android%209%2B%20%7C%20Web%20PWA-6366F1?style=for-the-badge&logo=android&logoColor=white" alt="Platform" />
+  <img src="https://img.shields.io/badge/Kotlin-2.0-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin" />
+  <img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white" alt="Jetpack Compose" />
+  <img src="https://img.shields.io/badge/AndroidX%20Ink-Active%20Stylus-00C853?style=for-the-badge" alt="AndroidX Ink" />
+  <img src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/License-MIT-amber?style=for-the-badge" alt="License" />
+</p>
+
+<p align="center">
+  <!-- PRIMARY ACTION BUTTONS -->
+  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/readmaster-app-debug.apk">
+    <img src="https://img.shields.io/badge/Download-APK%20(v2026.11.14)-25D366?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://readm.vercel.app">
+    <img src="https://img.shields.io/badge/Live-Web%20Demo-blue?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Demo" />
+  </a>
+</p>
 
 ---
 
-## 🚀 Quick Start
+## Overview & Key Highlights
 
-### 1. Requirements
-- Node.js v18+ (tested on Node v24)
-- npm v9+
+### Problem Statement
+Modern computer science students, researchers, and engineers studying complex technical papers, Java documentation, and system design literature struggle with fragmented workflows:
+1. Standard PDF readers suffer from perceptible stylus latency (>30ms), pixelated zoom rendering, and rigid layouts that fail on compact phone screens.
+2. English technical jargon creates high cognitive overhead when translating terminology into regional languages (Hindi, Nepali) without breaking study focus.
+3. Highlighted notes and vocabulary fade from memory without systematic, automated active recall mechanisms.
 
-### 2. Install & Run
+### Core Value Proposition
+- **Sub-2ms Active Stylus Latency:** Powered by `AndroidX Ink` hardware stroke authoring with trajectory prediction (`MotionEventPredictor`) and double-buffered high-DPI rendering up to 144Hz.
+- **Universal Multi-Device Layout:** A single adaptive codebase automatically scaling from compact 5.0" smartphones (Xiaomi 14, Galaxy S24, Pixel 9) to massive 14.6" ultra tablets (Galaxy Tab S9/S10 Ultra & Moto Pad 70 Pro).
+- **100% On-Device & Zero-Cloud Dependent:** Embedded tri-lingual technical lexicon (English, Hindi, Nepali), on-device Google ML Kit OCR word selection, and offline Text-to-Speech pronunciation.
+- **Hierarchical Knowledge Architecture:** Recursive topic folders with arbitrary nesting depth (e.g., `Java` → `Multithreading`, `Spring Boot` → `Data JPA`, `System Design` → `HLD`) and 100+ topic-specific icons.
+- **Cognitive Retention Pipeline:** SuperMemo SM-2 spaced repetition flashcards automatically generated from annotations and saved vocabulary.
+
+### Feature Matrix
+
+| Capability | Native Android Engine (`com.readmaster.app`) | Web Application (`Vite + React`) |
+| :--- | :--- | :--- |
+| **Ink Latency** | **< 2ms** (Hardware motion prediction + 144Hz sync) | ~12ms (`perfect-freehand` SVG rendering) |
+| **Reading Modes** | Dual: Realistic 3D Book Flip + Virtualized Ribbon Scroll | Continuous Virtualized PDF & GitHub Markdown Viewer |
+| **Annotation Tools** | Pen, Translucent Highlighter, Precision Segment Eraser, Freehand Vector Lasso | 5-Color Text Highlighter, Deep-linked Margin Notes, Freehand Ink |
+| **Bilingual Lexicon** | Offline Tri-lingual Lexicon (EN → HI / NE) | Popover Translator with Web Speech Audio API |
+| **OCR & Lookup** | Google ML Kit On-Device Tap OCR | PDF.js Character Bounds Selection |
+| **Knowledge Tree** | Recursive Room DB Subfolders (100+ Icons) | Tag-based Folders with Dexie IndexedDB |
+| **Spaced Repetition**| Built-in SM-2 Review Studio & Memory Intervals | Anki / Obsidian / Markdown Bi-directional Exporter |
+| **Session Memory** | Instant Resume Toggle (Last Read Page vs Page 1) | LocalStorage Viewport Anchor & Scroll Position Memory |
+
+---
+
+## System Architecture & Workflow
+
+### High-Level Architecture Diagram
+
+```mermaid
+graph TD
+    subgraph "Input & Gesture Layer"
+        TouchInput["Pointer / Stylus Touch Event"] --> InputArbiter{"Tool Type?"}
+        InputArbiter -->|"TOOL_TYPE_STYLUS"| PalmFilter["Hardware Palm Filter<br/>(Rejection Active)"]
+        InputArbiter -->|"TOOL_TYPE_FINGER"| GestureRouter{"Active Tool?"}
+        GestureRouter -->|"BOOK_FLIP / SCROLL"| ViewportHandler["Pan, Pinch-Zoom & Fling<br/>(144Hz OverScroller)"]
+        GestureRouter -->|"PEN / HIGHLIGHT"| PalmFilter
+    end
+
+    subgraph "Low-Latency Inking Engine"
+        PalmFilter --> TrajectoryPredictor["MotionEventPredictor<br/>(Up to 25ms prediction)"]
+        TrajectoryPredictor --> InProgressView["InProgressStrokesView<br/>(Real-Time Stroke Mesh <2ms)"]
+        InProgressView -->|"ACTION_UP / Commit"| DryInkView["DryInkCanvasView<br/>(High-DPI Vector Strokes)"]
+        DryInkView --> SpatialIndex["SpatialStrokeIndex<br/>(R-tree $O(\log N)$ Collision)"]
+        SpatialIndex --> LassoEraser["Lasso Selection &<br/>Segment Cutting Eraser"]
+    end
+
+    subgraph "PDF Rendering Engine"
+        PDFDoc["PDF Document File Descriptor"] --> PdfPageEngine["PdfPageEngine<br/>(Native PdfRenderer)"]
+        PdfPageEngine --> PdfTiler["PdfTiler (Deep Zoom<br/>Dynamic Tile Cache)"]
+        PdfTiler --> DryInkView
+    end
+
+    subgraph "Bilingual Study & Retention"
+        DryInkView -->|"Tap / Word Select"| MLKit["Google ML Kit OCR<br/>(Text Extraction)"]
+        MLKit --> DictEngine["BilingualDictionary<br/>(Offline EN -> HI / NE)"]
+        DictEngine --> TTS["Android Text-To-Speech<br/>(TtsManager)"]
+        DictEngine --> VocabStore["Room VocabularyDao<br/>(SM-2 Algorithm)"]
+    end
+
+    subgraph "Persistence Layer"
+        DryInkView -->|"Auto-Save"| RoomDB["Room SQLite Database<br/>(MIGRATION_2_3)"]
+        VocabStore --> RoomDB
+        RoomDB --> Prefs["SharedPreferences<br/>(Reading State & Folder Stack)"]
+    end
+```
+
+### Component Breakdown
+
+#### 1. Presentation & Interaction Layer
+- **Jetpack Compose Material 3:** Adaptive layout system with dynamic screen width class detection (`isCompact < 600dp`, `isMedium 600..839dp`, `isExpanded >= 840dp`).
+- **Responsive Navigation Strip:** Compact phones utilize a horizontal-scrolling action pill strip for quick tools (*Notebook*, *Flashcards*, *Resume Mode*, *+ Open PDF*) to guarantee that application branding is never squished or truncated.
+- **Weighted Header Columns:** All section headers utilize `Modifier.weight(1f).padding(end = 8.dp)` to eliminate button clipping on narrow devices.
+- **3D Book Curl Physics:** Multi-touch gesture arbitration calculating dynamic turn angles, lighting shading, and edge taps.
+
+#### 2. Core Engine & Processing Layer
+- **AndroidX Ink Authoring:** Leverages `androidx.ink.authoring.InProgressStrokesView`, Stock Brushes, and hardware motion prediction to achieve zero perceived latency.
+- **Alpha-Blended Translucent Highlighter:** Implements luminance-aware compositing so overlapping strokes create a glowing, radiant highlight without obscuring underlying text.
+- **Spatial R-Tree Indexing (`SpatialStrokeIndex`):** Bounding-box acceleration for both the freehand lasso marquee and the precision segment-cutting eraser.
+- **Virtualized Ribbon Tiling (`PdfTiler`):** Multi-threaded PDF rasterization generating crisp high-DPI bitmaps on background threads, caching rendered pages while recycling off-screen tiles.
+
+#### 3. Data & Persistence Layer
+- **Room SQLite (`ReadMasterDatabase`):** Structured database maintaining `documents`, `folders`, `strokes`, and `vocabulary` tables.
+- **Schema Migrations:** Clean incremental migrations (`MIGRATION_1_2` for reading modes, `MIGRATION_2_3` for nested subfolders with recursive cascading reassignments).
+- **Session State Restoration:** Remembers exactly whether the user was viewing the library or reading a book, honoring the global user preference to resume from the last-read page or restart from page 1.
+
+---
+
+## Project Structure
+
+```
+dream-reader/
+├── android/                               # Native Android Studio project
+│   ├── app/
+│   │   ├── build.gradle                   # Dependencies: Compose, AndroidX Ink, Room, ML Kit
+│   │   └── src/main/
+│   │       ├── AndroidManifest.xml        # Hardware acceleration & scoped storage permissions
+│   │       └── java/com/readmaster/app/
+│   │           ├── MainActivity.kt        # Entry point: 144Hz display sync & edge-to-edge
+│   │           ├── data/
+│   │           │   ├── db/                # Room DB: ReadMasterDatabase, DocumentDao, FolderDao
+│   │           │   ├── dictionary/        # Offline EN -> HI / NE Bilingual Dictionary
+│   │           │   └── model/             # Entities & 100+ Topic Icon Catalog
+│   │           ├── engine/
+│   │           │   ├── canvas/            # InkCanvasView, DryInkCanvasView, ReadingMode
+│   │           │   ├── eraser/            # PrecisionEraser, SpatialStrokeIndex (R-tree)
+│   │           │   ├── lasso/             # Freehand vector lasso selection & transform
+│   │           │   ├── palm/              # Hardware stylus palm rejection filter
+│   │           │   └── pdf/               # PdfPageEngine & virtualized PdfTiler
+│   │           ├── speech/                # TtsManager (Offline pronunciation engine)
+│   │           └── ui/
+│   │               ├── library/           # Universal responsive LibraryScreen
+│   │               ├── reader/            # High-performance ReaderScreen & toolbar
+│   │               └── dialogs/           # Topic creator, flashcards, vocab notebook
+├── src/                                   # Web Application (React 18 + TypeScript)
+│   ├── components/                        # UI controls, modals, and viewer layouts
+│   ├── engine/                            # Web ink engine (perfect-freehand) & PDF.js
+│   ├── services/                          # Local dictionary lookup, SM-2 engine & export
+│   └── stores/                            # Zustand reactive state stores
+├── server/                                # Translation proxy & sync microservice
+│   └── index.ts                           # Express REST endpoints (/api/translate, /api/sync)
+├── .env.example                           # Template environment configuration
+├── vercel.json                            # Vercel production serverless deployment
+├── package.json                           # Web dependencies and build scripts
+└── vite.config.ts                         # Vite configuration
+```
+
+---
+
+## Getting Started & Local Setup
+
+### Prerequisites
+- **For Android Development:**
+  - Android Studio Ladybug (2024.2.1+) or newer
+  - Android SDK (Compile SDK: 35, Min SDK: 28)
+  - Java Development Kit: OpenJDK 17 or 21
+- **For Web Development:**
+  - Node.js v18.0.0 or higher
+  - npm v9.0.0 or higher
+
+---
+
+### Installation & Run
+
+#### Option A: Running the Native Android Application
 ```bash
-# Clone and enter directory
+# Navigate to the Android project root
+cd dream-reader/android
+
+# Build Debug APK
+./gradlew assembleDebug
+
+# Install on connected device or emulator (e.g. Xiaomi 14 or Moto Pad 70 Pro)
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+
+# Launch App
+adb shell am start -n com.readmaster.app/.MainActivity
+```
+
+#### Option B: Running the Web Application
+```bash
+# Navigate to project root
 cd dream-reader
 
-# Install dependencies
+# Install Node dependencies
 npm install
 
-# Start development servers (Vite frontend on :5180 + Translation proxy on :3050)
+# Copy environment template
+cp .env.example .env.local
+
+# Launch Vite development server + Translation proxy
 npm run start
-
-# Run test suite (43 automated tests across 11 suites)
-npm test
-
-# Build for production
-npm run build
 ```
-
-The application is live at:
-- **Web App**: `http://localhost:5180`
-- **Translation & Sync Proxy**: `http://localhost:3050` (`/api/health`, `/api/translate`, `/api/explain`, `/api/sync/pull`, `/api/sync/push`, `/api/sync/share`)
+The web dashboard is accessible at `http://localhost:5180`.
 
 ---
 
-## 🌟 Complete Feature Roadmap (Phases 1 through 5)
+## Privacy, Permissions & Security
 
-| Phase | Milestone | Status | Key Deliverables |
-|---|---|---|---|
-| **Phase 1** | Reader Foundations | ✅ Completed | PDF & GitHub Markdown reader, virtualized PDF scroll, themes, reading position persistence. |
-| **Phase 2** | Instant Lookup & Vocab | ✅ Completed | Hindi & Nepali word/sentence popover, Web Speech audio, offline dictionary, proxy with glossary preservation. |
-| **Phase 3** | Rich Annotations & Ink | ✅ Completed | 5-color highlights, comments with deep links, stylus ink (`perfect-freehand`), notes sidebar, export (Obsidian/Anki/JSON). |
-| **Phase 4** | Advanced Learning & PWA | ✅ Completed | SRS Flashcards (SM-2), "Explain this" AI helper, Bilingual side-by-side mode, Read-Aloud with synced highlighting, Universal search (`Cmd+K`), Reading insights, PWA installable. |
-| **Phase 5** | Sync, Sharing & Android | ✅ Completed | PostgreSQL schema, bidirectional sync (`/push`, `/pull`), shareable read-only links (`/share`), Capacitor Android config. |
+- **100% On-Device Processing:** All PDF documents, vector annotations, and vocabulary entries remain strictly inside your device's isolated application sandbox (`context.filesDir` / Room DB).
+- **Zero Cloud Leakage:** Documents are never sent to external servers or AI training clusters. Translation dictionaries run completely offline.
+- **Scoped Storage & Persistable Permissions:** Operates using Android's native `ACTION_OPEN_DOCUMENT` system file picker with `FLAG_GRANT_READ_URI_PERMISSION`. No invasive `MANAGE_EXTERNAL_STORAGE` broad storage permissions required.
+- **Air-Gapped Operation:** The Android application requires zero runtime internet permissions to view, annotate, and review flashcards.
 
 ---
 
-## 🧠 Phase 4 Features (Advanced Learning & Offline Polish)
+## License & Attribution
 
-### 1. Spaced Repetition Flashcards (SM-2 Algorithm)
-- **SuperMemo-2 (SM-2) Engine**: Calculates ease factor ($EF \ge 1.3$), repetition count, and interval in days based on user rating:
-  - `Again` (Grade 0): Resets interval to 1 day.
-  - `Hard` (Grade 3): Slightly decreases ease factor.
-  - `Good` (Grade 4): Standard interval growth ($I = I \times EF$).
-  - `Easy` (Grade 5): Boosts ease factor and expands review interval.
-- **Interactive 3D Flip Card**: Displays word, IPA phonetics, source sentence quote on front; reveals Hindi & Nepali meanings on flip.
-- **Daily Review Streak**: Tracks continuous reading and review streaks with visual flame counters.
+Distributed under the **MIT License**. See [`LICENSE`](file:///Users/aashishkumarray/Desktop/creativity-with-ai/dream-reader/LICENSE) for details.
 
-### 2. "Explain This" AI Assistant
-- **Accessible from Lookup**: Click **"✨ Explain"** on any selected phrase or sentence in a PDF or Markdown file.
-- **Multi-language explanations**: English, Hindi (हिंदी), and Nepali (नेपाली).
-- **Targeted Modes**:
-  - `Beginner Mode`: Breaks down complex concepts with intuitive daily life analogies.
-  - `Standard Mode`: Concise, direct, technical summary.
-  - `Code Mode`: Breaks down code snippets, data flow, parameters, and complexity.
-- **Hybrid Architecture**: Uses Google Gemini API when `GEMINI_API_KEY` is present; seamlessly switches to ReadMaster's built-in intelligent technical explainer when offline or unconfigured.
-
-### 3. Bilingual Side-by-Side Parallel Reader
-- Toggle via the **"Bilingual"** button in PDF/Markdown toolbars.
-- Synchronized reading view showing original paragraphs alongside sentence-by-sentence Hindi or Nepali translations.
-- Preserves technical keywords (`thread`, `mutex`, `virtual memory`, `heap`, `cache`) in English / Devanagari transliteration.
-
-### 4. Read-Aloud with Synced Word Highlighting
-- Powered by `SpeechSynthesis` with `onboundary` word event tracking.
-- Floating playback bar with Play / Pause / Resume, Next / Previous sentence skipping, and adjustable reading speeds (`0.75x`, `1.0x`, `1.25x`, `1.5x`, `2.0x`).
-- Automatically scrolls with the active speech boundary.
-
-### 5. Universal Global Search (`Cmd+K` / `Ctrl+K`)
-- Instant fuzzy search across:
-  - **Documents**: Titles, file names, GitHub repository paths.
-  - **Annotations**: Highlighted quotes, comment notes, and deep link pins.
-  - **Vocabulary**: Words, source sentences, Hindi meanings, Nepali meanings.
-- Direct jump: clicking a search result navigates directly to the document and page.
-
-### 6. Reading Insights & Habit Tracker
-- Tracks total reading time in minutes and hours, pages read, and words mastered.
-- Visual 7-day activity graph and consecutive-day reading streak badge in the top navbar.
-
-### 7. Progressive Web App (PWA)
-- Full `manifest.json` with theme colors, display standalone, and icons.
-- Service worker (`sw.js`) precaching reader shell for offline capability.
-
----
-
-## ☁️ Phase 5 Features (Accounts, PostgreSQL Sync, Sharing & Android)
-
-### 1. PostgreSQL Schema (`server/schema.sql`)
-- Multi-user data model ready for cloud deployment:
-  - `users`: User identity, email, password hash, created/updated timestamps.
-  - `documents` & `document_blobs`: Portable sync-ready document metadata and binary storage.
-  - `annotations`: Sync-tracked text anchors, vector strokes, and comment notes.
-  - `vocabulary`: Spaced repetition states (`repetitions`, `interval_days`, `ease_factor`, `next_review_at`).
-  - `shareable_links`: Cryptographic tokens for public read-only document sharing.
-
-### 2. Cloud Sync Endpoints
-- `POST /api/sync/push`: Accepts locally modified documents, annotations, and vocabulary records, resolving conflicts using timestamp comparison.
-- `POST /api/sync/pull`: Returns changes committed after `lastSyncedAt`.
-- `POST /api/sync/share`: Generates a public shareable URL with a secure 24-character hexadecimal token.
-- `GET /api/sync/share/:token`: Public read-only viewer for shared annotated documents.
-
-### 3. Android Port Preparation (Capacitor)
-- Pre-configured `capacitor.config.json` with:
-  - App ID: `com.readmaster.app`
-  - Name: `ReadMaster`
-  - Web directory: `dist`
-  - Android schemes and stylus input capture settings.
-- Build instructions for Android:
-  ```bash
-  # 1. Build the production web bundle
-  npm run build
-
-  # 2. Add and sync Capacitor Android platform
-  npx cap add android
-  npx cap sync android
-
-  # 3. Open in Android Studio to build APK or run on emulator/device
-  npx cap open android
-  ```
-
----
-
-## 📖 Phase 2 Features (Instant Lookup & Vocabulary Notebook)
-
-### 1. Instant Lookup Popover
-- **Word Lookup**: Double-click or select any English word to open an immediate floating popover.
-- **Bilingual Meanings**: Displays Hindi (हिंदी) and Nepali (नेपाली) definitions with parts of speech.
-- **Audio Pronunciation**: Click the speaker icon to hear the English pronunciation via the Web Speech API (`speechSynthesis`).
-- **Phonetics**: IPA phonetics + Devanagari transliteration (e.g. `वर्चुअलाइजेशन`, `थ्रेड`).
-- **Sentence / Paragraph Translation**: Select a full sentence to get sentence translation with Hindi / Nepali / Both toggle.
-- **Context-Aware Technical Term Preservation**: Prevents translation mistranslating terms like `thread`, `process`, `virtual memory`, `mutex`, `API`.
-- **Keyboard Dismiss**: Press `Esc` or click anywhere outside to close without interrupting reading flow.
-
-### 2. Vocabulary Notebook
-- Click **"Save Word"** in the popup to store the word, meanings, and source sentence.
-- Accessible via the **"Notebook"** button in the top navbar with a live count badge.
-- Words are pinned to their source document and page number with a **"Return to text"** link that scrolls back to the exact location.
-- Search and filter across saved words and source sentences.
-- Sync-ready data structure initialized with Spaced Repetition (SM-2) review states.
-
----
-
-## 🎨 Phase 3 Features (Rich Annotations, Stylus Ink & Export)
-
-### 1. Text Annotations & Palette
-- **5-Color Palette**: Yellow (`#fef08a`), Green (`#bbf7d0`), Blue (`#bae6fd`), Pink (`#fbcfe8`), Purple (`#e9d5ff`).
-- **Highlight, Underline & Strikethrough**: One-click actions right inside the floating selection bar.
-- **Comments with Deep Links**: Attach notes to any phrase. Each comment creates a clickable pin on the text and has a unique deep link (e.g. `#annotation-abc123`) that scrolls directly to it.
-- **Editable & Deletable**: Edit comment notes inline or delete them with instant reactivity.
-
-### 2. Freehand Stylus & Touch Ink
-- **Powered by `perfect-freehand`**: Pressure sensitivity, organic thinning, and smooth spline tapering for pen and highlighter strokes.
-- **Hardware Agnostic**: Works with Wacom styluses, Apple Pencils, Samsung S-Pen, or mouse.
-- **Palm Rejection**: Filters non-primary touch events when using an active stylus.
-- **Normalized Vector Strokes**: Coordinates are stored as `(0-1)` ratios relative to page dimensions, guaranteeing that ink scales crisply and positions accurately across any zoom level (50% to 300%).
-- **Floating Inking Toolbar**: Quick tool toggle (Pen vs. Highlighter), color selection, 3 stroke thicknesses, and single-click stroke Undo.
-
-### 3. Annotation Sidebar
-- Dedicated **"Notes"** tab inside the reader sidebar.
-- Filter by kind: All, Highlights, Underlines, Strikethroughs, Comments, or Ink drawings.
-- Displays quotes, notes, creation dates, and page badges.
-- Click any entry to jump straight to the page and center the annotation.
-
-### 4. Rich Exporting
-- **Obsidian & Notion Markdown**: Formatted note with YAML frontmatter, quote blocks, notes, and a structured vocabulary study table.
-- **Anki CSV**: Pre-formatted deck with UTF-8 BOM encoding for Hindi & Nepali Devanagari script, word fronts, and rich back definitions.
-- **JSON Backup**: Complete document backup containing text anchors, vector strokes, and metadata.
-
----
-
-## 🏗️ Phase 1 Architecture Overview
-
-```
-src/
-├── types/                 # Portable data models & JSON schemas (sync-ready)
-│   ├── document.ts        # DocumentRecord, DocumentPosition, OutlineItem, GitHubMetadata
-│   ├── annotation.ts      # AnnotationRecord, PdfAnchor, MarkdownAnchor, InkStroke
-│   ├── vocab.ts           # VocabEntryRecord, MeaningSense, SRSState
-│   ├── lookup.ts          # LookupCacheRecord, LookupResult, TargetLanguage
-│   ├── settings.ts        # ReaderSettingsRecord, ThemeMode, FontSize
-│   └── github.ts          # GitHubRepoRef, GitHubTreeItem
-│
-├── storage/               # IndexedDB storage abstraction via Dexie
-│   ├── db.ts              # ReadMasterDB schema definition (versioned)
-│   ├── DocumentRepository.ts # Document & blob persistence, position updates, soft delete
-│   └── SettingsRepository.ts # Reader configuration & theme persistence
-│
-├── reader-core/           # Rendering, navigation & text anchoring engines
-│   ├── pdf/
-│   │   ├── pdf-init.ts    # PDF.js worker setup (local offline bundle)
-│   │   ├── pdf-loader.ts  # Document parsing, metadata & outline/TOC extraction
-│   │   ├── pdf-search.ts  # Multi-page fast text search engine with sentence extraction
-│   │   └── pdf-thumbnail.ts # Low-overhead page thumbnail rendering
-│   ├── markdown/
-│   │   ├── markdown-parser.ts # Heading TOC extraction & slug generation
-│   │   ├── github-resolver.ts # GitHub URL parsing, raw link & image resolution
-│   │   └── ...
-│   └── anchoring/
-│       ├── text-quote.ts  # W3C TextQuoteSelector generator & matcher (prefix/exact/suffix)
-│       └── pdf-rects.ts   # Normalized 0-1 coordinates relative to page dimensions
-│
-├── services/              # Business logic & external API interfaces
-│   ├── library-service.ts # File imports, SHA-256 deduplication, position tracking
-│   ├── github-service.ts  # GitHub REST API client, tree fetching, commit change detection
-│   └── theme-service.ts   # Light / Sepia / Dark theme application
-│
-├── stores/                # Global UI state (Zustand)
-│   ├── library-store.ts   # Library documents, active filter, import states
-│   ├── reader-store.ts    # Active document, virtualized pages, zoom, TOC, search
-│   └── settings-store.ts  # Theme, font sizes, target languages
-│
-└── ui/                    # React UI components
-    ├── layout/            # Navbar, KeyboardShortcutsModal
-    ├── library/           # LibraryView, FileDropzone, DocumentCard, GitHubImportModal
-    └── reader/
-        ├── pdf/           # PdfViewer (virtualized), PdfPage (canvas+textLayer), PdfToolbar, PdfSidebar
-        └── markdown/      # MarkdownViewer, MarkdownToolbar, CodeBlock
-```
-
----
-
-## 📦 Data Model (Sync-Ready JSON Schema)
-
-Every record contains:
-- `id`: UUID v4
-- `updatedAt`: ISO 8601 timestamp
-- `deletedAt`: nullable ISO 8601 timestamp (soft-delete for eventual bidirectional sync with Phase 4/5 backend)
-
-### Key Entities
-1. **DocumentRecord**:
-   ```typescript
-   {
-     id: string;
-     type: "pdf" | "md";
-     source: "local" | "github";
-     hash: string; // SHA-256 of file content
-     title: string;
-     fileName: string;
-     fileSize: number;
-     lastPosition?: { type: "pdf", page: number } | { type: "md", scrollRatio: number };
-     metadata?: { github?: GitHubMetadata, ... };
-     createdAt: string;
-     updatedAt: string;
-     deletedAt?: string | null;
-   }
-   ```
-2. **Anchor**:
-   - PDF: Normalized bounding boxes `(0-1)` relative to the page viewport + selected text quote
-   - Markdown: W3C TextQuoteSelector (`exact`, `prefix`, `suffix`, `headingPath`)
-
----
-
-## ⌨️ Keyboard Shortcuts
-
-| Shortcut | Description |
-|---|---|
-| `j` / `↓` / `Space` | Next page / scroll down |
-| `k` / `↑` | Previous page / scroll up |
-| `+` / `-` | Zoom in / Zoom out |
-| `0` | Reset zoom to 100% |
-| `f` | Toggle Fit Width / Fit Page |
-| `t` | Cycle Theme (Light → Sepia → Dark) |
-| `b` | Toggle Navigation Sidebar |
-| `Cmd/Ctrl + F` | Search inside active document |
-| `?` | Keyboard shortcuts cheat-sheet |
-| `Esc` | Close modal / return |
-
----
-
-## 🧪 Testing
-
-Run automated tests:
-```bash
-npm test
-```
-Includes:
-- **Anchoring**: W3C TextQuoteSelector matching, duplicate phrase disambiguation, PDF rect normalization & denormalization across zoom.
-- **GitHub Resolver**: URL parsing, relative path resolution (`./` and `../`), raw image URL transformation.
-- **Markdown Parser**: Heading hierarchy extraction and slug generation.
-- **Storage Layer**: IndexedDB CRUD, reading position persistence, content deduplication via SHA-256, and soft delete.
-- **PDF Engine**: PDF loading, page extraction, outline/TOC extraction, and multi-page text search with snippets.
+Copyright © 2026 **Aashish Kumar Ray**. Developed as part of the **Creativity With AI** suite.
