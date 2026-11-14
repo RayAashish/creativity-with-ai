@@ -109,9 +109,10 @@ class InkCanvasView @JvmOverloads constructor(
     // Persistent Document ID for strokes storage
     var documentId: String = ""
         set(value) {
+            val isNewDoc = field != value
             field = value
-            if (value.isNotBlank()) {
-                loadDocumentStrokes(value)
+            if (isNewDoc && value.isNotBlank()) {
+                reloadStrokesFromStorage(value)
             }
         }
 
@@ -135,13 +136,26 @@ class InkCanvasView @JvmOverloads constructor(
     }
 
     fun loadDocumentStrokes(docId: String) {
-        documentId = docId
-        val loaded = StrokeStorage.loadStrokesSync(context, docId)
-        dryInkView.clearAllStrokes()
-        for ((pageIndex, list) in loaded) {
-            dryInkView.addPageStrokes(pageIndex, list)
+        if (docId.isBlank()) return
+        if (documentId != docId) {
+            documentId = docId
+        } else {
+            reloadStrokesFromStorage(docId)
         }
-        dryInkView.invalidate()
+    }
+
+    private fun reloadStrokesFromStorage(docId: String) {
+        if (docId.isBlank()) return
+        try {
+            val loaded = StrokeStorage.loadStrokesSync(context, docId)
+            dryInkView.clearAllStrokes()
+            for ((pageIndex, list) in loaded) {
+                dryInkView.addPageStrokes(pageIndex, list)
+            }
+            dryInkView.invalidate()
+        } catch (e: Exception) {
+            android.util.Log.e("InkCanvasView", "Error loading strokes for doc: $docId", e)
+        }
     }
 
     // Property alias for currentTool
