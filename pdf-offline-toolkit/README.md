@@ -1,133 +1,249 @@
 # Ledger — Offline-Only Air-Gapped Android PDF Toolkit
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Platform: Android](https://img.shields.io/badge/Platform-Android%208.0%2B%20(API%2026--35)-green.svg)]()
-[![Air-Gapped: Zero Internet](https://img.shields.io/badge/Network-0%20Internet%20Permissions-red.svg)]()
+<p align="center">
+  <em>An air-gapped, zero-telemetry, 100% on-device Android PDF toolkit engineered for high-security environments, legal professionals, journalists, and privacy purists.</em>
+</p>
 
-**Ledger** is an air-gapped, open-source Android PDF toolkit engineered for high-security environments, legal professionals, journalists, and privacy-conscious users. Every single byte of PDF processing happens locally on-device.
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-Active-emerald?style=for-the-badge" alt="Status" />
+  <img src="https://img.shields.io/badge/Platform-Android%208.0%2B%20(API%2026--35)-34A853?style=for-the-badge&logo=android&logoColor=white" alt="Platform" />
+  <img src="https://img.shields.io/badge/Security-Air--Gapped%20(0%20Network)-D32F2F?style=for-the-badge&logo=security&logoColor=white" alt="Security" />
+  <img src="https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin" />
+  <img src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white" alt="Compose" />
+  <img src="https://img.shields.io/badge/Native-NDK%20%2B%20CMake-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white" alt="NDK" />
+  <img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=for-the-badge" alt="License" />
+</p>
 
-- **Zero Network Capability**: Neither `android.permission.INTERNET` nor network state permissions exist in the application manifest. It is physically impossible for the app to phone home.
-- **Zero Telemetry**: No Firebase, no Google Play Services dependencies, no crash SDKs, no trackers, no advertising.
-- **Pure Storage Access Framework (SAF)**: Ledger never requests broad storage permissions (`MANAGE_EXTERNAL_STORAGE` or `READ_EXTERNAL_STORAGE`). Files are accessed exclusively via user-authorized SAF URIs with persistable permissions.
-- **Ephemeral Scratch Isolation**: Temporary processing files live in an app-private cache directory, wiped immediately on task completion and scrubbed at every app boot.
-- **Dense Document Design**: A custom high-information design system inspired by precision file managers and engineering tools. No default Material 3 templates, no rounded pill cards, no gradients.
-
----
-
-## Architecture & Technology Stack
-
-| Component | Implementation |
-|---|---|
-| **Language** | Kotlin 2.0+ with modern Coroutines and Kotlin Flow |
-| **UI Framework** | Jetpack Compose with custom design system tokens (Paper Light `#F5F2EB` & Charcoal Dark `#141414`, Oxblood `#9B3A2E`) |
-| **Typography** | Real Monospace (`JetBrains Mono`) for filenames, page counts, hex hashes; System Sans for chrome |
-| **Dependency Injection** | Hilt DI (`@HiltAndroidApp`, `@AndroidEntryPoint`, `@HiltViewModel`, `@HiltWorker`) |
-| **Structural PDF Engine** | `PdfBox-Android` (document assembly, split, merge, dictionary manipulation, XMP metadata scrub) |
-| **Native Preview Engine** | C++ NDK & CMake layer (`libledger_pdf.so`) with `AndroidBitmap` direct pixel buffer rendering and system `PdfRenderer` fallback |
-| **Offline OCR** | Bundled `Tesseract 4 Android` (`cz.adaptech.tesseract4android`) running in a foreground `WorkManager` job with per-page progress notification and cancel |
-| **Digital Signatures** | `BouncyCastle` PAdES (`org.bouncycastle:bcpkix-jdk18on`, `bcprov-jdk18on`), in-app self-signed RSA-2048 X.509 cert generator, PKCS#12 import |
-| **Local Persistence** | AndroidX `Room` database for persisted SAF document bookmarks |
-| **Build System** | Gradle Kotlin DSL (`build.gradle.kts`), Gradle Version Catalogs (`libs.versions.toml`), ProGuard/R8 minify |
+<p align="center">
+  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/ledger-airgapped-release.apk">
+    <img src="https://img.shields.io/badge/Download-APK-25D366?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+  </a>
+</p>
 
 ---
 
-## Core Features
+## Overview & Key Highlights
 
-### 1. Merge PDFs
-- Multi-select documents via SAF (`OpenMultipleDocuments`).
-- Drag-and-drop reordering.
-- **Interleave Mode**: Round-robin page combination across documents (ideal for assembling alternating front and back duplex scans).
+### Problem Statement
+Standard mobile PDF toolkits rely heavily on cloud processing APIs, covert telemetry, and ad trackers. For confidential legal contracts, medical charts, financial records, and investigative journalism, transmitting unencrypted document payloads to third-party servers represents an unacceptable compliance violation and privacy breach.
 
-### 2. Split PDFs
-- **By Page Range**: Flexible syntax parser supporting comma-separated lists and ranges (e.g. `1-3, 5, 8-12`).
-- **Every N Pages**: Automated chunk partitioning.
-- **At Bookmarks**: Introspects PDF outlines and splits into chapter files.
+### Core Value Proposition
+- **100% Offline & Physically Air-Gapped**: The production release manifest declares zero network permissions. `android.permission.INTERNET`, `ACCESS_NETWORK_STATE`, and `ACCESS_WIFI_STATE` are stripped at manifest merger with `tools:node="remove"`.
+- **Zero Telemetry & Third-Party SDKs**: No Firebase, no Google Play Services dependencies, no crash reporters, and zero tracking libraries.
+- **Strict Storage Access Framework (SAF)**: Ledger never requests broad filesystem storage permissions (`MANAGE_EXTERNAL_STORAGE` or `READ_EXTERNAL_STORAGE`). Documents are accessed strictly through user-directed SAF contracts (`OpenDocument`, `CreateDocument`).
+- **Deterministic Ephemeral Scratch Isolation**: Intermediates are isolated in an app-private sandbox and wiped immediately via structured execution blocks and boot-time sweeps.
+- **Dense Document Design System**: Crafted for high information density with custom paper-tone tokens (`#F5F2EB` Paper Light, `#141414` Charcoal Dark, `#9B3A2E` Oxblood), monospace technical readouts (`JetBrains Mono`), and tactile haptic feedback.
 
-### 3. Compress PDFs
-- Quality presets:
-  - **Email / Ultra-Compact**: 72 DPI, 45% JPEG quality.
-  - **Web / Balanced**: 144 DPI, 70% JPEG quality.
-  - **Print / High Quality**: 200 DPI, 85% JPEG quality.
-- **Target KB Mode**: Iterative resolution and quantization adjustment to reach a specific byte budget.
-- Technical size delta readout: `"2.4 MB → 780 KB (-67.5%)"`.
+### Feature Matrix
 
-### 4. Air-Gapped OCR
-- Rasterizes target pages at 200 DPI.
-- Feeds pages into embedded Tesseract engine.
-- Generates an invisible searchable text layer positioned precisely over glyphs.
-- Managed by foreground `WorkManager` service with real-time notification progress and cancel action.
-
-### 5. Strip Metadata
-- One-tap inspection and wipe.
-- Diff preview table identifying:
-  - Document Info dictionary (Title, Author, Creator, Producer, Creation/Mod Dates, Keywords, Subject).
-  - XMP metadata stream.
-  - Annotations, comments, and form tracking IDs.
-  - Embedded thumbnails and optional bookmark scrub.
-
-### 6. Sign Document
-- **Visual Signature**: Touch/stylus canvas with smooth quadratic Bezier curve interpolation, undo, and transparent stamp placement with page flattening.
-- **Digital PAdES Signature**: Cryptographic PDF signature with SHA-256 digest using self-signed RSA-2048 keypair or imported `.p12` / `.pfx` certificates.
-- **Signature Verification**: Validates certificate chains, checks byte ranges, and detects tampering.
-
-### 7. Page Operations & Workspace
-- Rotate individual or multi-selected pages by 90°, 180°, 270°.
-- Reorder pages.
-- Delete or extract selected pages.
-
-### 8. Batch Queue
-- Chain automated pipelines (e.g. `[Strip Metadata] → [Compress: Web] → [Sign]`) into a reusable workflow.
+| Capability | Description | Engine / Method |
+|:---|:---|:---|
+| **Merge Files** | Combine multiple PDFs via SAF with drag-and-drop reordering & alternating duplex interleaving. | `PdfBox-Android` memory stream assembler |
+| **Split Operations** | Split by page ranges (`1-3, 5, 8-12`), every *N* pages, or by bookmark outline chapters. | `RangeParser` + `PdfBox-Android` |
+| **Local Compression** | Downsample and re-quantize scanned/image-heavy PDFs with quality presets and target KB budget mode. | JPEG quality re-quantization & raster rebuild |
+| **Air-Gapped OCR** | Extract text and generate an invisible searchable text layer over rasterized PDF pages. | Bundled `Tesseract` (`tess-two`) in foreground `WorkManager` |
+| **Metadata Scrubbing** | One-tap removal of Document Info dictionary, XMP streams, comments, and form tracking IDs with diff preview. | Low-level COS dictionary scrub |
+| **Visual & Digital Signatures** | Interactive bezier canvas for stamp signatures; cryptographic PAdES digital signing with self-signed certs or PKCS#12 imports. | BouncyCastle CMS/PKCS#7 (`bcpkix-jdk18on`) |
+| **Document Workspace** | Interactive thumbnail grid, 90°/180° page rotations, page extraction, deletion, and selection. | Android Native `PdfRenderer` + C++ NDK JNI |
+| **Batch Automation** | Chain recurring sequential operations (e.g. *Scrub Metadata → Compress → Sign*) into automated pipelines. | Foreground `BatchWorker` WorkManager |
 
 ---
 
-## Security Model & Air-Gapped Guarantee
+## System Architecture & Workflow
 
-1. **Manifest Restrictions**:
-   The release build has **zero** network permissions declared. The `airgapped` build flavor includes an explicit removal node:
-   ```xml
-   <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
-   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
-   ```
-   Even if a transitive dependency requested internet access, the manifest merger strictly aborts it.
+### High-Level Architecture Diagram
 
-2. **Scoped Storage & SAF**:
-   Ledger never requests broad storage access (`READ_EXTERNAL_STORAGE` or `MANAGE_EXTERNAL_STORAGE`). Documents are opened using Android's system file picker (`ActivityResultContracts.OpenDocument`). Persistable URI permissions are maintained only for user-chosen files.
+```mermaid
+graph TD
+    subgraph UI ["Presentation Layer (Jetpack Compose)"]
+        HomeScreen["HomeScreen<br/>(Recent Documents, SAF Launcher)"]
+        WorkspaceScreen["WorkspaceScreen<br/>(Thumbnail Grid, Page Operations)"]
+        ToolScreens["Tool Screens<br/>(Merge, Split, Compress, OCR, Strip, Sign)"]
+        DesignSystem["Custom Design System<br/>(Paper & Charcoal Tokens, Monospace Type)"]
+    end
 
-3. **Scratch File Lifecycle**:
-   Intermediate processing files are stored in `context.cacheDir/ledger_scratch/` and wrapped inside scoped lambdas that guarantee deletion in `finally {}` blocks. In addition, the application performs an automated scrub of the scratch directory at every cold launch.
+    subgraph State ["MVVM & Architecture Components"]
+        NavHost["Compose NavHost<br/>(UriRouteCodec Base64 Safe Routing)"]
+        ViewModels["Hilt ViewModels<br/>(Home, Workspace, Tool ViewModels)"]
+        StateFlows["Unidirectional StateFlow & Coroutine Scopes"]
+    end
 
----
+    subgraph CoreEngine ["PDF & Cryptographic Engines"]
+        PdfEngine["PdfEngine Interface"]
+        PdfBoxEngine["PdfBoxAndroidEngine<br/>(Assembly, Splitting, Scrubbing, Signing)"]
+        NativeEngine["NativePdfiumEngine<br/>(Native PdfRenderer + C++ JNI libledger_pdf.so)"]
+        CertManager["CertGenerator & SignatureVerifier<br/>(RSA-2048 X.509, PKCS#12, PAdES CMS)"]
+        OcrEngine["TessBaseAPI Engine<br/>(Bundled tessdata/eng.traineddata)"]
+    end
 
-## Building from Source
+    subgraph BackgroundService ["Background Execution"]
+        WorkManager["AndroidX WorkManager (On-Demand Hilt Init)"]
+        OcrWorker["OcrWorker (Foreground Service Data-Sync)"]
+        BatchWorker["BatchWorker (Sequential Task Pipeline)"]
+    end
 
-### Prerequisites
-- JDK 21 (LTS)
-- Android SDK 35 (Android 15)
-- Android NDK (r25c or higher) & CMake 3.22.1+
+    subgraph Storage ["Data & Storage Layer (SAF & Sandbox)"]
+        SafHandler["SafFileHandler<br/>(OpenDocument, Persistable URIs, Stream Resolvers)"]
+        ScratchManager["ScratchFileManager<br/>(Auto-wiped temp storage in cacheDir)"]
+        RoomDB["Room Database<br/>(Recent Document Bookmarks, Pinned Items)"]
+    end
 
-### Build Commands
+    HomeScreen --> NavHost
+    WorkspaceScreen --> NavHost
+    ToolScreens --> NavHost
+    NavHost --> ViewModels
+    ViewModels --> StateFlows
+    ViewModels --> SafHandler
+    ViewModels --> PdfEngine
 
-```bash
-# Clone repository
-git clone https://github.com/ledger-pdf/ledger.git
-cd ledger
+    PdfEngine --> PdfBoxEngine
+    PdfEngine --> NativeEngine
+    PdfBoxEngine --> CertManager
+    PdfBoxEngine --> ScratchManager
 
-# Run JVM Unit Tests (RangeParser, MetadataScrub, ScratchCleanup, CertGenerator, SignatureVerifier)
-./gradlew test
+    ViewModels --> WorkManager
+    WorkManager --> OcrWorker
+    WorkManager --> BatchWorker
+    OcrWorker --> OcrEngine
 
-# Build Air-Gapped Release APK
-./gradlew assembleAirgappedRelease
-
-# Build Debug APK
-./gradlew assembleStandardDebug
+    SafHandler --> RoomDB
+    PdfBoxEngine --> SafHandler
+    NativeEngine --> SafHandler
 ```
 
-Output APK will be generated at:
-`app/build/outputs/apk/airgapped/release/app-airgapped-release-unsigned.apk`
+### Component Breakdown
+
+#### Presentation Layer
+- **Jetpack Compose UI**: Single-Activity architecture (`MainActivity`) hosting modular composable screens with unidirectional data flow.
+- **Custom Tokens**: Replaces generic Material 3 components with dense, document-tool styling: compact 58dp rows, ink-bordered page cards, and dual-theme warm paper off-white (`#F5F2EB`) and deep charcoal (`#141414`).
+- **URL-Safe Navigation (`UriRouteCodec`)**: Encodes arbitrary SAF content URIs into Base64 URL-safe tokens, preventing query parameter collision and double-decoding defects during screen transitions.
+
+#### Core Engine & Processing
+- **Structural Engine (`PdfBoxAndroidEngine`)**: Handles PDF structural mutation, cross-document object merging, page rotation/extraction, and COS-level metadata purging.
+- **Native Preview Engine (`NativePdfiumEngine` & NDK)**: Uses Android's native `android.graphics.pdf.PdfRenderer` backed by native Pdfium along with C++ JNI bindings (`libledger_pdf.so`) to rasterize high-fidelity thumbnails directly to hardware-backed bitmaps with proportional aspect-ratio preservation.
+- **Security & Cryptography (`CertGenerator` / `SignatureVerifier`)**: In-app RSA-2048 keypair generator creating standard X.509 certificates and PKCS#12 keystores. Digital PAdES signing verifies byte ranges and validates signer identity using BouncyCastle.
+- **OCR Foreground Service (`OcrWorker`)**: Executes bundled Tesseract optical character recognition inside a foreground service with `dataSync` type, surfacing live per-page notifications and cancellation support.
+
+#### Data & I/O
+- **Storage Access Framework (`SafFileHandler`)**: Mediates all input/output through user-authorized SAF URIs with persistable permission grants (`takePersistableUriPermission`).
+- **Scratch File Isolation (`ScratchFileManager`)**: Intermediate working files are generated inside `context.cacheDir/ledger_scratch/` and cleaned via Kotlin `finally` blocks, boot-time sweeps, and manual cache purge.
+- **Persistence (`LedgerDatabase`)**: Room database persisting recent file metadata, display names, and pinned bookmarks.
 
 ---
 
-## License & Support
+## Project Structure
 
-- **License**: [GNU General Public License v3.0 (GPL-3.0)](LICENSE).
-- **Donate**: [Buy Me a Coffee](https://buymeacoffee.com/ledgerpdf).
+```ascii
+pdf-offline-toolkit/
+├── app/
+│   ├── src/
+│   │   ├── airgapped/                    # Air-gapped build flavor
+│   │   │   └── AndroidManifest.xml       # Strips INTERNET & network permissions
+│   │   ├── main/
+│   │   │   ├── AndroidManifest.xml       # Base manifest with SAF & foreground services
+│   │   │   ├── assets/tessdata/          # Bundled offline OCR training data (eng.traineddata)
+│   │   │   ├── cpp/                      # Native NDK C++ layer
+│   │   │   │   ├── CMakeLists.txt        # CMake build configuration linking jnigraphics & log
+│   │   │   │   ├── ledger_pdf_engine.h   # C++ engine header
+│   │   │   │   └── ledger_pdf_jni.cpp    # JNI implementation & bitmap buffer operations
+│   │   │   ├── java/org/ledger/pdf/
+│   │   │   │   ├── LedgerApp.kt          # Application class with Hilt WorkManager config
+│   │   │   │   ├── MainActivity.kt       # Single-Activity entry point & navigation host
+│   │   │   │   ├── data/
+│   │   │   │   │   ├── db/               # Room Database & RecentDocumentDao
+│   │   │   │   │   ├── model/            # Domain models (DocumentInfo, PageInfo, Operations)
+│   │   │   │   │   ├── repository/       # Document, Certificate, and Scratch repositories
+│   │   │   │   │   └── saf/              # SafFileHandler for SAF permission & stream I/O
+│   │   │   │   ├── di/                   # Hilt dependency injection modules (AppModule)
+│   │   │   │   ├── engine/               # PdfEngine abstraction, PdfBox, and Native engines
+│   │   │   │   ├── security/             # CertGenerator & SignatureVerifier (BouncyCastle)
+│   │   │   │   ├── ui/
+│   │   │   │   │   ├── components/       # Custom buttons, cards, badges, progress bars
+│   │   │   │   │   ├── navigation/       # Screen routes & UriRouteCodec Base64 encoder
+│   │   │   │   │   ├── screens/          # Home, Workspace, Merge, Split, Compress, OCR, Sign
+│   │   │   │   │   └── theme/            # Color tokens, typography, and haptics
+│   │   │   │   └── worker/               # WorkManager workers (OcrWorker, BatchWorker)
+│   │   │   └── res/                      # Resource layouts, XML extraction rules, themes
+│   │   ├── test/                         # JVM Unit tests (RangeParser, Scrub, Crypto, Scratch)
+│   │   └── androidTest/                  # On-device connected tests (SAF flows, Engine preview)
+│   ├── build.gradle.kts                  # App build configuration & version catalog links
+│   └── proguard-rules.pro                # R8 & ProGuard optimization rules
+├── gradle/
+│   ├── libs.versions.toml                # Gradle Version Catalog
+│   └── wrapper/                          # Gradle Wrapper binaries & config
+├── build.gradle.kts                      # Root Gradle script
+├── settings.gradle.kts                   # Project settings
+├── LICENSE                               # GNU General Public License v3.0
+└── README.md                             # Architectural specification & documentation
+```
+
+---
+
+## Getting Started & Local Setup
+
+### Prerequisites
+- **Java Development Kit (JDK)**: OpenJDK 21 LTS (`export JAVA_HOME=...`)
+- **Android SDK**: API 35 (Android 15) with platform-tools (`adb`)
+- **Android NDK**: NDK r27+ (`27.0.12077973`)
+- **CMake**: Version 3.22.1+
+
+### Installation & Run
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/RayAashish/creativity-with-ai.git
+   cd creativity-with-ai/pdf-offline-toolkit
+   ```
+
+2. **Verify Environment:**
+   Ensure `local.properties` specifies your Android SDK directory:
+   ```properties
+   sdk.dir=/Users/<username>/Library/Android/sdk
+   ```
+
+3. **Build the Air-Gapped Release APK:**
+   ```bash
+   ./gradlew assembleAirgappedRelease
+   ```
+   The compiled, R8-optimized APK will be located at:
+   ```
+   app/build/outputs/apk/airgapped/release/app-airgapped-release.apk
+   ```
+
+4. **Install onto a Connected Device:**
+   ```bash
+   adb install -r app/build/outputs/apk/airgapped/release/app-airgapped-release.apk
+   ```
+
+5. **Execute Test Suites:**
+   ```bash
+   # Run all JVM unit tests
+   ./gradlew testAirgappedDebugUnitTest testStandardDebugUnitTest
+
+   # Run on-device instrumentation tests (device connected via adb)
+   ./gradlew connectedAirgappedDebugAndroidTest
+   ```
+
+---
+
+## Privacy, Permissions & Security
+
+### Air-Gapped Network Policy
+- The `airgapped` flavor physically removes all network capabilities at compile-time:
+  ```xml
+  <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+  <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" tools:node="remove" />
+  <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" tools:node="remove" />
+  ```
+- No server endpoints, remote telemetry, or analytic libraries are integrated.
+
+### Storage & Data Handling
+- **Scoped Storage Access**: Documents are read directly via Android Content Provider streams without copying them to permanent app storage.
+- **Scratch Directory Lifecycle**: Temporary intermediate files generated during rasterization, digital signing, or compression are isolated in `context.cacheDir/ledger_scratch/`. Each file is bounded by scoped execution wrappers that guarantee deletion upon operation completion, failure, or on next app startup.
+
+---
+
+## License & Attribution
+
+Distributed under the **GNU General Public License v3.0** (GPL-3.0). See [`LICENSE`](LICENSE) for complete terms.

@@ -11,3 +11,13 @@
 *.apk
 *.aab
 .kotlin/
+
+# Security & Secrets
+*.env*
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+google-services.json
+credentials.json

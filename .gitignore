@@ -1,4 +1,88 @@
+# ==============================================================================
+# Comprehensive Monorepo .gitignore
+# Creativity with AI (Android + Web Suite)
+# ==============================================================================
+
+# Environment variables & secrets (allow .env.example)
+*.env*
+!.env.example
+.env.local
+.env.*.local
+
+# Android / Gradle configuration & local properties
+local.properties
+**/local.properties
+.gradle/
+**/.gradle/
+build/
+**/build/
+**/app/build/
+**/captures/
+.externalNativeBuild/
+**/.externalNativeBuild/
+.cxx/
+**/.cxx/
+.kotlin/
+**/.kotlin/
+
+# Rust / Native build targets
+target/
+**/target/
+
+# Android Signing Keys & Keystores
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+**/secrets/*.keystore
+**/secrets/*.jks
+
+# Service Tokens & Credentials
+google-services.json
+**/google-services.json
+credentials.json
+**/credentials.json
+id_rsa
+id_rsa.pub
+
+# Package Managers & Dependencies
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# Web Build Outputs & Bundles
+dist/
+**/dist/
+dist-ssr/
+**/dist-ssr/
+out/
+**/out/
+.next/
+**/.next/
 .vercel
-.env*
+**/.vercel
+
+# Heavy ML Models, OCR Traineddata & Binaries
+*.traineddata
+**/*.traineddata
+!**/app/src/main/assets/tessdata/*.traineddata
+
+# OS & IDE Files
 .DS_Store
 **/.DS_Store
+.idea/
+**/.idea/
+.vscode/
+**/.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.iml
+**/*.iml
