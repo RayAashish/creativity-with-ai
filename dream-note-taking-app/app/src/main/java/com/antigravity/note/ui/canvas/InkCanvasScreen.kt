@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,6 +31,25 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.activity.ComponentActivity
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
@@ -418,6 +439,44 @@ fun InkCanvasScreen(
     var showAddPageMenu by remember { mutableStateOf(false) }
     var isInfiniteCanvas by remember { mutableStateOf(appSettings.isInfiniteCanvas) }
 
+    // Bottom Bar Lock & Minimized State
+    var isBottomBarLocked by remember { mutableStateOf(appSettings.isBottomBarLocked) }
+    var isBottomBarMinimized by remember { mutableStateOf(appSettings.isBottomBarMinimized) }
+    var isAccidentalTouchProtectionOn by remember { mutableStateOf(appSettings.isAccidentalTouchProtectionEnabled) }
+    var isTwoFingerUndoOn by remember { mutableStateOf(appSettings.isTwoFingerUndoEnabled) }
+    var viewportDebounceJob by remember { mutableStateOf<Job?>(null) }
+
+    LaunchedEffect(isTwoFingerUndoOn) {
+        canvasView.isTwoFingerUndoEnabled = isTwoFingerUndoOn
+    }
+
+    LaunchedEffect(isAccidentalTouchProtectionOn) {
+        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
+            isEdgeRejectionEnabled = isAccidentalTouchProtectionOn
+        )
+    }
+
+    // Sticky Immersive Mode (Circle to Search prevention while writing)
+    val activity = context as? ComponentActivity
+    LaunchedEffect(isAccidentalTouchProtectionOn) {
+        val window = activity?.window ?: return@LaunchedEffect
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+        if (isAccidentalTouchProtectionOn) {
+            insetsController.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            insetsController.hide(WindowInsetsCompat.Type.navigationBars())
+        } else {
+            insetsController.show(WindowInsetsCompat.Type.navigationBars())
+        }
+    }
+    DisposableEffect(activity) {
+        onDispose {
+            val window = activity?.window ?: return@onDispose
+            val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+            insetsController.show(WindowInsetsCompat.Type.navigationBars())
+        }
+    }
+
     // Read-Only Lock & Draggable Lasso State
     var isNoteLocked by remember { mutableStateOf(false) }
     var lassoToolbarOffset by remember { mutableStateOf<Offset?>(null) }
@@ -610,6 +669,26 @@ fun InkCanvasScreen(
         }
     }
 
+    val saveCurrentViewport: () -> Unit = {
+        val curPage = docManager.currentPage.value
+        if (curPage != null) {
+            val (zoomScale, offsetX, offsetY) = canvasView.getViewportState()
+            val currentIndex = pagesList.indexOfFirst { it.pageId == curPage.metadata.pageId }.coerceAtLeast(0)
+            appSettings.lastViewportZoomScale = zoomScale
+            appSettings.lastViewportOffsetX = offsetX
+            appSettings.lastViewportOffsetY = offsetY
+            scope.launch {
+                libraryRepo.updateNotebookViewport(
+                    notebookId = curPage.metadata.notebookId,
+                    lastPageIndex = currentIndex,
+                    viewportOffsetX = offsetX,
+                    viewportOffsetY = offsetY,
+                    viewportZoomScale = zoomScale
+                )
+            }
+        }
+    }
+
     // Resume last active notebook/page with ultra-fast path (< 10ms)
     LaunchedEffect(Unit) {
         val lastNotebookId = appSettings.lastActiveNotebookId
@@ -621,17 +700,38 @@ fun InkCanvasScreen(
             libraryRepo.seedDsaDreamTemplate()
         }
 
-        docManager.initialize(targetNotebookId, initialPageId = lastPageId) {
+        val savedNotebook = libraryRepo.getNotebookById(targetNotebookId)
+        val resolvedPageId = if (!lastPageId.isNullOrEmpty()) {
+            lastPageId
+        } else if (savedNotebook != null && savedNotebook.lastPageIndex > 0) {
+            val pages = pageRepo.listPages(targetNotebookId)
+            if (savedNotebook.lastPageIndex in pages.indices) {
+                pages[savedNotebook.lastPageIndex].pageId
+            } else null
+        } else null
+
+        docManager.initialize(targetNotebookId, initialPageId = resolvedPageId) {
             val page = docManager.currentPage.value
             if (page != null) {
                 // Instantly load the page into canvasView without waiting
                 canvasView.loadPage(page, docManager.lastOpenLatencyMs.value, pageRepo.getAssetsDir(page.metadata.notebookId))
+
+                // Deterministically restore exact saved viewport
+                val targetScale = savedNotebook?.viewportZoomScale ?: appSettings.lastViewportZoomScale
+                val targetX = savedNotebook?.viewportOffsetX ?: appSettings.lastViewportOffsetX
+                val targetY = savedNotebook?.viewportOffsetY ?: appSettings.lastViewportOffsetY
+                if (targetScale > 0f) {
+                    canvasView.setViewport(targetScale, targetX, targetY)
+                }
 
                 // Asynchronously verify SQLite WAL journal in background without blocking canvas render
                 scope.launch {
                     val recovered = strokeJournalCompactor.recoverUncompactedStrokes(page.metadata.notebookId, page)
                     if (recovered > 0) {
                         canvasView.loadPage(page, docManager.lastOpenLatencyMs.value, pageRepo.getAssetsDir(page.metadata.notebookId))
+                        if (targetScale > 0f) {
+                            canvasView.setViewport(targetScale, targetX, targetY)
+                        }
                     }
                 }
             }
@@ -769,6 +869,13 @@ fun InkCanvasScreen(
                 }
             }
         }
+        canvasView.onViewportTransformChanged = { _, _, _ ->
+            viewportDebounceJob?.cancel()
+            viewportDebounceJob = scope.launch {
+                delay(300L)
+                saveCurrentViewport()
+            }
+        }
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -779,6 +886,20 @@ fun InkCanvasScreen(
                 if (curPage != null) {
                     appSettings.lastActiveNotebookId = curPage.metadata.notebookId
                     appSettings.lastActivePageId = curPage.metadata.pageId
+                    val (zoomScale, offsetX, offsetY) = canvasView.getViewportState()
+                    val currentIndex = pagesList.indexOfFirst { it.pageId == curPage.metadata.pageId }.coerceAtLeast(0)
+                    appSettings.lastViewportZoomScale = zoomScale
+                    appSettings.lastViewportOffsetX = offsetX
+                    appSettings.lastViewportOffsetY = offsetY
+                    scope.launch {
+                        libraryRepo.updateNotebookViewport(
+                            notebookId = curPage.metadata.notebookId,
+                            lastPageIndex = currentIndex,
+                            viewportOffsetX = offsetX,
+                            viewportOffsetY = offsetY,
+                            viewportZoomScale = zoomScale
+                        )
+                    }
                     docManager.autoSaveCurrentPage()
                     scope.launch {
                         strokeJournalCompactor.flushImmediately(
@@ -792,6 +913,8 @@ fun InkCanvasScreen(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
+            viewportDebounceJob?.cancel()
+            saveCurrentViewport()
             gdriveBackupIdleJob?.cancel()
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
@@ -968,6 +1091,30 @@ fun InkCanvasScreen(
             factory = { canvasView },
             modifier = Modifier.fillMaxSize()
         )
+
+        // Accidental Touch Edge Dead-Zones (Blocks non-stylus palm/edge contacts from triggering canvas/gestures)
+        if (isAccidentalTouchProtectionOn) {
+            EdgeRejectionZone(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(28.dp)
+            )
+            if (!isSidebarOpen) {
+                EdgeRejectionZone(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .fillMaxHeight()
+                        .width(16.dp)
+                )
+            }
+            EdgeRejectionZone(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .width(16.dp)
+            )
+        }
 
         // Top Chrome: Floating Toolbars & Controls (Status Bar Optimized & Sleek Single-Line)
         Column(
@@ -2016,15 +2163,11 @@ fun InkCanvasScreen(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(start = 14.dp, end = 14.dp, bottom = 8.dp),
+                .padding(start = 14.dp, end = 14.dp, bottom = 12.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
-            Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Card 1: Page Navigation, Add & Delete Page, Infinite Canvas (Preserved as approved)
+            if (isBottomBarMinimized) {
+                // Minimized State: Low-footprint floating pill with Expand, Page indicator & Lock button
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
@@ -2033,464 +2176,680 @@ fun InkCanvasScreen(
                     Row(
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        val currentIndex = pagesList.indexOfFirst { it.pageId == currentPage?.metadata?.pageId }.coerceAtLeast(0)
-                        val totalPages = pagesList.size.coerceAtLeast(1)
-
                         IconButton(
                             onClick = {
-                                docManager.previousPage { page ->
-                                    canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                                if (!isBottomBarLocked) {
+                                    isBottomBarMinimized = false
+                                    appSettings.isBottomBarMinimized = false
                                 }
                             },
-                            enabled = currentIndex > 0,
-                            modifier = Modifier.size(32.dp)
+                            enabled = !isBottomBarLocked,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .alpha(if (isBottomBarLocked) 0.38f else 1f)
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
-                                contentDescription = "Previous Page",
-                                tint = if (currentIndex > 0) MaterialTheme.colorScheme.onSurface else Color.LightGray
+                                imageVector = Icons.Default.KeyboardArrowUp,
+                                contentDescription = "Expand Toolbar",
+                                tint = if (isBottomBarLocked) Color.LightGray else MaterialTheme.colorScheme.onSurface
                             )
                         }
 
+                        val currentIndex = pagesList.indexOfFirst { it.pageId == currentPage?.metadata?.pageId }.coerceAtLeast(0)
+                        val totalPages = pagesList.size.coerceAtLeast(1)
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
                         ) {
                             Text(
                                 text = "Page ${currentIndex + 1} / $totalPages",
-                                fontSize = 13.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
 
-                        IconButton(
-                            onClick = {
-                                docManager.nextPage { page ->
-                                    canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
-                                }
+                        BottomBarLockButton(
+                            isLocked = isBottomBarLocked,
+                            onLock = {
+                                isBottomBarLocked = true
+                                appSettings.isBottomBarLocked = true
                             },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                                contentDescription = "Next Page"
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Box(
-                            modifier = Modifier
-                                .height(22.dp)
-                                .width(1.dp)
-                                .background(MaterialTheme.colorScheme.outlineVariant)
+                            onUnlock = {
+                                isBottomBarLocked = false
+                                appSettings.isBottomBarLocked = false
+                            }
                         )
-                        Spacer(modifier = Modifier.width(2.dp))
-
-                        // + Add Page Button (One-tap adds page with current template, chevron opens template menu)
-                        Box {
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = if (isNoteLocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.clickable {
-                                    if (isNoteLocked) {
-                                        Toast.makeText(context, "Note is locked (Read-Only Mode)", Toast.LENGTH_SHORT).show()
-                                        return@clickable
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Card 1: Minimize, Lock, Page Navigation, Add & Delete Page, Infinite Canvas
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            // Minimize / Collapse Button
+                            IconButton(
+                                onClick = {
+                                    if (!isBottomBarLocked) {
+                                        isBottomBarMinimized = true
+                                        appSettings.isBottomBarMinimized = true
                                     }
-                                    val currentTpl = currentPage?.metadata?.template ?: PaperTemplate.GRID
-                                    val activeNbId = docManager.getActiveNotebookId()
-                                    scope.launch {
-                                        val p = libraryRepo.createGeneralNotePage(activeNbId, "Page ${pagesList.size + 1}", currentTpl)
-                                        docManager.switchToNotebookAndPage(activeNbId, p.pageId) { page ->
-                                            canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
-                                        }
-                                        Toast.makeText(context, "Added Page ${pagesList.size + 1}", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
+                                },
+                                enabled = !isBottomBarLocked,
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .alpha(if (isBottomBarLocked) 0.38f else 1f)
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(start = 10.dp, top = 6.dp, bottom = 6.dp, end = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = "Add Page",
-                                        modifier = Modifier.size(16.dp),
-                                        tint = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                    Text(
-                                        text = "Add Page",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                    IconButton(
-                                        onClick = {
-                                            if (isNoteLocked) {
-                                                Toast.makeText(context, "Note is locked (Read-Only Mode)", Toast.LENGTH_SHORT).show()
-                                                return@IconButton
-                                            }
-                                            showAddPageMenu = true
-                                        },
-                                        modifier = Modifier.size(20.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.ArrowDropDown,
-                                            contentDescription = "Choose Paper Template",
-                                            tint = MaterialTheme.colorScheme.onPrimary,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardArrowDown,
+                                    contentDescription = "Minimize Toolbar",
+                                    tint = if (isBottomBarLocked) Color.LightGray else MaterialTheme.colorScheme.onSurface
+                                )
                             }
 
-                            DropdownMenu(
-                                expanded = showAddPageMenu,
-                                onDismissRequest = { showAddPageMenu = false }
-                            ) {
-                                val currentTpl = currentPage?.metadata?.template ?: PaperTemplate.GRID
-                                DropdownMenuItem(
-                                    text = { Text("+ Current (${currentTpl.displayName})", fontWeight = FontWeight.Bold) },
-                                    onClick = {
-                                        showAddPageMenu = false
-                                        val activeNbId = docManager.getActiveNotebookId()
-                                        scope.launch {
-                                            val p = libraryRepo.createGeneralNotePage(activeNbId, "Page ${pagesList.size + 1}", currentTpl)
-                                            docManager.switchToNotebookAndPage(activeNbId, p.pageId) { page ->
-                                                canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
-                                            }
+                            // Lock / Unlock Toggle Button
+                            BottomBarLockButton(
+                                isLocked = isBottomBarLocked,
+                                onLock = {
+                                    isBottomBarLocked = true
+                                    appSettings.isBottomBarLocked = true
+                                },
+                                onUnlock = {
+                                    isBottomBarLocked = false
+                                    appSettings.isBottomBarLocked = false
+                                }
+                            )
+
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Box(
+                                modifier = Modifier
+                                    .height(22.dp)
+                                    .width(1.dp)
+                                    .background(MaterialTheme.colorScheme.outlineVariant)
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+
+                            val currentIndex = pagesList.indexOfFirst { it.pageId == currentPage?.metadata?.pageId }.coerceAtLeast(0)
+                            val totalPages = pagesList.size.coerceAtLeast(1)
+
+                            // Previous Page Button
+                            IconButton(
+                                onClick = {
+                                    if (!isBottomBarLocked) {
+                                        docManager.previousPage { page ->
+                                            canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                                            saveCurrentViewport()
                                         }
                                     }
+                                },
+                                enabled = currentIndex > 0 && !isBottomBarLocked,
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .alpha(if (isBottomBarLocked) 0.38f else 1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
+                                    contentDescription = "Previous Page",
+                                    tint = if (currentIndex > 0 && !isBottomBarLocked) MaterialTheme.colorScheme.onSurface else Color.LightGray
                                 )
-                                HorizontalDivider()
-                                PaperTemplate.entries.forEach { template ->
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                                modifier = Modifier.alpha(if (isBottomBarLocked) 0.5f else 1f)
+                            ) {
+                                Text(
+                                    text = "Page ${currentIndex + 1} / $totalPages",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                )
+                            }
+
+                            // Next Page Button
+                            IconButton(
+                                onClick = {
+                                    if (!isBottomBarLocked) {
+                                        docManager.nextPage { page ->
+                                            canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                                            saveCurrentViewport()
+                                        }
+                                    }
+                                },
+                                enabled = !isBottomBarLocked,
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .alpha(if (isBottomBarLocked) 0.38f else 1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                                    contentDescription = "Next Page",
+                                    tint = if (!isBottomBarLocked) MaterialTheme.colorScheme.onSurface else Color.LightGray
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Box(
+                                modifier = Modifier
+                                    .height(22.dp)
+                                    .width(1.dp)
+                                    .background(MaterialTheme.colorScheme.outlineVariant)
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+
+                            // + Add Page Button
+                            Box {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isNoteLocked || isBottomBarLocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .alpha(if (isBottomBarLocked) 0.38f else 1f)
+                                        .clickable(enabled = !isBottomBarLocked) {
+                                            if (isNoteLocked) {
+                                                Toast.makeText(context, "Note is locked (Read-Only Mode)", Toast.LENGTH_SHORT).show()
+                                                return@clickable
+                                            }
+                                            val currentTpl = currentPage?.metadata?.template ?: PaperTemplate.GRID
+                                            val activeNbId = docManager.getActiveNotebookId()
+                                            scope.launch {
+                                                val p = libraryRepo.createGeneralNotePage(activeNbId, "Page ${pagesList.size + 1}", currentTpl)
+                                                docManager.switchToNotebookAndPage(activeNbId, p.pageId) { page ->
+                                                    canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                                                    saveCurrentViewport()
+                                                }
+                                                Toast.makeText(context, "Added Page ${pagesList.size + 1}", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(start = 10.dp, top = 6.dp, bottom = 6.dp, end = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = "Add Page",
+                                            modifier = Modifier.size(16.dp),
+                                            tint = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                        Text(
+                                            text = "Add Page",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                        IconButton(
+                                            onClick = {
+                                                if (isBottomBarLocked) return@IconButton
+                                                if (isNoteLocked) {
+                                                    Toast.makeText(context, "Note is locked (Read-Only Mode)", Toast.LENGTH_SHORT).show()
+                                                    return@IconButton
+                                                }
+                                                showAddPageMenu = true
+                                            },
+                                            enabled = !isBottomBarLocked,
+                                            modifier = Modifier.size(20.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.ArrowDropDown,
+                                                contentDescription = "Choose Paper Template",
+                                                tint = MaterialTheme.colorScheme.onPrimary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                DropdownMenu(
+                                    expanded = showAddPageMenu && !isBottomBarLocked,
+                                    onDismissRequest = { showAddPageMenu = false }
+                                ) {
+                                    val currentTpl = currentPage?.metadata?.template ?: PaperTemplate.GRID
                                     DropdownMenuItem(
-                                        text = { Text("+ ${template.displayName} Page") },
+                                        text = { Text("+ Current (${currentTpl.displayName})", fontWeight = FontWeight.Bold) },
                                         onClick = {
                                             showAddPageMenu = false
                                             val activeNbId = docManager.getActiveNotebookId()
                                             scope.launch {
-                                                val p = libraryRepo.createGeneralNotePage(activeNbId, "Page ${pagesList.size + 1}", template)
+                                                val p = libraryRepo.createGeneralNotePage(activeNbId, "Page ${pagesList.size + 1}", currentTpl)
                                                 docManager.switchToNotebookAndPage(activeNbId, p.pageId) { page ->
                                                     canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                                                    saveCurrentViewport()
                                                 }
                                             }
                                         }
                                     )
+                                    HorizontalDivider()
+                                    PaperTemplate.entries.forEach { template ->
+                                        DropdownMenuItem(
+                                            text = { Text("+ ${template.displayName} Page") },
+                                            onClick = {
+                                                showAddPageMenu = false
+                                                val activeNbId = docManager.getActiveNotebookId()
+                                                scope.launch {
+                                                    val p = libraryRepo.createGeneralNotePage(activeNbId, "Page ${pagesList.size + 1}", template)
+                                                    docManager.switchToNotebookAndPage(activeNbId, p.pageId) { page ->
+                                                        canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                                                        saveCurrentViewport()
+                                                    }
+                                                }
+                                            }
+                                        )
+                                    }
                                 }
                             }
-                        }
 
-                        // Delete Page Button
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = if (isNoteLocked) 0.3f else 0.8f),
-                            modifier = Modifier.clickable {
-                                if (isNoteLocked) {
-                                    Toast.makeText(context, "Note is locked (Read-Only Mode)", Toast.LENGTH_SHORT).show()
-                                    return@clickable
+                            // Delete Page Button
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = if (isNoteLocked || isBottomBarLocked) 0.3f else 0.8f),
+                                modifier = Modifier
+                                    .alpha(if (isBottomBarLocked) 0.38f else 1f)
+                                    .clickable(enabled = !isBottomBarLocked) {
+                                        if (isNoteLocked) {
+                                            Toast.makeText(context, "Note is locked (Read-Only Mode)", Toast.LENGTH_SHORT).show()
+                                            return@clickable
+                                        }
+                                        showDeletePageDialog = true
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete Page",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                    Text(
+                                        text = "Delete",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
                                 }
-                                showDeletePageDialog = true
                             }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete Page",
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.onErrorContainer
-                                )
-                                Text(
-                                    text = "Delete",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onErrorContainer
-                                )
-                            }
-                        }
 
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Box(
-                            modifier = Modifier
-                                .height(22.dp)
-                                .width(1.dp)
-                                .background(MaterialTheme.colorScheme.outlineVariant)
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
-
-                        // Infinite Canvas Toggle (OneNote Style)
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (isInfiniteCanvas) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.clickable {
-                                isInfiniteCanvas = !isInfiniteCanvas
-                                appSettings.isInfiniteCanvas = isInfiniteCanvas
-                                canvasView.setInfiniteCanvasMode(isInfiniteCanvas)
-                                Toast.makeText(
-                                    context,
-                                    if (isInfiniteCanvas) "Infinite Canvas Enabled (OneNote style)" else "Fixed Page Boundaries Enabled",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(
-                                    text = if (isInfiniteCanvas) "♾️ Infinite" else "📄 Fixed",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isInfiniteCanvas) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Card 2: Input Mode & Palm Settings (Single-Line Collapsible Pill)
-                var isFingerEraserOn by remember { mutableStateOf(appSettings.isFingerEraserEnabled) }
-                var isHoldToEraseOn by remember { mutableStateOf(appSettings.isHoldToEraseEnabled) }
-                var showInputSettingsPopup by remember { mutableStateOf(false) }
-
-                Box {
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                        tonalElevation = 6.dp,
-                        shadowElevation = 6.dp,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable { showInputSettingsPopup = true }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PanTool,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Box(
+                                modifier = Modifier
+                                    .height(22.dp)
+                                    .width(1.dp)
+                                    .background(MaterialTheme.colorScheme.outlineVariant)
                             )
-                            val modeLabel = when (inputMode) {
-                                InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM -> "Pen + Gestures"
-                                InputMode.PEN_ONLY -> "Pen Only"
-                                InputMode.PEN_AND_FINGER_DRAW -> "All Draw"
-                                else -> "Pen + Gestures"
-                            }
-                            Text(
-                                text = modeLabel,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            if (isFingerEraserOn && inputMode == InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM) {
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = MaterialTheme.colorScheme.primaryContainer
+                            Spacer(modifier = Modifier.width(2.dp))
+
+                            // Infinite Canvas Toggle (OneNote Style)
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isInfiniteCanvas) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier
+                                    .alpha(if (isBottomBarLocked) 0.38f else 1f)
+                                    .clickable(enabled = !isBottomBarLocked) {
+                                        isInfiniteCanvas = !isInfiniteCanvas
+                                        appSettings.isInfiniteCanvas = isInfiniteCanvas
+                                        canvasView.setInfiniteCanvasMode(isInfiniteCanvas)
+                                        Toast.makeText(
+                                            context,
+                                            if (isInfiniteCanvas) "Infinite Canvas Enabled (OneNote style)" else "Fixed Page Boundaries Enabled",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Text(
-                                        text = "☝️ Eraser",
-                                        fontSize = 11.sp,
+                                        text = if (isInfiniteCanvas) "♾️ Infinite" else "📄 Fixed",
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
+                                        color = if (isInfiniteCanvas) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = "Input Options",
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
                         }
                     }
 
-                    // Collapsible Input & Palm Settings Popover Menu
-                    DropdownMenu(
-                        expanded = showInputSettingsPopup,
-                        onDismissRequest = { showInputSettingsPopup = false }
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                    // Card 2: Input Mode & Palm Settings (Single-Line Collapsible Pill)
+                    var isFingerEraserOn by remember { mutableStateOf(appSettings.isFingerEraserEnabled) }
+                    var isHoldToEraseOn by remember { mutableStateOf(appSettings.isHoldToEraseEnabled) }
+                    var showInputSettingsPopup by remember { mutableStateOf(false) }
+
+                    Box {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                            tonalElevation = 6.dp,
+                            shadowElevation = 6.dp,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .alpha(if (isBottomBarLocked) 0.38f else 1f)
+                                .clickable(enabled = !isBottomBarLocked) { showInputSettingsPopup = true }
                         ) {
-                            Text(
-                                text = "Stylus & Touch Input Settings",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            // Mode Chips
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                FilterChip(
-                                    selected = inputMode == InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM,
-                                    onClick = {
-                                        inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM
-                                        appSettings.inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM
-                                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
-                                            inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM,
-                                            isFingerEraserEnabled = isFingerEraserOn
-                                        )
-                                    },
-                                    label = { Text("A: Pen + Gestures", fontSize = 11.sp) }
-                                )
-                                FilterChip(
-                                    selected = inputMode == InputMode.PEN_ONLY,
-                                    onClick = {
-                                        inputMode = InputMode.PEN_ONLY
-                                        appSettings.inputMode = InputMode.PEN_ONLY
-                                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
-                                            inputMode = InputMode.PEN_ONLY,
-                                            isFingerEraserEnabled = isFingerEraserOn
-                                        )
-                                    },
-                                    label = { Text("B: Pen Only", fontSize = 11.sp) }
-                                )
-                                FilterChip(
-                                    selected = inputMode == InputMode.PEN_AND_FINGER_DRAW,
-                                    onClick = {
-                                        inputMode = InputMode.PEN_AND_FINGER_DRAW
-                                        appSettings.inputMode = InputMode.PEN_AND_FINGER_DRAW
-                                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
-                                            inputMode = InputMode.PEN_AND_FINGER_DRAW,
-                                            isFingerEraserEnabled = isFingerEraserOn
-                                        )
-                                    },
-                                    label = { Text("C: All Draw", fontSize = 11.sp) }
-                                )
-                            }
-
-                            HorizontalDivider(thickness = 0.5.dp)
-
-                            // Finger Eraser Toggle
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        isFingerEraserOn = !isFingerEraserOn
-                                        appSettings.isFingerEraserEnabled = isFingerEraserOn
-                                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
-                                            isFingerEraserEnabled = isFingerEraserOn
-                                        )
-                                    }
-                                    .padding(vertical = 4.dp),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.TouchApp,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
-                                        tint = if (isFingerEraserOn) MaterialTheme.colorScheme.primary else Color.Gray
-                                    )
-                                    Column {
-                                        Text("Finger as Eraser (Palm-Safe)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                                        Text("Single finger erases; 2 fingers pan & zoom", fontSize = 10.sp, color = Color.Gray)
+                                Icon(
+                                    imageVector = Icons.Default.PanTool,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                val modeLabel = when (inputMode) {
+                                    InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM -> "Pen + Gestures"
+                                    InputMode.PEN_ONLY -> "Pen Only"
+                                    InputMode.PEN_AND_FINGER_DRAW -> "All Draw"
+                                    else -> "Pen + Gestures"
+                                }
+                                Text(
+                                    text = modeLabel,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                if (isFingerEraserOn && inputMode == InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM) {
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = MaterialTheme.colorScheme.primaryContainer
+                                    ) {
+                                        Text(
+                                            text = "☝️ Eraser",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
+                                        )
                                     }
                                 }
-                                Switch(
-                                    checked = isFingerEraserOn,
-                                    onCheckedChange = {
-                                        isFingerEraserOn = it
-                                        appSettings.isFingerEraserEnabled = it
-                                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
-                                            isFingerEraserEnabled = it
+                                Icon(
+                                    imageVector = Icons.Default.ArrowDropDown,
+                                    contentDescription = "Input Options",
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        // Collapsible Input & Palm Settings Popover Menu
+                        DropdownMenu(
+                            expanded = showInputSettingsPopup && !isBottomBarLocked,
+                            onDismissRequest = { showInputSettingsPopup = false }
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Stylus & Touch Input Settings",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                // Mode Chips
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    FilterChip(
+                                        selected = inputMode == InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM,
+                                        onClick = {
+                                            inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM
+                                            appSettings.inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM
+                                            canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
+                                                inputMode = InputMode.PEN_DRAWS_FINGERS_PAN_ZOOM,
+                                                isFingerEraserEnabled = isFingerEraserOn
+                                            )
+                                        },
+                                        label = { Text("A: Pen + Gestures", fontSize = 11.sp) }
+                                    )
+                                    FilterChip(
+                                        selected = inputMode == InputMode.PEN_ONLY,
+                                        onClick = {
+                                            inputMode = InputMode.PEN_ONLY
+                                            appSettings.inputMode = InputMode.PEN_ONLY
+                                            canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
+                                                inputMode = InputMode.PEN_ONLY,
+                                                isFingerEraserEnabled = isFingerEraserOn
+                                            )
+                                        },
+                                        label = { Text("B: Pen Only", fontSize = 11.sp) }
+                                    )
+                                    FilterChip(
+                                        selected = inputMode == InputMode.PEN_AND_FINGER_DRAW,
+                                        onClick = {
+                                            inputMode = InputMode.PEN_AND_FINGER_DRAW
+                                            appSettings.inputMode = InputMode.PEN_AND_FINGER_DRAW
+                                            canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
+                                                inputMode = InputMode.PEN_AND_FINGER_DRAW,
+                                                isFingerEraserEnabled = isFingerEraserOn
+                                            )
+                                        },
+                                        label = { Text("C: All Draw", fontSize = 11.sp) }
+                                    )
+                                }
+
+                                HorizontalDivider(thickness = 0.5.dp)
+
+                                // Accidental Touch & Edge Gesture Protection (Circle to Search Lock)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            isAccidentalTouchProtectionOn = !isAccidentalTouchProtectionOn
+                                            appSettings.isAccidentalTouchProtectionEnabled = isAccidentalTouchProtectionOn
+                                            canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
+                                                isEdgeRejectionEnabled = isAccidentalTouchProtectionOn
+                                            )
+                                        }
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Shield,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = if (isAccidentalTouchProtectionOn) MaterialTheme.colorScheme.primary else Color.Gray
                                         )
+                                        Column {
+                                            Text("Accidental Touch Protection", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                            Text("Hides nav bar (blocks Circle-to-Search) & dead zones", fontSize = 10.sp, color = Color.Gray)
+                                        }
                                     }
-                                )
-                            }
-
-                            // Hold Pen to Erase Toggle
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        isHoldToEraseOn = !isHoldToEraseOn
-                                        appSettings.isHoldToEraseEnabled = isHoldToEraseOn
-                                        canvasView.holdToEraseEnabled = isHoldToEraseOn
-                                    }
-                                    .padding(vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Schedule,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
-                                        tint = if (isHoldToEraseOn) MaterialTheme.colorScheme.primary else Color.Gray
+                                    Switch(
+                                        checked = isAccidentalTouchProtectionOn,
+                                        onCheckedChange = {
+                                            isAccidentalTouchProtectionOn = it
+                                            appSettings.isAccidentalTouchProtectionEnabled = it
+                                            canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
+                                                isEdgeRejectionEnabled = it
+                                            )
+                                        }
                                     )
-                                    Column {
-                                        Text("Hold Pen to Erase (800ms)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                                        Text("NoteWise style stationary pen hold (800ms)", fontSize = 10.sp, color = Color.Gray)
-                                    }
                                 }
-                                Switch(
-                                    checked = isHoldToEraseOn,
-                                    onCheckedChange = {
-                                        isHoldToEraseOn = it
-                                        appSettings.isHoldToEraseEnabled = it
-                                        canvasView.holdToEraseEnabled = it
-                                    }
-                                )
-                            }
 
-                            // Debug HUD Toggle
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        isDebugOverlayOn = !isDebugOverlayOn
-                                        appSettings.isDebugOverlayEnabled = isDebugOverlayOn
-                                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(debugOverlayEnabled = isDebugOverlayOn)
-                                        canvasView.invalidate()
-                                    }
-                                    .padding(vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
+                                // Two-Finger Tap to Undo Toggle
                                 Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            isTwoFingerUndoOn = !isTwoFingerUndoOn
+                                            appSettings.isTwoFingerUndoEnabled = isTwoFingerUndoOn
+                                            canvasView.isTwoFingerUndoEnabled = isTwoFingerUndoOn
+                                        }
+                                        .padding(vertical = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.BugReport,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
-                                        tint = if (isDebugOverlayOn) MaterialTheme.colorScheme.primary else Color.Gray
-                                    )
-                                    Text("Debug Performance HUD", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                                }
-                                Switch(
-                                    checked = isDebugOverlayOn,
-                                    onCheckedChange = {
-                                        isDebugOverlayOn = it
-                                        appSettings.isDebugOverlayEnabled = it
-                                        canvasView.palmFilter.config = canvasView.palmFilter.config.copy(debugOverlayEnabled = it)
-                                        canvasView.invalidate()
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.Undo,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = if (isTwoFingerUndoOn) MaterialTheme.colorScheme.primary else Color.Gray
+                                        )
+                                        Column {
+                                            Text("Two-Finger Tap to Undo", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                            Text("Palm-rejection hardened 2-finger tap undo", fontSize = 10.sp, color = Color.Gray)
+                                        }
                                     }
-                                )
+                                    Switch(
+                                        checked = isTwoFingerUndoOn,
+                                        onCheckedChange = {
+                                            isTwoFingerUndoOn = it
+                                            appSettings.isTwoFingerUndoEnabled = it
+                                            canvasView.isTwoFingerUndoEnabled = it
+                                        }
+                                    )
+                                }
+
+                                HorizontalDivider(thickness = 0.5.dp)
+
+                                // Finger Eraser Toggle
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            isFingerEraserOn = !isFingerEraserOn
+                                            appSettings.isFingerEraserEnabled = isFingerEraserOn
+                                            canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
+                                                isFingerEraserEnabled = isFingerEraserOn
+                                            )
+                                        }
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.TouchApp,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = if (isFingerEraserOn) MaterialTheme.colorScheme.primary else Color.Gray
+                                        )
+                                        Column {
+                                            Text("Finger as Eraser (Palm-Safe)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                            Text("Single finger erases; 2 fingers pan & zoom", fontSize = 10.sp, color = Color.Gray)
+                                        }
+                                    }
+                                    Switch(
+                                        checked = isFingerEraserOn,
+                                        onCheckedChange = {
+                                            isFingerEraserOn = it
+                                            appSettings.isFingerEraserEnabled = it
+                                            canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
+                                                isFingerEraserEnabled = it
+                                            )
+                                        }
+                                    )
+                                }
+
+                                // Hold Pen to Erase Toggle
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            isHoldToEraseOn = !isHoldToEraseOn
+                                            appSettings.isHoldToEraseEnabled = isHoldToEraseOn
+                                            canvasView.holdToEraseEnabled = isHoldToEraseOn
+                                        }
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Schedule,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = if (isHoldToEraseOn) MaterialTheme.colorScheme.primary else Color.Gray
+                                        )
+                                        Column {
+                                            Text("Hold Pen to Erase (800ms)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                            Text("NoteWise style stationary pen hold (800ms)", fontSize = 10.sp, color = Color.Gray)
+                                        }
+                                    }
+                                    Switch(
+                                        checked = isHoldToEraseOn,
+                                        onCheckedChange = {
+                                            isHoldToEraseOn = it
+                                            appSettings.isHoldToEraseEnabled = it
+                                            canvasView.holdToEraseEnabled = it
+                                        }
+                                    )
+                                }
+
+                                // Debug HUD Toggle
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            isDebugOverlayOn = !isDebugOverlayOn
+                                            appSettings.isDebugOverlayEnabled = isDebugOverlayOn
+                                            canvasView.palmFilter.config = canvasView.palmFilter.config.copy(debugOverlayEnabled = isDebugOverlayOn)
+                                            canvasView.invalidate()
+                                        }
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.BugReport,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = if (isDebugOverlayOn) MaterialTheme.colorScheme.primary else Color.Gray
+                                        )
+                                        Text("Debug Performance HUD", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                    }
+                                    Switch(
+                                        checked = isDebugOverlayOn,
+                                        onCheckedChange = {
+                                            isDebugOverlayOn = it
+                                            appSettings.isDebugOverlayEnabled = it
+                                            canvasView.palmFilter.config = canvasView.palmFilter.config.copy(debugOverlayEnabled = it)
+                                            canvasView.invalidate()
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -2513,8 +2872,15 @@ fun InkCanvasScreen(
                 activePageId = currentPage?.metadata?.pageId,
                 dueReviewCount = duePages.size,
                 onPageSelected = { notebookId, pageId ->
+                    saveCurrentViewport()
                     docManager.switchToNotebookAndPage(notebookId, pageId) { page ->
                         canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
+                        scope.launch {
+                            val nb = libraryRepo.getNotebookById(notebookId)
+                            if (nb != null && nb.viewportZoomScale > 0f) {
+                                canvasView.setViewport(nb.viewportZoomScale, nb.viewportOffsetX, nb.viewportOffsetY)
+                            }
+                        }
                     }
                     isSidebarOpen = false
                 },
@@ -3676,4 +4042,127 @@ private fun ToolIconButton(
             }
         }
     }
+}
+
+@Composable
+private fun BottomBarLockButton(
+    isLocked: Boolean,
+    onLock: () -> Unit,
+    onUnlock: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    var isHolding by remember { mutableStateOf(false) }
+    var unlockProgress by remember { mutableFloatStateOf(0f) }
+
+    LaunchedEffect(isHolding) {
+        if (isHolding) {
+            val start = System.currentTimeMillis()
+            while (isHolding) {
+                val elapsed = System.currentTimeMillis() - start
+                val fraction = (elapsed / 500f).coerceIn(0f, 1f)
+                unlockProgress = fraction
+                if (fraction >= 1f) {
+                    onUnlock()
+                    Toast.makeText(context, "Toolbar Unlocked", Toast.LENGTH_SHORT).show()
+                    isHolding = false
+                    unlockProgress = 0f
+                    break
+                }
+                delay(16L)
+            }
+        } else {
+            unlockProgress = 0f
+        }
+    }
+
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = if (isLocked) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant,
+        border = if (isLocked) BorderStroke(1.5.dp, MaterialTheme.colorScheme.error) else null,
+        modifier = modifier
+            .pointerInput(isLocked) {
+                if (!isLocked) {
+                    detectTapGestures(
+                        onTap = {
+                            onLock()
+                            Toast.makeText(context, "Toolbar Locked", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                } else {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        isHolding = true
+                        val downTime = System.currentTimeMillis()
+                        var released = false
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val change = event.changes.find { it.id == down.id }
+                            if (change == null || !change.pressed) {
+                                released = true
+                                break
+                            }
+                        }
+                        if (released) {
+                            val duration = System.currentTimeMillis() - downTime
+                            isHolding = false
+                            if (duration < 450L) {
+                                Toast.makeText(context, "Hold for 0.5s to unlock toolbar", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+            }
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp)
+        ) {
+            if (isLocked && unlockProgress > 0f) {
+                CircularProgressIndicator(
+                    progress = { unlockProgress },
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.error,
+                    strokeWidth = 2.5.dp
+                )
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = if (isLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                    contentDescription = if (isLocked) "Unlock Toolbar (Hold 0.5s)" else "Lock Toolbar",
+                    modifier = Modifier.size(16.dp),
+                    tint = if (isLocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = if (isLocked) "Locked" else "Lock",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isLocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EdgeRejectionZone(
+    modifier: Modifier
+) {
+    Box(
+        modifier = modifier.pointerInput(Unit) {
+            awaitEachGesture {
+                while (true) {
+                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                    for (change in event.changes) {
+                        if (change.type != PointerType.Stylus && change.type != PointerType.Eraser) {
+                            change.consume()
+                        }
+                    }
+                }
+            }
+        }
+    )
 }

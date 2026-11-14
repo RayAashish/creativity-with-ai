@@ -43,6 +43,16 @@ interface NotebookDao {
     @Query("UPDATE notebooks SET is_dirty = :isDirty WHERE notebookId = :notebookId")
     suspend fun setNotebookDirty(notebookId: String, isDirty: Boolean)
 
+    @Query("UPDATE notebooks SET lastPageIndex = :pageIndex, viewportOffsetX = :offsetX, viewportOffsetY = :offsetY, viewportZoomScale = :zoomScale, modifiedAt = :timestamp WHERE notebookId = :notebookId")
+    suspend fun updateNotebookViewport(
+        notebookId: String,
+        pageIndex: Int,
+        offsetX: Float,
+        offsetY: Float,
+        zoomScale: Float,
+        timestamp: Long = System.currentTimeMillis()
+    )
+
     @Query("UPDATE notebooks SET is_dirty = 0")
     suspend fun resetAllDirtyFlags()
 

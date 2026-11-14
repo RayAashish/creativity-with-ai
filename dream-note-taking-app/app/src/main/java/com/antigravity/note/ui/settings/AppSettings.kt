@@ -112,4 +112,32 @@ class AppSettings(context: Context) {
     var lastActivePageId: String?
         get() = prefs.getString("last_active_page_id", null)
         set(value) = prefs.edit().putString("last_active_page_id", value).apply()
+
+    var isBottomBarLocked: Boolean
+        get() = prefs.getBoolean("is_bottom_bar_locked", false)
+        set(value) = prefs.edit().putBoolean("is_bottom_bar_locked", value).apply()
+
+    var isBottomBarMinimized: Boolean
+        get() = prefs.getBoolean("is_bottom_bar_minimized", false)
+        set(value) = prefs.edit().putBoolean("is_bottom_bar_minimized", value).apply()
+
+    var isAccidentalTouchProtectionEnabled: Boolean
+        get() = prefs.getBoolean("is_accidental_touch_protection", true)
+        set(value) = prefs.edit().putBoolean("is_accidental_touch_protection", value).apply()
+
+    var isTwoFingerUndoEnabled: Boolean
+        get() = prefs.getBoolean("is_two_finger_undo_enabled", true)
+        set(value) = prefs.edit().putBoolean("is_two_finger_undo_enabled", value).apply()
+
+    var lastViewportOffsetX: Float
+        get() = prefs.getFloat("last_viewport_offset_x", 0f)
+        set(value) = prefs.edit().putFloat("last_viewport_offset_x", value).apply()
+
+    var lastViewportOffsetY: Float
+        get() = prefs.getFloat("last_viewport_offset_y", 0f)
+        set(value) = prefs.edit().putFloat("last_viewport_offset_y", value).apply()
+
+    var lastViewportZoomScale: Float
+        get() = prefs.getFloat("last_viewport_zoom_scale", 1.0f)
+        set(value) = prefs.edit().putFloat("last_viewport_zoom_scale", value).apply()
 }

@@ -13,6 +13,9 @@ data class PalmRejectionConfig(
     val graceWindowMs: Long = 350L,
     val palmTouchMajorThresholdPx: Float = 42f, // Contacts larger than this are classified as palm
     val edgeZoneMarginPx: Float = 36f,          // Touches originating near screen bezel
+    val isEdgeRejectionEnabled: Boolean = true,
+    val bottomEdgeZoneMarginPx: Float = 70f,    // ~28dp on high-DPI tablets
+    val sideEdgeZoneMarginPx: Float = 40f,      // ~16dp on high-DPI tablets
     val gestureDisambiguationWindowMs: Long = 35L,
     val debugOverlayEnabled: Boolean = false
 )

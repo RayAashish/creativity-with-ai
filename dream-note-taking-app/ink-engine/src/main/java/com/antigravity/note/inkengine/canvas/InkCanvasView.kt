@@ -101,6 +101,30 @@ class InkCanvasView @JvmOverloads constructor(
     // Phase 5: On-Device ML Kit Digital Ink Recognition
     val digitalInkManager = DigitalInkManager()
 
+    // Two-Finger Tap to Undo gesture setting and qualification flags
+    var isTwoFingerUndoEnabled: Boolean = true
+    private var isDisqualifiedFromUndoTap = false
+
+    // Viewport change listener for real-time persistence
+    var onViewportTransformChanged: ((scale: Float, translationX: Float, translationY: Float) -> Unit)? = null
+
+    fun setViewport(zoomScale: Float, offsetX: Float, offsetY: Float) {
+        val safeScale = if (zoomScale <= 0f) 1.0f else zoomScale
+        val tx = -offsetX * safeScale
+        val ty = -offsetY * safeScale
+        dryInkView.transform.setTransform(safeScale, tx, ty)
+        dryInkView.invalidate()
+        invalidate()
+    }
+
+    fun getViewportState(): Triple<Float, Float, Float> {
+        val scale = dryInkView.transform.scale
+        val safeScale = if (scale <= 0f) 1.0f else scale
+        val offsetX = -dryInkView.transform.translationX / safeScale
+        val offsetY = -dryInkView.transform.translationY / safeScale
+        return Triple(safeScale, offsetX, offsetY)
+    }
+
     private val strokePoints = mutableListOf<ShapeRecognizer.Point>()
     private var lastMoveTime = 0L
     private var lastMoveX = 0f
@@ -840,6 +864,15 @@ class InkCanvasView @JvmOverloads constructor(
 
     private fun handleStylusAction(event: MotionEvent, pointerIndex: Int, pointerId: Int, isHardwareEraser: Boolean) {
         val action = event.actionMasked
+
+        // Strict Pen Only Mode: reject any non-stylus pointer attempting to ink
+        if (palmFilter.config.inputMode == com.antigravity.note.inkengine.palm.InputMode.PEN_ONLY) {
+            val toolType = event.getToolType(pointerIndex)
+            if (toolType != MotionEvent.TOOL_TYPE_STYLUS && toolType != MotionEvent.TOOL_TYPE_ERASER) {
+                return
+            }
+        }
+
         val isEraser = isHardwareEraser || currentTool == CanvasTool.STROKE_ERASER ||
                 (event.buttonState and MotionEvent.BUTTON_STYLUS_PRIMARY) != 0 ||
                 (event.buttonState and MotionEvent.BUTTON_STYLUS_SECONDARY) != 0 ||
@@ -866,6 +899,11 @@ class InkCanvasView @JvmOverloads constructor(
                         lastReadOnlyPanX = screenX
                         lastReadOnlyPanY = screenY
                         dryInkView.invalidate()
+                        onViewportTransformChanged?.invoke(
+                            dryInkView.transform.scale,
+                            dryInkView.transform.translationX,
+                            dryInkView.transform.translationY
+                        )
                     }
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
@@ -1163,6 +1201,11 @@ class InkCanvasView @JvmOverloads constructor(
                         lastReadOnlyPanX = screenX
                         lastReadOnlyPanY = screenY
                         dryInkView.invalidate()
+                        onViewportTransformChanged?.invoke(
+                            dryInkView.transform.scale,
+                            dryInkView.transform.translationX,
+                            dryInkView.transform.translationY
+                        )
                     }
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
@@ -1229,6 +1272,7 @@ class InkCanvasView @JvmOverloads constructor(
             val currentDist = hypot(p0X - p1X, p0Y - p1Y)
             val centerX = (p0X + p1X) / 2f
             val centerY = (p0Y + p1Y) / 2f
+            val density = resources.displayMetrics.density
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_DOWN -> {
@@ -1250,8 +1294,32 @@ class InkCanvasView @JvmOverloads constructor(
                     lastGestureCenterY = centerY
                     gestureStartTime = SystemClock.uptimeMillis()
                     totalGestureMovement = 0f
+
+                    // Hardened Two-Finger Tap Validation:
+                    // 1. Both pointers must be TOOL_TYPE_FINGER
+                    // 2. Both touchMajor must not exceed palm threshold
+                    // 3. Distance between fingers must be reasonable (e.g. 18dp to 140dp)
+                    val p0Tool = event.getToolType(0)
+                    val p1Tool = event.getToolType(1)
+                    val p0Major = event.getTouchMajor(0)
+                    val p1Major = event.getTouchMajor(1)
+                    val distDp = currentDist / density
+
+                    isDisqualifiedFromUndoTap = (p0Tool != MotionEvent.TOOL_TYPE_FINGER ||
+                            p1Tool != MotionEvent.TOOL_TYPE_FINGER ||
+                            p0Major > palmFilter.config.palmTouchMajorThresholdPx ||
+                            p1Major > palmFilter.config.palmTouchMajorThresholdPx ||
+                            distDp < 18f || distDp > 140f)
                 }
                 MotionEvent.ACTION_MOVE -> {
+                    for (i in 0 until event.pointerCount) {
+                        if (event.getToolType(i) != MotionEvent.TOOL_TYPE_FINGER ||
+                            event.getTouchMajor(i) > palmFilter.config.palmTouchMajorThresholdPx) {
+                            isDisqualifiedFromUndoTap = true
+                            break
+                        }
+                    }
+
                     if (!isGestureActive || lastGestureDistance <= 0f) {
                         // Resilient gesture recovery:
                         // If POINTER_DOWN was missed or merged by Android OS,
@@ -1292,12 +1360,18 @@ class InkCanvasView @JvmOverloads constructor(
                         lastGestureCenterX = centerX
                         lastGestureCenterY = centerY
                         dryInkView.invalidate()
+                        onViewportTransformChanged?.invoke(
+                            dryInkView.transform.scale,
+                            dryInkView.transform.translationX,
+                            dryInkView.transform.translationY
+                        )
                     }
                 }
                 MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     val duration = SystemClock.uptimeMillis() - gestureStartTime
-                    // Only trigger undo/redo if fingers were tapped in place without significant drag
-                    if (totalGestureMovement < 20f && duration < palmFilter.config.gestureDisambiguationWindowMs * 4) {
+                    val slopPx = 12f * density
+                    // Only trigger undo/redo if two-finger undo is enabled and qualified
+                    if (isTwoFingerUndoEnabled && !isDisqualifiedFromUndoTap && totalGestureMovement < slopPx && duration in 40L..250L) {
                         // Rapid 2-finger tap detected -> Undo
                         if (event.pointerCount == 2) {
                             undo()
@@ -1306,6 +1380,7 @@ class InkCanvasView @JvmOverloads constructor(
                         }
                     }
                     isGestureActive = false
+                    isDisqualifiedFromUndoTap = false
                     lastGestureDistance = 0f
                     totalGestureMovement = 0f
                 }
@@ -1376,6 +1451,11 @@ class InkCanvasView @JvmOverloads constructor(
     fun resetZoom() {
         dryInkView.transform.reset()
         dryInkView.invalidate()
+        onViewportTransformChanged?.invoke(
+            dryInkView.transform.scale,
+            dryInkView.transform.translationX,
+            dryInkView.transform.translationY
+        )
     }
 
     // Phase 4 Lasso Operations

@@ -173,12 +173,14 @@ class PalmRejectionFilter(
             return FilteredResult.RejectedPalm
         }
 
-        // Layer 3: Bezel / Edge Zone Rejection on initial contact
-        if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-            val isNearEdge = x < config.edgeZoneMarginPx ||
-                    x > (surfaceWidth - config.edgeZoneMarginPx) ||
+        // Layer 3: Bezel / Perimeter Edge Zone Rejection on initial contact
+        if (config.isEdgeRejectionEnabled && (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN)) {
+            val sideMargin = config.sideEdgeZoneMarginPx.coerceAtLeast(config.edgeZoneMarginPx)
+            val bottomMargin = config.bottomEdgeZoneMarginPx.coerceAtLeast(config.edgeZoneMarginPx)
+            val isNearEdge = x < sideMargin ||
+                    x > (surfaceWidth - sideMargin) ||
                     y < config.edgeZoneMarginPx ||
-                    y > (surfaceHeight - config.edgeZoneMarginPx)
+                    y > (surfaceHeight - bottomMargin)
 
             if (isNearEdge) {
                 palmsRejectedCount++

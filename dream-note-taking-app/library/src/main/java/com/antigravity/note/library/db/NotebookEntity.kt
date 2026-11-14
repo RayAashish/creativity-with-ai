@@ -29,5 +29,13 @@ data class NotebookEntity(
     val modifiedAt: Long = System.currentTimeMillis(),
     val iconKey: String? = null,
     @ColumnInfo(name = "is_dirty", defaultValue = "1")
-    val isDirty: Boolean = true
+    val isDirty: Boolean = true,
+    @ColumnInfo(name = "lastPageIndex", defaultValue = "0")
+    val lastPageIndex: Int = 0,
+    @ColumnInfo(name = "viewportOffsetX", defaultValue = "0.0")
+    val viewportOffsetX: Float = 0f,
+    @ColumnInfo(name = "viewportOffsetY", defaultValue = "0.0")
+    val viewportOffsetY: Float = 0f,
+    @ColumnInfo(name = "viewportZoomScale", defaultValue = "1.0")
+    val viewportZoomScale: Float = 1.0f
 )

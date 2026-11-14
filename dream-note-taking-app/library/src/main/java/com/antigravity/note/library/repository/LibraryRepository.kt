@@ -51,6 +51,22 @@ class LibraryRepository(
         notebookDao.getNotebookById(notebookId)
     }
 
+    suspend fun updateNotebookViewport(
+        notebookId: String,
+        lastPageIndex: Int,
+        viewportOffsetX: Float,
+        viewportOffsetY: Float,
+        viewportZoomScale: Float
+    ) = withContext(ioDispatcher) {
+        notebookDao.updateNotebookViewport(
+            notebookId = notebookId,
+            pageIndex = lastPageIndex,
+            offsetX = viewportOffsetX,
+            offsetY = viewportOffsetY,
+            zoomScale = viewportZoomScale
+        )
+    }
+
     fun getPagesForNotebook(notebookId: String): Flow<List<PageEntity>> =
         pageDao.getPagesForNotebook(notebookId)
 

@@ -17,7 +17,7 @@ import com.antigravity.note.library.backup.manifest.BackupManifestEntity
         BackupManifestEntity::class,
         StrokeJournalEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class NoteDatabase : RoomDatabase() {
@@ -55,6 +55,15 @@ abstract class NoteDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE notebooks ADD COLUMN lastPageIndex INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE notebooks ADD COLUMN viewportOffsetX REAL NOT NULL DEFAULT 0.0")
+                db.execSQL("ALTER TABLE notebooks ADD COLUMN viewportOffsetY REAL NOT NULL DEFAULT 0.0")
+                db.execSQL("ALTER TABLE notebooks ADD COLUMN viewportZoomScale REAL NOT NULL DEFAULT 1.0")
+            }
+        }
+
         @Volatile
         private var INSTANCE: NoteDatabase? = null
 
@@ -72,7 +81,7 @@ abstract class NoteDatabase : RoomDatabase() {
                             db.execSQL("PRAGMA synchronous = NORMAL;")
                         }
                     })
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
