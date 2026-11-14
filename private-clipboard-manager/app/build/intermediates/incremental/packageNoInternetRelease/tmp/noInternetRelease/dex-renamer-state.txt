@@ -1,4 +1,0 @@
-#Sat Nov 07 19:35:09 IST 2026
-base.0=/Users/aashishkumarray/Desktop/creativity-with-ai/private-clipboard-manager/app/build/intermediates/dex/noInternetRelease/minifyNoInternetReleaseWithR8/classes.dex
-path.0=classes.dex
-renamed.0=classes.dex

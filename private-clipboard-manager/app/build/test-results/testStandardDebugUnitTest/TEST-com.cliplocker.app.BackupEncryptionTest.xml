@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.cliplocker.app.BackupEncryptionTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-07T14:24:29.026Z" hostname="Aashishs-MacBook-Air.local" time="0.348">
-  <properties/>
-  <testcase name="testEncryptionDecryptionRoundtrip" classname="com.cliplocker.app.BackupEncryptionTest" time="0.221"/>
-  <testcase name="testCorruptPayloadFails" classname="com.cliplocker.app.BackupEncryptionTest" time="0.06"/>
-  <testcase name="testWrongPasswordFails" classname="com.cliplocker.app.BackupEncryptionTest" time="0.065"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
