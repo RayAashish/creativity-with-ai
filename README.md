@@ -145,7 +145,7 @@ All Android binaries are compiled with ProGuard/R8 optimizations and distributed
 | **FocusLauncher** | Release (Optimized) | 3.66 MB | [📥 Download `anti-addiction-launcher.apk`](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/anti-addiction-launcher.apk) |
 | **Cliplocker** | Air-Gapped Release | 7.86 MB | [📥 Download `private-clipboard-manager.apk`](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/private-clipboard-manager.apk) |
 | **PDF Offline Toolkit** | Air-Gapped Release | 32.27 MB | [📥 Download `pdf-offline-toolkit.apk`](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/pdf-offline-toolkit.apk) |
-| **Dream Note & InkFlow** | Debug Build | 70.63 MB | [📥 Download `dream-notes.apk`](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/dream-notes.apk) |
+| **Dream Note & InkFlow** | Debug Build | 91.38 MB | [📥 Download `dream-notes.apk`](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/dream-notes.apk) |
 | **Brain Games** | Release (Lean) | 2.21 MB | [📥 Download `brain-games.apk`](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/brain-games.apk) |
 | **Zoomable SVG** | Debug Build | 18.03 MB | [📥 Download `infinitely-zoomable-svg.apk`](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/infinitely-zoomable-svg.apk) |
 
