@@ -15,10 +15,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/app-release.apk">
+  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/focus-launcher-release.apk">
     <img src="https://img.shields.io/badge/Download-Release_APK-25D366?style=for-the-badge&logo=android&logoColor=white" alt="Download Release APK" />
   </a>
-  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/app-debug.apk">
+  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/focus-launcher-debug.apk">
     <img src="https://img.shields.io/badge/Download-Debug_APK-blue?style=for-the-badge&logo=android&logoColor=white" alt="Download Debug APK" />
   </a>
 </p>

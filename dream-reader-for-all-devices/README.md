@@ -1,6 +1,28 @@
 # Lipi (लिपि) — Universal Bilingual PDF Reader & Precision Stylus Annotation Engine
 
-> **A high-performance, adaptive Android reading and study platform engineered for seamless responsiveness across all form factors: from compact 5.0" smartphones (Xiaomi 14, Pixel 9, Galaxy S24) to ultra-large 14.6" tablets (Samsung Galaxy Tab S9/S10 Ultra & Moto Pad 70 Pro 144Hz).**
+<p align="center">
+  <em>Universal Bilingual Technical PDF Reader & Sub-2ms Active Stylus Annotation Platform with Offline Hindi/Nepali Lexicons and Spaced Repetition for all Android devices (5.0" to 14.6").</em>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-Active-emerald?style=for-the-badge" alt="Status" />
+  <img src="https://img.shields.io/badge/Platform-Android%209%2B%20(API%2028%2B)-6366F1?style=for-the-badge&logo=android&logoColor=white" alt="Platform" />
+  <img src="https://img.shields.io/badge/Kotlin-2.0-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin" />
+  <img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white" alt="Jetpack Compose" />
+  <img src="https://img.shields.io/badge/AndroidX%20Ink-Active%20Stylus-00C853?style=for-the-badge" alt="AndroidX Ink" />
+  <img src="https://img.shields.io/badge/License-MIT-amber?style=for-the-badge" alt="License" />
+</p>
+
+<p align="center">
+  <!-- PRIMARY ACTION BUTTONS -->
+  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/readmaster-app-debug.apk">
+    <img src="https://img.shields.io/badge/Download-APK%20(v2026.11.14)-25D366?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://readm.vercel.app">
+    <img src="https://img.shields.io/badge/Live-Web%20Demo-blue?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Demo" />
+  </a>
+</p>
 
 ---
 
@@ -152,5 +174,8 @@ adb shell am start -n com.readmaster.app/.MainActivity
 
 ---
 
-## 📄 License
-This project is proprietary and developed as part of the **Creativity With AI** suite by [Aashish Kumar Ray](https://github.com/RayAashish). All rights reserved.
+## 📄 License & Attribution
+
+Distributed under the **MIT License**. See [`LICENSE`](file:///Users/aashishkumarray/Desktop/creativity-with-ai/dream-reader-for-all-devices/LICENSE) for details.
+
+Copyright © 2026 **Aashish Kumar Ray**. Developed as part of the **Creativity With AI** suite.
