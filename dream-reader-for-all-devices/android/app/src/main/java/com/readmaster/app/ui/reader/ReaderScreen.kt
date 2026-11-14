@@ -79,6 +79,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -101,12 +102,14 @@ import com.readmaster.app.data.dictionary.BilingualDictionary
 import com.readmaster.app.data.dictionary.VocabEntry
 import com.readmaster.app.data.model.DocumentEntity
 import com.readmaster.app.data.model.VocabularyEntity
+import com.readmaster.app.data.translation.TranslationService
 import com.readmaster.app.engine.canvas.CanvasTool
 import com.readmaster.app.engine.canvas.InkCanvasView
 import com.readmaster.app.speech.TtsManager
 import com.readmaster.app.ui.dialogs.ColorPickerDialog
 import com.readmaster.app.ui.dialogs.WordLookupDialog
 import java.io.File
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -124,6 +127,7 @@ fun ReaderScreen(
     val isMedium = screenWidthDp in 600..839
     val isExpanded = screenWidthDp >= 840
     val lifecycleOwner = LocalLifecycleOwner.current
+    val coroutineScope = rememberCoroutineScope()
 
     // Canvas view reference
     var inkCanvasView: InkCanvasView? by remember { mutableStateOf(null) }
@@ -175,10 +179,11 @@ fun ReaderScreen(
         }
     }
 
-    // Lifecycle monitoring: save page on pause/stop without overriding back-navigation state
+    // Lifecycle monitoring: save page and flush ink/highlighter annotations on pause/stop
     DisposableEffect(lifecycleOwner, document.id) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
+                inkCanvasView?.flushSave()
                 readingPrefs.edit()
                     .putInt("last_page_${document.id}", currentPage)
                     .apply()
@@ -188,6 +193,7 @@ fun ReaderScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+            inkCanvasView?.flushSave()
             readingPrefs.edit()
                 .putInt("last_page_${document.id}", currentPage)
                 .apply()
@@ -598,6 +604,7 @@ fun ReaderScreen(
                             currentTool = CanvasTool.BOOK
                             inkCanvasView?.activeTool = CanvasTool.BOOK
                             isFixedScreen = isFixedScreen
+                            documentId = document.id
 
                             // Undo / Redo listener
                             onUndoRedoStateChanged = { u, r ->
@@ -617,7 +624,7 @@ fun ReaderScreen(
                                 onUpdateDocProgress(page)
                             }
 
-                            // Bilingual word selection listener
+                            // Bilingual word selection listener with online translate enhancement
                             onWordSelected = { rawWord, _, _ ->
                                 val clean = rawWord.trim().trim(
                                     '"', '\'', '.', ',', ';', ':', '?', '!',
@@ -625,6 +632,9 @@ fun ReaderScreen(
                                 )
                                 if (clean.isNotBlank()) {
                                     lookupEntry = BilingualDictionary.lookup(clean)
+                                    coroutineScope.launch {
+                                        lookupEntry = TranslationService.translateText(clean)
+                                    }
                                 }
                             }
                         }
@@ -799,7 +809,7 @@ fun ReaderScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(if (isCompact) 3.dp else 5.dp)
                 ) {
-                    // Tools: Book Read, Pen, Highlighter, Eraser, Lasso, Word Translate
+                    // Tools: Book Read, Pen, Highlighter, Eraser, Lasso, Word/Sentence Translate
                     listOf(
                         Triple(CanvasTool.BOOK, Icons.Default.AutoStories, "Book"),
                         Triple(CanvasTool.PEN, Icons.Default.Edit, "Pen"),
@@ -808,7 +818,11 @@ fun ReaderScreen(
                         Triple(CanvasTool.LASSO, Icons.Default.CropFree, "Lasso"),
                         Triple(CanvasTool.TRANSLATE, Icons.Default.TextFields, "Translate")
                     ).forEach { (tool, icon, label) ->
-                        val isSelected = currentTool == tool
+                        val isSelected = when (tool) {
+                            CanvasTool.BOOK -> currentTool == CanvasTool.BOOK || currentTool == CanvasTool.BOOK_HIGHLIGHT
+                            CanvasTool.HIGHLIGHT -> currentTool == CanvasTool.HIGHLIGHT || currentTool == CanvasTool.BOOK_HIGHLIGHT
+                            else -> currentTool == tool
+                        }
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(if (isCompact) 10.dp else 12.dp))
@@ -821,7 +835,27 @@ fun ReaderScreen(
                                     shape = RoundedCornerShape(if (isCompact) 10.dp else 12.dp)
                                 )
                                 .clickable {
-                                    if (tool == CanvasTool.HIGHLIGHT) {
+                                    val nextTool: CanvasTool = when (tool) {
+                                        CanvasTool.BOOK -> {
+                                            when (currentTool) {
+                                                CanvasTool.BOOK_HIGHLIGHT -> CanvasTool.HIGHLIGHT
+                                                CanvasTool.HIGHLIGHT -> CanvasTool.BOOK_HIGHLIGHT
+                                                CanvasTool.BOOK -> CanvasTool.BOOK
+                                                else -> CanvasTool.BOOK
+                                            }
+                                        }
+                                        CanvasTool.HIGHLIGHT -> {
+                                            when (currentTool) {
+                                                CanvasTool.BOOK_HIGHLIGHT -> CanvasTool.BOOK
+                                                CanvasTool.BOOK -> CanvasTool.BOOK_HIGHLIGHT
+                                                CanvasTool.HIGHLIGHT -> CanvasTool.BOOK_HIGHLIGHT
+                                                else -> CanvasTool.HIGHLIGHT
+                                            }
+                                        }
+                                        else -> tool
+                                    }
+
+                                    if (tool == CanvasTool.HIGHLIGHT || nextTool == CanvasTool.BOOK_HIGHLIGHT) {
                                         if (currentColor == AndroidColor.parseColor("#111318")) {
                                             currentColor = AndroidColor.parseColor("#FFD600")
                                             inkCanvasView?.strokeColor = currentColor
@@ -836,12 +870,13 @@ fun ReaderScreen(
                                             inkCanvasView?.strokeColor = currentColor
                                         }
                                         if (currentWidth >= 8.0f) {
-                                            currentWidth = 0.6f
-                                            inkCanvasView?.strokeWidth = 0.6f
+                                            currentWidth = 1.5f
+                                            inkCanvasView?.strokeWidth = 1.5f
                                         }
                                     }
-                                    currentTool = tool
-                                    inkCanvasView?.activeTool = tool
+
+                                    currentTool = nextTool
+                                    inkCanvasView?.activeTool = nextTool
                                 }
                                 .padding(horizontal = if (isCompact) 8.dp else 10.dp, vertical = if (isCompact) 5.dp else 6.dp),
                             contentAlignment = Alignment.Center
@@ -864,13 +899,15 @@ fun ReaderScreen(
                         }
                     }
 
-                    // Stroke Intensity / Thickness Presets (Visible when Pen or Highlighter is active)
-                    if (currentTool == CanvasTool.PEN || currentTool == CanvasTool.HIGHLIGHT) {
+                    // Stroke Intensity / Thickness Presets (Visible when Pen or Highlighter or Book+Highlight is active)
+                    val isHighlightMode = currentTool == CanvasTool.HIGHLIGHT || currentTool == CanvasTool.BOOK_HIGHLIGHT
+                    val isPenMode = currentTool == CanvasTool.PEN
+                    if (isPenMode || isHighlightMode) {
                         Spacer(modifier = Modifier.width(3.dp))
                         Box(modifier = Modifier.width(1.dp).height(20.dp).background(Color(0xFF475569)))
                         Spacer(modifier = Modifier.width(3.dp))
 
-                        val widthPresets = if (currentTool == CanvasTool.HIGHLIGHT) {
+                        val widthPresets = if (isHighlightMode) {
                             listOf(
                                 12.0f to "Fine",
                                 16.0f to "Med",
@@ -879,15 +916,15 @@ fun ReaderScreen(
                             )
                         } else {
                             listOf(
-                                0.6f to "Fine",
-                                1.2f to "Med",
-                                2.2f to "Bold",
-                                4.0f to "Thick"
+                                0.8f to "Fine",
+                                1.5f to "Med",
+                                2.6f to "Bold",
+                                4.2f to "Thick"
                             )
                         }
 
                         widthPresets.forEach { (size, label) ->
-                            val tolerance = if (currentTool == CanvasTool.HIGHLIGHT) 3.0f else 0.25f
+                            val tolerance = if (isHighlightMode) 3.0f else 0.35f
                             val isSizeSelected = kotlin.math.abs(currentWidth - size) < tolerance
                             Box(
                                 modifier = Modifier
@@ -1093,7 +1130,7 @@ fun ReaderScreen(
         )
     }
 
-    // Manual Word Lookup Dialog (High-Contrast Theme)
+    // Manual Word & Sentence Lookup Dialog (High-Contrast Theme)
     if (showManualLookupDialog) {
         Dialog(onDismissRequest = { showManualLookupDialog = false }) {
             Surface(
@@ -1104,7 +1141,7 @@ fun ReaderScreen(
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(
-                        text = "Quick Word Lookup",
+                        text = "Translate Word or Sentence",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -1113,9 +1150,10 @@ fun ReaderScreen(
                     OutlinedTextField(
                         value = manualWordInput,
                         onValueChange = { manualWordInput = it },
-                        label = { Text("Enter English word", color = Color(0xFF94A3B8)) },
-                        placeholder = { Text("e.g. habit, atomic, reward, system", color = Color(0xFF64748B)) },
-                        singleLine = true,
+                        label = { Text("Enter English word or entire sentence", color = Color(0xFF94A3B8)) },
+                        placeholder = { Text("e.g. Inversion of Control, or full sentence...", color = Color(0xFF64748B)) },
+                        maxLines = 4,
+                        singleLine = false,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
@@ -1136,14 +1174,17 @@ fun ReaderScreen(
                         FilledTonalButton(
                             onClick = {
                                 if (manualWordInput.isNotBlank()) {
-                                    val entry = BilingualDictionary.lookup(manualWordInput)
-                                    lookupEntry = entry
+                                    val textToLookup = manualWordInput.trim()
+                                    lookupEntry = BilingualDictionary.lookup(textToLookup)
                                     showManualLookupDialog = false
                                     manualWordInput = ""
+                                    coroutineScope.launch {
+                                        lookupEntry = TranslationService.translateText(textToLookup)
+                                    }
                                 }
                             }
                         ) {
-                            Text("Look Up")
+                            Text("Translate & Look Up")
                         }
                     }
                 }

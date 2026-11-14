@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -45,6 +46,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -64,6 +67,7 @@ fun WordLookupDialog(
     // 0: English, 1: Hindi, 2: Nepali, 3: Combined
     var selectedTab by remember { mutableIntStateOf(0) }
     var isSaved by remember { mutableStateOf(false) }
+    val clipboardManager = LocalClipboardManager.current
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -80,24 +84,29 @@ fun WordLookupDialog(
                     .padding(20.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                // Top Bar: Word, Pronunciation Button, Close
+                // Top Bar: Word/Sentence, Audio Button, Copy Button, Close
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
                             text = vocabEntry.word,
-                            fontSize = 24.sp,
+                            fontSize = if (vocabEntry.word.length > 30) 17.sp else 22.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = Color.White,
+                            maxLines = 3,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         IconButton(
                             onClick = { onSpeak(vocabEntry.word) },
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(34.dp)
                                 .clip(CircleShape)
                                 .background(Color(0xFF4F46E5))
                         ) {
@@ -105,7 +114,27 @@ fun WordLookupDialog(
                                 imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                                 contentDescription = "Pronounce",
                                 tint = Color.White,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        IconButton(
+                            onClick = {
+                                val hindi = vocabEntry.senses.firstOrNull()?.hindi?.joinToString(", ") ?: ""
+                                val nepali = vocabEntry.senses.firstOrNull()?.nepali?.joinToString(", ") ?: ""
+                                val textToCopy = "${vocabEntry.word}\nHindi: $hindi\nNepali: $nepali"
+                                clipboardManager.setText(AnnotatedString(textToCopy))
+                            },
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF1E293B))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "Copy Translation",
+                                tint = Color(0xFFCBD5E1),
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
@@ -418,7 +447,7 @@ fun WordLookupDialog(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (isSaved) "Saved to Notebook ✓" else "Save Word to Notebook",
+                        text = if (isSaved) "Saved to Notebook ✓" else if (vocabEntry.senses.firstOrNull()?.partOfSpeech == "sentence") "Save Sentence to Notebook" else "Save Word to Notebook",
                         color = Color.White,
                         fontWeight = FontWeight.Bold
                     )

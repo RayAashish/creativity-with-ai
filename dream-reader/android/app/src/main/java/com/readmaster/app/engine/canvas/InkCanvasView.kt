@@ -10,6 +10,8 @@ import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.Rect
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.GestureDetector
@@ -26,6 +28,7 @@ import androidx.ink.brush.Brush
 import androidx.ink.brush.StockBrushes
 import androidx.ink.strokes.Stroke
 import androidx.input.motionprediction.MotionEventPredictor
+import com.readmaster.app.data.storage.StrokeStorage
 import com.readmaster.app.engine.eraser.EraserMode
 import com.readmaster.app.engine.lasso.LassoTool
 import com.readmaster.app.engine.palm.InputMode
@@ -35,12 +38,13 @@ import kotlin.math.abs
 import kotlin.math.hypot
 
 enum class CanvasTool {
-    BOOK,        // Single-source Book Reading Mode (Pen is OFF, gestures arbitrated: curl, tap, 500ms long press, pinch zoom)
-    PEN,         // Ultra-low latency pen inking (<2ms)
-    HIGHLIGHT,   // Translucent highlighter directly on page
-    ERASER,      // Precision stroke cutting & stroke eraser
-    LASSO,       // Freehand vector lasso selection, move & color change
-    TRANSLATE;   // Dedicated instant dictionary lookup
+    BOOK,            // Single-source Book Reading Mode (Pen is OFF, gestures arbitrated: curl, tap, 500ms long press, pinch zoom)
+    PEN,             // Ultra-low latency pen inking (<2ms) with solid, non-fading ink
+    HIGHLIGHT,       // Translucent highlighter directly on page
+    BOOK_HIGHLIGHT,  // Simultaneous Book Reading & Highlighting (Stylus highlights, Finger turns pages/curls)
+    ERASER,          // Precision stroke cutting & stroke eraser
+    LASSO,           // Freehand vector lasso selection, move & color change
+    TRANSLATE;       // Dedicated instant dictionary lookup
 
     companion object {
         val READ_BOOK get() = BOOK
@@ -93,13 +97,52 @@ class InkCanvasView @JvmOverloads constructor(
                 // Detach pointer handling from drawing layer entirely
                 inProgressStrokesView.isEnabled = false
                 inProgressStrokesView.isClickable = false
-            } else if (value == CanvasTool.PEN || value == CanvasTool.HIGHLIGHT) {
+            } else if (value == CanvasTool.PEN || value == CanvasTool.HIGHLIGHT || value == CanvasTool.BOOK_HIGHLIGHT) {
                 inProgressStrokesView.isEnabled = true
-                activeBrush = createBrushForTool(value, strokeColor, strokeWidth)
+                val toolForBrush = if (value == CanvasTool.BOOK_HIGHLIGHT) CanvasTool.HIGHLIGHT else value
+                activeBrush = createBrushForTool(toolForBrush, strokeColor, strokeWidth)
             } else {
                 inProgressStrokesView.isEnabled = false
             }
         }
+
+    // Persistent Document ID for strokes storage
+    var documentId: String = ""
+        set(value) {
+            field = value
+            if (value.isNotBlank()) {
+                loadDocumentStrokes(value)
+            }
+        }
+
+    private val saveHandler = Handler(Looper.getMainLooper())
+    private val saveRunnable = Runnable {
+        flushSave()
+    }
+
+    fun scheduleSaveStrokes() {
+        saveHandler.removeCallbacks(saveRunnable)
+        saveHandler.postDelayed(saveRunnable, 500L)
+    }
+
+    fun flushSave() {
+        saveHandler.removeCallbacks(saveRunnable)
+        val docId = documentId
+        if (docId.isNotBlank()) {
+            val snapshot = dryInkView.pageStrokesMap.mapValues { it.value.toList() }
+            StrokeStorage.saveStrokesSync(context, docId, snapshot)
+        }
+    }
+
+    fun loadDocumentStrokes(docId: String) {
+        documentId = docId
+        val loaded = StrokeStorage.loadStrokesSync(context, docId)
+        dryInkView.clearAllStrokes()
+        for ((pageIndex, list) in loaded) {
+            dryInkView.addPageStrokes(pageIndex, list)
+        }
+        dryInkView.invalidate()
+    }
 
     // Property alias for currentTool
     var currentTool: CanvasTool
@@ -111,16 +154,18 @@ class InkCanvasView @JvmOverloads constructor(
     var strokeColor: Int = Color.parseColor("#111318")
         set(value) {
             field = value
-            activeBrush = createBrushForTool(activeTool, value, strokeWidth)
+            val toolForBrush = if (activeTool == CanvasTool.BOOK_HIGHLIGHT) CanvasTool.HIGHLIGHT else activeTool
+            activeBrush = createBrushForTool(toolForBrush, value, strokeWidth)
         }
 
     var strokeWidth: Float = 0.6f
         set(value) {
             field = value
-            activeBrush = createBrushForTool(activeTool, strokeColor, value)
+            val toolForBrush = if (activeTool == CanvasTool.BOOK_HIGHLIGHT) CanvasTool.HIGHLIGHT else activeTool
+            activeBrush = createBrushForTool(toolForBrush, strokeColor, value)
         }
 
-    private var activeBrush: Brush = createBrushForTool(activeTool, strokeColor, strokeWidth)
+    private var activeBrush: Brush = createBrushForTool(if (activeTool == CanvasTool.BOOK_HIGHLIGHT) CanvasTool.HIGHLIGHT else activeTool, strokeColor, strokeWidth)
     private val activeStrokeIds = HashMap<Int, InProgressStrokeId>()
     private val activeStrokePages = HashMap<Int, Int>()
     private var lastActiveStrokeTargetPage: Int = 0
@@ -222,6 +267,7 @@ class InkCanvasView @JvmOverloads constructor(
             redoStack.clear()
             notifyUndoRedoState()
             dryInkView.invalidate()
+            scheduleSaveStrokes()
         }
 
         inProgressStrokesView.addFinishedStrokesListener(object : InProgressStrokesFinishedListener {
@@ -235,6 +281,7 @@ class InkCanvasView @JvmOverloads constructor(
                     notifyUndoRedoState()
                     inProgressStrokesView.removeFinishedStrokes(strokes.keys)
                     dryInkView.invalidate()
+                    scheduleSaveStrokes()
                 }
             }
         })
@@ -307,9 +354,10 @@ class InkCanvasView @JvmOverloads constructor(
     private fun createBrushForTool(tool: CanvasTool, color: Int, size: Float): Brush {
         return when (tool) {
             CanvasTool.PEN -> {
-                Brush.createWithColorIntArgb(StockBrushes.pressurePen(), color, size, 0.01f)
+                // High-precision solid ink with consistent width & zero fading - holds full intensity while writing and after lift
+                Brush.createWithColorIntArgb(StockBrushes.marker(), color, size, 0.01f)
             }
-            CanvasTool.HIGHLIGHT -> {
+            CanvasTool.HIGHLIGHT, CanvasTool.BOOK_HIGHLIGHT -> {
                 // In PDF points: standard text line height in printed books is ~14-18 pt.
                 // Size directly specifies the highlighter height in PDF points.
                 val highlighterSize = size.coerceIn(10f, 36f)
@@ -375,6 +423,7 @@ class InkCanvasView @JvmOverloads constructor(
             notifyUndoRedoState()
             dryInkView.invalidate()
             onLassoSelectionChanged?.invoke(false)
+            scheduleSaveStrokes()
         }
     }
 
@@ -387,6 +436,7 @@ class InkCanvasView @JvmOverloads constructor(
             redoStack.clear()
             notifyUndoRedoState()
             dryInkView.invalidate()
+            scheduleSaveStrokes()
         }
     }
 
@@ -400,6 +450,7 @@ class InkCanvasView @JvmOverloads constructor(
             notifyUndoRedoState()
             dryInkView.invalidate()
             onLassoSelectionChanged?.invoke(true)
+            scheduleSaveStrokes()
         }
     }
 
@@ -482,6 +533,7 @@ class InkCanvasView @JvmOverloads constructor(
             dryInkView.addPageStrokes(action.pageIndex, action.removedStrokes)
             notifyUndoRedoState()
             dryInkView.invalidate()
+            scheduleSaveStrokes()
         }
     }
 
@@ -494,6 +546,7 @@ class InkCanvasView @JvmOverloads constructor(
             dryInkView.addPageStrokes(action.pageIndex, action.addedStrokes)
             notifyUndoRedoState()
             dryInkView.invalidate()
+            scheduleSaveStrokes()
         }
     }
 
@@ -505,6 +558,7 @@ class InkCanvasView @JvmOverloads constructor(
             redoStack.clear()
             dryInkView.clearPageStrokes(page)
             notifyUndoRedoState()
+            scheduleSaveStrokes()
         }
     }
 
@@ -712,6 +766,32 @@ class InkCanvasView @JvmOverloads constructor(
             return true
         }
 
+        if (activeTool == CanvasTool.BOOK_HIGHLIGHT) {
+            // SIMULTANEOUS BOOK READING & HIGHLIGHTING MODE
+            // Stylus highlights directly on the page without delay or toolbar switching.
+            // Finger turns pages (horizontal drag = real-time page curl, edge tap = page flip, pinch = zoom/pan).
+            val toolType = event.getToolType(pointerIndex)
+            if (toolType == MotionEvent.TOOL_TYPE_STYLUS || toolType == MotionEvent.TOOL_TYPE_ERASER) {
+                val isEraser = toolType == MotionEvent.TOOL_TYPE_ERASER ||
+                        (event.buttonState and MotionEvent.BUTTON_STYLUS_PRIMARY) != 0
+                handleStylusAction(event, pointerIndex, pointerId, isEraser)
+                return true
+            } else {
+                // Finger touch: routes to Book mode (page curl, edge tap, pinch, long-press)
+                if (!isPalmFilterActive && event.pointerCount == 1) {
+                    // Finger drawing enabled: if near margins (>85% or <15%), flip/curl; otherwise highlight
+                    if (screenX > w * 0.85f || screenX < w * 0.15f) {
+                        handleBookModeGesture(event, pointerIndex, screenX, screenY, w, h)
+                    } else {
+                        handleStylusAction(event, pointerIndex, pointerId, false)
+                    }
+                } else {
+                    handleBookModeGesture(event, pointerIndex, screenX, screenY, w, h)
+                }
+                return true
+            }
+        }
+
         if (activeTool == CanvasTool.TRANSLATE) {
             // TRANSLATE MODE: Dedicated dictionary inspection
             handleTranslateModeGesture(event, pointerIndex, screenX, screenY)
@@ -879,6 +959,7 @@ class InkCanvasView @JvmOverloads constructor(
             undoStack.add(StrokeAction(pageIndex = targetPageIndex, addedStrokes = mod.addedStrokes, removedStrokes = mod.removedStrokes))
             redoStack.clear()
             notifyUndoRedoState()
+            scheduleSaveStrokes()
         }
     }
 

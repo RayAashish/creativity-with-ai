@@ -581,6 +581,13 @@ object BilingualDictionary {
         return clean
     }
 
+    fun findExactHit(rawText: String): VocabEntry? {
+        val clean = rawText.trim().replace(Regex("^[\\W_]+|[\\W_]+$"), "")
+        val stemmed = stemWord(clean)
+        val hit = entries[stemmed] ?: entries[clean.lowercase()]
+        return hit?.copy(word = clean)
+    }
+
     fun lookup(rawText: String): VocabEntry {
         val clean = rawText.trim().replace(Regex("^[\\W_]+|[\\W_]+$"), "")
         val stemmed = stemWord(clean)
