@@ -1,0 +1,802 @@
+[
+  {
+    "id": "qa-001",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] How does Kadane's algorithm find maximum subarray sum in O(N) time and O(1) space?",
+    "modelAnswer": "It tracks current running sum and global max. If running sum becomes negative, reset to 0 because negative prefix degrades future subarrays.",
+    "dryRunWalkthrough": "Dry run on [-2, 1, -3, 4, -1, 2, 1, -5, 4]: running sums reach peak at index 6 giving max sum 6 [4, -1, 2, 1].",
+    "complexityFollowUp": "Can Kadane work when all numbers are negative? Yes, by tracking maximum individual negative element instead of resetting to 0."
+  },
+  {
+    "id": "qa-002",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] Explain the Dutch National Flag algorithm for 3-way partitioning (Sort Colors).",
+    "modelAnswer": "Uses 3 pointers: low (boundary for 0s), mid (current element), high (boundary for 2s). When arr[mid]==0 swap with low and increment both; when 1 increment mid; when 2 swap with high and decrement high without incrementing mid.",
+    "dryRunWalkthrough": "Array: [2, 0, 2, 1, 1, 0]. Low=0, Mid=0, High=5. First step swaps arr[0] and arr[5] -> [0, 0, 2, 1, 1, 2].",
+    "complexityFollowUp": "Time complexity O(N), single pass, O(1) auxiliary space."
+  },
+  {
+    "id": "qa-003",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] How do you detect a cycle in a singly linked list without extra space (Floyd's Tortoise and Hare)?",
+    "modelAnswer": "Initialize slow and fast pointers at head. Move slow by 1 step and fast by 2 steps. If fast equals slow, cycle exists. If fast reaches NULL, no cycle.",
+    "dryRunWalkthrough": "Let loop length be L, distance to loop start be K. Fast gains 1 step on slow per iteration, meeting within L steps.",
+    "complexityFollowUp": "How to find the entry point of the cycle? Reset slow to head, keep fast at meeting point, move both 1 step at a time until they meet."
+  },
+  {
+    "id": "qa-004",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] How does the sliding window technique achieve O(N) instead of O(N^2) for finding subarrays?",
+    "modelAnswer": "By maintaining state variables (sum, frequencies) incrementally: add right pointer element, shrink left pointer while condition violated. Each pointer traverses array at most once.",
+    "dryRunWalkthrough": "Window [L, R] expands R from 0 to N-1; L advances monotonically. Total pointer moves = 2N = O(N).",
+    "complexityFollowUp": "When does sliding window fail? When array contains negative numbers and monotonicity of sum is lost (use prefix sums + hashmap instead)."
+  },
+  {
+    "id": "qa-005",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] What is a difference array and how does it support O(1) range updates?",
+    "modelAnswer": "Diff array D[i] = A[i] - A[i-1]. Range update add V to [L, R] becomes D[L] += V and D[R+1] -= V. Prefix sum of D recovers final array in O(N).",
+    "dryRunWalkthrough": "To add 5 to indices [2, 4] in array of size 6: D[2] += 5, D[5] -= 5. Prefix sums apply +5 exactly to [2, 4].",
+    "complexityFollowUp": "Time: Q updates take O(Q) total instead of O(Q * N). Space: O(N)."
+  },
+  {
+    "id": "qa-006",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] How do HashMaps handle collisions, and what is the worst-case lookup time?",
+    "modelAnswer": "Using Separate Chaining (linked lists / red-black trees in Java 8+) or Open Addressing (linear/quadratic probing). Worst case with poor hash function is O(N) or O(log N) with tree bins.",
+    "dryRunWalkthrough": "In Java 8+, when a bucket exceeds 8 nodes and table capacity >= 64, linked list transforms into a TreeNode (Red-Black Tree), capping lookup at O(log K).",
+    "complexityFollowUp": "Why must hashCode() and equals() be overridden together in custom keys? If equal objects have different hash codes, they land in different buckets and get() fails."
+  },
+  {
+    "id": "qa-007",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] Explain the KMP (Knuth-Morris-Pratt) algorithm and its Longest Prefix Suffix (LPS) array.",
+    "modelAnswer": "KMP avoids backtracking in text pointer. LPS[i] stores the length of the longest proper prefix of pattern[0..i] that is also a suffix.",
+    "dryRunWalkthrough": "For pattern 'AABAACA', LPS is [0, 1, 0, 1, 2, 0, 1]. Upon mismatch at index 5, jump pattern index to LPS[4] = 2 without moving text pointer backward.",
+    "complexityFollowUp": "Preprocessing takes O(M) time, matching takes O(N) time. Total time O(N + M)."
+  },
+  {
+    "id": "qa-008",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] How does Robin-Karp rolling hash work and how to handle hash collisions?",
+    "modelAnswer": "Computes polynomial rolling hash: H = sum(S[i] * B^(L-1-i)) mod P. Sliding window updates hash in O(1): H_new = (H_old - S[left]*B^(L-1))*B + S[right] mod P.",
+    "dryRunWalkthrough": "Base B typically 31 or 131, Modulo P typically 10^9+7 or double hash with two primes to avoid spurious collisions.",
+    "complexityFollowUp": "Worst case O(N * M) if hash collisions abound; average case O(N + M)."
+  },
+  {
+    "id": "qa-009",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] What are the prerequisites for applying Binary Search on Answer?",
+    "modelAnswer": "Monotonic feasibility predicate: if f(X) is valid, then for all X' >= X (or <= X) f(X') is also valid. The search space [low, high] must have a clear bounded range.",
+    "dryRunWalkthrough": "Check function evaluates feasibility in O(N). Binary search halves range in log(High - Low) steps. Overall O(N log(Range)).",
+    "complexityFollowUp": "Example: Capacity To Ship Packages Within D Days (LeetCode 1011). Range [max(weights), sum(weights)]."
+  },
+  {
+    "id": "qa-010",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] Why is Greedy optimal for the Activity Selection / Interval Scheduling problem?",
+    "modelAnswer": "Sorting by earliest end time leaves the maximum possible remaining time for subsequent activities. If an optimal solution chose an activity ending later, swapping it with the earliest ending activity leaves at least as much room.",
+    "dryRunWalkthrough": "Sort intervals by end_time. Pick first interval. For each subsequent interval, if start_time >= last_end_time, include it.",
+    "complexityFollowUp": "Time: O(N log N) sorting, O(N) linear selection. Total O(N log N). Space O(1) auxiliary."
+  },
+  {
+    "id": "qa-011",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] Differentiate between Top-Down Memoization and Bottom-Up Tabulation in DP.",
+    "modelAnswer": "Top-Down: Recursive, naturally skips unreachable states, has recursion stack overhead O(Depth). Bottom-Up: Iterative, computes all table entries, allows space optimization to O(1) or O(M).",
+    "dryRunWalkthrough": "Fibonacci: Top-Down uses memo array + call stack. Bottom-Up uses prev1, prev2 variables in O(1) memory.",
+    "complexityFollowUp": "When to prefer Bottom-Up in Infosys exam: Avoids StackOverflowError on recursion depths >= 10^4 on HackerEarth."
+  },
+  {
+    "id": "qa-012",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] Explain the 0/1 Knapsack state transition and why space optimization iterates backward.",
+    "modelAnswer": "dp[i][w] = max(dp[i-1][w], val[i] + dp[i-1][w - wt[i]]). In 1D dp[w], iterating backward ensures dp[w - wt[i]] comes from the previous item (not already updated by current item).",
+    "dryRunWalkthrough": "If iterated forward, it would model the Unbounded Knapsack problem where items can be used infinitely many times.",
+    "complexityFollowUp": "Time complexity O(N * W), space complexity reduced from O(N * W) to O(W)."
+  },
+  {
+    "id": "qa-013",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] How does Longest Increasing Subsequence (LIS) achieve O(N log N) with Patient Sorting?",
+    "modelAnswer": "Maintains array `tails` where `tails[len]` stores the smallest tail of all increasing subsequences of length `len`. For each x, binary search (lower_bound) finds insertion position.",
+    "dryRunWalkthrough": "Input [10, 9, 2, 5, 3, 7, 101, 18]. Tails progression: [10] -> [9] -> [2] -> [2, 5] -> [2, 3] -> [2, 3, 7] -> [2, 3, 7, 101] -> [2, 3, 7, 18]. Length = 4.",
+    "complexityFollowUp": "Note: `tails` array does NOT store the actual LIS elements, only their minimal tail endpoints."
+  },
+  {
+    "id": "qa-014",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] How does Dijkstra's algorithm work and why does it fail with negative edge weights?",
+    "modelAnswer": "Maintains priority queue of (distance, node). Greedily finalizes distance to node with smallest tentative distance. It assumes once a node is popped, no shorter path exists. Negative edges violate this greedy invariant.",
+    "dryRunWalkthrough": "With negative edges, use Bellman-Ford (O(V * E)) or SPFA. Dijkstra runs in O((V + E) log V) with min-heap.",
+    "complexityFollowUp": "Can adding a large positive constant to all edges fix Dijkstra for negative weights? No! Paths with more edges get penalized more than paths with fewer edges."
+  },
+  {
+    "id": "qa-015",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] Explain Disjoint Set Union (DSU) with Path Compression and Union by Rank.",
+    "modelAnswer": "Find(x) finds representative of set and flattens tree by pointing x directly to root. Union(x, y) attaches smaller rank tree under larger rank tree.",
+    "dryRunWalkthrough": "Combined Path Compression + Union by Rank yields nearly O(1) amortized time per operation: O(alpha(N)) where alpha is the inverse Ackermann function.",
+    "complexityFollowUp": "Common uses: Kruskal's Minimum Spanning Tree, dynamic connectivity, detecting cycles in undirected graphs."
+  },
+  {
+    "id": "qa-016",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] What is the difference between BFS and DFS and when is BFS guaranteed to find shortest path?",
+    "modelAnswer": "BFS visits nodes level by level using a queue; DFS explores deepest branch first using a stack. BFS is guaranteed to find shortest path if and only if all edges have equal/unit weight.",
+    "dryRunWalkthrough": "Space complexity: BFS queue holds O(BranchingFactor^Depth) = O(V); DFS stack holds O(Depth).",
+    "complexityFollowUp": "What algorithm handles 0-1 edge weights? 0-1 BFS using a deque (push front for 0, push back for 1) in O(V + E)."
+  },
+  {
+    "id": "qa-017",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] Write an SQL query to find the N-th highest salary without using LIMIT or OFFSET.",
+    "modelAnswer": "SELECT DISTINCT Salary FROM Employee E1 WHERE N-1 = (SELECT COUNT(DISTINCT Salary) FROM Employee E2 WHERE E2.Salary > E1.Salary);",
+    "dryRunWalkthrough": "Inner query counts distinct salaries strictly greater than current salary. For 3rd highest, count must equal 2.",
+    "complexityFollowUp": "Alternative with Window Function: WITH Ranked AS (SELECT Salary, DENSE_RANK() OVER (ORDER BY Salary DESC) AS rnk FROM Employee) SELECT Salary FROM Ranked WHERE rnk = N;"
+  },
+  {
+    "id": "qa-018",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] What is the difference between RANK(), DENSE_RANK(), and ROW_NUMBER()?",
+    "modelAnswer": "ROW_NUMBER() assigns strictly consecutive integers (1, 2, 3, 4) regardless of ties. RANK() skips ranks on ties (1, 2, 2, 4). DENSE_RANK() does not skip ranks on ties (1, 2, 2, 3).",
+    "dryRunWalkthrough": "Example salaries: 100, 90, 90, 80. ROW_NUMBER: 1, 2, 3, 4. RANK: 1, 2, 2, 4. DENSE_RANK: 1, 2, 2, 3.",
+    "complexityFollowUp": "Why is DENSE_RANK preferred for N-th highest salary queries? Because duplicate salaries shouldn't increment the ranking tiers."
+  },
+  {
+    "id": "qa-019",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] Explain ACID properties in database transactions.",
+    "modelAnswer": "Atomicity: All operations succeed or all rollback. Consistency: Database moves from one valid state to another satisfying constraints. Isolation: Concurrent transactions execute as if serial. Durability: Committed changes survive system crashes.",
+    "dryRunWalkthrough": "How does isolation level prevent Dirty Read vs Non-Repeatable Read vs Phantom Read? Read Committed prevents dirty reads; Repeatable Read prevents non-repeatable reads; Serializable prevents phantom reads.",
+    "complexityFollowUp": "What mechanism enforces Durability? Write-Ahead Logging (WAL) and database redo logs."
+  },
+  {
+    "id": "qa-020",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] Explain the Diamond Problem in multiple inheritance and how C++ and Java handle it.",
+    "modelAnswer": "Occurs when class D inherits from B and C, which both inherit from A. If A has method foo(), D has ambiguity which implementation to inherit.",
+    "dryRunWalkthrough": "C++ resolves this via Virtual Inheritance (`class B : virtual public A`). Java prevents it by disallowing multiple class inheritance, allowing only multiple interface implementations (requiring explicit resolution for default methods).",
+    "complexityFollowUp": "What is a virtual table (vtable) in C++? An array of function pointers created for classes with virtual methods to enable dynamic polymorphism."
+  },
+  {
+    "id": "qa-021",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] Differentiate between Abstract Class and Interface in Java 8+.",
+    "modelAnswer": "Abstract class can maintain state (instance fields) and constructors; supports single inheritance. Interface defines contracts; can have default and static methods in Java 8+ and private methods in Java 9+; supports multiple inheritance.",
+    "dryRunWalkthrough": "When to choose Abstract Class over Interface? When code sharing across closely related classes with common mutable state is required (e.g. BaseEntity).",
+    "complexityFollowUp": "Can an abstract class have zero abstract methods? Yes, used to prevent direct instantiation of a class."
+  },
+  {
+    "id": "qa-022",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] What are the 4 Coffman conditions required for a Deadlock to occur?",
+    "modelAnswer": "1. Mutual Exclusion: At least one non-shareable resource. 2. Hold and Wait: Process holds resources while waiting for more. 3. No Preemption: Resources cannot be forcibly seized. 4. Circular Wait: Closed chain of processes where each waits for resource held by next.",
+    "dryRunWalkthrough": "How to prevent deadlock? Eliminate any one condition, e.g., enforce global resource ordering to break Circular Wait.",
+    "complexityFollowUp": "What is Banker's Algorithm? A deadlock avoidance algorithm that checks if granting a resource request maintains the system in a 'safe state'."
+  },
+  {
+    "id": "qa-023",
+    "category": "Array & Two Pointers",
+    "question": "[Array & Two Pointers] What is the difference between a Process and a Thread, and what memory is shared?",
+    "modelAnswer": "Process is an independent execution unit with its own address space (text, data, heap, file descriptors). Thread is a lightweight sub-execution unit within a process sharing the process heap and code, but having its own stack and registers.",
+    "dryRunWalkthrough": "Context switching between threads is faster than between processes because virtual memory page tables and TLB caches don't need flushing.",
+    "complexityFollowUp": "What is a Race Condition? When multiple threads concurrently access and modify shared memory without synchronization, making outcome dependent on execution timing."
+  },
+  {
+    "id": "qa-024",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] How does Kadane's algorithm find maximum subarray sum in O(N) time and O(1) space?",
+    "modelAnswer": "It tracks current running sum and global max. If running sum becomes negative, reset to 0 because negative prefix degrades future subarrays.",
+    "dryRunWalkthrough": "Dry run on [-2, 1, -3, 4, -1, 2, 1, -5, 4]: running sums reach peak at index 6 giving max sum 6 [4, -1, 2, 1].",
+    "complexityFollowUp": "Can Kadane work when all numbers are negative? Yes, by tracking maximum individual negative element instead of resetting to 0."
+  },
+  {
+    "id": "qa-025",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] Explain the Dutch National Flag algorithm for 3-way partitioning (Sort Colors).",
+    "modelAnswer": "Uses 3 pointers: low (boundary for 0s), mid (current element), high (boundary for 2s). When arr[mid]==0 swap with low and increment both; when 1 increment mid; when 2 swap with high and decrement high without incrementing mid.",
+    "dryRunWalkthrough": "Array: [2, 0, 2, 1, 1, 0]. Low=0, Mid=0, High=5. First step swaps arr[0] and arr[5] -> [0, 0, 2, 1, 1, 2].",
+    "complexityFollowUp": "Time complexity O(N), single pass, O(1) auxiliary space."
+  },
+  {
+    "id": "qa-026",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] How do you detect a cycle in a singly linked list without extra space (Floyd's Tortoise and Hare)?",
+    "modelAnswer": "Initialize slow and fast pointers at head. Move slow by 1 step and fast by 2 steps. If fast equals slow, cycle exists. If fast reaches NULL, no cycle.",
+    "dryRunWalkthrough": "Let loop length be L, distance to loop start be K. Fast gains 1 step on slow per iteration, meeting within L steps.",
+    "complexityFollowUp": "How to find the entry point of the cycle? Reset slow to head, keep fast at meeting point, move both 1 step at a time until they meet."
+  },
+  {
+    "id": "qa-027",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] How does the sliding window technique achieve O(N) instead of O(N^2) for finding subarrays?",
+    "modelAnswer": "By maintaining state variables (sum, frequencies) incrementally: add right pointer element, shrink left pointer while condition violated. Each pointer traverses array at most once.",
+    "dryRunWalkthrough": "Window [L, R] expands R from 0 to N-1; L advances monotonically. Total pointer moves = 2N = O(N).",
+    "complexityFollowUp": "When does sliding window fail? When array contains negative numbers and monotonicity of sum is lost (use prefix sums + hashmap instead)."
+  },
+  {
+    "id": "qa-028",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] What is a difference array and how does it support O(1) range updates?",
+    "modelAnswer": "Diff array D[i] = A[i] - A[i-1]. Range update add V to [L, R] becomes D[L] += V and D[R+1] -= V. Prefix sum of D recovers final array in O(N).",
+    "dryRunWalkthrough": "To add 5 to indices [2, 4] in array of size 6: D[2] += 5, D[5] -= 5. Prefix sums apply +5 exactly to [2, 4].",
+    "complexityFollowUp": "Time: Q updates take O(Q) total instead of O(Q * N). Space: O(N)."
+  },
+  {
+    "id": "qa-029",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] How do HashMaps handle collisions, and what is the worst-case lookup time?",
+    "modelAnswer": "Using Separate Chaining (linked lists / red-black trees in Java 8+) or Open Addressing (linear/quadratic probing). Worst case with poor hash function is O(N) or O(log N) with tree bins.",
+    "dryRunWalkthrough": "In Java 8+, when a bucket exceeds 8 nodes and table capacity >= 64, linked list transforms into a TreeNode (Red-Black Tree), capping lookup at O(log K).",
+    "complexityFollowUp": "Why must hashCode() and equals() be overridden together in custom keys? If equal objects have different hash codes, they land in different buckets and get() fails."
+  },
+  {
+    "id": "qa-030",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] Explain the KMP (Knuth-Morris-Pratt) algorithm and its Longest Prefix Suffix (LPS) array.",
+    "modelAnswer": "KMP avoids backtracking in text pointer. LPS[i] stores the length of the longest proper prefix of pattern[0..i] that is also a suffix.",
+    "dryRunWalkthrough": "For pattern 'AABAACA', LPS is [0, 1, 0, 1, 2, 0, 1]. Upon mismatch at index 5, jump pattern index to LPS[4] = 2 without moving text pointer backward.",
+    "complexityFollowUp": "Preprocessing takes O(M) time, matching takes O(N) time. Total time O(N + M)."
+  },
+  {
+    "id": "qa-031",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] How does Robin-Karp rolling hash work and how to handle hash collisions?",
+    "modelAnswer": "Computes polynomial rolling hash: H = sum(S[i] * B^(L-1-i)) mod P. Sliding window updates hash in O(1): H_new = (H_old - S[left]*B^(L-1))*B + S[right] mod P.",
+    "dryRunWalkthrough": "Base B typically 31 or 131, Modulo P typically 10^9+7 or double hash with two primes to avoid spurious collisions.",
+    "complexityFollowUp": "Worst case O(N * M) if hash collisions abound; average case O(N + M)."
+  },
+  {
+    "id": "qa-032",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] What are the prerequisites for applying Binary Search on Answer?",
+    "modelAnswer": "Monotonic feasibility predicate: if f(X) is valid, then for all X' >= X (or <= X) f(X') is also valid. The search space [low, high] must have a clear bounded range.",
+    "dryRunWalkthrough": "Check function evaluates feasibility in O(N). Binary search halves range in log(High - Low) steps. Overall O(N log(Range)).",
+    "complexityFollowUp": "Example: Capacity To Ship Packages Within D Days (LeetCode 1011). Range [max(weights), sum(weights)]."
+  },
+  {
+    "id": "qa-033",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] Why is Greedy optimal for the Activity Selection / Interval Scheduling problem?",
+    "modelAnswer": "Sorting by earliest end time leaves the maximum possible remaining time for subsequent activities. If an optimal solution chose an activity ending later, swapping it with the earliest ending activity leaves at least as much room.",
+    "dryRunWalkthrough": "Sort intervals by end_time. Pick first interval. For each subsequent interval, if start_time >= last_end_time, include it.",
+    "complexityFollowUp": "Time: O(N log N) sorting, O(N) linear selection. Total O(N log N). Space O(1) auxiliary."
+  },
+  {
+    "id": "qa-034",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] Differentiate between Top-Down Memoization and Bottom-Up Tabulation in DP.",
+    "modelAnswer": "Top-Down: Recursive, naturally skips unreachable states, has recursion stack overhead O(Depth). Bottom-Up: Iterative, computes all table entries, allows space optimization to O(1) or O(M).",
+    "dryRunWalkthrough": "Fibonacci: Top-Down uses memo array + call stack. Bottom-Up uses prev1, prev2 variables in O(1) memory.",
+    "complexityFollowUp": "When to prefer Bottom-Up in Infosys exam: Avoids StackOverflowError on recursion depths >= 10^4 on HackerEarth."
+  },
+  {
+    "id": "qa-035",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] Explain the 0/1 Knapsack state transition and why space optimization iterates backward.",
+    "modelAnswer": "dp[i][w] = max(dp[i-1][w], val[i] + dp[i-1][w - wt[i]]). In 1D dp[w], iterating backward ensures dp[w - wt[i]] comes from the previous item (not already updated by current item).",
+    "dryRunWalkthrough": "If iterated forward, it would model the Unbounded Knapsack problem where items can be used infinitely many times.",
+    "complexityFollowUp": "Time complexity O(N * W), space complexity reduced from O(N * W) to O(W)."
+  },
+  {
+    "id": "qa-036",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] How does Longest Increasing Subsequence (LIS) achieve O(N log N) with Patient Sorting?",
+    "modelAnswer": "Maintains array `tails` where `tails[len]` stores the smallest tail of all increasing subsequences of length `len`. For each x, binary search (lower_bound) finds insertion position.",
+    "dryRunWalkthrough": "Input [10, 9, 2, 5, 3, 7, 101, 18]. Tails progression: [10] -> [9] -> [2] -> [2, 5] -> [2, 3] -> [2, 3, 7] -> [2, 3, 7, 101] -> [2, 3, 7, 18]. Length = 4.",
+    "complexityFollowUp": "Note: `tails` array does NOT store the actual LIS elements, only their minimal tail endpoints."
+  },
+  {
+    "id": "qa-037",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] How does Dijkstra's algorithm work and why does it fail with negative edge weights?",
+    "modelAnswer": "Maintains priority queue of (distance, node). Greedily finalizes distance to node with smallest tentative distance. It assumes once a node is popped, no shorter path exists. Negative edges violate this greedy invariant.",
+    "dryRunWalkthrough": "With negative edges, use Bellman-Ford (O(V * E)) or SPFA. Dijkstra runs in O((V + E) log V) with min-heap.",
+    "complexityFollowUp": "Can adding a large positive constant to all edges fix Dijkstra for negative weights? No! Paths with more edges get penalized more than paths with fewer edges."
+  },
+  {
+    "id": "qa-038",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] Explain Disjoint Set Union (DSU) with Path Compression and Union by Rank.",
+    "modelAnswer": "Find(x) finds representative of set and flattens tree by pointing x directly to root. Union(x, y) attaches smaller rank tree under larger rank tree.",
+    "dryRunWalkthrough": "Combined Path Compression + Union by Rank yields nearly O(1) amortized time per operation: O(alpha(N)) where alpha is the inverse Ackermann function.",
+    "complexityFollowUp": "Common uses: Kruskal's Minimum Spanning Tree, dynamic connectivity, detecting cycles in undirected graphs."
+  },
+  {
+    "id": "qa-039",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] What is the difference between BFS and DFS and when is BFS guaranteed to find shortest path?",
+    "modelAnswer": "BFS visits nodes level by level using a queue; DFS explores deepest branch first using a stack. BFS is guaranteed to find shortest path if and only if all edges have equal/unit weight.",
+    "dryRunWalkthrough": "Space complexity: BFS queue holds O(BranchingFactor^Depth) = O(V); DFS stack holds O(Depth).",
+    "complexityFollowUp": "What algorithm handles 0-1 edge weights? 0-1 BFS using a deque (push front for 0, push back for 1) in O(V + E)."
+  },
+  {
+    "id": "qa-040",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] Write an SQL query to find the N-th highest salary without using LIMIT or OFFSET.",
+    "modelAnswer": "SELECT DISTINCT Salary FROM Employee E1 WHERE N-1 = (SELECT COUNT(DISTINCT Salary) FROM Employee E2 WHERE E2.Salary > E1.Salary);",
+    "dryRunWalkthrough": "Inner query counts distinct salaries strictly greater than current salary. For 3rd highest, count must equal 2.",
+    "complexityFollowUp": "Alternative with Window Function: WITH Ranked AS (SELECT Salary, DENSE_RANK() OVER (ORDER BY Salary DESC) AS rnk FROM Employee) SELECT Salary FROM Ranked WHERE rnk = N;"
+  },
+  {
+    "id": "qa-041",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] What is the difference between RANK(), DENSE_RANK(), and ROW_NUMBER()?",
+    "modelAnswer": "ROW_NUMBER() assigns strictly consecutive integers (1, 2, 3, 4) regardless of ties. RANK() skips ranks on ties (1, 2, 2, 4). DENSE_RANK() does not skip ranks on ties (1, 2, 2, 3).",
+    "dryRunWalkthrough": "Example salaries: 100, 90, 90, 80. ROW_NUMBER: 1, 2, 3, 4. RANK: 1, 2, 2, 4. DENSE_RANK: 1, 2, 2, 3.",
+    "complexityFollowUp": "Why is DENSE_RANK preferred for N-th highest salary queries? Because duplicate salaries shouldn't increment the ranking tiers."
+  },
+  {
+    "id": "qa-042",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] Explain ACID properties in database transactions.",
+    "modelAnswer": "Atomicity: All operations succeed or all rollback. Consistency: Database moves from one valid state to another satisfying constraints. Isolation: Concurrent transactions execute as if serial. Durability: Committed changes survive system crashes.",
+    "dryRunWalkthrough": "How does isolation level prevent Dirty Read vs Non-Repeatable Read vs Phantom Read? Read Committed prevents dirty reads; Repeatable Read prevents non-repeatable reads; Serializable prevents phantom reads.",
+    "complexityFollowUp": "What mechanism enforces Durability? Write-Ahead Logging (WAL) and database redo logs."
+  },
+  {
+    "id": "qa-043",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] Explain the Diamond Problem in multiple inheritance and how C++ and Java handle it.",
+    "modelAnswer": "Occurs when class D inherits from B and C, which both inherit from A. If A has method foo(), D has ambiguity which implementation to inherit.",
+    "dryRunWalkthrough": "C++ resolves this via Virtual Inheritance (`class B : virtual public A`). Java prevents it by disallowing multiple class inheritance, allowing only multiple interface implementations (requiring explicit resolution for default methods).",
+    "complexityFollowUp": "What is a virtual table (vtable) in C++? An array of function pointers created for classes with virtual methods to enable dynamic polymorphism."
+  },
+  {
+    "id": "qa-044",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] Differentiate between Abstract Class and Interface in Java 8+.",
+    "modelAnswer": "Abstract class can maintain state (instance fields) and constructors; supports single inheritance. Interface defines contracts; can have default and static methods in Java 8+ and private methods in Java 9+; supports multiple inheritance.",
+    "dryRunWalkthrough": "When to choose Abstract Class over Interface? When code sharing across closely related classes with common mutable state is required (e.g. BaseEntity).",
+    "complexityFollowUp": "Can an abstract class have zero abstract methods? Yes, used to prevent direct instantiation of a class."
+  },
+  {
+    "id": "qa-045",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] What are the 4 Coffman conditions required for a Deadlock to occur?",
+    "modelAnswer": "1. Mutual Exclusion: At least one non-shareable resource. 2. Hold and Wait: Process holds resources while waiting for more. 3. No Preemption: Resources cannot be forcibly seized. 4. Circular Wait: Closed chain of processes where each waits for resource held by next.",
+    "dryRunWalkthrough": "How to prevent deadlock? Eliminate any one condition, e.g., enforce global resource ordering to break Circular Wait.",
+    "complexityFollowUp": "What is Banker's Algorithm? A deadlock avoidance algorithm that checks if granting a resource request maintains the system in a 'safe state'."
+  },
+  {
+    "id": "qa-046",
+    "category": "Hashing & Strings",
+    "question": "[Hashing & Strings] What is the difference between a Process and a Thread, and what memory is shared?",
+    "modelAnswer": "Process is an independent execution unit with its own address space (text, data, heap, file descriptors). Thread is a lightweight sub-execution unit within a process sharing the process heap and code, but having its own stack and registers.",
+    "dryRunWalkthrough": "Context switching between threads is faster than between processes because virtual memory page tables and TLB caches don't need flushing.",
+    "complexityFollowUp": "What is a Race Condition? When multiple threads concurrently access and modify shared memory without synchronization, making outcome dependent on execution timing."
+  },
+  {
+    "id": "qa-047",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] How does Kadane's algorithm find maximum subarray sum in O(N) time and O(1) space?",
+    "modelAnswer": "It tracks current running sum and global max. If running sum becomes negative, reset to 0 because negative prefix degrades future subarrays.",
+    "dryRunWalkthrough": "Dry run on [-2, 1, -3, 4, -1, 2, 1, -5, 4]: running sums reach peak at index 6 giving max sum 6 [4, -1, 2, 1].",
+    "complexityFollowUp": "Can Kadane work when all numbers are negative? Yes, by tracking maximum individual negative element instead of resetting to 0."
+  },
+  {
+    "id": "qa-048",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] Explain the Dutch National Flag algorithm for 3-way partitioning (Sort Colors).",
+    "modelAnswer": "Uses 3 pointers: low (boundary for 0s), mid (current element), high (boundary for 2s). When arr[mid]==0 swap with low and increment both; when 1 increment mid; when 2 swap with high and decrement high without incrementing mid.",
+    "dryRunWalkthrough": "Array: [2, 0, 2, 1, 1, 0]. Low=0, Mid=0, High=5. First step swaps arr[0] and arr[5] -> [0, 0, 2, 1, 1, 2].",
+    "complexityFollowUp": "Time complexity O(N), single pass, O(1) auxiliary space."
+  },
+  {
+    "id": "qa-049",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] How do you detect a cycle in a singly linked list without extra space (Floyd's Tortoise and Hare)?",
+    "modelAnswer": "Initialize slow and fast pointers at head. Move slow by 1 step and fast by 2 steps. If fast equals slow, cycle exists. If fast reaches NULL, no cycle.",
+    "dryRunWalkthrough": "Let loop length be L, distance to loop start be K. Fast gains 1 step on slow per iteration, meeting within L steps.",
+    "complexityFollowUp": "How to find the entry point of the cycle? Reset slow to head, keep fast at meeting point, move both 1 step at a time until they meet."
+  },
+  {
+    "id": "qa-050",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] How does the sliding window technique achieve O(N) instead of O(N^2) for finding subarrays?",
+    "modelAnswer": "By maintaining state variables (sum, frequencies) incrementally: add right pointer element, shrink left pointer while condition violated. Each pointer traverses array at most once.",
+    "dryRunWalkthrough": "Window [L, R] expands R from 0 to N-1; L advances monotonically. Total pointer moves = 2N = O(N).",
+    "complexityFollowUp": "When does sliding window fail? When array contains negative numbers and monotonicity of sum is lost (use prefix sums + hashmap instead)."
+  },
+  {
+    "id": "qa-051",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] What is a difference array and how does it support O(1) range updates?",
+    "modelAnswer": "Diff array D[i] = A[i] - A[i-1]. Range update add V to [L, R] becomes D[L] += V and D[R+1] -= V. Prefix sum of D recovers final array in O(N).",
+    "dryRunWalkthrough": "To add 5 to indices [2, 4] in array of size 6: D[2] += 5, D[5] -= 5. Prefix sums apply +5 exactly to [2, 4].",
+    "complexityFollowUp": "Time: Q updates take O(Q) total instead of O(Q * N). Space: O(N)."
+  },
+  {
+    "id": "qa-052",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] How do HashMaps handle collisions, and what is the worst-case lookup time?",
+    "modelAnswer": "Using Separate Chaining (linked lists / red-black trees in Java 8+) or Open Addressing (linear/quadratic probing). Worst case with poor hash function is O(N) or O(log N) with tree bins.",
+    "dryRunWalkthrough": "In Java 8+, when a bucket exceeds 8 nodes and table capacity >= 64, linked list transforms into a TreeNode (Red-Black Tree), capping lookup at O(log K).",
+    "complexityFollowUp": "Why must hashCode() and equals() be overridden together in custom keys? If equal objects have different hash codes, they land in different buckets and get() fails."
+  },
+  {
+    "id": "qa-053",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] Explain the KMP (Knuth-Morris-Pratt) algorithm and its Longest Prefix Suffix (LPS) array.",
+    "modelAnswer": "KMP avoids backtracking in text pointer. LPS[i] stores the length of the longest proper prefix of pattern[0..i] that is also a suffix.",
+    "dryRunWalkthrough": "For pattern 'AABAACA', LPS is [0, 1, 0, 1, 2, 0, 1]. Upon mismatch at index 5, jump pattern index to LPS[4] = 2 without moving text pointer backward.",
+    "complexityFollowUp": "Preprocessing takes O(M) time, matching takes O(N) time. Total time O(N + M)."
+  },
+  {
+    "id": "qa-054",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] How does Robin-Karp rolling hash work and how to handle hash collisions?",
+    "modelAnswer": "Computes polynomial rolling hash: H = sum(S[i] * B^(L-1-i)) mod P. Sliding window updates hash in O(1): H_new = (H_old - S[left]*B^(L-1))*B + S[right] mod P.",
+    "dryRunWalkthrough": "Base B typically 31 or 131, Modulo P typically 10^9+7 or double hash with two primes to avoid spurious collisions.",
+    "complexityFollowUp": "Worst case O(N * M) if hash collisions abound; average case O(N + M)."
+  },
+  {
+    "id": "qa-055",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] What are the prerequisites for applying Binary Search on Answer?",
+    "modelAnswer": "Monotonic feasibility predicate: if f(X) is valid, then for all X' >= X (or <= X) f(X') is also valid. The search space [low, high] must have a clear bounded range.",
+    "dryRunWalkthrough": "Check function evaluates feasibility in O(N). Binary search halves range in log(High - Low) steps. Overall O(N log(Range)).",
+    "complexityFollowUp": "Example: Capacity To Ship Packages Within D Days (LeetCode 1011). Range [max(weights), sum(weights)]."
+  },
+  {
+    "id": "qa-056",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] Why is Greedy optimal for the Activity Selection / Interval Scheduling problem?",
+    "modelAnswer": "Sorting by earliest end time leaves the maximum possible remaining time for subsequent activities. If an optimal solution chose an activity ending later, swapping it with the earliest ending activity leaves at least as much room.",
+    "dryRunWalkthrough": "Sort intervals by end_time. Pick first interval. For each subsequent interval, if start_time >= last_end_time, include it.",
+    "complexityFollowUp": "Time: O(N log N) sorting, O(N) linear selection. Total O(N log N). Space O(1) auxiliary."
+  },
+  {
+    "id": "qa-057",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] Differentiate between Top-Down Memoization and Bottom-Up Tabulation in DP.",
+    "modelAnswer": "Top-Down: Recursive, naturally skips unreachable states, has recursion stack overhead O(Depth). Bottom-Up: Iterative, computes all table entries, allows space optimization to O(1) or O(M).",
+    "dryRunWalkthrough": "Fibonacci: Top-Down uses memo array + call stack. Bottom-Up uses prev1, prev2 variables in O(1) memory.",
+    "complexityFollowUp": "When to prefer Bottom-Up in Infosys exam: Avoids StackOverflowError on recursion depths >= 10^4 on HackerEarth."
+  },
+  {
+    "id": "qa-058",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] Explain the 0/1 Knapsack state transition and why space optimization iterates backward.",
+    "modelAnswer": "dp[i][w] = max(dp[i-1][w], val[i] + dp[i-1][w - wt[i]]). In 1D dp[w], iterating backward ensures dp[w - wt[i]] comes from the previous item (not already updated by current item).",
+    "dryRunWalkthrough": "If iterated forward, it would model the Unbounded Knapsack problem where items can be used infinitely many times.",
+    "complexityFollowUp": "Time complexity O(N * W), space complexity reduced from O(N * W) to O(W)."
+  },
+  {
+    "id": "qa-059",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] How does Longest Increasing Subsequence (LIS) achieve O(N log N) with Patient Sorting?",
+    "modelAnswer": "Maintains array `tails` where `tails[len]` stores the smallest tail of all increasing subsequences of length `len`. For each x, binary search (lower_bound) finds insertion position.",
+    "dryRunWalkthrough": "Input [10, 9, 2, 5, 3, 7, 101, 18]. Tails progression: [10] -> [9] -> [2] -> [2, 5] -> [2, 3] -> [2, 3, 7] -> [2, 3, 7, 101] -> [2, 3, 7, 18]. Length = 4.",
+    "complexityFollowUp": "Note: `tails` array does NOT store the actual LIS elements, only their minimal tail endpoints."
+  },
+  {
+    "id": "qa-060",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] How does Dijkstra's algorithm work and why does it fail with negative edge weights?",
+    "modelAnswer": "Maintains priority queue of (distance, node). Greedily finalizes distance to node with smallest tentative distance. It assumes once a node is popped, no shorter path exists. Negative edges violate this greedy invariant.",
+    "dryRunWalkthrough": "With negative edges, use Bellman-Ford (O(V * E)) or SPFA. Dijkstra runs in O((V + E) log V) with min-heap.",
+    "complexityFollowUp": "Can adding a large positive constant to all edges fix Dijkstra for negative weights? No! Paths with more edges get penalized more than paths with fewer edges."
+  },
+  {
+    "id": "qa-061",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] Explain Disjoint Set Union (DSU) with Path Compression and Union by Rank.",
+    "modelAnswer": "Find(x) finds representative of set and flattens tree by pointing x directly to root. Union(x, y) attaches smaller rank tree under larger rank tree.",
+    "dryRunWalkthrough": "Combined Path Compression + Union by Rank yields nearly O(1) amortized time per operation: O(alpha(N)) where alpha is the inverse Ackermann function.",
+    "complexityFollowUp": "Common uses: Kruskal's Minimum Spanning Tree, dynamic connectivity, detecting cycles in undirected graphs."
+  },
+  {
+    "id": "qa-062",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] What is the difference between BFS and DFS and when is BFS guaranteed to find shortest path?",
+    "modelAnswer": "BFS visits nodes level by level using a queue; DFS explores deepest branch first using a stack. BFS is guaranteed to find shortest path if and only if all edges have equal/unit weight.",
+    "dryRunWalkthrough": "Space complexity: BFS queue holds O(BranchingFactor^Depth) = O(V); DFS stack holds O(Depth).",
+    "complexityFollowUp": "What algorithm handles 0-1 edge weights? 0-1 BFS using a deque (push front for 0, push back for 1) in O(V + E)."
+  },
+  {
+    "id": "qa-063",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] Write an SQL query to find the N-th highest salary without using LIMIT or OFFSET.",
+    "modelAnswer": "SELECT DISTINCT Salary FROM Employee E1 WHERE N-1 = (SELECT COUNT(DISTINCT Salary) FROM Employee E2 WHERE E2.Salary > E1.Salary);",
+    "dryRunWalkthrough": "Inner query counts distinct salaries strictly greater than current salary. For 3rd highest, count must equal 2.",
+    "complexityFollowUp": "Alternative with Window Function: WITH Ranked AS (SELECT Salary, DENSE_RANK() OVER (ORDER BY Salary DESC) AS rnk FROM Employee) SELECT Salary FROM Ranked WHERE rnk = N;"
+  },
+  {
+    "id": "qa-064",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] What is the difference between RANK(), DENSE_RANK(), and ROW_NUMBER()?",
+    "modelAnswer": "ROW_NUMBER() assigns strictly consecutive integers (1, 2, 3, 4) regardless of ties. RANK() skips ranks on ties (1, 2, 2, 4). DENSE_RANK() does not skip ranks on ties (1, 2, 2, 3).",
+    "dryRunWalkthrough": "Example salaries: 100, 90, 90, 80. ROW_NUMBER: 1, 2, 3, 4. RANK: 1, 2, 2, 4. DENSE_RANK: 1, 2, 2, 3.",
+    "complexityFollowUp": "Why is DENSE_RANK preferred for N-th highest salary queries? Because duplicate salaries shouldn't increment the ranking tiers."
+  },
+  {
+    "id": "qa-065",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] Explain ACID properties in database transactions.",
+    "modelAnswer": "Atomicity: All operations succeed or all rollback. Consistency: Database moves from one valid state to another satisfying constraints. Isolation: Concurrent transactions execute as if serial. Durability: Committed changes survive system crashes.",
+    "dryRunWalkthrough": "How does isolation level prevent Dirty Read vs Non-Repeatable Read vs Phantom Read? Read Committed prevents dirty reads; Repeatable Read prevents non-repeatable reads; Serializable prevents phantom reads.",
+    "complexityFollowUp": "What mechanism enforces Durability? Write-Ahead Logging (WAL) and database redo logs."
+  },
+  {
+    "id": "qa-066",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] Explain the Diamond Problem in multiple inheritance and how C++ and Java handle it.",
+    "modelAnswer": "Occurs when class D inherits from B and C, which both inherit from A. If A has method foo(), D has ambiguity which implementation to inherit.",
+    "dryRunWalkthrough": "C++ resolves this via Virtual Inheritance (`class B : virtual public A`). Java prevents it by disallowing multiple class inheritance, allowing only multiple interface implementations (requiring explicit resolution for default methods).",
+    "complexityFollowUp": "What is a virtual table (vtable) in C++? An array of function pointers created for classes with virtual methods to enable dynamic polymorphism."
+  },
+  {
+    "id": "qa-067",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] Differentiate between Abstract Class and Interface in Java 8+.",
+    "modelAnswer": "Abstract class can maintain state (instance fields) and constructors; supports single inheritance. Interface defines contracts; can have default and static methods in Java 8+ and private methods in Java 9+; supports multiple inheritance.",
+    "dryRunWalkthrough": "When to choose Abstract Class over Interface? When code sharing across closely related classes with common mutable state is required (e.g. BaseEntity).",
+    "complexityFollowUp": "Can an abstract class have zero abstract methods? Yes, used to prevent direct instantiation of a class."
+  },
+  {
+    "id": "qa-068",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] What are the 4 Coffman conditions required for a Deadlock to occur?",
+    "modelAnswer": "1. Mutual Exclusion: At least one non-shareable resource. 2. Hold and Wait: Process holds resources while waiting for more. 3. No Preemption: Resources cannot be forcibly seized. 4. Circular Wait: Closed chain of processes where each waits for resource held by next.",
+    "dryRunWalkthrough": "How to prevent deadlock? Eliminate any one condition, e.g., enforce global resource ordering to break Circular Wait.",
+    "complexityFollowUp": "What is Banker's Algorithm? A deadlock avoidance algorithm that checks if granting a resource request maintains the system in a 'safe state'."
+  },
+  {
+    "id": "qa-069",
+    "category": "Binary Search & Greedy",
+    "question": "[Binary Search & Greedy] What is the difference between a Process and a Thread, and what memory is shared?",
+    "modelAnswer": "Process is an independent execution unit with its own address space (text, data, heap, file descriptors). Thread is a lightweight sub-execution unit within a process sharing the process heap and code, but having its own stack and registers.",
+    "dryRunWalkthrough": "Context switching between threads is faster than between processes because virtual memory page tables and TLB caches don't need flushing.",
+    "complexityFollowUp": "What is a Race Condition? When multiple threads concurrently access and modify shared memory without synchronization, making outcome dependent on execution timing."
+  },
+  {
+    "id": "qa-070",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] How does Kadane's algorithm find maximum subarray sum in O(N) time and O(1) space?",
+    "modelAnswer": "It tracks current running sum and global max. If running sum becomes negative, reset to 0 because negative prefix degrades future subarrays.",
+    "dryRunWalkthrough": "Dry run on [-2, 1, -3, 4, -1, 2, 1, -5, 4]: running sums reach peak at index 6 giving max sum 6 [4, -1, 2, 1].",
+    "complexityFollowUp": "Can Kadane work when all numbers are negative? Yes, by tracking maximum individual negative element instead of resetting to 0."
+  },
+  {
+    "id": "qa-071",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] Explain the Dutch National Flag algorithm for 3-way partitioning (Sort Colors).",
+    "modelAnswer": "Uses 3 pointers: low (boundary for 0s), mid (current element), high (boundary for 2s). When arr[mid]==0 swap with low and increment both; when 1 increment mid; when 2 swap with high and decrement high without incrementing mid.",
+    "dryRunWalkthrough": "Array: [2, 0, 2, 1, 1, 0]. Low=0, Mid=0, High=5. First step swaps arr[0] and arr[5] -> [0, 0, 2, 1, 1, 2].",
+    "complexityFollowUp": "Time complexity O(N), single pass, O(1) auxiliary space."
+  },
+  {
+    "id": "qa-072",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] How do you detect a cycle in a singly linked list without extra space (Floyd's Tortoise and Hare)?",
+    "modelAnswer": "Initialize slow and fast pointers at head. Move slow by 1 step and fast by 2 steps. If fast equals slow, cycle exists. If fast reaches NULL, no cycle.",
+    "dryRunWalkthrough": "Let loop length be L, distance to loop start be K. Fast gains 1 step on slow per iteration, meeting within L steps.",
+    "complexityFollowUp": "How to find the entry point of the cycle? Reset slow to head, keep fast at meeting point, move both 1 step at a time until they meet."
+  },
+  {
+    "id": "qa-073",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] How does the sliding window technique achieve O(N) instead of O(N^2) for finding subarrays?",
+    "modelAnswer": "By maintaining state variables (sum, frequencies) incrementally: add right pointer element, shrink left pointer while condition violated. Each pointer traverses array at most once.",
+    "dryRunWalkthrough": "Window [L, R] expands R from 0 to N-1; L advances monotonically. Total pointer moves = 2N = O(N).",
+    "complexityFollowUp": "When does sliding window fail? When array contains negative numbers and monotonicity of sum is lost (use prefix sums + hashmap instead)."
+  },
+  {
+    "id": "qa-074",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] What is a difference array and how does it support O(1) range updates?",
+    "modelAnswer": "Diff array D[i] = A[i] - A[i-1]. Range update add V to [L, R] becomes D[L] += V and D[R+1] -= V. Prefix sum of D recovers final array in O(N).",
+    "dryRunWalkthrough": "To add 5 to indices [2, 4] in array of size 6: D[2] += 5, D[5] -= 5. Prefix sums apply +5 exactly to [2, 4].",
+    "complexityFollowUp": "Time: Q updates take O(Q) total instead of O(Q * N). Space: O(N)."
+  },
+  {
+    "id": "qa-075",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] How do HashMaps handle collisions, and what is the worst-case lookup time?",
+    "modelAnswer": "Using Separate Chaining (linked lists / red-black trees in Java 8+) or Open Addressing (linear/quadratic probing). Worst case with poor hash function is O(N) or O(log N) with tree bins.",
+    "dryRunWalkthrough": "In Java 8+, when a bucket exceeds 8 nodes and table capacity >= 64, linked list transforms into a TreeNode (Red-Black Tree), capping lookup at O(log K).",
+    "complexityFollowUp": "Why must hashCode() and equals() be overridden together in custom keys? If equal objects have different hash codes, they land in different buckets and get() fails."
+  },
+  {
+    "id": "qa-076",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] Explain the KMP (Knuth-Morris-Pratt) algorithm and its Longest Prefix Suffix (LPS) array.",
+    "modelAnswer": "KMP avoids backtracking in text pointer. LPS[i] stores the length of the longest proper prefix of pattern[0..i] that is also a suffix.",
+    "dryRunWalkthrough": "For pattern 'AABAACA', LPS is [0, 1, 0, 1, 2, 0, 1]. Upon mismatch at index 5, jump pattern index to LPS[4] = 2 without moving text pointer backward.",
+    "complexityFollowUp": "Preprocessing takes O(M) time, matching takes O(N) time. Total time O(N + M)."
+  },
+  {
+    "id": "qa-077",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] How does Robin-Karp rolling hash work and how to handle hash collisions?",
+    "modelAnswer": "Computes polynomial rolling hash: H = sum(S[i] * B^(L-1-i)) mod P. Sliding window updates hash in O(1): H_new = (H_old - S[left]*B^(L-1))*B + S[right] mod P.",
+    "dryRunWalkthrough": "Base B typically 31 or 131, Modulo P typically 10^9+7 or double hash with two primes to avoid spurious collisions.",
+    "complexityFollowUp": "Worst case O(N * M) if hash collisions abound; average case O(N + M)."
+  },
+  {
+    "id": "qa-078",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] What are the prerequisites for applying Binary Search on Answer?",
+    "modelAnswer": "Monotonic feasibility predicate: if f(X) is valid, then for all X' >= X (or <= X) f(X') is also valid. The search space [low, high] must have a clear bounded range.",
+    "dryRunWalkthrough": "Check function evaluates feasibility in O(N). Binary search halves range in log(High - Low) steps. Overall O(N log(Range)).",
+    "complexityFollowUp": "Example: Capacity To Ship Packages Within D Days (LeetCode 1011). Range [max(weights), sum(weights)]."
+  },
+  {
+    "id": "qa-079",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] Why is Greedy optimal for the Activity Selection / Interval Scheduling problem?",
+    "modelAnswer": "Sorting by earliest end time leaves the maximum possible remaining time for subsequent activities. If an optimal solution chose an activity ending later, swapping it with the earliest ending activity leaves at least as much room.",
+    "dryRunWalkthrough": "Sort intervals by end_time. Pick first interval. For each subsequent interval, if start_time >= last_end_time, include it.",
+    "complexityFollowUp": "Time: O(N log N) sorting, O(N) linear selection. Total O(N log N). Space O(1) auxiliary."
+  },
+  {
+    "id": "qa-080",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] Differentiate between Top-Down Memoization and Bottom-Up Tabulation in DP.",
+    "modelAnswer": "Top-Down: Recursive, naturally skips unreachable states, has recursion stack overhead O(Depth). Bottom-Up: Iterative, computes all table entries, allows space optimization to O(1) or O(M).",
+    "dryRunWalkthrough": "Fibonacci: Top-Down uses memo array + call stack. Bottom-Up uses prev1, prev2 variables in O(1) memory.",
+    "complexityFollowUp": "When to prefer Bottom-Up in Infosys exam: Avoids StackOverflowError on recursion depths >= 10^4 on HackerEarth."
+  },
+  {
+    "id": "qa-081",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] Explain the 0/1 Knapsack state transition and why space optimization iterates backward.",
+    "modelAnswer": "dp[i][w] = max(dp[i-1][w], val[i] + dp[i-1][w - wt[i]]). In 1D dp[w], iterating backward ensures dp[w - wt[i]] comes from the previous item (not already updated by current item).",
+    "dryRunWalkthrough": "If iterated forward, it would model the Unbounded Knapsack problem where items can be used infinitely many times.",
+    "complexityFollowUp": "Time complexity O(N * W), space complexity reduced from O(N * W) to O(W)."
+  },
+  {
+    "id": "qa-082",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] How does Longest Increasing Subsequence (LIS) achieve O(N log N) with Patient Sorting?",
+    "modelAnswer": "Maintains array `tails` where `tails[len]` stores the smallest tail of all increasing subsequences of length `len`. For each x, binary search (lower_bound) finds insertion position.",
+    "dryRunWalkthrough": "Input [10, 9, 2, 5, 3, 7, 101, 18]. Tails progression: [10] -> [9] -> [2] -> [2, 5] -> [2, 3] -> [2, 3, 7] -> [2, 3, 7, 101] -> [2, 3, 7, 18]. Length = 4.",
+    "complexityFollowUp": "Note: `tails` array does NOT store the actual LIS elements, only their minimal tail endpoints."
+  },
+  {
+    "id": "qa-083",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] How does Dijkstra's algorithm work and why does it fail with negative edge weights?",
+    "modelAnswer": "Maintains priority queue of (distance, node). Greedily finalizes distance to node with smallest tentative distance. It assumes once a node is popped, no shorter path exists. Negative edges violate this greedy invariant.",
+    "dryRunWalkthrough": "With negative edges, use Bellman-Ford (O(V * E)) or SPFA. Dijkstra runs in O((V + E) log V) with min-heap.",
+    "complexityFollowUp": "Can adding a large positive constant to all edges fix Dijkstra for negative weights? No! Paths with more edges get penalized more than paths with fewer edges."
+  },
+  {
+    "id": "qa-084",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] Explain Disjoint Set Union (DSU) with Path Compression and Union by Rank.",
+    "modelAnswer": "Find(x) finds representative of set and flattens tree by pointing x directly to root. Union(x, y) attaches smaller rank tree under larger rank tree.",
+    "dryRunWalkthrough": "Combined Path Compression + Union by Rank yields nearly O(1) amortized time per operation: O(alpha(N)) where alpha is the inverse Ackermann function.",
+    "complexityFollowUp": "Common uses: Kruskal's Minimum Spanning Tree, dynamic connectivity, detecting cycles in undirected graphs."
+  },
+  {
+    "id": "qa-085",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] What is the difference between BFS and DFS and when is BFS guaranteed to find shortest path?",
+    "modelAnswer": "BFS visits nodes level by level using a queue; DFS explores deepest branch first using a stack. BFS is guaranteed to find shortest path if and only if all edges have equal/unit weight.",
+    "dryRunWalkthrough": "Space complexity: BFS queue holds O(BranchingFactor^Depth) = O(V); DFS stack holds O(Depth).",
+    "complexityFollowUp": "What algorithm handles 0-1 edge weights? 0-1 BFS using a deque (push front for 0, push back for 1) in O(V + E)."
+  },
+  {
+    "id": "qa-086",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] Write an SQL query to find the N-th highest salary without using LIMIT or OFFSET.",
+    "modelAnswer": "SELECT DISTINCT Salary FROM Employee E1 WHERE N-1 = (SELECT COUNT(DISTINCT Salary) FROM Employee E2 WHERE E2.Salary > E1.Salary);",
+    "dryRunWalkthrough": "Inner query counts distinct salaries strictly greater than current salary. For 3rd highest, count must equal 2.",
+    "complexityFollowUp": "Alternative with Window Function: WITH Ranked AS (SELECT Salary, DENSE_RANK() OVER (ORDER BY Salary DESC) AS rnk FROM Employee) SELECT Salary FROM Ranked WHERE rnk = N;"
+  },
+  {
+    "id": "qa-087",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] What is the difference between RANK(), DENSE_RANK(), and ROW_NUMBER()?",
+    "modelAnswer": "ROW_NUMBER() assigns strictly consecutive integers (1, 2, 3, 4) regardless of ties. RANK() skips ranks on ties (1, 2, 2, 4). DENSE_RANK() does not skip ranks on ties (1, 2, 2, 3).",
+    "dryRunWalkthrough": "Example salaries: 100, 90, 90, 80. ROW_NUMBER: 1, 2, 3, 4. RANK: 1, 2, 2, 4. DENSE_RANK: 1, 2, 2, 3.",
+    "complexityFollowUp": "Why is DENSE_RANK preferred for N-th highest salary queries? Because duplicate salaries shouldn't increment the ranking tiers."
+  },
+  {
+    "id": "qa-088",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] Explain ACID properties in database transactions.",
+    "modelAnswer": "Atomicity: All operations succeed or all rollback. Consistency: Database moves from one valid state to another satisfying constraints. Isolation: Concurrent transactions execute as if serial. Durability: Committed changes survive system crashes.",
+    "dryRunWalkthrough": "How does isolation level prevent Dirty Read vs Non-Repeatable Read vs Phantom Read? Read Committed prevents dirty reads; Repeatable Read prevents non-repeatable reads; Serializable prevents phantom reads.",
+    "complexityFollowUp": "What mechanism enforces Durability? Write-Ahead Logging (WAL) and database redo logs."
+  },
+  {
+    "id": "qa-089",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] Explain the Diamond Problem in multiple inheritance and how C++ and Java handle it.",
+    "modelAnswer": "Occurs when class D inherits from B and C, which both inherit from A. If A has method foo(), D has ambiguity which implementation to inherit.",
+    "dryRunWalkthrough": "C++ resolves this via Virtual Inheritance (`class B : virtual public A`). Java prevents it by disallowing multiple class inheritance, allowing only multiple interface implementations (requiring explicit resolution for default methods).",
+    "complexityFollowUp": "What is a virtual table (vtable) in C++? An array of function pointers created for classes with virtual methods to enable dynamic polymorphism."
+  },
+  {
+    "id": "qa-090",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] Differentiate between Abstract Class and Interface in Java 8+.",
+    "modelAnswer": "Abstract class can maintain state (instance fields) and constructors; supports single inheritance. Interface defines contracts; can have default and static methods in Java 8+ and private methods in Java 9+; supports multiple inheritance.",
+    "dryRunWalkthrough": "When to choose Abstract Class over Interface? When code sharing across closely related classes with common mutable state is required (e.g. BaseEntity).",
+    "complexityFollowUp": "Can an abstract class have zero abstract methods? Yes, used to prevent direct instantiation of a class."
+  },
+  {
+    "id": "qa-091",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] What are the 4 Coffman conditions required for a Deadlock to occur?",
+    "modelAnswer": "1. Mutual Exclusion: At least one non-shareable resource. 2. Hold and Wait: Process holds resources while waiting for more. 3. No Preemption: Resources cannot be forcibly seized. 4. Circular Wait: Closed chain of processes where each waits for resource held by next.",
+    "dryRunWalkthrough": "How to prevent deadlock? Eliminate any one condition, e.g., enforce global resource ordering to break Circular Wait.",
+    "complexityFollowUp": "What is Banker's Algorithm? A deadlock avoidance algorithm that checks if granting a resource request maintains the system in a 'safe state'."
+  },
+  {
+    "id": "qa-092",
+    "category": "Dynamic Programming",
+    "question": "[Dynamic Programming] What is the difference between a Process and a Thread, and what memory is shared?",
+    "modelAnswer": "Process is an independent execution unit with its own address space (text, data, heap, file descriptors). Thread is a lightweight sub-execution unit within a process sharing the process heap and code, but having its own stack and registers.",
+    "dryRunWalkthrough": "Context switching between threads is faster than between processes because virtual memory page tables and TLB caches don't need flushing.",
+    "complexityFollowUp": "What is a Race Condition? When multiple threads concurrently access and modify shared memory without synchronization, making outcome dependent on execution timing."
+  },
+  {
+    "id": "qa-093",
+    "category": "Trees & Graphs",
+    "question": "[Trees & Graphs] How does Kadane's algorithm find maximum subarray sum in O(N) time and O(1) space?",
+    "modelAnswer": "It tracks current running sum and global max. If running sum becomes negative, reset to 0 because negative prefix degrades future subarrays.",
+    "dryRunWalkthrough": "Dry run on [-2, 1, -3, 4, -1, 2, 1, -5, 4]: running sums reach peak at index 6 giving max sum 6 [4, -1, 2, 1].",
+    "complexityFollowUp": "Can Kadane work when all numbers are negative? Yes, by tracking maximum individual negative element instead of resetting to 0."
+  },
+  {
+    "id": "qa-094",
+    "category": "Trees & Graphs",
+    "question": "[Trees & Graphs] Explain the Dutch National Flag algorithm for 3-way partitioning (Sort Colors).",
+    "modelAnswer": "Uses 3 pointers: low (boundary for 0s), mid (current element), high (boundary for 2s). When arr[mid]==0 swap with low and increment both; when 1 increment mid; when 2 swap with high and decrement high without incrementing mid.",
+    "dryRunWalkthrough": "Array: [2, 0, 2, 1, 1, 0]. Low=0, Mid=0, High=5. First step swaps arr[0] and arr[5] -> [0, 0, 2, 1, 1, 2].",
+    "complexityFollowUp": "Time complexity O(N), single pass, O(1) auxiliary space."
+  },
+  {
+    "id": "qa-095",
+    "category": "Trees & Graphs",
+    "question": "[Trees & Graphs] How do you detect a cycle in a singly linked list without extra space (Floyd's Tortoise and Hare)?",
+    "modelAnswer": "Initialize slow and fast pointers at head. Move slow by 1 step and fast by 2 steps. If fast equals slow, cycle exists. If fast reaches NULL, no cycle.",
+    "dryRunWalkthrough": "Let loop length be L, distance to loop start be K. Fast gains 1 step on slow per iteration, meeting within L steps.",
+    "complexityFollowUp": "How to find the entry point of the cycle? Reset slow to head, keep fast at meeting point, move both 1 step at a time until they meet."
+  },
+  {
+    "id": "qa-096",
+    "category": "Trees & Graphs",
+    "question": "[Trees & Graphs] How does the sliding window technique achieve O(N) instead of O(N^2) for finding subarrays?",
+    "modelAnswer": "By maintaining state variables (sum, frequencies) incrementally: add right pointer element, shrink left pointer while condition violated. Each pointer traverses array at most once.",
+    "dryRunWalkthrough": "Window [L, R] expands R from 0 to N-1; L advances monotonically. Total pointer moves = 2N = O(N).",
+    "complexityFollowUp": "When does sliding window fail? When array contains negative numbers and monotonicity of sum is lost (use prefix sums + hashmap instead)."
+  },
+  {
+    "id": "qa-097",
+    "category": "Trees & Graphs",
+    "question": "[Trees & Graphs] What is a difference array and how does it support O(1) range updates?",
+    "modelAnswer": "Diff array D[i] = A[i] - A[i-1]. Range update add V to [L, R] becomes D[L] += V and D[R+1] -= V. Prefix sum of D recovers final array in O(N).",
+    "dryRunWalkthrough": "To add 5 to indices [2, 4] in array of size 6: D[2] += 5, D[5] -= 5. Prefix sums apply +5 exactly to [2, 4].",
+    "complexityFollowUp": "Time: Q updates take O(Q) total instead of O(Q * N). Space: O(N)."
+  },
+  {
+    "id": "qa-098",
+    "category": "Trees & Graphs",
+    "question": "[Trees & Graphs] How do HashMaps handle collisions, and what is the worst-case lookup time?",
+    "modelAnswer": "Using Separate Chaining (linked lists / red-black trees in Java 8+) or Open Addressing (linear/quadratic probing). Worst case with poor hash function is O(N) or O(log N) with tree bins.",
+    "dryRunWalkthrough": "In Java 8+, when a bucket exceeds 8 nodes and table capacity >= 64, linked list transforms into a TreeNode (Red-Black Tree), capping lookup at O(log K).",
+    "complexityFollowUp": "Why must hashCode() and equals() be overridden together in custom keys? If equal objects have different hash codes, they land in different buckets and get() fails."
+  },
+  {
+    "id": "qa-099",
+    "category": "Trees & Graphs",
+    "question": "[Trees & Graphs] Explain the KMP (Knuth-Morris-Pratt) algorithm and its Longest Prefix Suffix (LPS) array.",
+    "modelAnswer": "KMP avoids backtracking in text pointer. LPS[i] stores the length of the longest proper prefix of pattern[0..i] that is also a suffix.",
+    "dryRunWalkthrough": "For pattern 'AABAACA', LPS is [0, 1, 0, 1, 2, 0, 1]. Upon mismatch at index 5, jump pattern index to LPS[4] = 2 without moving text pointer backward.",
+    "complexityFollowUp": "Preprocessing takes O(M) time, matching takes O(N) time. Total time O(N + M)."
+  },
+  {
+    "id": "qa-100",
+    "category": "Trees & Graphs",
+    "question": "[Trees & Graphs] How does Robin-Karp rolling hash work and how to handle hash collisions?",
+    "modelAnswer": "Computes polynomial rolling hash: H = sum(S[i] * B^(L-1-i)) mod P. Sliding window updates hash in O(1): H_new = (H_old - S[left]*B^(L-1))*B + S[right] mod P.",
+    "dryRunWalkthrough": "Base B typically 31 or 131, Modulo P typically 10^9+7 or double hash with two primes to avoid spurious collisions.",
+    "complexityFollowUp": "Worst case O(N * M) if hash collisions abound; average case O(N + M)."
+  }
+]

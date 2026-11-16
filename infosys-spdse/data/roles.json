@@ -1,0 +1,121 @@
+{
+  "roles": [
+    {
+      "id": "dse",
+      "name": "Digital Specialist Engineer",
+      "shortName": "DSE",
+      "ctc": "₹6.25 LPA – ₹7.00 LPA",
+      "baseSalary": "₹5.50 LPA",
+      "variableSalary": "₹0.75 LPA",
+      "minSolvedThreshold": {
+        "fullProblems": 1,
+        "partialPercentage": 35,
+        "description": "1 Problem Full (P1: 20 marks) + at least 30-40% test cases on P2 (10-15 marks) for a total of ~30-35 marks."
+      },
+      "targetMarks": 35,
+      "recommendedTimeBudget": {
+        "P1": 30,
+        "P2": 70,
+        "P3_fallback": 30,
+        "buffer": 50
+      },
+      "ladderTiers": [
+        "P1 Easy (Arrays, Strings, Prefix Sums, Two Pointers)",
+        "P2 Medium (Greedy, Sorting, Binary Search Basics)"
+      ],
+      "requiredProblemCount": 40,
+      "estimatedPrepHours": 35,
+      "description": "Entry-tier digital development role focused on application engineering, clean coding, and core algorithmic problem solving."
+    },
+    {
+      "id": "sp_l1",
+      "name": "Specialist Programmer (L1)",
+      "shortName": "SP L1",
+      "ctc": "₹10.00 LPA – ₹11.00 LPA",
+      "baseSalary": "₹8.50 LPA",
+      "variableSalary": "₹1.00L joining bonus + quarterly incentives",
+      "minSolvedThreshold": {
+        "fullProblems": 2,
+        "partialPercentage": 20,
+        "description": "2 Problems Full (P1 + P2 = 50 marks) or P1 Full + high partial passes on both P2 and P3 (~55-60 marks)."
+      },
+      "targetMarks": 55,
+      "recommendedTimeBudget": {
+        "P1": 25,
+        "P2": 55,
+        "P3_partial": 65,
+        "buffer": 35
+      },
+      "ladderTiers": [
+        "All DSE Must-Do Problems",
+        "P2 Medium Mastery (Binary Search on Answer, Monotonic Stack, Sliding Window)",
+        "P3 Hard Brute-Force & 1D DP Subtasks"
+      ],
+      "requiredProblemCount": 75,
+      "estimatedPrepHours": 65,
+      "description": "Primary high-paying development track at Infosys, requiring clean multi-pointer techniques, greedy proofs, and basic DP proficiency."
+    },
+    {
+      "id": "sp_l2",
+      "name": "Specialist Programmer (L2)",
+      "shortName": "SP L2",
+      "ctc": "₹16.00 LPA",
+      "baseSalary": "₹13.60 LPA",
+      "variableSalary": "₹2.40 LPA quarterly performance pay",
+      "minSolvedThreshold": {
+        "fullProblems": 2,
+        "partialPercentage": 70,
+        "description": "2 Problems Full (P1 + P2 = 50 marks) + > 60-70% hidden test cases on P3 (30-35 marks) for a total of ~80-85 marks."
+      },
+      "targetMarks": 80,
+      "recommendedTimeBudget": {
+        "P1": 20,
+        "P2": 45,
+        "P3": 85,
+        "buffer": 30
+      },
+      "ladderTiers": [
+        "All SP L1 Must-Do Problems",
+        "P3 Hard (2D Dynamic Programming, Knapsack, State-Machine DP, Tree DFS)",
+        "Advanced Graph Traversals (Dijkstra, DSU, BFS with Bitmask State)"
+      ],
+      "requiredProblemCount": 120,
+      "estimatedPrepHours": 95,
+      "description": "Advanced technical tier demanding optimization under tight constraints, zero TLE solutions, and comprehensive edge-case handling."
+    },
+    {
+      "id": "sp_l3",
+      "name": "Specialist Programmer (L3)",
+      "shortName": "SP L3",
+      "ctc": "₹21.00 LPA",
+      "baseSalary": "₹18.00 LPA",
+      "variableSalary": "₹3.00 LPA annual variable",
+      "minSolvedThreshold": {
+        "fullProblems": 3,
+        "partialPercentage": 100,
+        "description": "All 3 Problems Fully Solved (100/100 marks) with optimal asymptotic bounds, plus stellar performance in the rapid pre-interview coding round."
+      },
+      "targetMarks": 100,
+      "recommendedTimeBudget": {
+        "P1": 15,
+        "P2": 35,
+        "P3": 80,
+        "buffer": 50
+      },
+      "ladderTiers": [
+        "All SP L2 Must-Do Problems",
+        "P4 Complex / HackWithInfy Finale Problems",
+        "Advanced Bitmask DP, Segment Trees, Coordinate Compression, Linear Basis"
+      ],
+      "requiredProblemCount": 160,
+      "estimatedPrepHours": 130,
+      "description": "Top fresher compensation tier reserved for national finalist caliber candidates capable of 100% test case clearance on LeetCode Hard / Codeforces 1700-2000 problems."
+    }
+  ],
+  "examDefaults": {
+    "defaultExamDate": "2026-12-06T09:00:00+05:30",
+    "totalMinutes": 180,
+    "totalMarks": 100,
+    "defaultProblemCount": 3
+  }
+}

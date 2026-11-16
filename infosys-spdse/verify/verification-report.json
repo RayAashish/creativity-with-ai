@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-11-16T18:41:13Z",
+  "harness": "multi-language compiler & stress runner (Java 25, Clang++ 21, Python 3.11)",
+  "results": [
+    {
+      "problemId": "PYQ-01",
+      "problemName": "RPG Monster Quest",
+      "verified": true,
+      "testsPassed": 15,
+      "languages": [
+        "Java",
+        "C++",
+        "Python"
+      ],
+      "compilers": [
+        "javac 25",
+        "Apple clang++ 21.0.0",
+        "Python 3.11.15"
+      ]
+    },
+    {
+      "problemId": "PYQ-38",
+      "problemName": "Subarray Sum Modulo K",
+      "verified": true,
+      "testsPassed": 15,
+      "languages": [
+        "Java",
+        "C++",
+        "Python"
+      ],
+      "compilers": [
+        "javac 25",
+        "Apple clang++ 21.0.0",
+        "Python 3.11.15"
+      ]
+    }
+  ]
+}

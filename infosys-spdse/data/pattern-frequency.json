@@ -1,0 +1,354 @@
+{
+  "total_sample_size": 42,
+  "by_position": {
+    "P1": 10,
+    "P2": 15,
+    "P3": 15,
+    "P4": 2
+  },
+  "by_difficulty": {
+    "Easy": 10,
+    "Medium": 15,
+    "Hard": 15,
+    "Complex": 2
+  },
+  "by_pattern": {
+    "sorting_and_greedy": 5,
+    "binary_search": 4,
+    "dp": 12,
+    "graphs_and_bfs_dfs": 4,
+    "two_pointers_and_sliding_window": 4,
+    "hashing": 1,
+    "arrays_and_prefix_sums": 5,
+    "simulation_and_implementation": 2,
+    "stack_and_monotonic_stack": 1,
+    "number_theory_and_math": 2,
+    "bit_tricks": 1,
+    "strings": 1
+  },
+  "position_breakdown": {
+    "P1": {
+      "sorting_and_greedy": 2,
+      "hashing": 1,
+      "arrays_and_prefix_sums": 4,
+      "two_pointers_and_sliding_window": 2,
+      "simulation_and_implementation": 1
+    },
+    "P2": {
+      "binary_search": 4,
+      "two_pointers_and_sliding_window": 2,
+      "sorting_and_greedy": 3,
+      "simulation_and_implementation": 1,
+      "dp": 3,
+      "arrays_and_prefix_sums": 1,
+      "graphs_and_bfs_dfs": 1
+    },
+    "P3": {
+      "dp": 7,
+      "graphs_and_bfs_dfs": 3,
+      "stack_and_monotonic_stack": 1,
+      "number_theory_and_math": 2,
+      "bit_tricks": 1,
+      "strings": 1
+    },
+    "P4": {
+      "dp": 2
+    }
+  },
+  "questions": [
+    {
+      "id": "PYQ-01",
+      "name": "RPG Monster Quest",
+      "pos": "P1",
+      "tier": "Easy",
+      "pattern": "sorting_and_greedy"
+    },
+    {
+      "id": "PYQ-02",
+      "name": "Heroes and Villains",
+      "pos": "P2",
+      "tier": "Medium",
+      "pattern": "binary_search"
+    },
+    {
+      "id": "PYQ-03",
+      "name": "Alternating Vowel Paths",
+      "pos": "P3",
+      "tier": "Hard",
+      "pattern": "dp"
+    },
+    {
+      "id": "PYQ-04",
+      "name": "Shortest Unique Paths with Keys",
+      "pos": "P3",
+      "tier": "Hard",
+      "pattern": "graphs_and_bfs_dfs"
+    },
+    {
+      "id": "PYQ-05",
+      "name": "Peaks and Crates",
+      "pos": "P3",
+      "tier": "Hard",
+      "pattern": "dp"
+    },
+    {
+      "id": "PYQ-06",
+      "name": "Range of Towers",
+      "pos": "P2",
+      "tier": "Medium",
+      "pattern": "two_pointers_and_sliding_window"
+    },
+    {
+      "id": "PYQ-07",
+      "name": "Maximum Dish Selection",
+      "pos": "P1",
+      "tier": "Easy",
+      "pattern": "hashing"
+    },
+    {
+      "id": "PYQ-08",
+      "name": "Delayed Stock Settlement",
+      "pos": "P1",
+      "tier": "Easy",
+      "pattern": "arrays_and_prefix_sums"
+    },
+    {
+      "id": "PYQ-09",
+      "name": "Free Item Purchase",
+      "pos": "P2",
+      "tier": "Medium",
+      "pattern": "sorting_and_greedy"
+    },
+    {
+      "id": "PYQ-10",
+      "name": "Last Stone Weight II (Resonance)",
+      "pos": "P3",
+      "tier": "Hard",
+      "pattern": "dp"
+    },
+    {
+      "id": "PYQ-11",
+      "name": "Longest Increasing Path + Teleport",
+      "pos": "P4",
+      "tier": "Complex",
+      "pattern": "dp"
+    },
+    {
+      "id": "PYQ-12",
+      "name": "Machine Cooling & Task Scheduling",
+      "pos": "P2",
+      "tier": "Medium",
+      "pattern": "simulation_and_implementation"
+    },
+    {
+      "id": "PYQ-13",
+      "name": "Max Product Absolute Segments",
+      "pos": "P1",
+      "tier": "Easy",
+      "pattern": "two_pointers_and_sliding_window"
+    },
+    {
+      "id": "PYQ-14",
+      "name": "Max Savings via K Coupons",
+      "pos": "P2",
+      "tier": "Medium",
+      "pattern": "sorting_and_greedy"
+    },
+    {
+      "id": "PYQ-15",
+      "name": "Min Cost Merge of Two Arrays",
+      "pos": "P3",
+      "tier": "Hard",
+      "pattern": "dp"
+    },
+    {
+      "id": "PYQ-16",
+      "name": "Min Makespan on M Servers",
+      "pos": "P2",
+      "tier": "Medium",
+      "pattern": "binary_search"
+    },
+    {
+      "id": "PYQ-17",
+      "name": "Partition by Increasing Beauty",
+      "pos": "P4",
+      "tier": "Complex",
+      "pattern": "dp"
+    },
+    {
+      "id": "PYQ-18",
+      "name": "Pizza with 3N Slices (Tolerance)",
+      "pos": "P3",
+      "tier": "Hard",
+      "pattern": "dp"
+    },
+    {
+      "id": "PYQ-19",
+      "name": "Reduce Array Size (Range Variant)",
+      "pos": "P2",
+      "tier": "Medium",
+      "pattern": "two_pointers_and_sliding_window"
+    },
+    {
+      "id": "PYQ-20",
+      "name": "Rod Pairing",
+      "pos": "P1",
+      "tier": "Easy",
+      "pattern": "two_pointers_and_sliding_window"
+    },
+    {
+      "id": "PYQ-21",
+      "name": "Split Array by Tension",
+      "pos": "P3",
+      "tier": "Hard",
+      "pattern": "stack_and_monotonic_stack"
+    },
+    {
+      "id": "PYQ-22",
+      "name": "Street Lamps with Generator",
+      "pos": "P2",
+      "tier": "Medium",
+      "pattern": "sorting_and_greedy"
+    },
+    {
+      "id": "PYQ-23",
+      "name": "Two City Scheduling + Penalty",
+      "pos": "P2",
+      "tier": "Medium",
+      "pattern": "dp"
+    },
+    {
+      "id": "PYQ-24",
+      "name": "Car Pooling Bus Grouping",
+      "pos": "P1",
+      "tier": "Easy",
+      "pattern": "arrays_and_prefix_sums"
+    },
+    {
+      "id": "PYQ-25",
+      "name": "Andy's Vacation",
+      "pos": "P2",
+      "tier": "Medium",
+      "pattern": "dp"
+    },
+    {
+      "id": "PYQ-26",
+      "name": "Minimize Ugliness of Binary String",
+      "pos": "P2",
+      "tier": "Medium",
+      "pattern": "binary_search"
+    },
+    {
+      "id": "PYQ-27",
+      "name": "Count Arrays Divisibility Condition",
+      "pos": "P3",
+      "tier": "Hard",
+      "pattern": "number_theory_and_math"
+    },
+    {
+      "id": "PYQ-28",
+      "name": "Mountain Array Minimum Changes",
+      "pos": "P2",
+      "tier": "Medium",
+      "pattern": "dp"
+    },
+    {
+      "id": "PYQ-29",
+      "name": "XOR Sum Maximization",
+      "pos": "P3",
+      "tier": "Hard",
+      "pattern": "bit_tricks"
+    },
+    {
+      "id": "PYQ-30",
+      "name": "Wine Bottle Transport",
+      "pos": "P2",
+      "tier": "Medium",
+      "pattern": "arrays_and_prefix_sums"
+    },
+    {
+      "id": "PYQ-31",
+      "name": "LIS with Bitwise Condition",
+      "pos": "P3",
+      "tier": "Hard",
+      "pattern": "dp"
+    },
+    {
+      "id": "PYQ-32",
+      "name": "Minimum Base with Identical Digits",
+      "pos": "P3",
+      "tier": "Hard",
+      "pattern": "number_theory_and_math"
+    },
+    {
+      "id": "PYQ-33",
+      "name": "Minimum Days for Terrain Road",
+      "pos": "P3",
+      "tier": "Hard",
+      "pattern": "graphs_and_bfs_dfs"
+    },
+    {
+      "id": "PYQ-34",
+      "name": "Pack Gifts into K Boxes",
+      "pos": "P2",
+      "tier": "Medium",
+      "pattern": "binary_search"
+    },
+    {
+      "id": "PYQ-35",
+      "name": "Grid Path with Switching Costs",
+      "pos": "P3",
+      "tier": "Hard",
+      "pattern": "dp"
+    },
+    {
+      "id": "PYQ-36",
+      "name": "Roads and Libraries Reconnection",
+      "pos": "P2",
+      "tier": "Medium",
+      "pattern": "graphs_and_bfs_dfs"
+    },
+    {
+      "id": "PYQ-37",
+      "name": "Palindrome Insertion Count",
+      "pos": "P3",
+      "tier": "Hard",
+      "pattern": "strings"
+    },
+    {
+      "id": "PYQ-38",
+      "name": "Subarray Sum Modulo K",
+      "pos": "P1",
+      "tier": "Easy",
+      "pattern": "arrays_and_prefix_sums"
+    },
+    {
+      "id": "PYQ-39",
+      "name": "Tree Path Node Divisibility",
+      "pos": "P3",
+      "tier": "Hard",
+      "pattern": "graphs_and_bfs_dfs"
+    },
+    {
+      "id": "PYQ-40",
+      "name": "Stress Points",
+      "pos": "P1",
+      "tier": "Easy",
+      "pattern": "arrays_and_prefix_sums"
+    },
+    {
+      "id": "PYQ-41",
+      "name": "Temperature Cooling",
+      "pos": "P1",
+      "tier": "Easy",
+      "pattern": "sorting_and_greedy"
+    },
+    {
+      "id": "PYQ-42",
+      "name": "Repair Pairs Mismatch",
+      "pos": "P1",
+      "tier": "Easy",
+      "pattern": "simulation_and_implementation"
+    }
+  ]
+}

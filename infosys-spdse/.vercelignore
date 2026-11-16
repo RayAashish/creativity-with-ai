@@ -1,0 +1,12 @@
+node_modules
+node_modules/**
+.git
+.git/**
+verify/tmp_build
+verify/tmp_build/**
+dist
+dist/**
+.env.local
+.DS_Store
+*.pyc
+__pycache__

@@ -1,0 +1,26 @@
+{
+  "totalSets": 52,
+  "maxProblemReuse": 1,
+  "patternOccurrences": {
+    "arrays_and_prefix_sums": 28,
+    "two_pointers_and_sliding_window": 26,
+    "hashing": 25,
+    "sorting_and_greedy": 30,
+    "binary_search": 26,
+    "dp": 25,
+    "graphs_and_bfs_dfs": 7,
+    "number_theory_and_math": 3
+  },
+  "tierOccurrences": {
+    "P1 Easy": 52,
+    "P2 Medium": 52,
+    "P3 Hard": 52,
+    "P4 Complex": 14
+  },
+  "roleOccurrences": {
+    "DSE": 15,
+    "SP L1": 17,
+    "SP L2": 12,
+    "SP L3": 8
+  }
+}
