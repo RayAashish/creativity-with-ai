@@ -132,10 +132,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar container */}
       <aside className={`
-        fixed md:sticky top-14 left-0 z-20 h-[calc(100vh-3.5rem)] w-64 bg-paper-50 dark:bg-paper-900 border-r border-neutral-200 dark:border-neutral-800 flex flex-col justify-between overflow-y-auto transition-transform duration-200
+        fixed md:sticky top-14 left-0 z-20 h-[calc(100vh-3.5rem)] w-64 bg-paper-50 dark:bg-paper-900 border-r border-neutral-200 dark:border-neutral-800 flex flex-col justify-between overflow-hidden transition-transform duration-200
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-        <div className="p-3 space-y-5">
+        <div className="p-3 space-y-4 flex-1 overflow-y-auto">
           {/* Mobile brand header */}
           <div className="md:hidden pb-2 border-b border-neutral-200 dark:border-neutral-800">
             <Logo variant="full" size="md" />
@@ -203,11 +203,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           ))}
 
-        </div>
-
-        {/* Bottom Section: Support Card, Solved progress, Export/Import, Offline indicator */}
-        <div className="p-3 border-t border-neutral-200 dark:border-neutral-800 space-y-2.5 bg-paper-100/50 dark:bg-paper-950/40">
-          
           {/* Buy Me a Coffee Indie Card */}
           {onOpenSupport && (
             <div className="p-2.5 rounded bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-300/80 dark:border-amber-700/60 space-y-1.5 text-xs">
@@ -231,6 +226,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             </div>
           )}
+
+        </div>
+
+        {/* Pinned Bottom Footer: Track Progress, Backup/Restore, Offline indicator, LiveCounter */}
+        <div className="p-3 border-t border-neutral-200 dark:border-neutral-800 space-y-2 bg-paper-50 dark:bg-paper-900 shrink-0">
 
           {/* Progress Mini Bar */}
           <div>
