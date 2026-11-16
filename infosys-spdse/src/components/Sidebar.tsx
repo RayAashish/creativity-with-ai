@@ -19,6 +19,7 @@ import {
   Coffee
 } from 'lucide-react';
 import { Logo } from './Logo';
+import { VisitorCounter } from './VisitorCounter';
 
 interface SidebarProps {
   currentView: string;
@@ -230,6 +231,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             </div>
           )}
+
+          {/* Community Prepping Visitor Counter */}
+          <VisitorCounter variant="sidebar" />
 
           {/* Progress Mini Bar */}
           <div>

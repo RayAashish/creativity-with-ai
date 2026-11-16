@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { rolesData, examDefaults } from '../data/rolesData';
 import { patternFrequencyData } from '../data/frequencyData';
+import { VisitorCounter } from '../components/VisitorCounter';
 
 interface DashboardViewProps {
   onNavigate: (view: string, itemId?: string) => void;
@@ -172,7 +173,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* Verified Catalog Stats Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <div 
           onClick={() => onNavigate('pyq')}
           className="p-3.5 rounded-sm border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-700 cursor-pointer transition-colors"
@@ -219,6 +220,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div className="text-2xl font-bold font-mono text-neutral-900 dark:text-white mt-1">216</div>
           <div className="text-[10px] text-neutral-400 mt-0.5">Story-to-pattern cues</div>
+        </div>
+
+        {/* Live Visitor / Community Counter Card */}
+        <div className="col-span-2 sm:col-span-1">
+          <VisitorCounter variant="card" />
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { SearchModal } from './components/SearchModal';
@@ -238,6 +239,9 @@ export function App() {
         isOpen={isSupportOpen}
         onClose={() => setIsSupportOpen(false)}
       />
+
+      {/* Vercel Analytics */}
+      <Analytics />
 
     </div>
   );
