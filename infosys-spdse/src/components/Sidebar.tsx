@@ -19,7 +19,7 @@ import {
   Coffee
 } from 'lucide-react';
 import { Logo } from './Logo';
-import { VisitorCounter } from './VisitorCounter';
+import { LiveCounter } from './LiveCounter';
 
 interface SidebarProps {
   currentView: string;
@@ -232,9 +232,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
 
-          {/* Community Prepping Visitor Counter */}
-          <VisitorCounter variant="sidebar" />
-
           {/* Progress Mini Bar */}
           <div>
             <div className="flex justify-between items-center text-[11px] mb-1">
@@ -269,13 +266,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
 
-          {/* Offline Ready Badge */}
-          <div className="flex items-center justify-between text-[10px] text-neutral-400 dark:text-neutral-500 font-mono pt-1">
-            <span className="flex items-center gap-1">
-              <CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400" />
-              <span>Offline Ready (PWA)</span>
-            </span>
-            <span>v1.0</span>
+          {/* Offline Ready Badge & Live Counter */}
+          <div className="pt-1 border-t border-neutral-200/60 dark:border-neutral-800/60 space-y-1">
+            <div className="flex items-center justify-between text-[10px] text-neutral-400 dark:text-neutral-500 font-mono">
+              <span className="flex items-center gap-1">
+                <CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400" />
+                <span>Offline Ready (PWA)</span>
+              </span>
+              <span>v1.0</span>
+            </div>
+
+            {/* Global Live Active Visitor Counter */}
+            <LiveCounter />
           </div>
 
         </div>

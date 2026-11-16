@@ -1,0 +1,23 @@
+/* Small, quiet live counter styling with tabular numerals and steady dot */
+.live-counter-container {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.live-counter-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #10b981;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-counter-container,
+  .live-counter-dot {
+    transition: none !important;
+    animation: none !important;
+  }
+}

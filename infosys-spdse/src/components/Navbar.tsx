@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Search, Moon, Sun, Clock, Zap, BookOpen, Menu, X, ShieldCheck, Coffee } from 'lucide-react';
 import { Language } from '../types';
 import { Logo } from './Logo';
-import { VisitorCounter } from './VisitorCounter';
 
 interface NavbarProps {
   currentView: string;
@@ -91,11 +90,6 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Right Controls: Role, Language, Last 48H Mode, Theme */}
         <div className="flex items-center gap-2.5">
           
-          {/* Live Visitor Counter */}
-          <div className="hidden sm:block">
-            <VisitorCounter variant="navbar" />
-          </div>
-
           {/* Target Role Selector */}
           <div className="hidden lg:flex items-center gap-1.5 text-xs">
             <span className="text-neutral-500 dark:text-neutral-400 text-[11px]">Role:</span>
