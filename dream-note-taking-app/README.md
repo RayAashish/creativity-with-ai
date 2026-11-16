@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/app-debug.apk">
+  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/InkFlow.apk">
     <img src="https://img.shields.io/badge/Download-APK-25D366?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
   </a>
   <a href="https://inkflow-reader.vercel.app">
