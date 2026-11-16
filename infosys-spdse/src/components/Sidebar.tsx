@@ -67,7 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { id: 'toolkit', label: 'Toolkit & Fast IO', icon: Wrench },
         { id: 'mistake-log', label: 'Mistake Log & SRS', icon: AlertTriangle },
-        { id: 'study-plan', label: '21-Day Study Plan', icon: CalendarDays },
+        { id: 'study-plan', label: 'Adaptive Study Plan', icon: CalendarDays, badge: '10-45d' },
         { id: 'interview', label: 'Interview & Concepts', icon: HelpCircle, badge: 'MCQ+Trace' },
       ]
     }

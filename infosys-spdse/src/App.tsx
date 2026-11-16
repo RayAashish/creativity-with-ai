@@ -190,7 +190,15 @@ export function App() {
 
           {currentView === 'mistake-log' && <MistakeLogView />}
 
-          {currentView === 'study-plan' && <StudyPlanView />}
+          {currentView === 'study-plan' && (
+            <StudyPlanView
+              targetRole={targetRole}
+              onTargetRoleChange={handleTargetRoleChange}
+              onViewProblemDetails={(prob) => setSelectedProblemModal(prob)}
+              onNavigate={handleNavigate}
+              onLaunchMockSet={handleLaunchSetInMock}
+            />
+          )}
 
           {currentView === 'interview' && (
             <InterviewModuleView focusedQuestionId={focusedItemId} />
