@@ -15,8 +15,8 @@
 
 <p align="center">
   <!-- PRIMARY ACTION BUTTONS -->
-  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/readmaster-app-debug.apk">
-    <img src="https://img.shields.io/badge/Download-APK%20(v2026.11.14)-25D366?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/Lipi.apk">
+    <img src="https://img.shields.io/badge/Download-Lipi.apk%20(v2026.11.14)-25D366?style=for-the-badge&logo=android&logoColor=white" alt="Download Lipi.apk" />
   </a>
   &nbsp;&nbsp;
   <a href="https://readm.vercel.app">
