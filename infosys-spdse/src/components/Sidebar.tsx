@@ -15,7 +15,8 @@ import {
   Download,
   Upload,
   CheckCircle2,
-  Flame
+  Flame,
+  Coffee
 } from 'lucide-react';
 import { Logo } from './Logo';
 
@@ -27,6 +28,7 @@ interface SidebarProps {
   setMobileMenuOpen: (open: boolean) => void;
   solvedCount: number;
   totalTrackCount: number;
+  onOpenSupport?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -36,7 +38,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   mobileMenuOpen,
   setMobileMenuOpen,
   solvedCount,
-  totalTrackCount
+  totalTrackCount,
+  onOpenSupport
 }) => {
   const handleItemClick = (view: string) => {
     onNavigate(view);
@@ -201,9 +204,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         </div>
 
-        {/* Bottom Section: Solved progress, Export/Import, Offline indicator */}
+        {/* Bottom Section: Support Card, Solved progress, Export/Import, Offline indicator */}
         <div className="p-3 border-t border-neutral-200 dark:border-neutral-800 space-y-2.5 bg-paper-100/50 dark:bg-paper-950/40">
           
+          {/* Buy Me a Coffee Indie Card */}
+          {onOpenSupport && (
+            <div className="p-2.5 rounded bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-300/80 dark:border-amber-700/60 space-y-1.5 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-mono font-bold text-[11px] text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                  <Coffee size={13} className="text-amber-600 dark:text-amber-400" />
+                  <span>Buy Me a Coffee</span>
+                </span>
+                <span className="text-[9px] font-mono font-bold px-1 py-0.2 bg-amber-500/20 text-amber-900 dark:text-amber-300 rounded">
+                  UPI
+                </span>
+              </div>
+              <p className="text-[10px] leading-tight text-neutral-600 dark:text-neutral-300">
+                Cracked SP/DSE or saved prep hours? Support the developer!
+              </p>
+              <button
+                onClick={onOpenSupport}
+                className="w-full py-1 px-2 bg-amber-500 hover:bg-amber-600 text-white font-mono text-[10px] font-bold rounded-sm transition-colors flex items-center justify-center gap-1 shadow-xs"
+              >
+                <span>Support with PhonePe / UPI ☕</span>
+              </button>
+            </div>
+          )}
+
           {/* Progress Mini Bar */}
           <div>
             <div className="flex justify-between items-center text-[11px] mb-1">

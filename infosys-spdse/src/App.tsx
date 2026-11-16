@@ -3,6 +3,7 @@ import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { SearchModal } from './components/SearchModal';
 import { ProblemModal } from './components/ProblemModal';
+import { SupportModal } from './components/SupportModal';
 
 // Views
 import { DashboardView } from './views/DashboardView';
@@ -46,6 +47,7 @@ export function App() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [selectedProblemModal, setSelectedProblemModal] = useState<CodeforcesProblem | null>(null);
   const [focusedItemId, setFocusedItemId] = useState<string | undefined>(undefined);
   const [activeMockSet, setActiveMockSet] = useState<PredictedSet | null>(null);
@@ -105,6 +107,7 @@ export function App() {
         isLast48Hours={isLast48Hours}
         onToggleLast48Hours={handleToggleLast48Hours}
         onOpenSearch={() => setIsSearchOpen(true)}
+        onOpenSupport={() => setIsSupportOpen(true)}
         targetRole={targetRole}
         onTargetRoleChange={handleTargetRoleChange}
         mobileMenuOpen={mobileMenuOpen}
@@ -123,6 +126,7 @@ export function App() {
           setMobileMenuOpen={setMobileMenuOpen}
           solvedCount={solvedProblems.length}
           totalTrackCount={codeforcesProblems.length}
+          onOpenSupport={() => setIsSupportOpen(true)}
         />
 
         {/* Main Content Area */}
@@ -134,6 +138,7 @@ export function App() {
               targetRole={targetRole}
               onTargetRoleChange={handleTargetRoleChange}
               solvedProblems={solvedProblems}
+              onOpenSupport={() => setIsSupportOpen(true)}
             />
           )}
 
@@ -226,6 +231,12 @@ export function App() {
         onLanguageChange={handleLanguageChange}
         isSolved={selectedProblemModal ? solvedProblems.includes(selectedProblemModal.id) : false}
         onToggleSolved={handleToggleSolved}
+      />
+
+      {/* Buy Me a Coffee / Support Modal */}
+      <SupportModal
+        isOpen={isSupportOpen}
+        onClose={() => setIsSupportOpen(false)}
       />
 
     </div>

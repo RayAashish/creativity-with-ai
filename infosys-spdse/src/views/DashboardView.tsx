@@ -13,7 +13,8 @@ import {
   AlertTriangle,
   Settings,
   Calendar,
-  Zap
+  Zap,
+  Coffee
 } from 'lucide-react';
 import { rolesData, examDefaults } from '../data/rolesData';
 import { patternFrequencyData } from '../data/frequencyData';
@@ -23,13 +24,15 @@ interface DashboardViewProps {
   targetRole: string;
   onTargetRoleChange: (role: string) => void;
   solvedProblems: string[];
+  onOpenSupport?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigate,
   targetRole,
   onTargetRoleChange,
-  solvedProblems
+  solvedProblems,
+  onOpenSupport
 }) => {
   const [examDate, setExamDate] = useState<string>(() => {
     return localStorage.getItem('spdse_exam_date') || examDefaults.defaultExamDate;
@@ -350,6 +353,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Read full conflict resolution guide →
             </button>
           </div>
+
+          {/* Buy Me a Coffee Indie Dev Card */}
+          {onOpenSupport && (
+            <div className="p-3.5 rounded-sm border border-amber-300 dark:border-amber-700/80 bg-gradient-to-br from-amber-50 to-orange-50/50 dark:from-amber-950/25 dark:to-neutral-900 text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-mono font-bold text-xs text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                  <Coffee size={14} className="text-amber-600 dark:text-amber-400" />
+                  <span>Buy Me a Coffee ☕</span>
+                </span>
+                <span className="text-[9px] font-mono px-1.5 py-0.2 bg-amber-500/20 text-amber-900 dark:text-amber-300 rounded font-bold">
+                  Indie Dev
+                </span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-neutral-700 dark:text-neutral-300">
+                Cracked your SP / DSE online assessment or interview with this platform? A small contribution (cost of a cutting chai or coffee) directly fuels hosting and upcoming 2026 drive updates.
+              </p>
+              <button
+                onClick={onOpenSupport}
+                className="w-full py-1.5 px-3 bg-amber-500 hover:bg-amber-600 text-white font-mono text-[11px] font-bold rounded-sm transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+              >
+                <span>Support with PhonePe / Any UPI →</span>
+              </button>
+            </div>
+          )}
         </div>
 
       </div>

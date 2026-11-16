@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Moon, Sun, Clock, Zap, BookOpen, Menu, X, ShieldCheck } from 'lucide-react';
+import { Search, Moon, Sun, Clock, Zap, BookOpen, Menu, X, ShieldCheck, Coffee } from 'lucide-react';
 import { Language } from '../types';
 import { Logo } from './Logo';
 
@@ -11,6 +11,7 @@ interface NavbarProps {
   isLast48Hours: boolean;
   onToggleLast48Hours: () => void;
   onOpenSearch: () => void;
+  onOpenSupport?: () => void;
   targetRole: string;
   onTargetRoleChange: (role: string) => void;
   mobileMenuOpen: boolean;
@@ -25,6 +26,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   isLast48Hours,
   onToggleLast48Hours,
   onOpenSearch,
+  onOpenSupport,
   targetRole,
   onTargetRoleChange,
   mobileMenuOpen,
@@ -142,6 +144,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             {isDark ? <Sun size={15} /> : <Moon size={15} />}
           </button>
+
+          {/* Buy Me a Coffee / Support */}
+          {onOpenSupport && (
+            <button
+              onClick={onOpenSupport}
+              className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-sm bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700/80 font-mono font-medium transition-all shadow-sm"
+              title="Support the Developer / Buy Me a Coffee"
+            >
+              <Coffee size={13} className="text-amber-600 dark:text-amber-400" />
+              <span className="hidden sm:inline">Coffee</span>
+            </button>
+          )}
         </div>
 
       </div>
