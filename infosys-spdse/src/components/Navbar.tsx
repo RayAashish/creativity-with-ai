@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Moon, Sun, Clock, Zap, BookOpen, Menu, X, ShieldCheck } from 'lucide-react';
 import { Language } from '../types';
+import { Logo } from './Logo';
 
 interface NavbarProps {
   currentView: string;
@@ -61,21 +62,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button 
             onClick={() => onNavigate('dashboard')}
-            className="flex items-center gap-2.5 text-left focus:outline-none group"
+            className="flex items-center text-left focus:outline-none group py-1"
+            title="SPDSE.Prep Dashboard"
           >
-            <div className="w-7 h-7 rounded-sm bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-mono font-bold text-sm flex items-center justify-center">
-              SP
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-sm tracking-tight text-neutral-900 dark:text-white group-hover:text-accent dark:group-hover:text-accent-dark transition-colors">
-                  SPDSE<span className="text-accent dark:text-accent-dark">.Prep</span>
-                </span>
-                <span className="text-[10px] font-mono px-1.5 py-0.2 bg-neutral-200/70 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-sm">
-                  Infosys OA
-                </span>
-              </div>
-            </div>
+            <Logo variant="full" size="md" />
           </button>
         </div>
 

@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Flame
 } from 'lucide-react';
+import { Logo } from './Logo';
 
 interface SidebarProps {
   currentView: string;
@@ -131,6 +132,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         <div className="p-3 space-y-5">
+          {/* Mobile brand header */}
+          <div className="md:hidden pb-2 border-b border-neutral-200 dark:border-neutral-800">
+            <Logo variant="full" size="md" />
+          </div>
 
           {/* 48 Hours Alert if Active */}
           {isLast48Hours && (

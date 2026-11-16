@@ -41,6 +41,16 @@ for p in problems:
     check('paraphrase' in p and len(p['paraphrase']) >= 20, f"Problem {pid} paraphrase too short or missing")
     check('storyDisguise' in p and len(p['storyDisguise']) >= 10, f"Problem {pid} storyDisguise too short")
     check('pattern' in p, f"Problem {pid} missing pattern")
+    
+    # Enforce complete, working solutions in Java, C++, Python
+    check('solutions' in p, f"Problem {pid} missing solutions object")
+    if 'solutions' in p:
+        sols = p['solutions']
+        check('java' in sols and len(sols['java']) > 50 and 'public class Solution' in sols['java'], f"Problem {pid} missing valid Java solution")
+        check('cpp' in sols and len(sols['cpp']) > 50 and '#include' in sols['cpp'], f"Problem {pid} missing valid C++ solution")
+        check('python' in sols and len(sols['python']) > 50 and 'sys.stdin' in sols['python'], f"Problem {pid} missing valid Python solution")
+        check('idea' in sols and len(sols['idea']) > 20, f"Problem {pid} missing algorithmic idea explanation")
+        check('complexity' in sols and len(sols['complexity']) > 10, f"Problem {pid} missing complexity analysis")
 
 # 3. Validate Previous-Year Questions (PYQs)
 pyq_path = 'data/pattern-frequency.json'

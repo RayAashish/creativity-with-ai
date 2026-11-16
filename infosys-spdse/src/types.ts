@@ -16,6 +16,17 @@ export type PatternId =
   | 'bit_tricks'
   | 'simulation_and_implementation';
 
+export interface ProblemSolutions {
+  java: string;
+  cpp: string;
+  python: string;
+  idea: string;
+  complexity: string;
+  pitfalls: string[];
+  verified: boolean;
+  testsPassed: number;
+}
+
 export interface CodeforcesProblem {
   id: string;
   contestId: number;
@@ -30,6 +41,7 @@ export interface CodeforcesProblem {
   storyDisguise: string;
   paraphrase: string;
   constraints: string;
+  solutions?: ProblemSolutions;
 }
 
 export interface PYQQuestion {
@@ -47,16 +59,7 @@ export interface PYQQuestion {
   sourceUrl: string;
   wrongApproaches: string[];
   partialScoreTips: string;
-  solutions: {
-    java: string;
-    cpp: string;
-    python: string;
-    idea: string;
-    complexity: string;
-    pitfalls: string[];
-    verified: boolean;
-    testsPassed: number;
-  };
+  solutions: ProblemSolutions;
 }
 
 export interface PredictedProblemItem {
