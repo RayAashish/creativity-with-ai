@@ -6,7 +6,16 @@
     "build": "mkdir -p dist && cp -r index.html logo.svg favicon.svg dist/",
     "start": "npx serve dist"
   },
-  "keywords": ["inkflow", "notes", "google-drive", "vector", "drawing"],
+  "keywords": [
+    "inkflow",
+    "notes",
+    "google-drive",
+    "vector",
+    "drawing"
+  ],
   "author": "Aashish Kumar Ray",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "jszip": "^3.10.2"
+  }
 }

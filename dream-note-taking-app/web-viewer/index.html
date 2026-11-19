@@ -689,7 +689,7 @@
         ctx.moveTo(260, 0);
         ctx.lineTo(260, VIRTUAL_HEIGHT);
         ctx.stroke();
-      } else if (template === "GRID" || template === 2) {
+      } else if (template === "GRID" || template === "DSA_PROBLEM" || template === 2) {
         const gridSpacing = 60;
         ctx.strokeStyle = isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
         ctx.lineWidth = 1;
@@ -749,7 +749,17 @@
 
     function drawStroke(stroke) {
       const pts = stroke.pts;
-      if (!pts || pts.length < 2) return;
+      if (!pts || pts.length === 0) return;
+
+      if (pts.length === 1) {
+        ctx.save();
+        ctx.fillStyle = adaptStrokeColor(stroke.c, stroke.h);
+        ctx.beginPath();
+        ctx.arc(pts[0][0], pts[0][1], Math.max(1.2, (stroke.w || 3.0) / 2), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        return;
+      }
 
       ctx.save();
       ctx.strokeStyle = adaptStrokeColor(stroke.c, stroke.h);
@@ -1054,27 +1064,66 @@
         const loadedZip = await zip.loadAsync(fileOrBuffer);
         cachedVaultZip = loadedZip;
 
+        function findZipFile(candidates) {
+          for (const cand of candidates) {
+            const entry = loadedZip.file(cand);
+            if (entry && !entry.dir) return entry;
+          }
+          // Stripped leading slash check
+          for (const cand of candidates) {
+            const stripped = cand.replace(/^\/+/, '');
+            const entry = loadedZip.file(stripped);
+            if (entry && !entry.dir) return entry;
+          }
+          // Match by suffix / basename across all zip files
+          for (const cand of candidates) {
+            const base = cand.split('/').pop();
+            for (const [filePath, fileObj] of Object.entries(loadedZip.files)) {
+              if (fileObj.dir) continue;
+              if (filePath.endsWith('/' + base) || filePath === base) {
+                return fileObj;
+              }
+            }
+          }
+          return null;
+        }
+
         // 1. Full Vault Backup (.zip containing library.json)
-        const libJsonEntry = loadedZip.file("library.json");
+        let libJsonEntry = findZipFile(["library.json"]);
         if (libJsonEntry) {
           const libText = await libJsonEntry.async("text");
           const library = JSON.parse(libText);
           currentLibrary = library;
 
-          // Parse each page binary in parallel
-          const pageParsePromises = library.pages.map(async (pageMeta) => {
-            const pagePath = `notebooks/${pageMeta.notebookId}/${pageMeta.pageId}.inkpage`;
-            const pageEntry = loadedZip.file(pagePath) || loadedZip.file(new RegExp(pageMeta.pageId + "\\.inkpage$"));
-            if (pageEntry) {
-              const arrayBuf = await pageEntry.async("arraybuffer");
-              const parsed = await parseInkPage(arrayBuf);
-              return {
-                ...pageMeta,
-                strokes: parsed.strokes,
-                template: parsed.template
-              };
+          updateStatus(`Decompressing vault (${library.pages ? library.pages.length : 0} pages)...`);
+
+          // Parse each page binary in parallel with per-page resilience
+          const pageParsePromises = (library.pages || []).map(async (pageMeta) => {
+            try {
+              const candidates = [
+                `notebooks/${pageMeta.notebookId}/pages/${pageMeta.pageId}.inkpage`,
+                `notebooks/${pageMeta.notebookId}/${pageMeta.pageId}.inkpage`,
+                `pages/${pageMeta.pageId}.inkpage`,
+                `${pageMeta.pageId}.inkpage`
+              ];
+              const pageEntry = findZipFile(candidates);
+              if (pageEntry) {
+                const arrayBuf = await pageEntry.async("arraybuffer");
+                const parsed = await parseInkPage(arrayBuf);
+                return {
+                  ...pageMeta,
+                  title: parsed.title || pageMeta.title,
+                  strokes: parsed.strokes || [],
+                  template: parsed.template || pageMeta.template || "GRID"
+                };
+              } else {
+                console.warn("Could not find .inkpage in zip for page:", pageMeta.title, pageMeta.pageId);
+                return { ...pageMeta, strokes: [] };
+              }
+            } catch (pageErr) {
+              console.warn("Error parsing page:", pageMeta.title, pageErr);
+              return { ...pageMeta, strokes: [] };
             }
-            return { ...pageMeta, strokes: [] };
           });
 
           const resolvedPages = await Promise.all(pageParsePromises);
@@ -1082,30 +1131,64 @@
 
           renderLibrarySidebar(currentLibrary);
 
-          // Select first notebook
+          // Select first notebook with pages (or first notebook)
           if (currentLibrary.notebooks && currentLibrary.notebooks.length > 0) {
-            selectNotebook(currentLibrary.notebooks[0].notebookId);
+            const firstWithPages = currentLibrary.notebooks.find(nb =>
+              currentLibrary.pages.some(p => p.notebookId === nb.notebookId && p.strokes && p.strokes.length > 0)
+            ) || currentLibrary.notebooks[0];
+            selectNotebook(firstWithPages.notebookId);
           }
-          saveToIndexedDB(currentLibrary);
-          updateStatus(`Loaded vault: ${currentLibrary.notebooks.length} notebooks (${currentLibrary.pages.length} pages)`);
+          await saveToIndexedDB(currentLibrary);
+          const strokeTotal = currentLibrary.pages.reduce((acc, p) => acc + (p.strokes ? p.strokes.length : 0), 0);
+          updateStatus(`Vault Loaded: ${currentLibrary.notebooks.length} notebooks • ${currentLibrary.pages.length} pages • ${strokeTotal} strokes`);
           return;
         }
 
         // 2. Single Note Package (.inkflow containing manifest.json)
-        const manifestEntry = loadedZip.file("manifest.json");
+        let manifestEntry = findZipFile(["manifest.json"]);
         if (manifestEntry) {
           const manifestText = await manifestEntry.async("text");
           const manifest = JSON.parse(manifestText);
           const pages = [];
-          for (const p of manifest.pages) {
-            const entry = loadedZip.file(`pages/${p.pageId}.inkpage`);
-            if (entry) {
-              const buf = await entry.async("arraybuffer");
-              pages.push(await parseInkPage(buf));
+          for (const p of (manifest.pages || [])) {
+            try {
+              const candidates = [
+                `pages/${p.pageId}.inkpage`,
+                `${p.pageId}.inkpage`
+              ];
+              const entry = findZipFile(candidates);
+              if (entry) {
+                const buf = await entry.async("arraybuffer");
+                pages.push(await parseInkPage(buf));
+              }
+            } catch (pErr) {
+              console.warn("Failed to parse manifest page", p.title, pErr);
             }
           }
           if (pages.length > 0) {
             setLoadedNote(manifest.title || filename.replace(/\.[^/.]+$/, ""), pages);
+            updateStatus(`Loaded .inkflow: ${manifest.title || filename} (${pages.length} pages)`);
+            return;
+          }
+        }
+
+        // 3. Fallback: Loose .inkpage files
+        const looseInkEntries = Object.values(loadedZip.files).filter(f => !f.dir && f.name.endsWith('.inkpage'));
+        if (looseInkEntries.length > 0) {
+          const pages = [];
+          for (const entry of looseInkEntries) {
+            try {
+              const buf = await entry.async("arraybuffer");
+              const parsed = await parseInkPage(buf);
+              pages.push(parsed);
+            } catch (err) {
+              console.warn("Failed to parse loose inkpage", entry.name, err);
+            }
+          }
+          if (pages.length > 0) {
+            pages.sort((a, b) => (a.index || 0) - (b.index || 0));
+            setLoadedNote(filename.replace(/\.[^/.]+$/, ""), pages);
+            updateStatus(`Loaded ${pages.length} ink pages from archive`);
             return;
           }
         }
@@ -1113,7 +1196,7 @@
         console.warn("JSZip extraction error", err);
       }
 
-      // 3. Fallback: single .html note check
+      // 4. Fallback: Standalone .html note
       if (typeof fileOrBuffer.text === "function") {
         try {
           const text = await fileOrBuffer.text();
@@ -1121,6 +1204,7 @@
           if (match && match[1]) {
             const pages = JSON.parse(match[1]);
             setLoadedNote(filename.replace(/\.[^/.]+$/, ""), pages);
+            updateStatus(`Loaded HTML note: ${filename}`);
             return;
           }
         } catch (_) {}
@@ -1129,26 +1213,40 @@
       alert("Could not load archive. Ensure it is a valid inkflow_vault_backup.zip or .inkflow package.");
     }
 
-    function selectNotebook(notebookId) {
+    function selectNotebook(notebookId, targetPageIndex = 0) {
       activeNotebookId = notebookId;
       const nb = currentLibrary.notebooks.find(n => n.notebookId === notebookId);
-      const pages = currentLibrary.pages.filter(p => p.notebookId === notebookId).sort((a,b) => a.pageIndex - b.pageIndex);
-      setLoadedNote(nb ? nb.title : "Notebook", pages);
+      const pages = currentLibrary.pages.filter(p => p.notebookId === notebookId).sort((a,b) => (a.pageIndex ?? 0) - (b.pageIndex ?? 0));
+      setLoadedNote(nb ? nb.title : "Notebook", pages, targetPageIndex);
 
       // Update sidebar active classes
       document.querySelectorAll('.tree-notebook-item').forEach(el => {
         el.classList.toggle('active', el.dataset.nbId === notebookId);
       });
+      document.querySelectorAll('.page-list-subgroup').forEach(el => {
+        el.style.display = el.id === `pages-nb-${notebookId}` ? 'block' : 'none';
+      });
+      updateActivePageHighlight();
     }
 
-    function setLoadedNote(title, pages) {
+    function setLoadedNote(title, pages, startIdx = 0) {
       activePages = pages.length > 0 ? pages : [{ title: "Empty Page", template: "GRID", strokes: [] }];
-      currentPageIndex = 0;
+      currentPageIndex = Math.min(Math.max(0, startIdx), activePages.length - 1);
       document.getElementById('hdr-active-title').textContent = title || "InkFlow Note";
       dropzone.style.display = 'none';
       navControls.style.display = 'flex';
       fitToScreen();
       render();
+      updateActivePageHighlight();
+    }
+
+    function updateActivePageHighlight() {
+      const activeList = document.getElementById(`pages-nb-${activeNotebookId}`);
+      if (activeList) {
+        activeList.querySelectorAll('.tree-page-item').forEach(el => {
+          el.classList.toggle('active', parseInt(el.dataset.pageIdx) === currentPageIndex);
+        });
+      }
     }
 
     function renderLibrarySidebar(lib) {
@@ -1201,20 +1299,53 @@
     }
 
     function createNotebookTreeItem(nb) {
+      const container = document.createElement('div');
+      container.className = 'tree-notebook-container';
+
       const item = document.createElement('div');
       item.className = `tree-notebook-item ${nb.notebookId === activeNotebookId ? 'active' : ''}`;
       item.dataset.nbId = nb.notebookId;
 
-      const pageCount = currentLibrary.pages.filter(p => p.notebookId === nb.notebookId).length;
+      const nbPages = currentLibrary.pages.filter(p => p.notebookId === nb.notebookId).sort((a,b) => (a.pageIndex ?? 0) - (b.pageIndex ?? 0));
       item.innerHTML = `
         <span style="display:flex; align-items:center; gap:6px;">
-          <span>${nb.isStarred ? '⭐' : '📄'}</span>
+          <span>${nb.isStarred ? '⭐' : '📓'}</span>
           <span>${escapeHtml(nb.title)}</span>
         </span>
-        <span class="notebook-meta-badge">${pageCount} p</span>
+        <span class="notebook-meta-badge">${nbPages.length} p</span>
       `;
-      item.onclick = () => selectNotebook(nb.notebookId);
-      return item;
+
+      const pagesList = document.createElement('div');
+      pagesList.className = 'page-list-subgroup';
+      pagesList.id = `pages-nb-${nb.notebookId}`;
+      pagesList.style.display = nb.notebookId === activeNotebookId ? 'block' : 'none';
+
+      for (let pIdx = 0; pIdx < nbPages.length; pIdx++) {
+        const p = nbPages[pIdx];
+        const pageEl = document.createElement('div');
+        pageEl.className = `tree-page-item ${nb.notebookId === activeNotebookId && pIdx === currentPageIndex ? 'active' : ''}`;
+        pageEl.dataset.pageIdx = pIdx;
+        const strokeCount = p.strokes ? p.strokes.length : 0;
+        pageEl.innerHTML = `
+          <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;">
+            📄 ${escapeHtml(p.title || `Page ${pIdx + 1}`)}
+          </span>
+          <span style="font-size:10px; opacity:0.6;">${strokeCount}s</span>
+        `;
+        pageEl.onclick = (e) => {
+          e.stopPropagation();
+          selectNotebook(nb.notebookId, pIdx);
+        };
+        pagesList.appendChild(pageEl);
+      }
+
+      item.onclick = () => {
+        selectNotebook(nb.notebookId);
+      };
+
+      container.appendChild(item);
+      container.appendChild(pagesList);
+      return container;
     }
 
     function updateStatus(msg) {
@@ -1264,7 +1395,7 @@
       fetchBtn.style.display = "none";
 
       try {
-        const query = encodeURIComponent("(name = 'inkflow_vault_backup.zip' or name contains 'inkflow_vault_backup') and trashed = false");
+        const query = encodeURIComponent("(name = 'inkflow_vault_backup.zip' or name contains 'inkflow_vault' or name contains 'inkflow') and trashed = false");
         const url = `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name,modifiedTime,size)&orderBy=modifiedTime%20desc`;
 
         const res = await fetch(url, {
@@ -1383,26 +1514,54 @@
     // ----------------------------------------------------
     // IndexedDB Local Offline Cache
     // ----------------------------------------------------
-    function saveToIndexedDB(lib) {
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open("InkFlowVaultDB", 1);
+        req.onupgradeneeded = () => {
+          if (!req.result.objectStoreNames.contains("vault")) {
+            req.result.createObjectStore("vault");
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function saveToIndexedDB(lib) {
       try {
-        localStorage.setItem("inkflow_cached_lib", JSON.stringify(lib));
-      } catch (e) {
-        console.warn("Storage quota exceeded", e);
+        const db = await openDB();
+        const tx = db.transaction("vault", "readwrite");
+        tx.objectStore("vault").put(lib, "currentLibrary");
+        await new Promise((res, rej) => {
+          tx.oncomplete = res;
+          tx.onerror = rej;
+        });
+      } catch (err) {
+        console.warn("IndexedDB save error", err);
       }
     }
 
-    function loadFromIndexedDB() {
+    async function loadFromIndexedDB() {
       try {
-        const cached = localStorage.getItem("inkflow_cached_lib");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed.notebooks && parsed.notebooks.length > 0) {
-            currentLibrary = parsed;
-            renderLibrarySidebar(currentLibrary);
-            selectNotebook(currentLibrary.notebooks[0].notebookId);
-          }
+        const db = await openDB();
+        const tx = db.transaction("vault", "readonly");
+        const req = tx.objectStore("vault").get("currentLibrary");
+        const cached = await new Promise((res, rej) => {
+          req.onsuccess = () => res(req.result);
+          req.onerror = rej;
+        });
+        if (cached && cached.notebooks && cached.notebooks.length > 0) {
+          currentLibrary = cached;
+          renderLibrarySidebar(currentLibrary);
+          const firstWithPages = currentLibrary.notebooks.find(nb => 
+            currentLibrary.pages.some(p => p.notebookId === nb.notebookId && p.strokes && p.strokes.length > 0)
+          ) || currentLibrary.notebooks[0];
+          selectNotebook(firstWithPages.notebookId);
+          updateStatus(`Restored ${cached.notebooks.length} notebooks from offline cache`);
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn("IndexedDB load error", e);
+      }
     }
 
     // ----------------------------------------------------
@@ -1435,8 +1594,20 @@
     document.getElementById('btn-fit').onclick = fitToScreen;
     document.getElementById('btn-zoom-in').onclick = () => { scale = Math.min(scale * 1.25, 4.5); render(); };
     document.getElementById('btn-zoom-out').onclick = () => { scale = Math.max(scale * 0.8, 0.15); render(); };
-    document.getElementById('btn-prev').onclick = () => { if (currentPageIndex > 0) { currentPageIndex--; render(); } };
-    document.getElementById('btn-next').onclick = () => { if (currentPageIndex < activePages.length - 1) { currentPageIndex++; render(); } };
+    document.getElementById('btn-prev').onclick = () => {
+      if (currentPageIndex > 0) {
+        currentPageIndex--;
+        render();
+        updateActivePageHighlight();
+      }
+    };
+    document.getElementById('btn-next').onclick = () => {
+      if (currentPageIndex < activePages.length - 1) {
+        currentPageIndex++;
+        render();
+        updateActivePageHighlight();
+      }
+    };
 
     document.getElementById('btn-print').onclick = () => window.print();
     document.getElementById('btn-export-png').onclick = () => {
@@ -1477,7 +1648,12 @@
 
     document.getElementById('btn-sample-dsa').onclick = loadSampleDsaNote;
     document.getElementById('btn-splash-sample').onclick = loadSampleDsaNote;
-    document.getElementById('btn-clear-cache').onclick = () => {
+    document.getElementById('btn-clear-cache').onclick = async () => {
+      try {
+        const db = await openDB();
+        const tx = db.transaction("vault", "readwrite");
+        tx.objectStore("vault").clear();
+      } catch (_) {}
       localStorage.removeItem("inkflow_cached_lib");
       location.reload();
     };
