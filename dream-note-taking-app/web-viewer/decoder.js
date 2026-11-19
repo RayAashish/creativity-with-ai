@@ -312,7 +312,7 @@ async function loadArchiveFile(fileOrBuffer, filename = "inkflow_vault_backup.zi
       return null;
     }
 
-    // Check for library.json or manifest.json
+    // 1. Check for library.json or manifest.json
     let libFile = findZipFile(["library.json", "/library.json", "manifest.json"]);
     let libraryData = null;
 
@@ -320,56 +320,82 @@ async function loadArchiveFile(fileOrBuffer, filename = "inkflow_vault_backup.zi
       const text = await libFile.async("text");
       libraryData = JSON.parse(text);
     } else {
-      // Auto-synthesize library from .inkpage files
-      const inkEntries = Object.keys(loadedZip.files).filter(k => k.endsWith(".inkpage") || k.endsWith(".snapshot"));
-      if (inkEntries.length > 0) {
-        libraryData = {
-          folders: [{ folderId: "f_root", name: "Imported Notes" }],
-          notebooks: [{
-            notebookId: "nb_imported",
-            folderId: "f_root",
-            title: filename.replace(/\.(zip|inkflow)$/i, ''),
-            pages: inkEntries.map(f => f.split('/').pop().replace(/\.(inkpage|snapshot)$/, ''))
-          }]
-        };
-      } else {
-        throw new Error("Could not find library.json, manifest.json, or .inkpage files in archive");
+      libraryData = {
+        folders: [{ folderId: "f_root", name: "Imported Notes" }],
+        notebooks: []
+      };
+    }
+    if (!libraryData.notebooks) libraryData.notebooks = [];
+    if (!libraryData.folders) libraryData.folders = [];
+
+    // 2. Discover all page files (.inkpage prioritized, snapshots as fallback)
+    const pageFilesMap = new Map(); // pageId -> fileObj
+    for (const [filePath, fileObj] of Object.entries(loadedZip.files)) {
+      if (fileObj.dir) continue;
+      if (filePath.endsWith('.inkpage')) {
+        const pageId = filePath.split('/').pop().replace(/\.inkpage$/, '');
+        pageFilesMap.set(pageId, fileObj);
       }
     }
-
-    const loadedPages = [];
-    let totalStrokesLoaded = 0;
-
-    for (const nb of libraryData.notebooks || []) {
-      const pageIds = nb.pages || [];
-      for (let pIdx = 0; pIdx < pageIds.length; pIdx++) {
-        const pid = pageIds[pIdx];
-        const candidates = [
-          `notebooks/${nb.notebookId}/pages/${pid}.inkpage`,
-          `notebooks/${nb.notebookId}/pages/${pid}.snapshot`,
-          `pages/${pid}.inkpage`,
-          `pages/${pid}.snapshot`,
-          `${pid}.inkpage`,
-          `${pid}.snapshot`
-        ];
-
-        let pEntry = findZipFile(candidates);
-        if (pEntry) {
-          try {
-            const buf = await pEntry.async("arraybuffer");
-            const parsed = await parseInkPage(buf);
-            parsed.notebookId = nb.notebookId;
-            parsed.index = pIdx;
-            totalStrokesLoaded += (parsed.strokes ? parsed.strokes.length : 0);
-            loadedPages.push(parsed);
-          } catch (pErr) {
-            console.warn(`Failed to parse page ${pid}:`, pErr);
-          }
+    // Fallback: snapshots for any page not already found
+    for (const [filePath, fileObj] of Object.entries(loadedZip.files)) {
+      if (fileObj.dir) continue;
+      if (filePath.endsWith('.snapshot')) {
+        const baseName = filePath.split('/').pop();
+        const pageId = baseName.split('.')[0];
+        if (!pageFilesMap.has(pageId)) {
+          pageFilesMap.set(pageId, fileObj);
         }
       }
     }
 
-    // Persist full vault to native IndexedDB
+    // 3. Parse all discovered pages
+    const loadedPages = [];
+    let totalStrokesLoaded = 0;
+    const pagesByNotebook = new Map(); // notebookId -> [pageObj]
+
+    for (const [pageId, fileObj] of pageFilesMap.entries()) {
+      try {
+        const buf = await fileObj.async("arraybuffer");
+        const parsed = await parseInkPage(buf);
+        if (parsed) {
+          totalStrokesLoaded += (parsed.strokes ? parsed.strokes.length : 0);
+          loadedPages.push(parsed);
+
+          const nbId = parsed.notebookId || "default";
+          if (!pagesByNotebook.has(nbId)) {
+            pagesByNotebook.set(nbId, []);
+          }
+          pagesByNotebook.get(nbId).push(parsed);
+        }
+      } catch (pErr) {
+        console.warn(`Failed to parse page ${pageId}:`, pErr);
+      }
+    }
+
+    // 4. Populate pages on each notebook
+    for (const nb of libraryData.notebooks) {
+      const nbPages = pagesByNotebook.get(nb.notebookId) || [];
+      nbPages.sort((a, b) => a.index - b.index);
+      nb.pages = nbPages.map(p => p.id);
+      nb.pageCount = nbPages.length;
+    }
+
+    // Include any notebooks present in pages but missing from libraryData
+    for (const [nbId, nbPages] of pagesByNotebook.entries()) {
+      if (!libraryData.notebooks.some(n => n.notebookId === nbId)) {
+        nbPages.sort((a, b) => a.index - b.index);
+        libraryData.notebooks.push({
+          notebookId: nbId,
+          folderId: libraryData.folders[0]?.folderId || "f_root",
+          title: nbPages[0]?.title || "Imported Notebook",
+          pages: nbPages.map(p => p.id),
+          pageCount: nbPages.length
+        });
+      }
+    }
+
+    // 5. Persist full vault to native IndexedDB
     await saveToIndexedDB("cached_library", libraryData);
     await saveToIndexedDB("cached_pages", loadedPages);
 

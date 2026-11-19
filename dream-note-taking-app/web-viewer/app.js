@@ -462,11 +462,16 @@ function render() {
 }
 
 function updateHeaderAndDock() {
-  if (activePages.length === 0) return;
-  const page = activePages[currentPageIndex] || activePages[0];
   const nb = currentLibrary.notebooks.find(n => n.notebookId === activeNotebookId);
-
   const titleEl = document.getElementById('hdr-active-title');
+  if (activePages.length === 0) {
+    if (titleEl) {
+      titleEl.textContent = nb ? `${nb.title} • 0 pages` : "No Note Loaded";
+    }
+    return;
+  }
+  const page = activePages[currentPageIndex] || activePages[0];
+
   if (isContinuousStream) {
     titleEl.textContent = `${nb ? nb.title : "Notebook"} • ${activePages.length} pages continuous`;
   } else {
@@ -808,16 +813,23 @@ async function selectNotebook(notebookId) {
 
   currentPageIndex = 0;
 
-  dropzoneOverlay.style.display = 'none';
-  floatingDock.style.display = 'flex';
-  modeControl.style.display = 'flex';
+  if (activePages.length === 0) {
+    dropzoneOverlay.style.display = 'flex';
+    floatingDock.style.display = 'none';
+    modeControl.style.display = 'none';
+  } else {
+    dropzoneOverlay.style.display = 'none';
+    floatingDock.style.display = 'flex';
+    modeControl.style.display = 'flex';
+  }
 
   renderLibraryTree(document.getElementById('search-input').value);
 
-  // Position viewport cleanly at top of document
-  fitToWidth();
-  panY = 40;
-  clampPan();
+  if (activePages.length > 0) {
+    fitToWidth();
+    panY = 40;
+    clampPan();
+  }
   render();
 }
 
@@ -1259,7 +1271,7 @@ async function boot() {
     const cachedLib = await loadFromIndexedDB("cached_library");
     const cachedPages = await loadFromIndexedDB("cached_pages");
 
-    if (cachedLib && cachedPages && cachedLib.notebooks && cachedLib.notebooks.length > 0) {
+    if (cachedLib && cachedPages && cachedPages.length > 0 && cachedLib.notebooks && cachedLib.notebooks.length > 0) {
       currentLibrary = cachedLib;
       renderLibraryTree();
       selectNotebook(cachedLib.notebooks[0].notebookId);
@@ -1269,7 +1281,7 @@ async function boot() {
     console.warn("Cached notes restore failed:", err);
   }
 
-  // If no saved notes, show welcome overlay
+  // If no saved notes or empty pages cache, show welcome overlay
   dropzoneOverlay.style.display = 'flex';
 }
 
