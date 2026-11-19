@@ -86,3 +86,4 @@ out/
 *.sw?
 *.iml
 **/*.iml
+.env*

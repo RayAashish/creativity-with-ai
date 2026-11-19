@@ -172,6 +172,7 @@ fun LibrarySidebarDrawer(
     onCreateProblemPage: (notebookId: String, title: String, url: String, diff: String, tags: String) -> Unit = { _, _, _, _, _ -> },
     onOpenBackupSettings: () -> Unit = {},
     onOpenLocalBackupSettings: () -> Unit = {},
+    onImportNotesRequest: () -> Unit = {},
     onRenamePage: (pageId: String, newTitle: String) -> Unit = { _, _ -> },
     onRenameNotebook: (notebookId: String, newTitle: String) -> Unit = { _, _ -> },
     onRenameFolder: (folderId: String, newName: String) -> Unit = { _, _ -> },
@@ -361,6 +362,32 @@ fun LibrarySidebarDrawer(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
                             color = if (isMultiSelectMode) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Import Archive Button (.zip / .inkflow)
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.clickable { onImportNotesRequest() }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FolderOpen,
+                            contentDescription = "Import Notes",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Import",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

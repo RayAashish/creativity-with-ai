@@ -11,6 +11,7 @@ import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -42,15 +43,38 @@ class GoogleDriveClient(
         try {
             val token = getAuthToken()
 
+            // 1. Check preferred storage space first
+            val primary = querySingleSpace(token, useVisibleFolder)
+            if (primary != null) {
+                return@withContext Result.success(primary)
+            }
+
+            // 2. Fallback: check alternate space (e.g. tablet used appDataFolder, phone is on visible folder or vice versa)
+            val fallback = querySingleSpace(token, !useVisibleFolder)
+            if (fallback != null) {
+                authStorage.setUseVisibleFolder(!useVisibleFolder)
+                return@withContext Result.success(fallback)
+            }
+
+            Result.success(null)
+        } catch (e: Exception) {
+            Log.e("GDriveBackup", "queryLatestBackup error: ${e.message}", e)
+            if (e is CancellationException) throw e
+            Result.failure(e)
+        }
+    }
+
+    private fun querySingleSpace(token: String, useVisibleFolder: Boolean): DriveFileItem? {
+        try {
             val urlBuilder = GoogleDriveConfig.FILES_ENDPOINT.toHttpUrl().newBuilder()
             if (!useVisibleFolder) {
                 urlBuilder.addQueryParameter("spaces", "appDataFolder")
             }
-            urlBuilder.addQueryParameter("q", "name='${GoogleDriveConfig.BACKUP_FILENAME}' and trashed=false")
+            urlBuilder.addQueryParameter("q", "(name = '${GoogleDriveConfig.BACKUP_FILENAME}' or name contains 'inkflow_vault_backup') and trashed = false")
             urlBuilder.addQueryParameter("fields", "files(id,name,modifiedTime,size)")
             urlBuilder.addQueryParameter("orderBy", "modifiedTime desc")
             val requestUrl = urlBuilder.build()
-            Log.d("GDriveBackup", "Querying latest backup: $requestUrl")
+            Log.d("GDriveBackup", "Querying space (visible=$useVisibleFolder): $requestUrl")
 
             val request = Request.Builder()
                 .url(requestUrl)
@@ -62,29 +86,24 @@ class GoogleDriveClient(
                 val body = response.body?.string().orEmpty()
                 Log.d("GDriveBackup", "Query response code ${response.code}: $body")
                 if (!response.isSuccessful) {
-                    val code = response.code
-                    return@withContext Result.failure(IOException("Google Drive Query failed ($code): $body"))
+                    return null
                 }
 
-                val idMatch = Regex("\"id\"\\s*:\\s*\"(.*?)\"").find(body)
-                val nameMatch = Regex("\"name\"\\s*:\\s*\"(.*?)\"").find(body)
-                val modifiedMatch = Regex("\"modifiedTime\"\\s*:\\s*\"(.*?)\"").find(body)
-                val sizeMatch = Regex("\"size\"\\s*:\\s*\"?(\\d+)\"?").find(body)
-
-                if (idMatch != null) {
-                    val id = idMatch.groupValues[1]
-                    val name = nameMatch?.groupValues?.get(1) ?: GoogleDriveConfig.BACKUP_FILENAME
-                    val modifiedTime = modifiedMatch?.groupValues?.get(1)
-                    val size = sizeMatch?.groupValues?.get(1)?.toLongOrNull() ?: 0L
-                    Result.success(DriveFileItem(id, name, modifiedTime, size))
-                } else {
-                    Result.success(null)
+                val jsonRoot = JSONObject(body)
+                val filesArray = jsonRoot.optJSONArray("files")
+                if (filesArray != null && filesArray.length() > 0) {
+                    val fileObj = filesArray.getJSONObject(0)
+                    val id = fileObj.getString("id")
+                    val name = fileObj.optString("name", GoogleDriveConfig.BACKUP_FILENAME)
+                    val modifiedTime = if (fileObj.has("modifiedTime")) fileObj.getString("modifiedTime") else null
+                    val size = fileObj.optLong("size", 0L)
+                    return DriveFileItem(id, name, modifiedTime, size)
                 }
+                return null
             }
         } catch (e: Exception) {
-            Log.e("GDriveBackup", "queryLatestBackup error: ${e.message}", e)
-            if (e is CancellationException) throw e
-            Result.failure(e)
+            Log.w("GDriveBackup", "querySingleSpace error (visible=$useVisibleFolder): ${e.message}")
+            return null
         }
     }
 

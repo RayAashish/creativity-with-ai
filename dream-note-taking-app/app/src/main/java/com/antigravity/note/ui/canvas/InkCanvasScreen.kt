@@ -206,6 +206,8 @@ import com.antigravity.note.ui.library.QuickSwitcherDialog
 import kotlinx.coroutines.launch
 import android.content.Context
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -247,11 +249,27 @@ fun InkCanvasScreen(
 
     var isLocalBackupDialogOpen by remember { mutableStateOf(false) }
     var detectedNotesPrompt by remember { mutableStateOf<com.antigravity.note.library.backup.local.ExistingNotesDetection.Found?>(null) }
+    var detectedCloudBackupPrompt by remember { mutableStateOf<com.antigravity.note.library.backup.gdrive.DriveFileItem?>(null) }
 
     LaunchedEffect(Unit) {
         val detection = localBackupManager.detectExistingNotes()
         if (detection is com.antigravity.note.library.backup.local.ExistingNotesDetection.Found) {
             detectedNotesPrompt = detection
+        }
+
+        if (googleDriveAuthStorage.getAccessToken() != null) {
+            scope.launch {
+                try {
+                    val remote = googleDriveClient.queryLatestBackup(googleDriveAuthStorage.isUseVisibleFolder()).getOrNull()
+                    if (remote != null) {
+                        val allNb = database.notebookDao().getAllNotebooks().first()
+                        val totalPages = database.pageDao().getAllActivePages().first().size
+                        if (allNb.size <= 1 && totalPages <= 1) {
+                            detectedCloudBackupPrompt = remote
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
         }
     }
 
@@ -490,26 +508,130 @@ fun InkCanvasScreen(
     var imageCardWidthPx by remember { mutableFloatStateOf(0f) }
     var imageCardHeightPx by remember { mutableFloatStateOf(0f) }
 
+    var lastHandledIncomingUri by remember { mutableStateOf<Uri?>(null) }
+
+    val importArchiveFromUri: (Uri) -> Unit = { uri ->
+        scope.launch {
+            try {
+                Toast.makeText(context, "Reading archive...", Toast.LENGTH_SHORT).show()
+                val tempFile = File(context.cacheDir, "import_staging_${System.currentTimeMillis()}.zip")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    FileOutputStream(tempFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                if (!tempFile.exists() || tempFile.length() == 0L) {
+                    Toast.makeText(context, "Selected archive is empty", Toast.LENGTH_SHORT).show()
+                    tempFile.delete()
+                    return@launch
+                }
+
+                // Inspect zip archive entries to distinguish full vault from single note
+                var hasLibraryJson = false
+                var hasNotebooksDir = false
+                var hasManifestJson = false
+                var hasPagesDir = false
+
+                try {
+                    java.util.zip.ZipFile(tempFile).use { zf ->
+                        val entryNames = zf.entries().asSequence().map { it.name }.toList()
+                        hasLibraryJson = entryNames.any { it == "library.json" }
+                        hasNotebooksDir = entryNames.any { it.startsWith("notebooks/") }
+                        hasManifestJson = entryNames.any { it == "manifest.json" }
+                        hasPagesDir = entryNames.any { it.startsWith("pages/") }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("InkCanvasScreen", "Error inspecting zip entries", e)
+                }
+
+                if (hasLibraryJson || hasNotebooksDir) {
+                    // Full vault backup (.zip) - restore notebooks, pages, and rebuild database catalog
+                    val result = googleDriveRestoreEngine.restoreFromZipFile(tempFile)
+                    tempFile.delete()
+                    if (result.isSuccess) {
+                        val data = result.getOrThrow()
+                        Toast.makeText(
+                            context,
+                            "Successfully imported ${data.restoredNotebooks} notebooks (${data.restoredPages} pages)!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        val allNotebooks = database.notebookDao().getAllNotebooks().first()
+                        val targetNb = allNotebooks.firstOrNull()
+                        val targetNbId = targetNb?.notebookId ?: docManager.defaultNotebookId
+                        docManager.initialize(targetNbId) {
+                            val cur = docManager.currentPage.value
+                            if (cur != null) {
+                                canvasView.loadPage(
+                                    cur,
+                                    docManager.lastOpenLatencyMs.value,
+                                    pageRepo.getAssetsDir(cur.metadata.notebookId)
+                                )
+                            }
+                        }
+                    } else {
+                        val err = result.exceptionOrNull()?.message ?: "Unknown error"
+                        Toast.makeText(context, "Restore failed: $err", Toast.LENGTH_LONG).show()
+                    }
+                } else if (hasManifestJson || hasPagesDir) {
+                    // Single note package (.inkflow)
+                    FileInputStream(tempFile).use { stream ->
+                        val (manifest, importedPages) = PageExporter.importFromInkflow(stream)
+                        if (importedPages.isNotEmpty()) {
+                            val activeNbId = docManager.getActiveNotebookId()
+                            for (p in importedPages) {
+                                pageRepo.savePageAtomic(p)
+                            }
+                            val first = importedPages.first()
+                            docManager.switchToNotebookAndPage(activeNbId, first.metadata.pageId) { p ->
+                                canvasView.loadPage(p, docManager.lastOpenLatencyMs.value)
+                            }
+                            Toast.makeText(context, "Opened ${importedPages.size} page(s) from .inkflow", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                    tempFile.delete()
+                } else {
+                    // Fallback: try full vault restore
+                    val result = googleDriveRestoreEngine.restoreFromZipFile(tempFile)
+                    tempFile.delete()
+                    if (result.isSuccess) {
+                        val data = result.getOrThrow()
+                        Toast.makeText(context, "Restored ${data.restoredNotebooks} notebooks!", Toast.LENGTH_SHORT).show()
+                        val allNotebooks = database.notebookDao().getAllNotebooks().first()
+                        val targetNb = allNotebooks.firstOrNull()
+                        val targetNbId = targetNb?.notebookId ?: docManager.defaultNotebookId
+                        docManager.initialize(targetNbId) {
+                            val cur = docManager.currentPage.value
+                            if (cur != null) {
+                                canvasView.loadPage(
+                                    cur,
+                                    docManager.lastOpenLatencyMs.value,
+                                    pageRepo.getAssetsDir(cur.metadata.notebookId)
+                                )
+                            }
+                        }
+                    } else {
+                        Toast.makeText(context, "Invalid archive format. Expected .zip or .inkflow", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("InkCanvasScreen", "Failed to open archive file", e)
+                Toast.makeText(context, "Failed to import note: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    val importArchiveFilePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            importArchiveFromUri(uri)
+        }
+    }
+
     LaunchedEffect(incomingFileUri) {
         val uri = incomingFileUri ?: return@LaunchedEffect
-        try {
-            context.contentResolver.openInputStream(uri)?.use { stream ->
-                val (manifest, importedPages) = PageExporter.importFromInkflow(stream)
-                if (importedPages.isNotEmpty()) {
-                    val activeNbId = docManager.getActiveNotebookId()
-                    for (p in importedPages) {
-                        pageRepo.savePageAtomic(p)
-                    }
-                    val first = importedPages.first()
-                    docManager.switchToNotebookAndPage(activeNbId, first.metadata.pageId) { p ->
-                        canvasView.loadPage(p, docManager.lastOpenLatencyMs.value)
-                    }
-                    Toast.makeText(context, "Opened ${importedPages.size} page(s) from .inkflow", Toast.LENGTH_LONG).show()
-                }
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("InkCanvasScreen", "Failed to open .inkflow file", e)
-            Toast.makeText(context, "Failed to open note: ${e.message}", Toast.LENGTH_LONG).show()
+        if (uri != lastHandledIncomingUri) {
+            lastHandledIncomingUri = uri
+            importArchiveFromUri(uri)
         }
     }
 
@@ -2900,6 +3022,9 @@ fun InkCanvasScreen(
                 onOpenLocalBackupSettings = {
                     isLocalBackupDialogOpen = true
                 },
+                onImportNotesRequest = {
+                    importArchiveFilePicker.launch(arrayOf("application/zip", "application/octet-stream", "*/*"))
+                },
                 onCreateFolder = { name, parentId, iconKey ->
                     scope.launch {
                         libraryRepo.createFolder(name, parentId, iconKey)
@@ -3832,23 +3957,86 @@ fun InkCanvasScreen(
             )
         }
 
+        // Cloud Backup Auto-Detection Prompt (Cross-Device First Launch)
+        if (detectedCloudBackupPrompt != null) {
+            val cloudItem = detectedCloudBackupPrompt!!
+            AlertDialog(
+                onDismissRequest = { detectedCloudBackupPrompt = null },
+                title = { Text("☁️ Google Drive Backup Found") },
+                text = {
+                    Text(
+                        "We detected a cloud note archive ('${cloudItem.name}', ${cloudItem.size / 1024} KB) in your Google Drive account. Would you like to restore your notes onto this device now?"
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            detectedCloudBackupPrompt = null
+                            scope.launch {
+                                Toast.makeText(context, "Restoring notes from Google Drive...", Toast.LENGTH_SHORT).show()
+                                val res = googleDriveRestoreEngine.restoreBackup()
+                                if (res.isSuccess) {
+                                    val data = res.getOrThrow()
+                                    Toast.makeText(
+                                        context,
+                                        "Successfully restored ${data.restoredNotebooks} notebooks (${data.restoredPages} pages)!",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                    val allNotebooks = database.notebookDao().getAllNotebooks().first()
+                                    val targetNbId = allNotebooks.firstOrNull()?.notebookId ?: docManager.defaultNotebookId
+                                    docManager.initialize(targetNbId) {
+                                        val cur = docManager.currentPage.value
+                                        if (cur != null) {
+                                            canvasView.loadPage(
+                                                cur,
+                                                docManager.lastOpenLatencyMs.value,
+                                                pageRepo.getAssetsDir(cur.metadata.notebookId)
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    Toast.makeText(context, "Restore failed: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+                    ) {
+                        Text("Restore Notes")
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = { detectedCloudBackupPrompt = null }) {
+                        Text("Later")
+                    }
+                }
+            )
+        }
+
         // Google Drive Lossless Backup & Restore Dialog
         if (isGoogleDriveDialogOpen) {
             GoogleDriveBackupDialog(
                 authStorage = googleDriveAuthStorage,
                 backupEngine = googleDriveBackupEngine,
                 restoreEngine = googleDriveRestoreEngine,
+                driveClient = googleDriveClient,
                 onRestoreCompleted = {
-                    docManager.initialize(docManager.getActiveNotebookId()) {
-                        val cur = docManager.currentPage.value
-                        if (cur != null) {
-                            canvasView.loadPage(
-                                cur,
-                                docManager.lastOpenLatencyMs.value,
-                                pageRepo.getAssetsDir(cur.metadata.notebookId)
-                            )
+                    scope.launch {
+                        val allNotebooks = database.notebookDao().getAllNotebooks().first()
+                        val targetNbId = allNotebooks.firstOrNull()?.notebookId ?: docManager.defaultNotebookId
+                        docManager.initialize(targetNbId) {
+                            val cur = docManager.currentPage.value
+                            if (cur != null) {
+                                canvasView.loadPage(
+                                    cur,
+                                    docManager.lastOpenLatencyMs.value,
+                                    pageRepo.getAssetsDir(cur.metadata.notebookId)
+                                )
+                            }
                         }
                     }
+                },
+                onImportFileRequest = {
+                    importArchiveFilePicker.launch(arrayOf("application/zip", "application/octet-stream", "*/*"))
                 },
                 onDismiss = { isGoogleDriveDialogOpen = false }
             )

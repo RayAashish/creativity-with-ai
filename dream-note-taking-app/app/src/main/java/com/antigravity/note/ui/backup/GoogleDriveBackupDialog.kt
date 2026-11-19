@@ -24,17 +24,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Sync
 import com.google.android.gms.auth.GoogleAuthUtil
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -60,6 +58,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -76,10 +75,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.antigravity.note.library.backup.gdrive.DriveFileItem
 import com.antigravity.note.library.backup.gdrive.GoogleDriveAuthStorage
 import com.antigravity.note.library.backup.gdrive.GoogleDriveBackupEngine
+import com.antigravity.note.library.backup.gdrive.GoogleDriveClient
 import com.antigravity.note.library.backup.gdrive.GoogleDriveRestoreEngine
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -89,7 +92,9 @@ fun GoogleDriveBackupDialog(
     authStorage: GoogleDriveAuthStorage,
     backupEngine: GoogleDriveBackupEngine,
     restoreEngine: GoogleDriveRestoreEngine,
+    driveClient: GoogleDriveClient,
     onRestoreCompleted: () -> Unit,
+    onImportFileRequest: (() -> Unit)? = null,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -108,9 +113,71 @@ fun GoogleDriveBackupDialog(
     var lastBackupHash by remember { mutableStateOf(authStorage.getLastBackupHash()) }
     var apiKey by remember { mutableStateOf(authStorage.getApiKey()) }
     var accountEmail by remember { mutableStateOf(authStorage.getAccountEmail() ?: "2002raysi@gmail.com") }
-    val hasToken = authStorage.getAccessToken() != null
+    var hasToken by remember { mutableStateOf(authStorage.getAccessToken() != null) }
+
+    // Cloud query state
+    var remoteBackupItem by remember { mutableStateOf<DriveFileItem?>(null) }
+    var isCheckingRemote by remember { mutableStateOf(false) }
 
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy  hh:mm a", Locale.getDefault()) }
+
+    val checkRemoteBackup = {
+        if (hasToken && !isBackingUp && !isRestoring) {
+            isCheckingRemote = true
+            scope.launch {
+                val res = driveClient.queryLatestBackup(useVisibleFolder)
+                isCheckingRemote = false
+                if (res.isSuccess) {
+                    remoteBackupItem = res.getOrNull()
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(hasToken) {
+        if (hasToken) {
+            checkRemoteBackup()
+        }
+    }
+
+    // Direct local .zip file import launcher
+    val importFilePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                isRestoring = true
+                progressPercent = 0.05f
+                progressMessage = "Reading notes archive..."
+                try {
+                    val tempFile = File(context.cacheDir, "import_dialog_${System.currentTimeMillis()}.zip")
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        FileOutputStream(tempFile).use { output -> input.copyTo(output) }
+                    }
+                    val result = restoreEngine.restoreFromZipFile(tempFile) { p, msg ->
+                        progressPercent = p
+                        progressMessage = msg
+                    }
+                    tempFile.delete()
+                    isRestoring = false
+                    if (result.isSuccess) {
+                        val data = result.getOrThrow()
+                        Toast.makeText(
+                            context,
+                            "Successfully imported ${data.restoredNotebooks} notebooks (${data.restoredPages} pages)!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        onRestoreCompleted()
+                        onDismiss()
+                    } else {
+                        val err = result.exceptionOrNull()?.message ?: "Unknown error"
+                        Toast.makeText(context, "Import failed: $err", Toast.LENGTH_LONG).show()
+                    }
+                } catch (e: Exception) {
+                    isRestoring = false
+                    Toast.makeText(context, "Failed to import archive: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
 
     val signInLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -132,6 +199,8 @@ fun GoogleDriveBackupDialog(
                                 authStorage.saveAccessToken(token)
                                 authStorage.setUseVisibleFolder(true)
                                 withContext(Dispatchers.Main) {
+                                    hasToken = true
+                                    checkRemoteBackup()
                                     Toast.makeText(context, "Google Drive connected: $email", Toast.LENGTH_SHORT).show()
                                 }
                             }
@@ -163,7 +232,7 @@ fun GoogleDriveBackupDialog(
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 8.dp,
             modifier = Modifier
-                .fillMaxWidth(0.94f)
+                .fillMaxWidth(0.95f)
                 .padding(16.dp)
         ) {
             Column(
@@ -195,12 +264,12 @@ fun GoogleDriveBackupDialog(
                         Spacer(modifier = Modifier.width(14.dp))
                         Column {
                             Text(
-                                text = "Google Drive Backup",
+                                text = "Google Drive Sync",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Lossless local-first cloud snapshot",
+                                text = "Cloud backup & cross-device restore",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -211,9 +280,9 @@ fun GoogleDriveBackupDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-                // WhatsApp-Style Backup Info Card
+                // Account Info Card
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
@@ -221,15 +290,15 @@ fun GoogleDriveBackupDialog(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(14.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Account",
+                                    text = "Google Account",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -239,9 +308,10 @@ fun GoogleDriveBackupDialog(
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = if (apiKey.isNotEmpty()) "API Key: ${apiKey.take(10)}...${apiKey.takeLast(4)}" else "No API Key",
+                                    text = if (hasToken) "Status: Connected" else "Status: Not signed in",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    color = if (hasToken) Color(0xFF2E7D32) else Color(0xFFBA1A1A),
+                                    fontWeight = FontWeight.Medium
                                 )
                             }
                             Row(
@@ -256,7 +326,7 @@ fun GoogleDriveBackupDialog(
                                 ) {
                                     Icon(Icons.Default.AccountCircle, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text(if (hasToken) "Switch Account" else "Sign In", style = MaterialTheme.typography.labelSmall)
+                                    Text(if (hasToken) "Switch" else "Sign In", style = MaterialTheme.typography.labelSmall)
                                 }
 
                                 OutlinedButton(
@@ -268,13 +338,109 @@ fun GoogleDriveBackupDialog(
                                 }
                             }
                         }
+                    }
+                }
 
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
+                // Cloud Backup Status Card (Prominent Cloud Fetching Section)
+                if (hasToken) {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (remoteBackupItem != null) {
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                            }
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(
+                                        imageVector = if (remoteBackupItem != null) Icons.Default.CloudDone else Icons.Default.Cloud,
+                                        contentDescription = null,
+                                        tint = if (remoteBackupItem != null) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            text = if (remoteBackupItem != null) "Cloud Backup in Google Drive" else "Cloud Backup Search",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (remoteBackupItem != null) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = if (isCheckingRemote) {
+                                                "Searching Drive for inkflow_vault_backup.zip..."
+                                            } else if (remoteBackupItem != null) {
+                                                "${remoteBackupItem?.name} (${(remoteBackupItem?.size ?: 0L) / 1024} KB)"
+                                            } else {
+                                                "No backup archive found in this Drive account yet"
+                                            },
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                IconButton(
+                                    onClick = checkRemoteBackup,
+                                    enabled = !isCheckingRemote && !isBackingUp && !isRestoring,
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    if (isCheckingRemote) {
+                                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                    } else {
+                                        Icon(Icons.Default.Refresh, contentDescription = "Check Drive", modifier = Modifier.size(18.dp))
+                                    }
+                                }
+                            }
+
+                            if (remoteBackupItem != null) {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Button(
+                                    onClick = { showRestoreConfirm = true },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
+                                    enabled = !isBackingUp && !isRestoring,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(40.dp)
+                                ) {
+                                    Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("📥 Fetch & Restore Notes from Drive", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+                }
+
+                // WhatsApp-Style Local Snapshot Stats Card
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Column {
                                 Text(
-                                    text = "Last Backup",
+                                    text = "Device Last Backup",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -319,7 +485,7 @@ fun GoogleDriveBackupDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 // Storage target folder switch
                 Card(
@@ -330,21 +496,21 @@ fun GoogleDriveBackupDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = if (useVisibleFolder) "Dedicated Visible Folder" else "AppDataFolder (Hidden Sandbox)",
+                                text = if (useVisibleFolder) "Dedicated Visible Folder" else "AppDataFolder (Hidden)",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
                                 text = if (useVisibleFolder) {
-                                    "Backup file visible in Google Drive root ('drive.file' scope)"
+                                    "Backup file visible in Google Drive root ('drive.file')"
                                 } else {
-                                    "Isolated application sandbox ('drive.appdata' scope, invisible to other apps)"
+                                    "Sandboxed private folder ('drive.appdata')"
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -355,6 +521,7 @@ fun GoogleDriveBackupDialog(
                             onCheckedChange = {
                                 useVisibleFolder = it
                                 authStorage.setUseVisibleFolder(it)
+                                checkRemoteBackup()
                             }
                         )
                     }
@@ -362,7 +529,7 @@ fun GoogleDriveBackupDialog(
 
                 // Progress indicator during operation
                 if (isBackingUp || isRestoring) {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
                             text = progressMessage,
@@ -381,19 +548,19 @@ fun GoogleDriveBackupDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-                // Action Buttons: Backup Now & Restore
+                // Action Buttons: Restore & Back Up Now
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     OutlinedButton(
                         onClick = { showRestoreConfirm = true },
                         enabled = !isBackingUp && !isRestoring && hasToken,
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp)
+                            .height(44.dp)
                     ) {
                         Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
@@ -420,6 +587,7 @@ fun GoogleDriveBackupDialog(
                                     lastBackupTime = authStorage.getLastBackupTime()
                                     lastBackupSize = authStorage.getLastBackupSize()
                                     lastBackupHash = authStorage.getLastBackupHash()
+                                    checkRemoteBackup()
                                     Toast.makeText(context, "Backup uploaded (${data.bytesUploaded / 1024} KB)!", Toast.LENGTH_LONG).show()
                                 } else {
                                     val err = result.exceptionOrNull()?.message ?: "Unknown error"
@@ -431,7 +599,7 @@ fun GoogleDriveBackupDialog(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp)
+                            .height(44.dp)
                     ) {
                         if (isBackingUp) {
                             CircularProgressIndicator(
@@ -446,6 +614,27 @@ fun GoogleDriveBackupDialog(
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Direct File Import Button
+                OutlinedButton(
+                    onClick = {
+                        if (onImportFileRequest != null) {
+                            onImportFileRequest()
+                        } else {
+                            importFilePicker.launch(arrayOf("application/zip", "application/octet-stream", "*/*"))
+                        }
+                    },
+                    enabled = !isBackingUp && !isRestoring,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(42.dp)
+                ) {
+                    Icon(Icons.Default.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("📂 Import Notes from File (.zip)", fontSize = 13.sp)
+                }
             }
         }
     }
@@ -457,7 +646,7 @@ fun GoogleDriveBackupDialog(
             title = { Text("Restore notes from Google Drive?") },
             text = {
                 Text(
-                    "This will restore all notes and media from the latest Google Drive backup archive and replace local notes. All archive checksums will be validated prior to restoring."
+                    "This will restore all notes and media from the Google Drive backup archive and rebuild the note library on this device. Local files will be updated to match the cloud snapshot."
                 )
             },
             confirmButton = {
@@ -596,7 +785,9 @@ fun GoogleDriveBackupDialog(
                         authStorage.saveApiKey(apiKeyInput.trim().ifEmpty { null })
                         apiKey = apiKeyInput.trim()
                         accountEmail = emailInput.trim().ifEmpty { "Connected Account" }
+                        hasToken = authStorage.getAccessToken() != null
                         showTokenDialog = false
+                        checkRemoteBackup()
                         Toast.makeText(context, "Google Drive credentials saved", Toast.LENGTH_SHORT).show()
                     }
                 ) {
