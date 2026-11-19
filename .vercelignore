@@ -1,0 +1,24 @@
+# Vercel Ignore for Mobile/Android builds
+.gradle
+.kotlin
+**/build/**
+**/.gradle/**
+**/node_modules/**
+*.apk
+*.aab
+*.zip
+*.tar.gz
+dream-note-taking-app/app/build
+dream-note-taking-app/build
+anti-addication-launcher
+brain-games
+dream-reader
+dream-reader-for-all-devices
+dream-wallpaper
+dsa_learning_app
+edit_image_text
+infintely-zoomable-svg
+markdown-to-pdf
+pdf-offline-toolkit
+private-clipboard-manager
+snapshots

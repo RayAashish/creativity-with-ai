@@ -1,0 +1,8 @@
+# Ignore everything except static deployment assets
+.git
+.gradle
+build
+**/build/**
+**/node_modules/**
+*.apk
+*.zip

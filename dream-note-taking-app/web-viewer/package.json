@@ -1,0 +1,12 @@
+{
+  "name": "inkflow-web",
+  "version": "1.0.0",
+  "description": "InkFlow Web — Lossless Vector Note Taking & Reading Studio",
+  "scripts": {
+    "build": "mkdir -p dist && cp -r index.html logo.svg favicon.svg dist/",
+    "start": "npx serve dist"
+  },
+  "keywords": ["inkflow", "notes", "google-drive", "vector", "drawing"],
+  "author": "Aashish Kumar Ray",
+  "license": "MIT"
+}
