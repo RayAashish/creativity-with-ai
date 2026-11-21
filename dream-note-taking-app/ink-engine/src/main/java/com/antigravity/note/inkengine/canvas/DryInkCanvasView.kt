@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.DashPathEffect
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.util.LruCache
@@ -15,7 +16,13 @@ import androidx.ink.brush.Brush
 import androidx.ink.brush.StockBrushes
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.Stroke
+import android.graphics.Typeface
+import android.text.Layout
+import android.text.StaticLayout
+import android.text.TextPaint
 import com.antigravity.note.document.model.CanvasImage
+import com.antigravity.note.document.model.CanvasTextBox
+import com.antigravity.note.document.model.FontStyleType
 import com.antigravity.note.document.model.PaperTemplate
 import com.antigravity.note.inkengine.eraser.EraserMode
 import com.antigravity.note.inkengine.eraser.PrecisionEraser
@@ -107,18 +114,18 @@ class DryInkCanvasView @JvmOverloads constructor(
     private val imageDstRect = RectF()
     private val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
 
-    // Image selection paints
+    // Image selection paints (Imperial Amber & Gold Luxury Theme - Zero Blue)
     private val imageSelectBorderPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeWidth = 3.5f
-            color = Color.parseColor("#1976D2")
+            color = Color.parseColor("#F59E0B")
         }
     }
     private val imageSelectFillPaint by lazy {
         Paint().apply {
             style = Paint.Style.FILL
-            color = Color.parseColor("#141976D2")
+            color = Color.parseColor("#14F59E0B")
         }
     }
     private val imageHandlePaint by lazy {
@@ -131,7 +138,7 @@ class DryInkCanvasView @JvmOverloads constructor(
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeWidth = 3f
-            color = Color.parseColor("#1976D2")
+            color = Color.parseColor("#F59E0B")
         }
     }
 
@@ -142,14 +149,144 @@ class DryInkCanvasView @JvmOverloads constructor(
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeWidth = 4f
-            color = Color.parseColor("#2196F3")
+            color = Color.parseColor("#F59E0B")
             pathEffect = DashPathEffect(floatArrayOf(16f, 12f), 0f)
         }
     }
     private val dropTargetFillPaint by lazy {
         Paint().apply {
             style = Paint.Style.FILL
-            color = Color.parseColor("#182196F3")
+            color = Color.parseColor("#18F59E0B")
+        }
+    }
+
+    // Canvas Text Boxes (Interactive Typed Notes & Code Snippets)
+    val textBoxes = mutableListOf<CanvasTextBox>()
+    var selectedTextBox: CanvasTextBox? = null
+
+    // Permanent Neon Glow Pen strokes & hardware baking cache
+    val neonStrokes = mutableSetOf<Stroke>()
+    val neonStrokePaths = mutableMapOf<Stroke, Path>()
+
+    private val neonOuterHaloPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+    }
+    private val neonMidGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+    }
+    private val neonInnerCorePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+    }
+
+    private var neonBakeBitmap: Bitmap? = null
+    private var neonBakeCanvas: Canvas? = null
+    private var isNeonBakeDirty = true
+
+    fun invalidateNeonBake() {
+        isNeonBakeDirty = true
+    }
+
+    fun tagNeonStroke(stroke: Stroke) {
+        neonStrokes.add(stroke)
+        neonStrokePaths[stroke] = buildPathFromStroke(stroke)
+        invalidateNeonBake()
+        invalidate()
+    }
+
+    fun isNeonStroke(stroke: Stroke): Boolean {
+        return stroke in neonStrokes
+    }
+
+    fun buildPathFromStroke(stroke: Stroke): Path {
+        val path = Path()
+        val inputs = stroke.inputs
+        val count = inputs.size
+        if (count == 0) return path
+        val temp = androidx.ink.strokes.StrokeInput()
+        inputs.populate(0, temp)
+        path.moveTo(temp.x, temp.y)
+        if (count == 1) {
+            path.lineTo(temp.x + 0.1f, temp.y + 0.1f)
+            return path
+        }
+        var prevX = temp.x
+        var prevY = temp.y
+        for (i in 1 until count) {
+            inputs.populate(i, temp)
+            val midX = (prevX + temp.x) * 0.5f
+            val midY = (prevY + temp.y) * 0.5f
+            path.quadTo(prevX, prevY, midX, midY)
+            prevX = temp.x
+            prevY = temp.y
+        }
+        path.lineTo(prevX, prevY)
+        return path
+    }
+
+    private fun computeInnerCoreColor(color: Int): Int {
+        val r = (color ushr 16) and 0xFF
+        val g = (color ushr 8) and 0xFF
+        val b = color and 0xFF
+        val coreR = (255 * 0.85f + r * 0.15f).toInt().coerceIn(0, 255)
+        val coreG = (255 * 0.85f + g * 0.15f).toInt().coerceIn(0, 255)
+        val coreB = (255 * 0.85f + b * 0.15f).toInt().coerceIn(0, 255)
+        return (0xFF shl 24) or (coreR shl 16) or (coreG shl 8) or coreB
+    }
+
+    fun drawNeonStroke(canvas: Canvas, stroke: Stroke) {
+        val path = neonStrokePaths[stroke] ?: buildPathFromStroke(stroke).also { neonStrokePaths[stroke] = it }
+        val color = stroke.brush.colorIntArgb
+        val coreColor = computeInnerCoreColor(color)
+        val density = resources.displayMetrics.density
+        val mult = (stroke.brush.size / 6.0f).coerceIn(0.6f, 2.5f)
+
+        // Outer Halo Pass (16dp base, 22% alpha)
+        neonOuterHaloPaint.strokeWidth = 16f * density * mult
+        val haloAlpha = (255 * 0.22f).toInt()
+        neonOuterHaloPaint.color = (color and 0x00FFFFFF) or (haloAlpha shl 24)
+        canvas.drawPath(path, neonOuterHaloPaint)
+
+        // Mid Glow Pass (10dp base, 45% alpha)
+        neonMidGlowPaint.strokeWidth = 10f * density * mult
+        val midAlpha = (255 * 0.45f).toInt()
+        neonMidGlowPaint.color = (color and 0x00FFFFFF) or (midAlpha shl 24)
+        canvas.drawPath(path, neonMidGlowPaint)
+
+        // Inner Core Pass (3.5dp base, 95% alpha, bright white blend)
+        neonInnerCorePaint.strokeWidth = 3.5f * density * mult
+        val coreAlpha = (255 * 0.95f).toInt()
+        neonInnerCorePaint.color = (coreColor and 0x00FFFFFF) or (coreAlpha shl 24)
+        canvas.drawPath(path, neonInnerCorePaint)
+    }
+
+    private val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
+    private val textBoxBgPaint = Paint().apply { style = Paint.Style.FILL }
+    private val textBoxBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.5f }
+    private val textBoxSelectBorderPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 3f
+            color = Color.parseColor("#F59E0B")
+            pathEffect = DashPathEffect(floatArrayOf(12f, 8f), 0f)
+        }
+    }
+    private val textBoxHandlePaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = Color.WHITE
+        }
+    }
+    private val textBoxHandleBorderPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 2.5f
+            color = Color.parseColor("#F59E0B")
         }
     }
 
@@ -262,19 +399,26 @@ class DryInkCanvasView @JvmOverloads constructor(
         if (isTransforming) {
             val selectedSet = lasso.selectedStrokesSet
 
-            // 1. Base Layer (Static): Unselected images & unselected strokes
+            // 1. Base Layer (Static): Unselected images, text boxes & unselected strokes
             drawImages(canvas)
+            drawTextBoxes(canvas)
 
             for (i in 0 until strokes.size) {
                 val stroke = strokes[i]
-                if (stroke !in selectedSet && isHighlighterStroke(stroke)) {
+                if (stroke !in selectedSet && !isNeonStroke(stroke) && isHighlighterStroke(stroke)) {
                     strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
                 }
             }
             for (i in 0 until strokes.size) {
                 val stroke = strokes[i]
-                if (stroke !in selectedSet && !isHighlighterStroke(stroke)) {
+                if (stroke !in selectedSet && !isNeonStroke(stroke) && !isHighlighterStroke(stroke)) {
                     strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
+                }
+            }
+            for (i in 0 until strokes.size) {
+                val stroke = strokes[i]
+                if (stroke !in selectedSet && isNeonStroke(stroke)) {
+                    drawNeonStroke(canvas, stroke)
                 }
             }
 
@@ -284,14 +428,20 @@ class DryInkCanvasView @JvmOverloads constructor(
 
             for (i in 0 until lasso.selectedStrokes.size) {
                 val stroke = lasso.selectedStrokes[i]
-                if (isHighlighterStroke(stroke)) {
+                if (!isNeonStroke(stroke) && isHighlighterStroke(stroke)) {
                     strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
                 }
             }
             for (i in 0 until lasso.selectedStrokes.size) {
                 val stroke = lasso.selectedStrokes[i]
-                if (!isHighlighterStroke(stroke)) {
+                if (!isNeonStroke(stroke) && !isHighlighterStroke(stroke)) {
                     strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
+                }
+            }
+            for (i in 0 until lasso.selectedStrokes.size) {
+                val stroke = lasso.selectedStrokes[i]
+                if (isNeonStroke(stroke)) {
+                    drawNeonStroke(canvas, stroke)
                 }
             }
             canvas.restore()
@@ -299,19 +449,26 @@ class DryInkCanvasView @JvmOverloads constructor(
             // 3. Selection Box & Handles in world space
             lasso.draw(canvas)
         } else {
-            // Standard render: all images then all strokes
+            // Standard render: all images, text boxes then all strokes
             drawImages(canvas)
+            drawTextBoxes(canvas)
 
             for (i in 0 until strokes.size) {
                 val stroke = strokes[i]
-                if (isHighlighterStroke(stroke)) {
+                if (!isNeonStroke(stroke) && isHighlighterStroke(stroke)) {
                     strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
                 }
             }
             for (i in 0 until strokes.size) {
                 val stroke = strokes[i]
-                if (!isHighlighterStroke(stroke)) {
+                if (!isNeonStroke(stroke) && !isHighlighterStroke(stroke)) {
                     strokeRenderer.draw(canvas, getStrokeForTheme(stroke), identityMatrix)
+                }
+            }
+            for (i in 0 until strokes.size) {
+                val stroke = strokes[i]
+                if (isNeonStroke(stroke)) {
+                    drawNeonStroke(canvas, stroke)
                 }
             }
 
@@ -441,6 +598,111 @@ class DryInkCanvasView @JvmOverloads constructor(
         return removed
     }
 
+    fun setTextBoxes(newBoxes: List<CanvasTextBox>) {
+        textBoxes.clear()
+        textBoxes.addAll(newBoxes)
+        invalidate()
+    }
+
+    fun addTextBox(box: CanvasTextBox) {
+        textBoxes.add(box)
+        invalidate()
+    }
+
+    fun removeTextBox(boxId: String): Boolean {
+        val removed = textBoxes.removeAll { it.id == boxId }
+        if (removed) invalidate()
+        return removed
+    }
+
+    fun findTextBoxAt(worldX: Float, worldY: Float): CanvasTextBox? {
+        for (i in textBoxes.indices.reversed()) {
+            val b = textBoxes[i]
+            if (b.contains(worldX, worldY)) {
+                return b
+            }
+        }
+        return null
+    }
+
+    private fun drawTextBoxes(canvas: Canvas) {
+        if (textBoxes.isEmpty()) return
+        val pad = 12f
+
+        for (i in 0 until textBoxes.size) {
+            val box = textBoxes[i]
+            canvas.save()
+            if (box.rotation != 0f) {
+                canvas.rotate(box.rotation, box.x + box.width / 2f, box.y + box.height / 2f)
+            }
+
+            // Fill background
+            if (box.isFilled) {
+                textBoxBgPaint.color = box.fillColorArgb
+                canvas.drawRoundRect(box.x, box.y, box.x + box.width, box.y + box.height, 10f, 10f, textBoxBgPaint)
+            }
+
+            // Border
+            if (box.isBordered) {
+                textBoxBorderPaint.color = box.borderColorArgb
+                canvas.drawRoundRect(box.x, box.y, box.x + box.width, box.y + box.height, 10f, 10f, textBoxBorderPaint)
+            }
+
+            // Text
+            textPaint.color = box.textColorArgb
+            textPaint.textSize = box.fontSizeSp * 2.2f
+            val baseTf = when (box.fontStyle) {
+                FontStyleType.MONOSPACE -> Typeface.MONOSPACE
+                FontStyleType.SERIF -> Typeface.SERIF
+                else -> Typeface.SANS_SERIF
+            }
+            val style = when {
+                box.isBold && box.isItalic -> Typeface.BOLD_ITALIC
+                box.isBold -> Typeface.BOLD
+                box.isItalic -> Typeface.ITALIC
+                else -> Typeface.NORMAL
+            }
+            textPaint.typeface = Typeface.create(baseTf, style)
+            textPaint.isUnderlineText = box.isUnderline
+
+            val innerW = maxOf(20, (box.width - 2 * pad).toInt())
+            val displayText = if (box.text.isEmpty() && selectedTextBox == box) "Type here..." else box.text
+            if (displayText.isNotEmpty()) {
+                val sl = StaticLayout.Builder.obtain(displayText, 0, displayText.length, textPaint, innerW)
+                    .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                    .setLineSpacing(0f, 1.15f)
+                    .setIncludePad(true)
+                    .build()
+
+                val neededH = sl.height + 2 * pad
+                if (neededH > box.height) {
+                    box.height = neededH
+                }
+
+                canvas.save()
+                canvas.translate(box.x + pad, box.y + pad)
+                sl.draw(canvas)
+                canvas.restore()
+            }
+
+            // Selected outline & corner handles
+            if (selectedTextBox == box) {
+                canvas.drawRoundRect(box.x, box.y, box.x + box.width, box.y + box.height, 10f, 10f, textBoxSelectBorderPaint)
+                val hr = 12f
+                fun drawHandle(hx: Float, hy: Float) {
+                    canvas.drawCircle(hx, hy, hr, textBoxHandlePaint)
+                    canvas.drawCircle(hx, hy, hr, textBoxHandleBorderPaint)
+                }
+                drawHandle(box.x, box.y)
+                drawHandle(box.x + box.width, box.y)
+                drawHandle(box.x, box.y + box.height)
+                drawHandle(box.x + box.width, box.y + box.height)
+            }
+
+            canvas.restore()
+        }
+    }
+
     private fun isHighlighterStroke(stroke: Stroke): Boolean {
         if (stroke.brush.family == StockBrushes.highlighter()) return true
         val familyId = stroke.brush.family.clientBrushFamilyId
@@ -468,11 +730,18 @@ class DryInkCanvasView @JvmOverloads constructor(
         }
     }
 
-    fun loadStrokes(newStrokes: List<Stroke>) {
+    fun loadStrokes(newStrokes: List<Stroke>, neonStrokesList: Collection<Stroke> = emptyList()) {
         strokes.clear()
         darkStrokeCache.clear()
         lightStrokeCache.clear()
+        neonStrokes.clear()
+        neonStrokePaths.clear()
+        invalidateNeonBake()
         strokes.addAll(newStrokes)
+        for (s in neonStrokesList) {
+            neonStrokes.add(s)
+            neonStrokePaths[s] = buildPathFromStroke(s)
+        }
         spatialIndex.rebuild(strokes)
         invalidate()
     }
@@ -632,8 +901,11 @@ class DryInkCanvasView @JvmOverloads constructor(
         lightStrokeCache.clear()
         for (s in strokesToRemove) {
             strokes.remove(s)
+            neonStrokes.remove(s)
+            neonStrokePaths.remove(s)
             spatialIndex.remove(s)
         }
+        invalidateNeonBake()
         invalidate()
     }
 
@@ -642,6 +914,9 @@ class DryInkCanvasView @JvmOverloads constructor(
         spatialIndex.clear()
         darkStrokeCache.clear()
         lightStrokeCache.clear()
+        neonStrokes.clear()
+        neonStrokePaths.clear()
+        invalidateNeonBake()
         invalidate()
     }
 }

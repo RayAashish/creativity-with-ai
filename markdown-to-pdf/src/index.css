@@ -136,15 +136,38 @@ h1, h2, h3, h4, .font-heading {
 }
 
 /* Document Paper Simulation */
+.paper-canvas-viewport {
+  position: relative;
+  margin: 12px auto 36px auto;
+  flex-shrink: 0;
+  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1), height 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.paper-preview-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  transform-origin: top left;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .paper-preview-sheet {
   background-color: #ffffff;
   color: #111827;
+  width: 100%;
+  max-width: 100%;
   min-height: 1050px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.2);
   border-radius: 4px;
   padding: 48px;
-  margin: 0 auto 60px auto;
+  margin: 0;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 [data-theme="beige"] .paper-preview-sheet {

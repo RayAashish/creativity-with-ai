@@ -121,4 +121,88 @@ class ShapeAndLassoTest {
         lasso.finishTransform()
         assertFalse(lasso.isTransformGestureActive)
     }
+
+    @Test
+    fun testSquareRecognitionNotTriangle() {
+        val points = mutableListOf<ShapeRecognizer.Point>()
+        // Draw a 200x200 square starting from corner
+        for (i in 0..10) points.add(ShapeRecognizer.Point(100f + i * 20f, 100f))
+        for (i in 0..10) points.add(ShapeRecognizer.Point(300f, 100f + i * 20f))
+        for (i in 0..10) points.add(ShapeRecognizer.Point(300f - i * 20f, 300f))
+        for (i in 0..10) points.add(ShapeRecognizer.Point(100f, 300f - i * 20f))
+
+        val result = recognizer.recognize(points)
+        assertNotNull("Expected shape to be recognized", result)
+        assertTrue("Square must NEVER be classified as Triangle! Got: $result", result is RecognizedShape.Square || result is RecognizedShape.Rectangle)
+        assertFalse("Square must not be triangle", result is RecognizedShape.Triangle)
+    }
+
+    @Test
+    fun testTriangleRecognition() {
+        val points = mutableListOf<ShapeRecognizer.Point>()
+        // Draw equilateral triangle: (200, 100) -> (300, 300) -> (100, 300) -> (200, 100)
+        for (i in 0..10) points.add(ShapeRecognizer.Point(200f + i * 10f, 100f + i * 20f))
+        for (i in 0..10) points.add(ShapeRecognizer.Point(300f - i * 20f, 300f))
+        for (i in 0..10) points.add(ShapeRecognizer.Point(100f + i * 10f, 300f - i * 20f))
+
+        val result = recognizer.recognize(points)
+        assertNotNull("Expected triangle to be recognized", result)
+        assertTrue("Expected Triangle, got $result", result is RecognizedShape.Triangle)
+    }
+
+    @Test
+    fun testStarRecognition() {
+        val points = mutableListOf<ShapeRecognizer.Point>()
+        val cx = 200f
+        val cy = 200f
+        val outerR = 100f
+        val innerR = 40f
+        for (i in 0 until 10) {
+            val r = if (i % 2 == 0) outerR else innerR
+            val a = (i * PI / 5.0 - PI / 2.0).toFloat()
+            // Add interpolation between vertices
+            val nextR = if ((i + 1) % 2 == 0) outerR else innerR
+            val nextA = ((i + 1) * PI / 5.0 - PI / 2.0).toFloat()
+            for (s in 0..3) {
+                val t = s / 4f
+                val curR = r + (nextR - r) * t
+                val curA = a + (nextA - a) * t
+                points.add(ShapeRecognizer.Point(cx + curR * cos(curA), cy + curR * sin(curA)))
+            }
+        }
+
+        val result = recognizer.recognize(points)
+        assertNotNull("Expected star to be recognized", result)
+        assertTrue("Expected Star, got $result", result is RecognizedShape.Star)
+        val star = result as RecognizedShape.Star
+        assertEquals(5, star.points)
+    }
+
+    @Test
+    fun testPolylineSpeechBubbleRecognition() {
+        val points = mutableListOf<ShapeRecognizer.Point>()
+        // Callout bubble with pointer: box with 6 corners
+        val corners = listOf(
+            Pair(100f, 100f),
+            Pair(300f, 100f),
+            Pair(300f, 250f),
+            Pair(200f, 250f),
+            Pair(180f, 300f), // pointer tail
+            Pair(160f, 250f),
+            Pair(100f, 250f),
+            Pair(100f, 100f)
+        )
+        for (c in 0 until corners.size - 1) {
+            val c1 = corners[c]
+            val c2 = corners[c + 1]
+            for (s in 0..6) {
+                val t = s / 7f
+                points.add(ShapeRecognizer.Point(c1.first + (c2.first - c1.first) * t, c1.second + (c2.second - c1.second) * t))
+            }
+        }
+
+        val result = recognizer.recognize(points)
+        assertNotNull("Expected callout polyline to be recognized", result)
+        assertTrue("Expected Polyline, got $result", result is RecognizedShape.Polyline)
+    }
 }

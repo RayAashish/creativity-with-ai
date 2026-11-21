@@ -2,6 +2,7 @@ package com.antigravity.note.document.storage
 
 import androidx.ink.strokes.Stroke
 import com.antigravity.note.document.model.DocumentPage
+import com.antigravity.note.document.model.StrokeStyle
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.DataInputStream
@@ -24,7 +25,11 @@ class PageWal(private val walFile: File) {
     }
 
     @Synchronized
-    fun appendAddStroke(stroke: Stroke, strokeId: String = UUID.randomUUID().toString()) {
+    fun appendAddStroke(
+        stroke: Stroke,
+        strokeId: String = UUID.randomUUID().toString(),
+        style: StrokeStyle = StrokeStyle.STANDARD
+    ) {
         val appendHeader = !walFile.exists() || walFile.length() == 0L
         FileOutputStream(walFile, true).use { fos ->
             BufferedOutputStream(fos).use { bos ->
@@ -34,7 +39,7 @@ class PageWal(private val walFile: File) {
                 }
                 dataOut.writeByte(OP_ADD_STROKE.toInt())
                 dataOut.writeLong(System.currentTimeMillis())
-                PageSerializer.serializeSingleStroke(stroke, dataOut, strokeId)
+                PageSerializer.serializeSingleStroke(stroke, dataOut, strokeId, style)
                 dataOut.flush()
             }
         }
@@ -97,8 +102,8 @@ class PageWal(private val walFile: File) {
 
                         when (opCode) {
                             OP_ADD_STROKE -> {
-                                val (strokeId, stroke) = PageSerializer.deserializeSingleStroke(dataIn, isV3)
-                                val added = page.addStroke(stroke, strokeId)
+                                val (strokeId, stroke, style) = PageSerializer.deserializeSingleStroke(dataIn, isV3)
+                                val added = page.addStroke(stroke, strokeId, style)
                                 if (added) {
                                     replayedAny = true
                                 }

@@ -2,7 +2,9 @@ package com.antigravity.note.ui.settings
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.antigravity.note.inkengine.canvas.BarrelButtonAction
 import com.antigravity.note.inkengine.canvas.CanvasTool
+import com.antigravity.note.inkengine.canvas.StationaryLongPressAction
 import com.antigravity.note.inkengine.eraser.EraserMode
 import com.antigravity.note.inkengine.palm.InputMode
 
@@ -68,7 +70,7 @@ class AppSettings(context: Context) {
         set(value) = prefs.edit().putFloat("pen_width", value).apply()
 
     var markerColorArgb: Int
-        get() = prefs.getInt("marker_color_argb", 0xFF005AC1.toInt())
+        get() = prefs.getInt("marker_color_argb", 0xFFF59E0B.toInt())
         set(value) = prefs.edit().putInt("marker_color_argb", value).apply()
 
     var markerWidth: Float
@@ -140,4 +142,69 @@ class AppSettings(context: Context) {
     var lastViewportZoomScale: Float
         get() = prefs.getFloat("last_viewport_zoom_scale", 1.0f)
         set(value) = prefs.edit().putFloat("last_viewport_zoom_scale", value).apply()
+
+    // --- Stylus & Hardware Settings ---
+    var stationaryLongPressAction: StationaryLongPressAction
+        get() {
+            val name = prefs.getString("stationary_long_press_action", StationaryLongPressAction.ERASER.name)
+            return try {
+                StationaryLongPressAction.valueOf(name ?: StationaryLongPressAction.ERASER.name)
+            } catch (e: Exception) {
+                StationaryLongPressAction.ERASER
+            }
+        }
+        set(value) = prefs.edit().putString("stationary_long_press_action", value.name).apply()
+
+    var barrelButtonAction: BarrelButtonAction
+        get() {
+            val name = prefs.getString("barrel_button_action", BarrelButtonAction.ERASER.name)
+            return try {
+                BarrelButtonAction.valueOf(name ?: BarrelButtonAction.ERASER.name)
+            } catch (e: Exception) {
+                BarrelButtonAction.ERASER
+            }
+        }
+        set(value) = prefs.edit().putString("barrel_button_action", value.name).apply()
+
+    var holdToSnapDelayMs: Long
+        get() = prefs.getLong("hold_to_snap_delay_ms", 400L)
+        set(value) = prefs.edit().putLong("hold_to_snap_delay_ms", value.coerceIn(250L, 700L)).apply()
+
+    var isHoldToSnapEnabled: Boolean
+        get() = prefs.getBoolean("is_hold_to_snap_enabled", true)
+        set(value) = prefs.edit().putBoolean("is_hold_to_snap_enabled", value).apply()
+
+    // --- User Profile & Study Goals ---
+    var userName: String
+        get() = prefs.getString("user_name", "Aashish K. Ray") ?: "Aashish K. Ray"
+        set(value) = prefs.edit().putString("user_name", value).apply()
+
+    var userBio: String
+        get() = prefs.getString("user_bio", "DSA & System Design Prep") ?: "DSA & System Design Prep"
+        set(value) = prefs.edit().putString("user_bio", value).apply()
+
+    var userGoal: String
+        get() = prefs.getString("user_goal", "3 LeetCode Problems / Day") ?: "3 LeetCode Problems / Day"
+        set(value) = prefs.edit().putString("user_goal", value).apply()
+
+    var userAvatarInitials: String
+        get() = prefs.getString("user_avatar_initials", "AR") ?: "AR"
+        set(value) = prefs.edit().putString("user_avatar_initials", value).apply()
+
+    var defaultPaperTemplate: String
+        get() = prefs.getString("default_paper_template", "GRID") ?: "GRID"
+        set(value) = prefs.edit().putString("default_paper_template", value).apply()
+
+    var defaultStrokeWidth: Float
+        get() = prefs.getFloat("default_stroke_width", 4f)
+        set(value) = prefs.edit().putFloat("default_stroke_width", value).apply()
+
+    // --- Persistent Sidebar Collapse/Expand State ---
+    var collapsedFolderIds: Set<String>
+        get() = prefs.getStringSet("collapsed_folder_ids", emptySet()) ?: emptySet()
+        set(value) = prefs.edit().putStringSet("collapsed_folder_ids", value).apply()
+
+    var collapsedNotebookIds: Set<String>
+        get() = prefs.getStringSet("collapsed_notebook_ids", emptySet()) ?: emptySet()
+        set(value) = prefs.edit().putStringSet("collapsed_notebook_ids", value).apply()
 }

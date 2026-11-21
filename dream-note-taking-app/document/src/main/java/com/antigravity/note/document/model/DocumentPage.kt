@@ -3,12 +3,52 @@ package com.antigravity.note.document.model
 import androidx.ink.strokes.Stroke
 import java.util.UUID
 
+enum class StrokeStyle {
+    STANDARD,
+    NEON_GLOW
+}
+
 data class DocumentPage(
     var metadata: PageMetadata,
     val strokes: MutableList<Stroke> = mutableListOf(),
     val strokeIds: MutableList<String> = mutableListOf(),
-    val images: MutableList<CanvasImage> = mutableListOf()
+    val strokeStyles: MutableMap<String, StrokeStyle> = mutableMapOf(),
+    val images: MutableList<CanvasImage> = mutableListOf(),
+    val textBoxes: MutableList<CanvasTextBox> = mutableListOf()
 ) {
+    fun setStrokeStyle(strokeId: String, style: StrokeStyle) {
+        if (style == StrokeStyle.STANDARD) {
+            strokeStyles.remove(strokeId)
+        } else {
+            strokeStyles[strokeId] = style
+        }
+    }
+
+    fun getStrokeStyle(strokeId: String): StrokeStyle {
+        return strokeStyles[strokeId] ?: StrokeStyle.STANDARD
+    }
+
+    fun isNeonGlowStroke(strokeId: String): Boolean {
+        return strokeStyles[strokeId] == StrokeStyle.NEON_GLOW
+    }
+    fun addTextBox(textBox: CanvasTextBox) {
+        textBoxes.add(textBox)
+        metadata = metadata.copy(modifiedAt = System.currentTimeMillis())
+    }
+
+    fun removeTextBox(textBoxId: String): Boolean {
+        val removed = textBoxes.removeAll { it.id == textBoxId }
+        if (removed) {
+            metadata = metadata.copy(modifiedAt = System.currentTimeMillis())
+        }
+        return removed
+    }
+
+    fun clearAllTextBoxes() {
+        textBoxes.clear()
+        metadata = metadata.copy(modifiedAt = System.currentTimeMillis())
+    }
+
     fun addImage(image: CanvasImage) {
         images.add(image)
         metadata = metadata.copy(modifiedAt = System.currentTimeMillis())
@@ -26,12 +66,15 @@ data class DocumentPage(
         images.clear()
         metadata = metadata.copy(modifiedAt = System.currentTimeMillis())
     }
-    fun addStroke(stroke: Stroke, id: String = UUID.randomUUID().toString()): Boolean {
+    fun addStroke(stroke: Stroke, id: String = UUID.randomUUID().toString(), style: StrokeStyle = StrokeStyle.STANDARD): Boolean {
         if (strokeIds.contains(id)) {
             return false // Deduplicate by unique stroke ID
         }
         strokes.add(stroke)
         strokeIds.add(id)
+        if (style != StrokeStyle.STANDARD) {
+            strokeStyles[id] = style
+        }
         metadata = metadata.copy(
             strokeCount = strokes.size,
             modifiedAt = System.currentTimeMillis()
@@ -63,7 +106,9 @@ data class DocumentPage(
         for (idx in toRemoveIndices) {
             strokes.removeAt(idx)
             if (idx < strokeIds.size) {
-                removedIds.add(strokeIds.removeAt(idx))
+                val remId = strokeIds.removeAt(idx)
+                strokeStyles.remove(remId)
+                removedIds.add(remId)
             }
         }
         metadata = metadata.copy(
@@ -78,6 +123,7 @@ data class DocumentPage(
         if (idx >= 0) {
             strokes.removeAt(idx)
             strokeIds.removeAt(idx)
+            strokeStyles.remove(id)
             metadata = metadata.copy(
                 strokeCount = strokes.size,
                 modifiedAt = System.currentTimeMillis()
@@ -90,6 +136,7 @@ data class DocumentPage(
     fun clearAllStrokes() {
         strokes.clear()
         strokeIds.clear()
+        strokeStyles.clear()
         metadata = metadata.copy(
             strokeCount = 0,
             modifiedAt = System.currentTimeMillis()

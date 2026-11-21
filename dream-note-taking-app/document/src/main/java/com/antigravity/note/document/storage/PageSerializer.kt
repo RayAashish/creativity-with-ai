@@ -12,6 +12,7 @@ import androidx.ink.strokes.StrokeInput
 import com.antigravity.note.document.model.DocumentPage
 import com.antigravity.note.document.model.PageMetadata
 import com.antigravity.note.document.model.PaperTemplate
+import com.antigravity.note.document.model.StrokeStyle
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
@@ -27,11 +28,12 @@ class CorruptedPageException(message: String, cause: Throwable? = null) : Runtim
 object PageSerializer {
 
     const val MAGIC_HEADER = 0x494E4B31 // "INK1"
-    const val FORMAT_VERSION = 3
+    const val FORMAT_VERSION = 4
 
     const val BRUSH_FAMILY_PRESSURE_PEN: Byte = 0
     const val BRUSH_FAMILY_HIGHLIGHTER: Byte = 1
     const val BRUSH_FAMILY_MARKER: Byte = 2
+    const val BRUSH_FAMILY_NEON_GLOW: Byte = 3
 
     private const val ENCODING_NATIVE_INK_PROTO: Byte = 0
     private const val ENCODING_RAW_INPUT_STREAM: Byte = 1
@@ -68,9 +70,10 @@ object PageSerializer {
             dataOut.writeUTF(strokeId)
 
             val brush = stroke.brush
-            val familyId = when (brush.family) {
-                StockBrushes.highlighter() -> BRUSH_FAMILY_HIGHLIGHTER
-                StockBrushes.marker() -> BRUSH_FAMILY_MARKER
+            val familyId = when {
+                page.isNeonGlowStroke(strokeId) -> BRUSH_FAMILY_NEON_GLOW
+                brush.family == StockBrushes.highlighter() -> BRUSH_FAMILY_HIGHLIGHTER
+                brush.family == StockBrushes.marker() -> BRUSH_FAMILY_MARKER
                 else -> BRUSH_FAMILY_PRESSURE_PEN
             }
             dataOut.writeByte(familyId.toInt())
@@ -111,6 +114,18 @@ object PageSerializer {
             dataOut.writeByte(encodingType.toInt())
             dataOut.writeInt(encodedBytes.size)
             dataOut.write(encodedBytes)
+        }
+
+        // 4. Images
+        dataOut.writeInt(page.images.size)
+        for (img in page.images) {
+            dataOut.writeUTF(img.toJsonString())
+        }
+
+        // 5. Text Boxes
+        dataOut.writeInt(page.textBoxes.size)
+        for (tb in page.textBoxes) {
+            dataOut.writeUTF(tb.toJsonString())
         }
         dataOut.flush()
 
@@ -222,6 +237,7 @@ object PageSerializer {
         val strokeCount = dataIn.readInt()
         val strokes = ArrayList<Stroke>(strokeCount)
         val strokeIds = ArrayList<String>(strokeCount)
+        val strokeStyles = HashMap<String, StrokeStyle>()
         val seenIds = HashSet<String>()
 
         for (i in 0 until strokeCount) {
@@ -230,10 +246,12 @@ object PageSerializer {
             val colorArgb: Int
             val size: Float
             val epsilon: Float
+            var isNeonGlow = false
 
             if (version >= 3) {
                 strokeId = dataIn.readUTF()
                 val familyId = dataIn.readByte()
+                isNeonGlow = (familyId == BRUSH_FAMILY_NEON_GLOW)
                 brushFamily = when (familyId) {
                     BRUSH_FAMILY_HIGHLIGHTER -> StockBrushes.highlighter()
                     BRUSH_FAMILY_MARKER -> StockBrushes.marker()
@@ -278,6 +296,9 @@ object PageSerializer {
                 continue
             }
             seenIds.add(resolvedStrokeId)
+            if (isNeonGlow) {
+                strokeStyles[resolvedStrokeId] = StrokeStyle.NEON_GLOW
+            }
 
             val inputs: ImmutableStrokeInputBatch = if (encodingType == ENCODING_NATIVE_INK_PROTO) {
                 try {
@@ -311,10 +332,36 @@ object PageSerializer {
             strokeIds.add(resolvedStrokeId)
         }
 
+        val images = mutableListOf<com.antigravity.note.document.model.CanvasImage>()
+        val textBoxes = mutableListOf<com.antigravity.note.document.model.CanvasTextBox>()
+        if (version >= 4 && dataIn.available() > 0) {
+            try {
+                val imgCount = dataIn.readInt()
+                for (i in 0 until imgCount) {
+                    val json = dataIn.readUTF()
+                    val img = com.antigravity.note.document.model.CanvasImage.fromJson(json)
+                    if (img != null) images.add(img)
+                }
+                if (dataIn.available() > 0) {
+                    val tbCount = dataIn.readInt()
+                    for (i in 0 until tbCount) {
+                        val json = dataIn.readUTF()
+                        val tb = com.antigravity.note.document.model.CanvasTextBox.fromJson(json)
+                        if (tb != null) textBoxes.add(tb)
+                    }
+                }
+            } catch (e: Exception) {
+                // Forward compatibility safeguard
+            }
+        }
+
         return DocumentPage(
             metadata = metadata.copy(strokeCount = strokes.size),
             strokes = strokes,
-            strokeIds = strokeIds
+            strokeIds = strokeIds,
+            strokeStyles = strokeStyles,
+            images = images,
+            textBoxes = textBoxes
         )
     }
 
@@ -328,13 +375,19 @@ object PageSerializer {
         return h.toString(16)
     }
 
-    fun serializeSingleStroke(stroke: Stroke, outputStream: OutputStream, strokeId: String = UUID.randomUUID().toString()) {
+    fun serializeSingleStroke(
+        stroke: Stroke,
+        outputStream: OutputStream,
+        strokeId: String = UUID.randomUUID().toString(),
+        style: StrokeStyle = StrokeStyle.STANDARD
+    ) {
         val dataOut = DataOutputStream(outputStream)
         dataOut.writeUTF(strokeId)
         val brush = stroke.brush
-        val familyId = when (brush.family) {
-            StockBrushes.highlighter() -> BRUSH_FAMILY_HIGHLIGHTER
-            StockBrushes.marker() -> BRUSH_FAMILY_MARKER
+        val familyId = when {
+            style == StrokeStyle.NEON_GLOW -> BRUSH_FAMILY_NEON_GLOW
+            brush.family == StockBrushes.highlighter() -> BRUSH_FAMILY_HIGHLIGHTER
+            brush.family == StockBrushes.marker() -> BRUSH_FAMILY_MARKER
             else -> BRUSH_FAMILY_PRESSURE_PEN
         }
         dataOut.writeByte(familyId.toInt())
@@ -377,17 +430,19 @@ object PageSerializer {
         dataOut.flush()
     }
 
-    fun deserializeSingleStroke(inputStream: InputStream, isV3: Boolean = true): Pair<String, Stroke> {
+    fun deserializeSingleStroke(inputStream: InputStream, isV3: Boolean = true): DeserializedStroke {
         val dataIn = DataInputStream(inputStream)
         val strokeId: String
         val brushFamily: BrushFamily
         val colorArgb: Int
         val size: Float
         val epsilon: Float
+        var isNeonGlow = false
 
         if (isV3) {
             strokeId = dataIn.readUTF()
             val familyId = dataIn.readByte()
+            isNeonGlow = (familyId == BRUSH_FAMILY_NEON_GLOW)
             brushFamily = when (familyId) {
                 BRUSH_FAMILY_HIGHLIGHTER -> StockBrushes.highlighter()
                 BRUSH_FAMILY_MARKER -> StockBrushes.marker()
@@ -437,6 +492,13 @@ object PageSerializer {
         }
 
         val brush = Brush.createWithColorIntArgb(brushFamily, colorArgb, size, epsilon)
-        return Pair(strokeId, Stroke(brush, inputs))
+        val style = if (isNeonGlow) StrokeStyle.NEON_GLOW else StrokeStyle.STANDARD
+        return DeserializedStroke(strokeId, Stroke(brush, inputs), style)
     }
 }
+
+data class DeserializedStroke(
+    val strokeId: String,
+    val stroke: Stroke,
+    val style: StrokeStyle = StrokeStyle.STANDARD
+)

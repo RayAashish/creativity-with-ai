@@ -4,6 +4,7 @@ import androidx.ink.strokes.Stroke
 import com.antigravity.note.document.model.DocumentPage
 import com.antigravity.note.document.model.PageMetadata
 import com.antigravity.note.document.model.PaperTemplate
+import com.antigravity.note.document.model.StrokeStyle
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -209,11 +210,17 @@ class PageRepository(
         }
     }
 
-    fun appendStrokeAsync(notebookId: String, pageId: String, stroke: Stroke, strokeId: String = java.util.UUID.randomUUID().toString()) {
+    fun appendStrokeAsync(
+        notebookId: String,
+        pageId: String,
+        stroke: Stroke,
+        strokeId: String = java.util.UUID.randomUUID().toString(),
+        style: StrokeStyle = StrokeStyle.STANDARD
+    ) {
         repositoryScope.launch {
             fileMutex.withLock {
                 val wal = PageWal(getWalFile(notebookId, pageId))
-                wal.appendAddStroke(stroke, strokeId)
+                wal.appendAddStroke(stroke, strokeId, style)
             }
         }
     }

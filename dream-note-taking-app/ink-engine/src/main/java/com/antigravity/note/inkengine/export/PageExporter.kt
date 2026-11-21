@@ -260,11 +260,15 @@ object PageExporter {
             var entry: ZipEntry? = zipIn.nextEntry
             while (entry != null) {
                 val name = entry.name
-                if (name == "manifest.json") {
+                if (name.endsWith("manifest.json")) {
                     val baos = ByteArrayOutputStream()
                     zipIn.copyTo(baos)
-                    manifest = InkflowManifest.fromJsonString(baos.toString("UTF-8"))
-                } else if (name.startsWith("pages/") && name.endsWith(".inkpage")) {
+                    try {
+                        manifest = InkflowManifest.fromJsonString(baos.toString("UTF-8"))
+                    } catch (e: Exception) {
+                        android.util.Log.w("PageExporter", "Failed to parse manifest.json", e)
+                    }
+                } else if (name.endsWith(".inkpage")) {
                     val baos = ByteArrayOutputStream()
                     zipIn.copyTo(baos)
                     pageByteMap[name] = baos.toByteArray()
@@ -273,18 +277,58 @@ object PageExporter {
                 entry = zipIn.nextEntry
             }
 
-            if (manifest == null) {
-                throw IllegalStateException("Invalid .inkflow archive: manifest.json missing")
+            if (manifest != null && manifest.pages.isNotEmpty()) {
+                // Deserialize pages in the manifest order
+                for (pageEntry in manifest.pages) {
+                    val bytes = pageByteMap["pages/${pageEntry.pageId}.inkpage"]
+                        ?: pageByteMap.entries.firstOrNull { it.key.endsWith("${pageEntry.pageId}.inkpage") }?.value
+                    if (bytes != null) {
+                        try {
+                            val page = PageSerializer.deserialize(ByteArrayInputStream(bytes))
+                            pages.add(page)
+                        } catch (e: Exception) {
+                            android.util.Log.e("PageExporter", "Failed to deserialize page ${pageEntry.pageId}", e)
+                        }
+                    }
+                }
             }
 
-            // Deserialize pages in the manifest order
-            for (pageEntry in manifest.pages) {
-                val path = "pages/${pageEntry.pageId}.inkpage"
-                val bytes = pageByteMap[path]
-                if (bytes != null) {
-                    val page = PageSerializer.deserialize(ByteArrayInputStream(bytes))
-                    pages.add(page)
+            // Fallback: If no pages loaded or manifest was missing, deserialize all .inkpage entries found!
+            if (pages.isEmpty() && pageByteMap.isNotEmpty()) {
+                for ((_, bytes) in pageByteMap) {
+                    try {
+                        val page = PageSerializer.deserialize(ByteArrayInputStream(bytes))
+                        pages.add(page)
+                    } catch (e: Exception) {
+                        android.util.Log.e("PageExporter", "Failed to deserialize fallback inkpage", e)
+                    }
                 }
+            }
+
+            if (manifest == null) {
+                val now = System.currentTimeMillis()
+                manifest = InkflowManifest(
+                    version = 1,
+                    appName = "InkFlow",
+                    notebookId = pages.firstOrNull()?.metadata?.notebookId ?: java.util.UUID.randomUUID().toString(),
+                    notebookTitle = pages.firstOrNull()?.metadata?.title?.takeIf { it.isNotBlank() } ?: "Imported Note",
+                    createdAt = pages.firstOrNull()?.metadata?.createdAt ?: now,
+                    exportedAt = now,
+                    pageCount = pages.size,
+                    pages = pages.map {
+                        InkflowPageEntry(
+                            pageId = it.metadata.pageId,
+                            title = it.metadata.title,
+                            pageIndex = it.metadata.pageIndex,
+                            template = it.metadata.template.name,
+                            strokeCount = it.strokes.size
+                        )
+                    }
+                )
+            }
+
+            if (pages.isEmpty()) {
+                throw IllegalStateException("No valid note pages found in this archive.")
             }
 
             return Pair(manifest, pages)

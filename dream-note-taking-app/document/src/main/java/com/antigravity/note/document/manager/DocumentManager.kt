@@ -4,6 +4,7 @@ import androidx.ink.strokes.Stroke
 import com.antigravity.note.document.model.DocumentPage
 import com.antigravity.note.document.model.PageMetadata
 import com.antigravity.note.document.model.PaperTemplate
+import com.antigravity.note.document.model.StrokeStyle
 import com.antigravity.note.document.storage.PageRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -71,11 +72,15 @@ class DocumentManager(
         }
     }
 
-    fun onStrokeCommitted(stroke: Stroke, strokeId: String = java.util.UUID.randomUUID().toString()) {
+    fun onStrokeCommitted(
+        stroke: Stroke,
+        strokeId: String = java.util.UUID.randomUUID().toString(),
+        style: StrokeStyle = StrokeStyle.STANDARD
+    ) {
         val page = _currentPage.value ?: return
-        val added = page.addStroke(stroke, strokeId)
+        val added = page.addStroke(stroke, strokeId, style)
         if (added) {
-            repository.appendStrokeAsync(page.metadata.notebookId, page.metadata.pageId, stroke, strokeId)
+            repository.appendStrokeAsync(page.metadata.notebookId, page.metadata.pageId, stroke, strokeId, style)
         }
     }
 

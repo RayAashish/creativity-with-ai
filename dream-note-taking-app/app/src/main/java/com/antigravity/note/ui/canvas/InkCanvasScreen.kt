@@ -124,12 +124,21 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelectAll
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.TouchApp
 import android.widget.Toast
+import com.antigravity.note.document.model.CanvasTextBox
+import com.antigravity.note.document.model.FontStyleType
+import androidx.compose.material.icons.filled.CropSquare
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.style.TextDecoration
 import com.antigravity.note.ui.library.EditProblemDialog
 import com.antigravity.note.ui.library.ReviewTodayDialog
+import com.antigravity.note.ui.settings.SettingsDialog
 import com.antigravity.note.ui.shapes.ShapesDialog
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -179,8 +188,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.antigravity.note.document.manager.DocumentManager
 import com.antigravity.note.document.model.PaperTemplate
 import com.antigravity.note.document.storage.PageRepository
+import com.antigravity.note.document.model.StrokeStyle
 import com.antigravity.note.inkengine.canvas.CanvasTool
+import com.antigravity.note.inkengine.canvas.GlowPenPersistenceMode
 import com.antigravity.note.inkengine.canvas.InkCanvasView
+import com.antigravity.note.inkengine.laser.LaserDecayType
+import com.antigravity.note.inkengine.laser.LaserMode
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Slider
 import com.antigravity.note.inkengine.palm.InputMode
 import com.antigravity.note.library.backup.worker.BackupWorker
 import com.antigravity.note.ui.backup.GoogleDriveBackupDialog
@@ -334,10 +353,19 @@ fun InkCanvasScreen(
     var highlighterColor by remember { mutableStateOf(Color(appSettings.highlighterColorArgb.toLong() and 0xFFFFFFFFL)) }
     var highlighterWidth by remember { mutableFloatStateOf(appSettings.highlighterWidth) }
 
+    var isLaserPopoverOpen by remember { mutableStateOf(false) }
+    var glowPenMode by remember { mutableStateOf(GlowPenPersistenceMode.TEMPORARY) }
+    var laserMode by remember { mutableStateOf(LaserMode.TRAIL) }
+    var laserDecayType by remember { mutableStateOf(LaserDecayType.FADE_ON_LIFT) }
+    var laserFadeDurationMs by remember { mutableStateOf(1200L) }
+    var activeNeonColor by remember { mutableStateOf(Color(0xFFFF2A55)) }
+    var laserThickness by remember { mutableStateOf("Medium") }
+
     val selectedColor = when (selectedTool) {
         CanvasTool.PRESSURE_PEN -> penColor
         CanvasTool.MARKER -> markerColor
         CanvasTool.HIGHLIGHTER -> highlighterColor
+        CanvasTool.GLOW_PEN -> activeNeonColor
         else -> penColor
     }
     var customRed by remember { mutableFloatStateOf(penColor.red * 255f) }
@@ -371,6 +399,10 @@ fun InkCanvasScreen(
                 highlighterColor = color
                 appSettings.highlighterColorArgb = intColor
             }
+            CanvasTool.GLOW_PEN -> {
+                activeNeonColor = color
+                canvasView.laserOverlay.neonColor = intColor
+            }
             else -> {
                 penColor = color
                 appSettings.penColorArgb = intColor
@@ -382,6 +414,11 @@ fun InkCanvasScreen(
         CanvasTool.PRESSURE_PEN -> penWidth
         CanvasTool.MARKER -> markerWidth
         CanvasTool.HIGHLIGHTER -> highlighterWidth
+        CanvasTool.GLOW_PEN -> when (laserThickness) {
+            "Thin" -> 3.5f
+            "Thick" -> 9.0f
+            else -> 6.0f
+        }
         else -> penWidth
     }
 
@@ -420,8 +457,28 @@ fun InkCanvasScreen(
                 )
                 canvasView.setInkColor(c)
             }
+            CanvasTool.GLOW_PEN -> {
+                val mult = when (laserThickness) {
+                    "Thin" -> 0.7f
+                    "Thick" -> 1.5f
+                    else -> 1.0f
+                }
+                canvasView.glowPenMode = glowPenMode
+                canvasView.setLaserThicknessMultiplier(mult)
+                canvasView.setInkWidth(6.0f * mult)
+                canvasView.setInkColor(activeNeonColor.toArgb())
+            }
             CanvasTool.SHAPE -> {
                 canvasView.setInkWidth(penWidth.coerceAtLeast(3.5f))
+                val c = AndroidColor.argb(
+                    (penColor.alpha * 255).toInt(),
+                    (penColor.red * 255).toInt(),
+                    (penColor.green * 255).toInt(),
+                    (penColor.blue * 255).toInt()
+                )
+                canvasView.setInkColor(c)
+            }
+            CanvasTool.TEXT -> {
                 val c = AndroidColor.argb(
                     (penColor.alpha * 255).toInt(),
                     (penColor.red * 255).toInt(),
@@ -445,8 +502,14 @@ fun InkCanvasScreen(
     var lassoHasClipboard by remember { mutableStateOf(false) }
     var isShapeSnapOn by remember { mutableStateOf(true) }
     var isShapesDialogOpen by remember { mutableStateOf(false) }
+    var is1to1AspectLocked by remember { mutableStateOf(false) }
     var isPdfLoaded by remember { mutableStateOf(false) }
     var currentPdfPage by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+
+    // Text Box & Settings Modal State
+    var selectedCanvasTextBox by remember { mutableStateOf<CanvasTextBox?>(null) }
+    var editingTextBox by remember { mutableStateOf<CanvasTextBox?>(null) }
+    var isSettingsDialogOpen by remember { mutableStateOf(false) }
 
     // Page Management & Edit State
     var isEditProblemOpen by remember { mutableStateOf(false) }
@@ -500,6 +563,11 @@ fun InkCanvasScreen(
     var lassoToolbarOffset by remember { mutableStateOf<Offset?>(null) }
     var lassoCardWidthPx by remember { mutableFloatStateOf(0f) }
     var lassoCardHeightPx by remember { mutableFloatStateOf(0f) }
+
+    // Draggable Text Box Toolbar State
+    var textBoxToolbarOffset by remember { mutableStateOf<Offset?>(null) }
+    var textBoxCardWidthPx by remember { mutableFloatStateOf(0f) }
+    var textBoxCardHeightPx by remember { mutableFloatStateOf(0f) }
 
     // Image Selection & Transformation State
     var selectedCanvasImage by remember { mutableStateOf<com.antigravity.note.document.model.CanvasImage?>(null) }
@@ -717,6 +785,44 @@ fun InkCanvasScreen(
         }
     }
 
+    LaunchedEffect(selectedCanvasTextBox) {
+        if (selectedCanvasTextBox != null) {
+            val screenBounds = canvasView.getTextBoxScreenBounds(selectedCanvasTextBox)
+            val screenW = context.resources.displayMetrics.widthPixels.toFloat()
+            val screenH = context.resources.displayMetrics.heightPixels.toFloat()
+            val density = context.resources.displayMetrics.density
+            val toolbarW = if (textBoxCardWidthPx > 50f) textBoxCardWidthPx else 480f * density
+            val toolbarH = if (textBoxCardHeightPx > 20f) textBoxCardHeightPx else 56f * density
+            val margin = 16f * density
+            val minX = margin
+            val maxX = (screenW - toolbarW - margin).coerceAtLeast(minX)
+            val minY = 90f * density
+            val maxY = (screenH - toolbarH - 80f * density).coerceAtLeast(minY)
+
+            if (screenBounds != null) {
+                val targetX = (screenBounds.centerX() - toolbarW / 2f).coerceIn(minX, maxX)
+                var targetY = screenBounds.top - toolbarH - 12f * density
+                if (targetY < minY) {
+                    targetY = screenBounds.bottom + 12f * density
+                }
+                if (targetY > maxY) {
+                    targetY = (screenBounds.top - toolbarH - 8f * density).coerceIn(minY, maxY)
+                }
+                textBoxToolbarOffset = Offset(
+                    targetX.coerceIn(minX, maxX),
+                    targetY.coerceIn(minY, maxY)
+                )
+            } else {
+                textBoxToolbarOffset = Offset(
+                    ((screenW - toolbarW) / 2f).coerceIn(minX, maxX),
+                    (screenH * 0.45f).coerceIn(minY, maxY)
+                )
+            }
+        } else {
+            textBoxToolbarOffset = null
+        }
+    }
+
     LaunchedEffect(Unit) {
         canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
             inputMode = appSettings.inputMode,
@@ -907,6 +1013,23 @@ fun InkCanvasScreen(
                 audioRecorder.recordStrokeTiming(docManager.currentPage.value?.strokes?.size ?: 0)
             }
         }
+        canvasView.onStrokeCommittedWithStyle = { stroke, style ->
+            val curPage = docManager.currentPage.value
+            val strokeId = java.util.UUID.randomUUID().toString()
+            if (curPage != null) {
+                strokeJournalCompactor.recordStroke(
+                    curPage.metadata.notebookId,
+                    curPage.metadata.pageId,
+                    stroke,
+                    strokeId
+                )
+            }
+            docManager.onStrokeCommitted(stroke, strokeId, style)
+            scheduleSettledIdleGoogleDriveBackup()
+            if (isRecordingAudio) {
+                audioRecorder.recordStrokeTiming(docManager.currentPage.value?.strokes?.size ?: 0)
+            }
+        }
         canvasView.onImageDropped = { uri, worldX, worldY ->
             scope.launch {
                 val curPage = docManager.currentPage.value ?: return@launch
@@ -960,8 +1083,47 @@ fun InkCanvasScreen(
             }
             scheduleSettledIdleGoogleDriveBackup()
         }
+        canvasView.holdToSnapDelayMs = appSettings.holdToSnapDelayMs
+        canvasView.holdToSnapEnabled = appSettings.isHoldToSnapEnabled
+        canvasView.stationaryLongPressAction = appSettings.stationaryLongPressAction
+        canvasView.barrelButtonAction = appSettings.barrelButtonAction
+
+        canvasView.onTextBoxSelectionChanged = { box ->
+            selectedCanvasTextBox = box
+        }
+        canvasView.onTextBoxChanged = { box ->
+            val curPage = docManager.currentPage.value
+            if (curPage != null) {
+                val idx = curPage.textBoxes.indexOfFirst { it.id == box.id }
+                if (idx >= 0) {
+                    curPage.textBoxes[idx] = box
+                } else {
+                    curPage.addTextBox(box)
+                }
+                scope.launch {
+                    pageRepo.savePageAtomic(curPage)
+                    database.notebookDao().setNotebookDirty(curPage.metadata.notebookId, true)
+                }
+            }
+        }
+        canvasView.onTextBoxRemoved = { box ->
+            val curPage = docManager.currentPage.value
+            if (curPage != null) {
+                curPage.removeTextBox(box.id)
+                scope.launch {
+                    pageRepo.savePageAtomic(curPage)
+                    database.notebookDao().setNotebookDirty(curPage.metadata.notebookId, true)
+                }
+            }
+        }
+        canvasView.onRequestEditText = { box ->
+            editingTextBox = box
+        }
         canvasView.onLassoSelectionChanged = { selected ->
             hasLassoSelection = selected
+        }
+        canvasView.onShapePlacementFinished = {
+            switchToTool(CanvasTool.PRESSURE_PEN)
         }
         canvasView.onImageSelectionChanged = { img ->
             selectedCanvasImage = img
@@ -1593,6 +1755,427 @@ fun InkCanvasScreen(
                             onClick = { switchToTool(CanvasTool.LASSO) }
                         )
                         ToolIconButton(
+                            icon = Icons.Default.TextFields,
+                            label = "Text",
+                            isSelected = selectedTool == CanvasTool.TEXT,
+                            onClick = { switchToTool(CanvasTool.TEXT) }
+                        )
+
+                        // Glowing Neon Pen & Laser Pointer Tool
+                        Box {
+                            val isGlowSelected = selectedTool == CanvasTool.GLOW_PEN
+                            ToolIconButton(
+                                icon = Icons.Default.AutoAwesome,
+                                label = if (isGlowSelected) {
+                                    if (glowPenMode == GlowPenPersistenceMode.TEMPORARY) "Laser ▾" else "Neon ▾"
+                                } else "Laser",
+                                isSelected = isGlowSelected,
+                                onClick = {
+                                    if (selectedTool == CanvasTool.GLOW_PEN) {
+                                        isLaserPopoverOpen = !isLaserPopoverOpen
+                                    } else {
+                                        switchToTool(CanvasTool.GLOW_PEN)
+                                        isLaserPopoverOpen = true
+                                    }
+                                },
+                                onLongClick = {
+                                    switchToTool(CanvasTool.GLOW_PEN)
+                                    isLaserPopoverOpen = true
+                                },
+                                badge = {
+                                    androidx.compose.foundation.Canvas(modifier = Modifier.size(24.dp)) {
+                                        val strokeW = 1.8.dp.toPx()
+                                        val isTemp = (glowPenMode == GlowPenPersistenceMode.TEMPORARY)
+                                        val ringColor = activeNeonColor.copy(alpha = 0.95f)
+                                        val style = if (isTemp) {
+                                            Stroke(
+                                                width = strokeW,
+                                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f), 0f)
+                                            )
+                                        } else {
+                                            Stroke(width = strokeW)
+                                        }
+                                        drawCircle(
+                                            color = ringColor,
+                                            radius = size.minDimension / 2f - strokeW / 2f,
+                                            style = style
+                                        )
+                                    }
+                                }
+                            )
+
+                            DropdownMenu(
+                                expanded = isLaserPopoverOpen,
+                                onDismissRequest = { isLaserPopoverOpen = false }
+                            ) {
+                                Column(modifier = Modifier.width(320.dp).padding(16.dp)) {
+                                    // Header
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.AutoAwesome,
+                                                contentDescription = null,
+                                                tint = activeNeonColor,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Text(
+                                                "Neon & Laser Tool",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 15.sp,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                        IconButton(
+                                            onClick = { isLaserPopoverOpen = false },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(Icons.Default.Close, contentDescription = "Close", modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    // 1. Primary Mode Switch: [ Temporary (Laser) | Permanent (Glow Pen) ]
+                                    Text(
+                                        "PERSISTENCE MODE",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                            .padding(3.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        val isTemp = glowPenMode == GlowPenPersistenceMode.TEMPORARY
+                                        Surface(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .clickable {
+                                                    glowPenMode = GlowPenPersistenceMode.TEMPORARY
+                                                    canvasView.glowPenMode = GlowPenPersistenceMode.TEMPORARY
+                                                },
+                                            color = if (isTemp) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(vertical = 8.dp),
+                                                horizontalArrangement = Arrangement.Center,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    "Temporary (Laser)",
+                                                    fontSize = 11.sp,
+                                                    fontWeight = if (isTemp) FontWeight.Bold else FontWeight.Medium,
+                                                    color = if (isTemp) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
+                                        }
+
+                                        Surface(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .clickable {
+                                                    glowPenMode = GlowPenPersistenceMode.PERMANENT
+                                                    canvasView.glowPenMode = GlowPenPersistenceMode.PERMANENT
+                                                },
+                                            color = if (!isTemp) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(vertical = 8.dp),
+                                                horizontalArrangement = Arrangement.Center,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    "Permanent (Glow)",
+                                                    fontSize = 11.sp,
+                                                    fontWeight = if (!isTemp) FontWeight.Bold else FontWeight.Medium,
+                                                    color = if (!isTemp) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    // 2. 5 Luminous Neon Swatches
+                                    Text(
+                                        "LUMINOUS NEON COLOR",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    val swatches = listOf(
+                                        Pair(Color(0xFFFF2A55), "Crimson"),
+                                        Pair(Color(0xFF00F0FF), "Cyan"),
+                                        Pair(Color(0xFFFFB800), "Gold"),
+                                        Pair(Color(0xFF00E676), "Emerald"),
+                                        Pair(Color(0xFFD500F9), "Violet")
+                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        swatches.forEach { (color, name) ->
+                                            val isSelected = activeNeonColor == color
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(38.dp)
+                                                    .clip(CircleShape)
+                                                    .background(color)
+                                                    .clickable {
+                                                        activeNeonColor = color
+                                                        canvasView.laserOverlay.neonColor = color.toArgb()
+                                                        canvasView.setInkColor(color.toArgb())
+                                                    }
+                                                    .border(
+                                                        width = if (isSelected) 3.dp else 1.dp,
+                                                        color = if (isSelected) Color.White else color.copy(alpha = 0.5f),
+                                                        shape = CircleShape
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                if (isSelected) {
+                                                    Icon(
+                                                        Icons.Default.Check,
+                                                        contentDescription = name,
+                                                        tint = if (color == Color(0xFFFFB800) || color == Color(0xFF00E676) || color == Color(0xFF00F0FF)) Color.Black else Color.White,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    // 3. Stroke Thickness Selector: Thin, Medium, Thick
+                                    Text(
+                                        "STROKE THICKNESS",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                            .padding(3.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        listOf("Thin" to 0.7f, "Medium" to 1.0f, "Thick" to 1.5f).forEach { (label, mult) ->
+                                            val isSel = laserThickness == label
+                                            Surface(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .clickable {
+                                                        laserThickness = label
+                                                        canvasView.setLaserThicknessMultiplier(mult)
+                                                        canvasView.setInkWidth(6.0f * mult)
+                                                    },
+                                                color = if (isSel) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(vertical = 6.dp),
+                                                    horizontalArrangement = Arrangement.Center,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        label,
+                                                        fontSize = 11.sp,
+                                                        fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                                        color = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // 4. Temporary-Only Controls (cleanly hidden when Permanent selected)
+                                    if (glowPenMode == GlowPenPersistenceMode.TEMPORARY) {
+                                        Spacer(modifier = Modifier.height(14.dp))
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        Text(
+                                            "LASER POINTER STYLE",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                                .padding(3.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            val isTrail = laserMode == LaserMode.TRAIL
+                                            Surface(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .clickable {
+                                                        laserMode = LaserMode.TRAIL
+                                                        canvasView.setLaserMode(LaserMode.TRAIL)
+                                                    },
+                                                color = if (isTrail) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(vertical = 6.dp),
+                                                    horizontalArrangement = Arrangement.Center,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        "Trail Mode",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = if (isTrail) FontWeight.Bold else FontWeight.Medium,
+                                                        color = if (isTrail) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
+                                            }
+                                            Surface(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .clickable {
+                                                        laserMode = LaserMode.DOT
+                                                        canvasView.setLaserMode(LaserMode.DOT)
+                                                    },
+                                                color = if (!isTrail) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(vertical = 6.dp),
+                                                    horizontalArrangement = Arrangement.Center,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        "Dot Mode",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = if (!isTrail) FontWeight.Bold else FontWeight.Medium,
+                                                        color = if (!isTrail) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        Text(
+                                            "DECAY TIMING",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                                .padding(3.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            val isLift = laserDecayType == LaserDecayType.FADE_ON_LIFT
+                                            Surface(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .clickable {
+                                                        laserDecayType = LaserDecayType.FADE_ON_LIFT
+                                                        canvasView.setLaserDecayType(LaserDecayType.FADE_ON_LIFT)
+                                                    },
+                                                color = if (isLift) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(vertical = 6.dp),
+                                                    horizontalArrangement = Arrangement.Center,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        "Fade on Lift",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = if (isLift) FontWeight.Bold else FontWeight.Medium,
+                                                        color = if (isLift) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
+                                            }
+                                            Surface(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .clickable {
+                                                        laserDecayType = LaserDecayType.CONTINUOUS_TRAIL
+                                                        canvasView.setLaserDecayType(LaserDecayType.CONTINUOUS_TRAIL)
+                                                    },
+                                                color = if (!isLift) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(vertical = 6.dp),
+                                                    horizontalArrangement = Arrangement.Center,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        "Continuous Trail",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = if (!isLift) FontWeight.Bold else FontWeight.Medium,
+                                                        color = if (!isLift) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text("Fade Duration", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                                            Text(
+                                                "%.1fs".format(laserFadeDurationMs.toFloat() / 1000f),
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = activeNeonColor
+                                            )
+                                        }
+                                        Slider(
+                                            value = laserFadeDurationMs.toFloat(),
+                                            onValueChange = {
+                                                laserFadeDurationMs = it.toLong()
+                                                canvasView.setLaserFadeDuration(it.toLong())
+                                            },
+                                            valueRange = 600f..2500f,
+                                            steps = 18,
+                                            colors = SliderDefaults.colors(
+                                                thumbColor = activeNeonColor,
+                                                activeTrackColor = activeNeonColor,
+                                                inactiveTrackColor = activeNeonColor.copy(alpha = 0.25f)
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        ToolIconButton(
                             icon = Icons.Default.Category,
                             label = if (selectedTool == CanvasTool.SHAPE) "Shapes ▾" else "Shapes",
                             isSelected = selectedTool == CanvasTool.SHAPE || isShapesDialogOpen,
@@ -1920,6 +2503,30 @@ fun InkCanvasScreen(
                             )
                         }
 
+                        // 1:1 Aspect Ratio Lock Toggle (for Shapes)
+                        if (selectedTool == CanvasTool.SHAPE) {
+                            IconButton(
+                                onClick = {
+                                    val next = !canvasView.is1to1AspectLocked
+                                    canvasView.is1to1AspectLocked = next
+                                    is1to1AspectLocked = next
+                                    Toast.makeText(
+                                        context,
+                                        if (next) "1:1 Aspect Lock: ON (Square / Circle)" else "1:1 Aspect Lock: OFF (Free Stretch)",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                },
+                                modifier = Modifier.size(38.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AspectRatio,
+                                    contentDescription = "1:1 Aspect Lock",
+                                    tint = if (is1to1AspectLocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+
                         // Read-Only / Lock Note Toggle
                         IconButton(
                             onClick = {
@@ -1938,6 +2545,19 @@ fun InkCanvasScreen(
                                 imageVector = if (isNoteLocked) Icons.Default.Lock else Icons.Default.LockOpen,
                                 contentDescription = if (isNoteLocked) "Unlock Note" else "Lock Note (Read-Only)",
                                 tint = if (isNoteLocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+
+                        // Settings Hub Modal (User Profile, Stylus Calibration & Gesture Hub)
+                        IconButton(
+                            onClick = { isSettingsDialogOpen = true },
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings Hub",
+                                tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
@@ -3161,6 +3781,9 @@ fun InkCanvasScreen(
                         libraryRepo.emptyTrash()
                         Toast.makeText(context, "Trash emptied", Toast.LENGTH_SHORT).show()
                     }
+                },
+                onOpenSettings = {
+                    isSettingsDialogOpen = true
                 }
             )
         }
@@ -3825,6 +4448,12 @@ fun InkCanvasScreen(
                     }
                 },
                 viewportCenter = canvasView.getViewportCenter(),
+                onSelectShapePlacement = { placementType ->
+                    canvasView.pendingPlacementShape = placementType
+                    switchToTool(CanvasTool.SHAPE)
+                    isShapesDialogOpen = false
+                    Toast.makeText(context, "Drag to stretch ${placementType.name.lowercase().replace('_', ' ')}", Toast.LENGTH_SHORT).show()
+                },
                 onInsertShape = { shape ->
                     canvasView.insertShape(shape)
                     isShapesDialogOpen = false
@@ -4121,6 +4750,376 @@ fun InkCanvasScreen(
                 )
             }
         }
+
+        // Floating Formatting Bar for Selected Canvas Text Box (Positioned above text box, draggable)
+        if (selectedCanvasTextBox != null && !isNoteLocked) {
+            val box = selectedCanvasTextBox!!
+            val currentOffset = textBoxToolbarOffset ?: Offset(60f, 180f)
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                modifier = Modifier
+                    .offset { IntOffset(currentOffset.x.roundToInt(), currentOffset.y.roundToInt()) }
+                    .onGloballyPositioned { coords ->
+                        val measuredW = coords.size.width.toFloat()
+                        val measuredH = coords.size.height.toFloat()
+                        textBoxCardWidthPx = measuredW
+                        textBoxCardHeightPx = measuredH
+                        textBoxToolbarOffset?.let { cur ->
+                            val screenW = context.resources.displayMetrics.widthPixels.toFloat()
+                            val screenH = context.resources.displayMetrics.heightPixels.toFloat()
+                            val density = context.resources.displayMetrics.density
+                            val margin = 16f * density
+                            val minX = margin
+                            val maxX = (screenW - measuredW - margin).coerceAtLeast(minX)
+                            val minY = 100f * density
+                            val maxY = (screenH - measuredH - 90f * density).coerceAtLeast(minY)
+                            val clampedX = cur.x.coerceIn(minX, maxX)
+                            val clampedY = cur.y.coerceIn(minY, maxY)
+                            if (clampedX != cur.x || clampedY != cur.y) {
+                                textBoxToolbarOffset = Offset(clampedX, clampedY)
+                            }
+                        }
+                    }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    // Drag Handle
+                    Row(
+                        modifier = Modifier
+                            .pointerInput(Unit) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consume()
+                                    val cur = textBoxToolbarOffset ?: Offset(60f, 180f)
+                                    val screenW = context.resources.displayMetrics.widthPixels.toFloat()
+                                    val screenH = context.resources.displayMetrics.heightPixels.toFloat()
+                                    val density = context.resources.displayMetrics.density
+                                    val toolbarW = if (textBoxCardWidthPx > 50f) textBoxCardWidthPx else 480f * density
+                                    val toolbarH = if (textBoxCardHeightPx > 20f) textBoxCardHeightPx else 56f * density
+                                    val margin = 16f * density
+                                    val minX = margin
+                                    val maxX = (screenW - toolbarW - margin).coerceAtLeast(minX)
+                                    val minY = 90f * density
+                                    val maxY = (screenH - toolbarH - 80f * density).coerceAtLeast(minY)
+                                    val newX = (cur.x + dragAmount.x).coerceIn(minX, maxX)
+                                    val newY = (cur.y + dragAmount.y).coerceIn(minY, maxY)
+                                    textBoxToolbarOffset = Offset(newX, newY)
+                                }
+                            }
+                            .padding(end = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.DragHandle,
+                            contentDescription = "Drag Toolbar",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "Text",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    // Font Style buttons: Sans / Serif / Code
+                    FontStyleType.entries.forEach { style ->
+                        val isSelected = box.fontStyle == style
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                            modifier = Modifier
+                                .clickable {
+                                    box.fontStyle = style
+                                    canvasView.updateTextBox(box)
+                                    selectedCanvasTextBox = box.copy()
+                                }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = when (style) {
+                                    FontStyleType.SANS -> "Sans"
+                                    FontStyleType.SERIF -> "Serif"
+                                    FontStyleType.MONOSPACE -> "Code"
+                                },
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+
+                    Box(modifier = Modifier.width(1.dp).height(20.dp).background(MaterialTheme.colorScheme.outlineVariant))
+
+                    // Font Size: - / Size / +
+                    IconButton(
+                        onClick = {
+                            val nextSize = (box.fontSizeSp - 2f).coerceIn(12f, 48f)
+                            box.fontSizeSp = nextSize
+                            canvasView.updateTextBox(box)
+                            selectedCanvasTextBox = box.copy()
+                        },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Text("A-", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Text(
+                        text = "${box.fontSizeSp.toInt()}sp",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    IconButton(
+                        onClick = {
+                            val nextSize = (box.fontSizeSp + 2f).coerceIn(12f, 48f)
+                            box.fontSizeSp = nextSize
+                            canvasView.updateTextBox(box)
+                            selectedCanvasTextBox = box.copy()
+                        },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Text("A+", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Box(modifier = Modifier.width(1.dp).height(20.dp).background(MaterialTheme.colorScheme.outlineVariant))
+
+                    // Bold toggle
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (box.isBold) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                        modifier = Modifier
+                            .clickable {
+                                box.isBold = !box.isBold
+                                canvasView.updateTextBox(box)
+                                selectedCanvasTextBox = box.copy()
+                            }
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    ) {
+                        Text("B", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
+
+                    // Italic toggle
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (box.isItalic) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                        modifier = Modifier
+                            .clickable {
+                                box.isItalic = !box.isItalic
+                                canvasView.updateTextBox(box)
+                                selectedCanvasTextBox = box.copy()
+                            }
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    ) {
+                        Text("I", fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
+
+                    // Underline toggle
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (box.isUnderline) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                        modifier = Modifier
+                            .clickable {
+                                box.isUnderline = !box.isUnderline
+                                canvasView.updateTextBox(box)
+                                selectedCanvasTextBox = box.copy()
+                            }
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    ) {
+                        Text("U", textDecoration = TextDecoration.Underline, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
+
+                    Box(modifier = Modifier.width(1.dp).height(20.dp).background(MaterialTheme.colorScheme.outlineVariant))
+
+                    // Background Fill toggle
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (box.isFilled) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                        modifier = Modifier
+                            .clickable {
+                                box.isFilled = !box.isFilled
+                                if (box.isFilled && box.fillColorArgb == 0) {
+                                    box.fillColorArgb = (box.textColorArgb and 0x00FFFFFF) or 0x22000000
+                                }
+                                canvasView.updateTextBox(box)
+                                selectedCanvasTextBox = box.copy()
+                            }
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FormatPaint,
+                            contentDescription = "Fill",
+                            modifier = Modifier.size(18.dp),
+                            tint = if (box.isFilled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    // Border toggle
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (box.isBordered) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                        modifier = Modifier
+                            .clickable {
+                                box.isBordered = !box.isBordered
+                                canvasView.updateTextBox(box)
+                                selectedCanvasTextBox = box.copy()
+                            }
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CropSquare,
+                            contentDescription = "Border",
+                            modifier = Modifier.size(18.dp),
+                            tint = if (box.isBordered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    // Text Color sync with active palette button
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(CircleShape)
+                            .background(Color(box.textColorArgb))
+                            .border(1.5.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                            .clickable {
+                                val c = AndroidColor.argb(
+                                    (penColor.alpha * 255).toInt(),
+                                    (penColor.red * 255).toInt(),
+                                    (penColor.green * 255).toInt(),
+                                    (penColor.blue * 255).toInt()
+                                )
+                                box.textColorArgb = c
+                                canvasView.updateTextBox(box)
+                                selectedCanvasTextBox = box.copy()
+                            }
+                    )
+
+                    Box(modifier = Modifier.width(1.dp).height(20.dp).background(MaterialTheme.colorScheme.outlineVariant))
+
+                    // Edit Text action
+                    IconButton(
+                        onClick = { editingTextBox = box },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Text", modifier = Modifier.size(18.dp))
+                    }
+
+                    // Delete text box
+                    IconButton(
+                        onClick = { canvasView.removeSelectedTextBox() },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                    }
+
+                    // OK / Done Button (Commits text box, deselects, and returns to Pen tool!)
+                    IconButton(
+                        onClick = {
+                            canvasView.clearTextBoxSelection()
+                            switchToTool(CanvasTool.PRESSURE_PEN)
+                            selectedCanvasTextBox = null
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(Icons.Default.Check, contentDescription = "Done", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+        }
+
+        // Edit Text Dialog for Text Box
+        if (editingTextBox != null) {
+            val targetBox = editingTextBox!!
+            var textContent by remember(targetBox.id) { mutableStateOf(targetBox.text) }
+            val focusRequester = remember { FocusRequester() }
+
+            AlertDialog(
+                onDismissRequest = { editingTextBox = null },
+                title = { Text("Edit Text Box") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = textContent,
+                            onValueChange = { textContent = it },
+                            placeholder = { Text("Type notes or paste code snippet...") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(220.dp)
+                                .focusRequester(focusRequester),
+                            textStyle = androidx.compose.ui.text.TextStyle(
+                                fontFamily = when (targetBox.fontStyle) {
+                                    FontStyleType.MONOSPACE -> FontFamily.Monospace
+                                    FontStyleType.SERIF -> FontFamily.Serif
+                                    FontStyleType.SANS -> FontFamily.SansSerif
+                                },
+                                fontSize = 16.sp
+                            )
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            targetBox.text = textContent
+                            canvasView.updateTextBox(targetBox)
+                            selectedCanvasTextBox = targetBox.copy()
+                            editingTextBox = null
+                        }
+                    ) {
+                        Text("Done")
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = { editingTextBox = null }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+
+            LaunchedEffect(targetBox.id) {
+                focusRequester.requestFocus()
+            }
+        }
+
+        // Settings Hub Dialog
+        if (isSettingsDialogOpen) {
+            SettingsDialog(
+                appSettings = appSettings,
+                isDarkMode = currentDarkMode,
+                onToggleDarkMode = { next ->
+                    currentDarkMode = next
+                    appSettings.isDarkMode = next
+                    canvasView.setDarkMode(next)
+                    onToggleDarkMode?.invoke(next)
+                },
+                onOpenCloudBackup = {
+                    isSettingsDialogOpen = false
+                    isGoogleDriveDialogOpen = true
+                },
+                onOpenLocalBackup = {
+                    isSettingsDialogOpen = false
+                    isLocalBackupDialogOpen = true
+                },
+                onApplySettings = {
+                    canvasView.holdToSnapDelayMs = appSettings.holdToSnapDelayMs
+                    canvasView.holdToSnapEnabled = appSettings.isHoldToSnapEnabled
+                    canvasView.stationaryLongPressAction = appSettings.stationaryLongPressAction
+                    canvasView.barrelButtonAction = appSettings.barrelButtonAction
+                    canvasView.palmFilter.config = canvasView.palmFilter.config.copy(
+                        inputMode = appSettings.inputMode,
+                        isFingerEraserEnabled = appSettings.isFingerEraserEnabled,
+                        isEdgeRejectionEnabled = appSettings.isAccidentalTouchProtectionEnabled,
+                        debugOverlayEnabled = appSettings.isDebugOverlayEnabled
+                    )
+                    canvasView.invalidate()
+                },
+                onDismissRequest = { isSettingsDialogOpen = false }
+            )
+        }
     }
 }
 
@@ -4198,7 +5197,8 @@ private fun ToolIconButton(
     label: String,
     isSelected: Boolean,
     onClick: () -> Unit,
-    onLongClick: (() -> Unit)? = null
+    onLongClick: (() -> Unit)? = null,
+    badge: (@Composable () -> Unit)? = null
 ) {
     Surface(
         modifier = Modifier
@@ -4214,12 +5214,15 @@ private fun ToolIconButton(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(20.dp)
-            )
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp)
+                )
+                badge?.invoke()
+            }
             if (isSelected) {
                 Text(
                     text = label,

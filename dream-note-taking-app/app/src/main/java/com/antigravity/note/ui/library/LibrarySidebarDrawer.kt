@@ -45,13 +45,17 @@ import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import com.antigravity.note.ui.icon.IconCatalog
 import com.antigravity.note.ui.icon.IconPickerDialog
+import com.antigravity.note.ui.settings.AppSettings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -189,8 +193,12 @@ fun LibrarySidebarDrawer(
     onRestorePageFromTrash: (pageId: String) -> Unit = {},
     onDeletePagePermanently: (pageId: String) -> Unit = {},
     onEmptyTrash: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val appSettings = remember { AppSettings(context) }
+
     // Track expanded folders & notebooks
     val expandedFolders = remember { mutableStateMapOf<String, Boolean>() }
     val expandedNotebooks = remember { mutableStateMapOf<String, Boolean>() }
@@ -222,16 +230,18 @@ fun LibrarySidebarDrawer(
     // Trash dialog state
     var showTrashDialog by remember { mutableStateOf(false) }
 
-    // Default expand all
+    // Persistent expand/collapse state restoration
     remember(folders, notebooks) {
+        val collapsedFolders = appSettings.collapsedFolderIds
         folders.forEach { f ->
             if (!expandedFolders.containsKey(f.folderId)) {
-                expandedFolders[f.folderId] = true
+                expandedFolders[f.folderId] = !collapsedFolders.contains(f.folderId)
             }
         }
+        val collapsedNotebooks = appSettings.collapsedNotebookIds
         notebooks.forEach { nb ->
             if (!expandedNotebooks.containsKey(nb.notebookId)) {
-                expandedNotebooks[nb.notebookId] = true
+                expandedNotebooks[nb.notebookId] = !collapsedNotebooks.contains(nb.notebookId)
             }
         }
     }
@@ -262,9 +272,9 @@ fun LibrarySidebarDrawer(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.MenuBook,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        painter = painterResource(id = com.antigravity.note.R.drawable.ic_app_symbol),
+                        contentDescription = "InkFlow Logo",
+                        tint = Color.Unspecified,
                         modifier = Modifier.size(24.dp)
                     )
                     Text(
@@ -292,6 +302,9 @@ fun LibrarySidebarDrawer(
                             tint = Color(0xFF2E7D32),
                             modifier = Modifier.size(20.dp)
                         )
+                    }
+                    IconButton(onClick = onOpenSettings, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.size(20.dp))
                     }
                     IconButton(onClick = onCloseSidebar, modifier = Modifier.size(36.dp)) {
                         Icon(Icons.Default.Close, contentDescription = "Close Sidebar", modifier = Modifier.size(20.dp))
@@ -1421,6 +1434,8 @@ private fun FolderTreeItem(
     onMoveToTrash: (PageEntity) -> Unit,
     indentLevel: Int
 ) {
+    val context = LocalContext.current
+    val appSettings = remember { AppSettings(context) }
     val isExpanded = expandedFolders[folder.folderId] == true
     val subFolders = allFolders.filter { it.parentFolderId == folder.folderId }
     val childNotebooks = allNotebooks.filter { it.folderId == folder.folderId }
@@ -1433,7 +1448,13 @@ private fun FolderTreeItem(
                 .fillMaxWidth()
                 .padding(start = (indentLevel * 14).dp)
                 .clip(RoundedCornerShape(8.dp))
-                .clickable { expandedFolders[folder.folderId] = !isExpanded }
+                .clickable {
+                    val next = !isExpanded
+                    expandedFolders[folder.folderId] = next
+                    val currentSet = appSettings.collapsedFolderIds.toMutableSet()
+                    if (next) currentSet.remove(folder.folderId) else currentSet.add(folder.folderId)
+                    appSettings.collapsedFolderIds = currentSet
+                }
                 .padding(horizontal = 6.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -1635,6 +1656,8 @@ private fun NotebookTreeItem(
     onMoveToTrash: (PageEntity) -> Unit,
     indentLevel: Int
 ) {
+    val context = LocalContext.current
+    val appSettings = remember { AppSettings(context) }
     val isExpanded = expandedNotebooks[notebook.notebookId] == true
     val childPages = allPages.filter { it.notebookId == notebook.notebookId }.sortedBy { it.pageIndex }
     val brandTag = resolveBrandTag(notebook.title, notebook.iconKey, isFolder = false, isSubject = false)
@@ -1646,7 +1669,13 @@ private fun NotebookTreeItem(
                 .fillMaxWidth()
                 .padding(start = (indentLevel * 14).dp)
                 .clip(RoundedCornerShape(8.dp))
-                .clickable { expandedNotebooks[notebook.notebookId] = !isExpanded }
+                .clickable {
+                    val next = !isExpanded
+                    expandedNotebooks[notebook.notebookId] = next
+                    val currentSet = appSettings.collapsedNotebookIds.toMutableSet()
+                    if (next) currentSet.remove(notebook.notebookId) else currentSet.add(notebook.notebookId)
+                    appSettings.collapsedNotebookIds = currentSet
+                }
                 .padding(horizontal = 6.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)

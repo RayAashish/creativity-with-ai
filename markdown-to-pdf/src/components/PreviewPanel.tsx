@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   ZoomIn,
   ZoomOut,
@@ -55,36 +55,126 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   const [isFocusReader, setIsFocusReader] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
 
+  // Target paper dimensions based on format & orientation
+  const targetPaperWidth = settings.orientation === 'landscape' ? 1040 : 780;
+  const basePaperHeight = settings.orientation === 'landscape' ? 740 : 1050;
+
+  // Exact unscaled height of the rendered paper sheet (tracked via ResizeObserver)
+  const [measuredPaperHeight, setMeasuredPaperHeight] = useState<number>(basePaperHeight);
+  const paperHeightRef = useRef<number>(basePaperHeight);
+  paperHeightRef.current = measuredPaperHeight;
+
+  // DOM node references for GPU-accelerated direct transforms & measurements
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const paperContainerRef = useRef<HTMLDivElement>(null);
+  const paperSheetRef = useRef<HTMLDivElement>(null);
+  const zoomPillTextRef = useRef<HTMLSpanElement>(null);
+
   const [containerWidth, setContainerWidth] = useState(800);
 
-  // Pinch-to-zoom and gesture states
+  // Pinch-to-zoom high-performance gesture states & refs
   const [isPinching, setIsPinching] = useState(false);
+  const isPinchingRef = useRef(false);
   const [showZoomPill, setShowZoomPill] = useState(false);
   const zoomPillTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pinchStartDistRef = useRef<number>(0);
-  const pinchStartZoomRef = useRef<number>(100);
+  const pinchStartScaleRef = useRef<number>(1.0);
+  const currentScaleRef = useRef<number>(1.0);
+  const pendingScaleRef = useRef<number>(1.0);
+  const rafIdRef = useRef<number | null>(null);
   const lastTapRef = useRef<number>(0);
 
-  // Target paper dimensions
-  const targetPaperWidth = settings.orientation === 'landscape' ? 1040 : 780;
+  const wheelRafRef = useRef<number | null>(null);
+  const wheelDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Refs for zero-latency touch listeners without re-binding
+  // Refs for zero-latency listeners without re-binding
   const fitToWidthRef = useRef(fitToWidth);
   fitToWidthRef.current = fitToWidth;
-  const zoomRef = useRef(zoom);
-  zoomRef.current = zoom;
   const targetPaperWidthRef = useRef(targetPaperWidth);
   targetPaperWidthRef.current = targetPaperWidth;
   const containerWidthRef = useRef(containerWidth);
   containerWidthRef.current = containerWidth;
 
-  const triggerZoomPill = () => {
+  const triggerZoomPill = useCallback(() => {
     setShowZoomPill(true);
     if (zoomPillTimeoutRef.current) clearTimeout(zoomPillTimeoutRef.current);
-    zoomPillTimeoutRef.current = setTimeout(() => setShowZoomPill(false), 2200);
-  };
+    zoomPillTimeoutRef.current = setTimeout(() => setShowZoomPill(false), 2000);
+  }, []);
+
+  // Auto-fit document when switching between split view and full page mode (sidebar toggle)
+  useEffect(() => {
+    setFitToWidth(true);
+  }, [isSidebarCollapsed]);
+
+  // Compute effective scale when Fit To Width is active (e.g. tablet portrait/landscape)
+  const computedScale = useMemo(() => {
+    if (fitToWidth) {
+      const horizontalPadding = 48; // 24px each side
+      // In full page mode, comfortably scale to fill available width up to 1.25x
+      return Math.min(1.25, Math.max(0.30, (containerWidth - horizontalPadding) / targetPaperWidth));
+    }
+    return Math.min(2.5, Math.max(0.35, zoom / 100));
+  }, [fitToWidth, containerWidth, targetPaperWidth, zoom]);
+
+  // Synchronize CSS dimensions and transforms when not actively in a touch gesture
+  useEffect(() => {
+    if (isPinchingRef.current) return;
+    currentScaleRef.current = computedScale;
+
+    if (paperContainerRef.current) {
+      paperContainerRef.current.style.transform = `scale(${computedScale})`;
+    }
+    if (viewportRef.current) {
+      const sW = Math.ceil(targetPaperWidth * computedScale);
+      const sH = Math.ceil(measuredPaperHeight * computedScale);
+      viewportRef.current.style.width = `${sW}px`;
+      viewportRef.current.style.height = `${sH}px`;
+    }
+    if (zoomPillTextRef.current) {
+      zoomPillTextRef.current.textContent = `${Math.round(computedScale * 100)}%`;
+    }
+  }, [computedScale, measuredPaperHeight, targetPaperWidth]);
+
+  // Track the exact unscaled height of the paper sheet via ResizeObserver
+  useEffect(() => {
+    const sheetEl = paperSheetRef.current;
+    if (!sheetEl) return;
+
+    const updateMeasuredHeight = (height: number) => {
+      if (height > 50) {
+        setMeasuredPaperHeight(height);
+        paperHeightRef.current = height;
+
+        // Keep viewport matching the measured height immediately
+        if (viewportRef.current && !isPinchingRef.current) {
+          const currentScale = currentScaleRef.current;
+          viewportRef.current.style.height = `${Math.ceil(height * currentScale)}px`;
+        }
+      }
+    };
+
+    // Immediate synchronous measurement on mount/update
+    if (sheetEl.offsetHeight > 50) {
+      updateMeasuredHeight(sheetEl.offsetHeight);
+    }
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const borderBoxHeight = entry.borderBoxSize?.[0]?.blockSize;
+        const height = Math.ceil(
+          borderBoxHeight !== undefined
+            ? borderBoxHeight
+            : (sheetEl.offsetHeight || (entry.contentRect.height + 96))
+        );
+        updateMeasuredHeight(height);
+      }
+    });
+
+    resizeObserver.observe(sheetEl);
+    return () => resizeObserver.disconnect();
+  }, [html, settings]);
 
   // Keyboard shortcut: Escape exits focus reader mode
   useEffect(() => {
@@ -97,7 +187,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFocusReader]);
 
-  // Read container width via ResizeObserver
+  // Read scroll container width via ResizeObserver & attach touch gesture listeners
   useEffect(() => {
     const el = scrollAreaRef.current;
     if (!el) return;
@@ -119,23 +209,39 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           e.touches[0].clientY - e.touches[1].clientY
         );
         pinchStartDistRef.current = dist;
-        const currentEffective = fitToWidthRef.current
-          ? Math.min(1, Math.max(0.35, (containerWidthRef.current - 48) / targetPaperWidthRef.current))
-          : zoomRef.current / 100;
-        pinchStartZoomRef.current = Math.round(currentEffective * 100);
+        pinchStartScaleRef.current = currentScaleRef.current;
+        isPinchingRef.current = true;
         setIsPinching(true);
         triggerZoomPill();
+
+        // Disable CSS transitions during live touch interaction for 1:1 instantaneous tracking
+        if (paperContainerRef.current) {
+          paperContainerRef.current.style.transition = 'none';
+        }
+        if (viewportRef.current) {
+          viewportRef.current.style.transition = 'none';
+        }
       } else if (e.touches.length === 1) {
         // Quick double-tap to toggle between Auto Fit and 100%
         const now = Date.now();
         if (now - lastTapRef.current < 300) {
+          e.preventDefault();
+          lastTapRef.current = 0;
+
+          // Re-enable smooth transition for double-tap animation
+          if (paperContainerRef.current) {
+            paperContainerRef.current.style.transition = 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)';
+          }
+          if (viewportRef.current) {
+            viewportRef.current.style.transition = 'width 0.22s cubic-bezier(0.16, 1, 0.3, 1), height 0.22s cubic-bezier(0.16, 1, 0.3, 1)';
+          }
+
           setFitToWidth((prev) => {
             const next = !prev;
             if (!next) setZoom(100);
             return next;
           });
           triggerZoomPill();
-          lastTapRef.current = 0;
         } else {
           lastTapRef.current = now;
         }
@@ -150,17 +256,61 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           e.touches[0].clientY - e.touches[1].clientY
         );
         const factor = dist / pinchStartDistRef.current;
-        const newZoom = Math.min(260, Math.max(35, Math.round(pinchStartZoomRef.current * factor)));
-        setFitToWidth(false);
-        setZoom(newZoom);
+        const nextScale = Math.min(2.5, Math.max(0.35, pinchStartScaleRef.current * factor));
+        pendingScaleRef.current = nextScale;
         triggerZoomPill();
+
+        // 120 FPS Direct GPU compositing loop via requestAnimationFrame
+        if (rafIdRef.current === null) {
+          rafIdRef.current = requestAnimationFrame(() => {
+            rafIdRef.current = null;
+            const s = pendingScaleRef.current;
+            currentScaleRef.current = s;
+
+            // Direct transform without React re-render lag
+            if (paperContainerRef.current) {
+              paperContainerRef.current.style.transform = `scale(${s})`;
+            }
+            if (viewportRef.current) {
+              const sW = Math.ceil(targetPaperWidthRef.current * s);
+              const sH = Math.ceil(paperHeightRef.current * s);
+              viewportRef.current.style.width = `${sW}px`;
+              viewportRef.current.style.height = `${sH}px`;
+            }
+            if (zoomPillTextRef.current) {
+              zoomPillTextRef.current.textContent = `${Math.round(s * 100)}%`;
+            }
+          });
+        }
       }
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
-      if (e.touches.length < 2) {
+      if (e.touches.length < 2 && isPinchingRef.current) {
+        isPinchingRef.current = false;
         setIsPinching(false);
         pinchStartDistRef.current = 0;
+
+        if (rafIdRef.current !== null) {
+          cancelAnimationFrame(rafIdRef.current);
+          rafIdRef.current = null;
+        }
+
+        const finalScale = currentScaleRef.current;
+        const finalZoom = Math.round(finalScale * 100);
+
+        // Commit final gesture scale to React state
+        setFitToWidth(false);
+        setZoom(finalZoom);
+        triggerZoomPill();
+
+        // Restore transition for subsequent button taps
+        if (paperContainerRef.current) {
+          paperContainerRef.current.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+        }
+        if (viewportRef.current) {
+          viewportRef.current.style.transition = 'width 0.2s cubic-bezier(0.16, 1, 0.3, 1), height 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+        }
       }
     };
 
@@ -168,14 +318,48 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
     const handleWheel = (e: WheelEvent) => {
       if (e.ctrlKey) {
         e.preventDefault();
-        const delta = -e.deltaY * 0.8;
-        const currentEffectiveScale = fitToWidthRef.current
-          ? Math.min(1, Math.max(0.45, (containerWidthRef.current - 48) / targetPaperWidthRef.current))
-          : zoomRef.current / 100;
-        const baseZoom = Math.round(currentEffectiveScale * 100);
-        setFitToWidth(false);
-        setZoom(Math.min(260, Math.max(35, Math.round(baseZoom + delta))));
+        const delta = -e.deltaY * 0.005;
+        const nextScale = Math.min(2.5, Math.max(0.35, currentScaleRef.current * (1 + delta)));
+        pendingScaleRef.current = nextScale;
         triggerZoomPill();
+
+        if (paperContainerRef.current) paperContainerRef.current.style.transition = 'none';
+        if (viewportRef.current) viewportRef.current.style.transition = 'none';
+
+        if (wheelRafRef.current === null) {
+          wheelRafRef.current = requestAnimationFrame(() => {
+            wheelRafRef.current = null;
+            const s = pendingScaleRef.current;
+            currentScaleRef.current = s;
+
+            if (paperContainerRef.current) {
+              paperContainerRef.current.style.transform = `scale(${s})`;
+            }
+            if (viewportRef.current) {
+              const sW = Math.ceil(targetPaperWidthRef.current * s);
+              const sH = Math.ceil(paperHeightRef.current * s);
+              viewportRef.current.style.width = `${sW}px`;
+              viewportRef.current.style.height = `${sH}px`;
+            }
+            if (zoomPillTextRef.current) {
+              zoomPillTextRef.current.textContent = `${Math.round(s * 100)}%`;
+            }
+          });
+        }
+
+        if (wheelDebounceRef.current) clearTimeout(wheelDebounceRef.current);
+        wheelDebounceRef.current = setTimeout(() => {
+          const finalScale = currentScaleRef.current;
+          setFitToWidth(false);
+          setZoom(Math.round(finalScale * 100));
+
+          if (paperContainerRef.current) {
+            paperContainerRef.current.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+          }
+          if (viewportRef.current) {
+            viewportRef.current.style.transition = 'width 0.2s cubic-bezier(0.16, 1, 0.3, 1), height 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+          }
+        }, 150);
       }
     };
 
@@ -193,21 +377,14 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
       el.removeEventListener('touchcancel', handleTouchEnd);
       el.removeEventListener('wheel', handleWheel);
       if (zoomPillTimeoutRef.current) clearTimeout(zoomPillTimeoutRef.current);
+      if (wheelDebounceRef.current) clearTimeout(wheelDebounceRef.current);
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      if (wheelRafRef.current) cancelAnimationFrame(wheelRafRef.current);
     };
-  }, []);
+  }, [triggerZoomPill]);
 
-  // Compute effective scale when Fit To Width is active (Supports compact phones down to 320px)
-  const computedScale = fitToWidth
-    ? Math.min(1, Math.max(0.30, (containerWidth - 32) / targetPaperWidth))
-    : zoom / 100;
-
-  // Computed layout dimensions so scaled paper centers and scrolls with 100% precision
-  const basePaperHeight = settings.orientation === 'landscape' ? 740 : 1050;
-  const scaledWidth = Math.round(targetPaperWidth * computedScale);
-  const scaledHeight = Math.round(basePaperHeight * computedScale);
-
-  // Generate scoped CSS for live preview
-  const themeCss = generateThemeCss(settings);
+  // Memoize generated CSS so theme generation is never executed during zoom
+  const themeCss = useMemo(() => generateThemeCss(settings), [settings]);
 
   // Copy HTML to clipboard
   const handleCopyHtml = async () => {
@@ -228,7 +405,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   };
 
   // Unique scroll storage key per document to prevent cross-document scroll jumps
-  const scrollStorageKey = `markforge_scroll_${documentTitle.replace(/[^\w-]/g, '_')}`;
+  const scrollStorageKey = `codexpress_scroll_${documentTitle.replace(/[^\w-]/g, '_')}`;
 
   // Handle and save scroll position to localStorage + update reading progress
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -245,7 +422,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
     }
   };
 
-  // Restore scroll position on document mount and after re-renders
+  // Restore scroll position strictly clamped to document boundaries
   useEffect(() => {
     if (!html) return;
 
@@ -253,26 +430,28 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
       const el = scrollAreaRef.current;
       if (!el) return;
 
-      const savedTopStr = localStorage.getItem(scrollStorageKey);
+      const maxScroll = Math.max(0, el.scrollHeight - el.clientHeight);
+      const savedTopStr =
+        localStorage.getItem(scrollStorageKey) ||
+        localStorage.getItem(`markforge_scroll_${documentTitle.replace(/[^\w-]/g, '_')}`);
+
       if (savedTopStr !== null) {
         const savedTop = parseFloat(savedTopStr);
-        if (!isNaN(savedTop) && savedTop > 0 && savedTop <= el.scrollHeight) {
-          el.scrollTop = savedTop;
+        if (!isNaN(savedTop) && savedTop > 0) {
+          el.scrollTop = Math.min(savedTop, maxScroll);
           return;
         }
       }
-      // If no valid saved position for this document, ensure it's at top
+      // If no valid saved position for this document, ensure it starts at top
       el.scrollTop = 0;
     };
 
     const t1 = setTimeout(restoreScroll, 50);
     const t2 = setTimeout(restoreScroll, 200);
-    const t3 = setTimeout(restoreScroll, 500);
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
-      clearTimeout(t3);
     };
   }, [documentTitle, html, scrollStorageKey]);
 
@@ -366,7 +545,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           <button
             onClick={() => {
               setFitToWidth(false);
-              setZoom((z) => Math.max(40, z - 15));
+              setZoom((z) => Math.max(35, z - 15));
             }}
             title="Zoom out"
             className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition"
@@ -392,7 +571,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           <button
             onClick={() => {
               setFitToWidth(false);
-              setZoom((z) => Math.min(160, z + 15));
+              setZoom((z) => Math.min(250, z + 15));
             }}
             title="Zoom in"
             className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition"
@@ -444,33 +623,53 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
         id="markpdf-scroll-area"
         ref={scrollAreaRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-auto p-2 sm:p-6 lg:p-8 relative select-text"
-        style={{ touchAction: 'pan-x pan-y' }}
+        className="flex-1 overflow-auto p-3 sm:p-6 lg:p-8 relative select-text"
+        style={{
+          touchAction: 'pan-x pan-y',
+          overscrollBehavior: 'contain',
+          WebkitOverflowScrolling: 'touch'
+        }}
       >
         {/* Scoped CSS styling for preview document */}
         <style dangerouslySetInnerHTML={{ __html: themeCss }} />
 
-        {/* Paper Container Simulation (Dynamically scaled via Pinch or Auto Fit) */}
+        {/* 
+          Bounded Paper Viewport Box:
+          Exactly matches the visual scaled dimensions of the document (width and height).
+          Guarantees ZERO empty black void or ghost space below the document!
+        */}
         <div
+          ref={viewportRef}
+          className="paper-canvas-viewport"
           style={{
-            width: fitToWidth ? '100%' : `${scaledWidth}px`,
-            minHeight: `${scaledHeight}px`,
-            margin: '0 auto',
-            display: 'flex',
-            justifyContent: 'center'
+            width: `${Math.ceil(targetPaperWidth * computedScale)}px`,
+            height: `${Math.ceil(measuredPaperHeight * computedScale)}px`,
+            margin: '8px auto 32px auto',
+            position: 'relative',
+            flexShrink: 0
           }}
         >
+          {/* Hardware-accelerated scaled paper wrapper: absolute positioning decouples unscaled DOM from scroll area */}
           <div
             id="markpdf-paper-container"
-            className="paper-preview-wrapper transition-transform duration-75 origin-top"
+            ref={paperContainerRef}
+            className="paper-preview-wrapper"
             style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
               width: `${targetPaperWidth}px`,
               transform: `scale(${computedScale})`,
-              transformOrigin: 'top center',
-              margin: '0 auto'
+              transformOrigin: 'top left',
+              willChange: isPinching ? 'transform' : 'auto',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden'
             }}
           >
-            <div className={`paper-preview-sheet theme-${settings.theme}`}>
+            <div
+              ref={paperSheetRef}
+              className={`paper-preview-sheet theme-${settings.theme}`}
+            >
               {/* Document Header if enabled */}
               {settings.showHeader && (
                 <div className="border-b border-slate-200 pb-3 mb-6 flex items-center justify-between text-xs text-slate-500 font-mono">
@@ -545,14 +744,14 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
 
-            <span className="font-semibold min-w-[50px] text-center text-[var(--text-primary)]">
+            <span ref={zoomPillTextRef} className="font-semibold min-w-[50px] text-center text-[var(--text-primary)]">
               {Math.round(computedScale * 100)}%
             </span>
 
             <button
               onClick={() => {
                 setFitToWidth(false);
-                setZoom((z) => Math.min(260, z + 10));
+                setZoom((z) => Math.min(250, z + 10));
                 triggerZoomPill();
               }}
               className="p-1 hover:text-[var(--accent)] text-[var(--text-secondary)] transition"

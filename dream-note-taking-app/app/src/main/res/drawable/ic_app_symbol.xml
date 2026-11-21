@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Nib Left Wing (18k Molten Gold) -->
+    <path
+        android:pathData="M 54,22.78 L 53.16,24.05 C 51.89,27 46.41,40.5 39.66,48.94 C 36.28,53.16 32.48,55.69 28.69,56.95 C 29.95,64.55 35.02,77.63 42.19,85.22 L 52.31,79.31 L 52.31,57.38 C 50.2,56.53 48.94,54.42 48.94,51.89 C 48.94,49.36 50.63,47.25 53.16,46.62 L 53.16,22.78 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="28"
+                android:startY="22"
+                android:endX="54"
+                android:endY="86">
+                <item android:offset="0.0" android:color="#FFFFF1B8" />
+                <item android:offset="0.3" android:color="#FFFDE68A" />
+                <item android:offset="0.7" android:color="#FFF59E0B" />
+                <item android:offset="1.0" android:color="#FFB45309" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Nib Right Wing (Burnished Imperial Amber Shadow) -->
+    <path
+        android:pathData="M 54,22.78 L 54.84,24.05 C 56.11,27 61.59,40.5 68.34,48.94 C 71.72,53.16 75.52,55.69 79.31,56.95 C 78.05,64.55 72.98,77.63 65.81,85.22 L 55.69,79.31 L 55.69,57.38 C 57.8,56.53 59.06,54.42 59.06,51.89 C 59.06,49.36 57.38,47.25 54.84,46.62 L 54.84,22.78 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="54"
+                android:startY="22"
+                android:endX="80"
+                android:endY="86">
+                <item android:offset="0.0" android:color="#FFFDE68A" />
+                <item android:offset="0.5" android:color="#FFD97706" />
+                <item android:offset="1.0" android:color="#FF92400E" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Central Optical Breather Core (Luminous Gold Anchor) -->
+    <path
+        android:pathData="M 54,51.89m-2.11,0a2.11,2.11 0 1,1 4.22,0a2.11,2.11 0 1,1 -4.22,0"
+        android:fillColor="#FFFDE68A" />
+    <path
+        android:pathData="M 54,51.89m-1.05,0a1.05,1.05 0 1,1 2.1,0a1.05,1.05 0 1,1 -2.1,0"
+        android:fillColor="#FF0E0F13" />
+
+    <!-- Chamfered Base Collar (Stylus Anchor) -->
+    <path
+        android:pathData="M 45.56,84.38 L 62.44,84.38 L 60.33,88.59 L 47.67,88.59 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="45"
+                android:startY="84"
+                android:endX="63"
+                android:endY="89">
+                <item android:offset="0.0" android:color="#FFFDE68A" />
+                <item android:offset="1.0" android:color="#FFF59E0B" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:pathData="M 49.36,89.44 L 58.64,89.44 L 57.8,91.13 L 50.2,91.13 Z"
+        android:fillColor="#FFB45309" />
+</vector>

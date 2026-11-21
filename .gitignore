@@ -71,6 +71,8 @@ out/
 *.traineddata
 **/*.traineddata
 !**/app/src/main/assets/tessdata/*.traineddata
+*.apk
+**/*.apk
 
 # OS & IDE Files
 .DS_Store

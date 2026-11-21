@@ -236,21 +236,26 @@ export function generateThemeCss(settings: PdfSettings): string {
       font-family: ${fontFam};
       font-size: ${fontSizes.body};
       width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
       margin: 0 auto;
+      overflow-wrap: break-word;
       word-wrap: break-word;
+      word-break: break-word;
     }
 
     /* Typography */
-    .markpdf-doc h1 { font-size: ${fontSizes.h1}; margin-top: 0; margin-bottom: 16px; break-after: avoid-page; page-break-after: avoid; }
-    .markpdf-doc h2 { font-size: ${fontSizes.h2}; margin-top: 24px; margin-bottom: 12px; break-after: avoid-page; page-break-after: avoid; }
-    .markpdf-doc h3 { font-size: calc(${fontSizes.body} * 1.25); margin-top: 20px; margin-bottom: 8px; break-after: avoid-page; page-break-after: avoid; }
-    .markpdf-doc h4 { font-size: calc(${fontSizes.body} * 1.1); margin-top: 16px; margin-bottom: 6px; break-after: avoid-page; page-break-after: avoid; }
-    .markpdf-doc p { margin-top: 0; margin-bottom: 14px; }
+    .markpdf-doc h1 { font-size: ${fontSizes.h1}; margin-top: 0; margin-bottom: 16px; break-after: avoid-page; page-break-after: avoid; overflow-wrap: break-word; word-break: break-word; }
+    .markpdf-doc h2 { font-size: ${fontSizes.h2}; margin-top: 24px; margin-bottom: 12px; break-after: avoid-page; page-break-after: avoid; overflow-wrap: break-word; word-break: break-word; }
+    .markpdf-doc h3 { font-size: calc(${fontSizes.body} * 1.25); margin-top: 20px; margin-bottom: 8px; break-after: avoid-page; page-break-after: avoid; overflow-wrap: break-word; word-break: break-word; }
+    .markpdf-doc h4 { font-size: calc(${fontSizes.body} * 1.1); margin-top: 16px; margin-bottom: 6px; break-after: avoid-page; page-break-after: avoid; overflow-wrap: break-word; word-break: break-word; }
+    .markpdf-doc p { margin-top: 0; margin-bottom: 14px; overflow-wrap: break-word; word-break: break-word; }
     .markpdf-doc ul, .markpdf-doc ol { margin-top: 0; margin-bottom: 14px; padding-left: 24px; }
-    .markpdf-doc li { margin-bottom: 4px; }
+    .markpdf-doc li { margin-bottom: 4px; overflow-wrap: break-word; word-break: break-word; }
     .markpdf-doc hr { height: 1px; border: none; background: #e2e8f0; margin: 24px 0; }
-    .markpdf-doc a { color: #0969da; text-decoration: none; }
+    .markpdf-doc a { color: #0969da; text-decoration: none; word-break: break-all; }
     .markpdf-doc strong { font-weight: 600; }
+    .markpdf-doc img { max-width: 100%; height: auto; }
 
     /* Inline Code */
     .markpdf-doc code:not(.hljs) {
@@ -260,6 +265,7 @@ export function generateThemeCss(settings: PdfSettings): string {
       background-color: rgba(175, 184, 193, 0.2);
       border-radius: 4px;
       font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      word-break: break-word;
     }
 
     /* Code Blocks */
@@ -269,6 +275,9 @@ export function generateThemeCss(settings: PdfSettings): string {
       border: 1px solid #d0d7de;
       border-radius: 6px;
       overflow: hidden;
+      max-width: 100%;
+      width: 100%;
+      box-sizing: border-box;
       break-inside: avoid;
       page-break-inside: avoid;
     }
@@ -291,20 +300,50 @@ export function generateThemeCss(settings: PdfSettings): string {
       margin: 0;
       padding: 12px 16px;
       overflow-x: auto;
+      max-width: 100%;
+      width: 100%;
+      box-sizing: border-box;
       font-size: 86%;
       line-height: 1.45;
       font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      -webkit-overflow-scrolling: touch;
+    }
+    .markpdf-doc pre code {
+      white-space: pre;
+      word-break: normal;
+      overflow-wrap: normal;
+    }
+
+    /* Mermaid Container */
+    .markpdf-doc .mermaid-container {
+      margin: 20px 0;
+      max-width: 100%;
+      width: 100%;
+      overflow-x: auto;
+      box-sizing: border-box;
+      text-align: center;
+      -webkit-overflow-scrolling: touch;
+    }
+    .markpdf-doc .mermaid-svg svg {
+      max-width: 100%;
+      height: auto;
     }
 
     /* Tables */
     .markpdf-doc .table-container {
       margin: 16px 0;
       overflow-x: auto;
+      max-width: 100%;
+      width: 100%;
+      box-sizing: border-box;
       break-inside: avoid;
       page-break-inside: avoid;
+      -webkit-overflow-scrolling: touch;
     }
     .markpdf-doc table {
       width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
       border-collapse: collapse;
       border-spacing: 0;
       font-size: 92%;

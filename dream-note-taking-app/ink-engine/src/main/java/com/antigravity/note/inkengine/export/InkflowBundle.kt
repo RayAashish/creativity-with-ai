@@ -5,7 +5,7 @@ package com.antigravity.note.inkengine.export
  */
 data class InkflowManifest(
     val version: Int = 1,
-    val appName: String = "Dream Note",
+    val appName: String = "InkFlow",
     val notebookId: String,
     val notebookTitle: String,
     val createdAt: Long,

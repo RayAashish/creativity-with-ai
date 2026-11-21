@@ -157,14 +157,15 @@ export async function parseMarkdownToHtml(markdown: string): Promise<{ html: str
   // 2. Process GitHub Callouts
   protectedMarkdown = processCallouts(protectedMarkdown);
 
-  // 3. Process Mermaid Diagrams
-  const mermaidPlaceholders: { id: string; code: string }[] = [];
+  // 3. Process Mermaid Diagrams using safe opaque tokens (prevents marked from mangling HTML or leaking tags)
+  const mermaidPlaceholders: { id: string; code: string; token: string }[] = [];
   let mermaidCounter = 0;
 
   protectedMarkdown = protectedMarkdown.replace(/```mermaid\s*\n([\s\S]+?)```/g, (_match, code) => {
     const id = `mermaidchart${mermaidCounter++}${Math.random().toString(36).substring(2, 7)}`;
-    mermaidPlaceholders.push({ id, code: code.trim() });
-    return `\n\n<div class="mermaid-container" id="${id}-wrapper"><div class="mermaid-raw" data-id="${id}">${code.trim()}</div></div>\n\n`;
+    const token = `MERMAIDBLOCKTOKEN${mermaidCounter}ENDTOKEN`;
+    mermaidPlaceholders.push({ id, code: code.trim(), token });
+    return `\n\n${token}\n\n`;
   });
 
   // Parse markdown to HTML
@@ -189,23 +190,42 @@ export async function parseMarkdownToHtml(markdown: string): Promise<{ html: str
     }
   }
 
-  // 5. Render Mermaid charts if running in browser
-  if (typeof window !== 'undefined' && mermaidPlaceholders.length > 0) {
-    for (const item of mermaidPlaceholders) {
+  // 5. Render Mermaid charts if running in browser or fallback to safely escaped code block
+  for (const item of mermaidPlaceholders) {
+    let renderedContent = '';
+    const safeEscapedCode = item.code
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    if (typeof window !== 'undefined') {
       try {
         const { svg } = await mermaid.render(item.id, item.code);
-        parsedHtml = parsedHtml.replace(
-          `<div class="mermaid-raw" data-id="${item.id}">${item.code}</div>`,
-          `<div class="mermaid-svg">${svg}</div>`
-        );
+        renderedContent = `<div class="mermaid-container" id="${item.id}-wrapper"><div class="mermaid-svg">${svg}</div></div>`;
       } catch (err) {
         console.warn('Mermaid render error for chart:', err);
-        parsedHtml = parsedHtml.replace(
-          `<div class="mermaid-raw" data-id="${item.id}">${item.code}</div>`,
-          `<div class="mermaid-error"><p>Could not render diagram</p><pre><code>${item.code}</code></pre></div>`
-        );
+        renderedContent = `<div class="mermaid-container" id="${item.id}-wrapper">
+  <div class="code-block-wrapper">
+    <div class="code-block-header">
+      <span class="code-lang-badge">mermaid (diagram)</span>
+    </div>
+    <pre><code class="hljs language-mermaid">${safeEscapedCode}</code></pre>
+  </div>
+</div>`;
       }
+    } else {
+      renderedContent = `<div class="mermaid-container" id="${item.id}-wrapper">
+  <div class="code-block-wrapper">
+    <div class="code-block-header">
+      <span class="code-lang-badge">mermaid (diagram)</span>
+    </div>
+    <pre><code class="hljs language-mermaid">${safeEscapedCode}</code></pre>
+  </div>
+</div>`;
     }
+
+    const tokenRegex = new RegExp(`<p>\\s*${item.token}\\s*<\\/p>|${item.token}`, 'g');
+    parsedHtml = parsedHtml.replace(tokenRegex, renderedContent);
   }
 
   return { html: parsedHtml, headings };
