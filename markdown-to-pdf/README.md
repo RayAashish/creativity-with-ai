@@ -16,8 +16,8 @@
 
 <p align="center">
   <!-- PRIMARY ACTION BUTTONS -->
-  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/CodexPress-v1.0.0.apk">
-    <img src="https://img.shields.io/badge/Download-APK%20(v1.0.0)-25D366?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+  <a href="https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.21/CodexPress-v1.1.0.apk">
+    <img src="https://img.shields.io/badge/Download-APK%20(v1.1.0)-25D366?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
   </a>
   <a href="https://github.com/RayAashish/creativity-with-ai/tree/main/markdown-to-pdf">
     <img src="https://img.shields.io/badge/Source-GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="Source Code" />
