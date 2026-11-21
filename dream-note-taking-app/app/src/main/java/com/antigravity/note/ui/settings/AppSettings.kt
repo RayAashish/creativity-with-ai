@@ -89,6 +89,14 @@ class AppSettings(context: Context) {
         get() = prefs.getBoolean("is_infinite_canvas", false)
         set(value) = prefs.edit().putBoolean("is_infinite_canvas", value).apply()
 
+    var isHoldToShapeEnabled: Boolean
+        get() = prefs.getBoolean("is_hold_to_shape_enabled", true)
+        set(value) = prefs.edit().putBoolean("is_hold_to_shape_enabled", value).apply()
+
+    var isShapeDragToStretchEnabled: Boolean
+        get() = prefs.getBoolean("is_shape_drag_to_stretch_enabled", true)
+        set(value) = prefs.edit().putBoolean("is_shape_drag_to_stretch_enabled", value).apply()
+
     var isDarkMode: Boolean
         get() = prefs.getBoolean("is_dark_mode", false)
         set(value) = prefs.edit().putBoolean("is_dark_mode", value).apply()

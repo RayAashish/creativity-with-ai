@@ -187,9 +187,55 @@ class InkCanvasView @JvmOverloads constructor(
     var onViewportTransformChanged: ((scale: Float, translationX: Float, translationY: Float) -> Unit)? = null
 
     fun setViewport(zoomScale: Float, offsetX: Float, offsetY: Float) {
-        val safeScale = if (zoomScale <= 0f) 1.0f else zoomScale
-        val tx = -offsetX * safeScale
-        val ty = -offsetY * safeScale
+        val safeScale = if (zoomScale <= 0f) 1.0f else zoomScale.coerceIn(0.2f, 4.0f)
+        var tx = -offsetX * safeScale
+        var ty = -offsetY * safeScale
+
+        val strokes = dryInkView.strokes
+        val images = dryInkView.images
+        val textBoxes = dryInkView.textBoxes
+        if (strokes.isNotEmpty() || images.isNotEmpty() || textBoxes.isNotEmpty()) {
+            var minX = Float.MAX_VALUE
+            var minY = Float.MAX_VALUE
+            var maxX = -Float.MAX_VALUE
+            var maxY = -Float.MAX_VALUE
+            for (s in strokes) {
+                val b = s.shape.computeBoundingBox() ?: continue
+                if (b.xMin < minX) minX = b.xMin
+                if (b.yMin < minY) minY = b.yMin
+                if (b.xMax > maxX) maxX = b.xMax
+                if (b.yMax > maxY) maxY = b.yMax
+            }
+            for (img in images) {
+                if (img.x < minX) minX = img.x
+                if (img.y < minY) minY = img.y
+                if (img.x + img.width > maxX) maxX = img.x + img.width
+                if (img.y + img.height > maxY) maxY = img.y + img.height
+            }
+            for (tb in textBoxes) {
+                if (tb.x < minX) minX = tb.x
+                if (tb.y < minY) minY = tb.y
+                if (tb.x + tb.width > maxX) maxX = tb.x + tb.width
+                if (tb.y + tb.height > maxY) maxY = tb.y + tb.height
+            }
+
+            if (minX != Float.MAX_VALUE) {
+                val viewW = width.toFloat().coerceAtLeast(800f)
+                val viewH = height.toFloat().coerceAtLeast(1000f)
+                val screenLeftWorld = -tx / safeScale
+                val screenTopWorld = -ty / safeScale
+                val screenRightWorld = screenLeftWorld + viewW / safeScale
+                val screenBottomWorld = screenTopWorld + viewH / safeScale
+
+                val isContentVisible = !(maxX < screenLeftWorld - 200f || minX > screenRightWorld + 200f ||
+                                         maxY < screenTopWorld - 200f || minY > screenBottomWorld + 200f)
+                if (!isContentVisible) {
+                    tx = (-minX + 60f).coerceAtMost(0f) * safeScale
+                    ty = (-minY + 80f).coerceAtMost(0f) * safeScale
+                }
+            }
+        }
+
         dryInkView.transform.setTransform(safeScale, tx, ty)
         dryInkView.invalidate()
         invalidate()
@@ -1024,7 +1070,64 @@ class InkCanvasView @JvmOverloads constructor(
         undoStack.clear()
         redoStack.clear()
         notifyUndoRedoState()
+        ensureContentInViewport(page)
         invalidate()
+    }
+
+    fun ensureContentInViewport(page: DocumentPage) {
+        if (page.strokes.isEmpty() && page.images.isEmpty() && page.textBoxes.isEmpty()) {
+            dryInkView.transform.setTransform(1.0f, 0f, 0f)
+            return
+        }
+
+        var minX = Float.MAX_VALUE
+        var minY = Float.MAX_VALUE
+        var maxX = -Float.MAX_VALUE
+        var maxY = -Float.MAX_VALUE
+
+        for (s in page.strokes) {
+            val b = s.shape.computeBoundingBox() ?: continue
+            if (b.xMin < minX) minX = b.xMin
+            if (b.yMin < minY) minY = b.yMin
+            if (b.xMax > maxX) maxX = b.xMax
+            if (b.yMax > maxY) maxY = b.yMax
+        }
+        for (img in page.images) {
+            if (img.x < minX) minX = img.x
+            if (img.y < minY) minY = img.y
+            if (img.x + img.width > maxX) maxX = img.x + img.width
+            if (img.y + img.height > maxY) maxY = img.y + img.height
+        }
+        for (tb in page.textBoxes) {
+            if (tb.x < minX) minX = tb.x
+            if (tb.y < minY) minY = tb.y
+            if (tb.x + tb.width > maxX) maxX = tb.x + tb.width
+            if (tb.y + tb.height > maxY) maxY = tb.y + tb.height
+        }
+
+        if (minX == Float.MAX_VALUE) {
+            dryInkView.transform.setTransform(1.0f, 0f, 0f)
+            return
+        }
+
+        val currentScale = dryInkView.transform.scale.coerceIn(0.2f, 4.0f)
+        val viewW = width.toFloat().coerceAtLeast(800f)
+        val viewH = height.toFloat().coerceAtLeast(1000f)
+
+        val screenLeftWorld = -dryInkView.transform.translationX / currentScale
+        val screenTopWorld = -dryInkView.transform.translationY / currentScale
+        val screenRightWorld = screenLeftWorld + viewW / currentScale
+        val screenBottomWorld = screenTopWorld + viewH / currentScale
+
+        val intersects = !(maxX < screenLeftWorld - 300f || minX > screenRightWorld + 300f ||
+                           maxY < screenTopWorld - 300f || minY > screenBottomWorld + 300f)
+
+        if (!intersects) {
+            val targetScale = 1.0f
+            val targetTx = (-minX + 60f).coerceAtMost(0f) * targetScale
+            val targetTy = (-minY + 80f).coerceAtMost(0f) * targetScale
+            dryInkView.transform.setTransform(targetScale, targetTx, targetTy)
+        }
     }
 
     fun setPaperTemplate(template: PaperTemplate) {
@@ -1681,6 +1784,11 @@ class InkCanvasView @JvmOverloads constructor(
                     identityMatrix
                 )
                 activeStrokeIds[pointerId] = strokeId
+
+                if (currentTool == CanvasTool.GLOW_PEN && glowPenMode == GlowPenPersistenceMode.PERMANENT) {
+                    laserOverlay.neonColor = strokeColor
+                    laserOverlay.startLivePermanentGlow(tempPoint.x, tempPoint.y, event.eventTime)
+                }
             }
             MotionEvent.ACTION_MOVE -> {
                 if (isHoldErasing) {
@@ -1749,9 +1857,23 @@ class InkCanvasView @JvmOverloads constructor(
                     val predictedEvent = predictor.predict()
                     inProgressStrokesView.addToStroke(event, pointerId, strokeId, predictedEvent)
                     predictedEvent?.recycle()
+
+                    if (currentTool == CanvasTool.GLOW_PEN && glowPenMode == GlowPenPersistenceMode.PERMANENT) {
+                        for (h in 0 until historySize) {
+                            val histX = event.getHistoricalX(pointerIndex, h)
+                            val histY = event.getHistoricalY(pointerIndex, h)
+                            dryInkView.transform.screenToWorld(histX, histY, tempPoint)
+                            laserOverlay.updateLivePermanentGlow(tempPoint.x, tempPoint.y, event.getHistoricalEventTime(h))
+                        }
+                        dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
+                        laserOverlay.updateLivePermanentGlow(tempPoint.x, tempPoint.y, event.eventTime)
+                    }
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
+                if (currentTool == CanvasTool.GLOW_PEN && glowPenMode == GlowPenPersistenceMode.PERMANENT) {
+                    laserOverlay.finishLivePermanentGlow()
+                }
                 removeCallbacks(holdToSnapRunnable)
                 removeCallbacks(stationaryLongPressRunnable)
                 if (isHoldErasing) {
@@ -1793,6 +1915,7 @@ class InkCanvasView @JvmOverloads constructor(
     }
 
     private fun handleCancelStroke(event: MotionEvent, pointerId: Int) {
+        laserOverlay.finishLivePermanentGlow()
         removeCallbacks(holdToSnapRunnable)
         removeCallbacks(stationaryLongPressRunnable)
         isHoldErasing = false

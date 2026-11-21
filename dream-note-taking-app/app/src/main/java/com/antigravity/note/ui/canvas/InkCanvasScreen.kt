@@ -140,6 +140,11 @@ import com.antigravity.note.ui.library.EditProblemDialog
 import com.antigravity.note.ui.library.ReviewTodayDialog
 import com.antigravity.note.ui.settings.SettingsDialog
 import com.antigravity.note.ui.shapes.ShapesDialog
+import com.antigravity.note.ui.shapes.uml.model.UmlDiagram
+import com.antigravity.note.ui.shapes.uml.model.UmlSerializer
+import com.antigravity.note.ui.shapes.uml.ui.UmlFullscreenEditorScreen
+import com.antigravity.note.ui.shapes.uml.ui.UmlExporter
+import android.graphics.Bitmap
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -500,8 +505,11 @@ fun InkCanvasScreen(
     // Phase 4 State
     var hasLassoSelection by remember { mutableStateOf(false) }
     var lassoHasClipboard by remember { mutableStateOf(false) }
-    var isShapeSnapOn by remember { mutableStateOf(true) }
+    var isShapeSnapOn by remember { mutableStateOf(appSettings.isHoldToShapeEnabled) }
+    var isDragToStretchOn by remember { mutableStateOf(appSettings.isShapeDragToStretchEnabled) }
     var isShapesDialogOpen by remember { mutableStateOf(false) }
+    var isUmlEditorOpen by remember { mutableStateOf(false) }
+    var activeUmlDiagram by remember { mutableStateOf<UmlDiagram?>(null) }
     var is1to1AspectLocked by remember { mutableStateOf(false) }
     var isPdfLoaded by remember { mutableStateOf(false) }
     var currentPdfPage by remember { androidx.compose.runtime.mutableIntStateOf(0) }
@@ -2150,21 +2158,55 @@ fun InkCanvasScreen(
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Text("Fade Duration", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                                            val durationText = if (laserFadeDurationMs < 60_000L) {
+                                                "%.1fs".format(laserFadeDurationMs.toFloat() / 1000f)
+                                            } else {
+                                                val mins = laserFadeDurationMs / 60_000L
+                                                val secs = (laserFadeDurationMs % 60_000L) / 1000L
+                                                if (secs == 0L) "${mins}m" else "${mins}m ${secs}s"
+                                            }
                                             Text(
-                                                "%.1fs".format(laserFadeDurationMs.toFloat() / 1000f),
+                                                durationText,
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = activeNeonColor
                                             )
                                         }
+
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        // Quick preset duration chips
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            listOf(
+                                                1200L to "1.2s",
+                                                5000L to "5s",
+                                                30000L to "30s",
+                                                60000L to "1m",
+                                                300000L to "5m",
+                                                600000L to "10m"
+                                            ).forEach { (ms, lbl) ->
+                                                FilterChip(
+                                                    selected = (laserFadeDurationMs == ms),
+                                                    onClick = {
+                                                        laserFadeDurationMs = ms
+                                                        canvasView.setLaserFadeDuration(ms)
+                                                    },
+                                                    label = { Text(lbl, fontSize = 9.sp) },
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                            }
+                                        }
+
                                         Slider(
-                                            value = laserFadeDurationMs.toFloat(),
-                                            onValueChange = {
-                                                laserFadeDurationMs = it.toLong()
-                                                canvasView.setLaserFadeDuration(it.toLong())
+                                            value = kotlin.math.sqrt(laserFadeDurationMs.toFloat()),
+                                            onValueChange = { sqrtVal ->
+                                                val ms = (sqrtVal * sqrtVal).toLong().coerceIn(600L, 600_000L)
+                                                laserFadeDurationMs = ms
+                                                canvasView.setLaserFadeDuration(ms)
                                             },
-                                            valueRange = 600f..2500f,
-                                            steps = 18,
+                                            valueRange = kotlin.math.sqrt(600f)..kotlin.math.sqrt(600_000f),
                                             colors = SliderDefaults.colors(
                                                 thumbColor = activeNeonColor,
                                                 activeTrackColor = activeNeonColor,
@@ -3617,12 +3659,6 @@ fun InkCanvasScreen(
                     saveCurrentViewport()
                     docManager.switchToNotebookAndPage(notebookId, pageId) { page ->
                         canvasView.loadPage(page, docManager.lastOpenLatencyMs.value)
-                        scope.launch {
-                            val nb = libraryRepo.getNotebookById(notebookId)
-                            if (nb != null && nb.viewportZoomScale > 0f) {
-                                canvasView.setViewport(nb.viewportZoomScale, nb.viewportOffsetX, nb.viewportOffsetY)
-                            }
-                        }
                     }
                     isSidebarOpen = false
                 },
@@ -4134,6 +4170,40 @@ fun InkCanvasScreen(
                         Icon(Icons.Default.Crop, contentDescription = "Crop Image", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     }
 
+                    if (selectedCanvasImage?.type == "uml_diagram") {
+                        IconButton(
+                            onClick = {
+                                val curPage = docManager.currentPage.value
+                                val selImg = selectedCanvasImage
+                                if (curPage != null && selImg != null) {
+                                    scope.launch(Dispatchers.IO) {
+                                        try {
+                                            val assetsDir = pageRepo.getAssetsDir(curPage.metadata.notebookId)
+                                            val jsonFile = File(assetsDir, "uml_${selImg.id}.json")
+                                            val diagram = if (jsonFile.exists()) {
+                                                UmlSerializer.fromJson(jsonFile.readText())
+                                            } else {
+                                                UmlDiagram(id = selImg.id, title = "UML Diagram")
+                                            }
+                                            withContext(Dispatchers.Main) {
+                                                activeUmlDiagram = diagram
+                                                isUmlEditorOpen = true
+                                            }
+                                        } catch (_: Exception) {
+                                            withContext(Dispatchers.Main) {
+                                                activeUmlDiagram = UmlDiagram(id = selImg.id, title = "UML Diagram")
+                                                isUmlEditorOpen = true
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit UML Diagram", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                        }
+                    }
+
                     // Rotate 90 Button
                     IconButton(
                         onClick = { canvasView.rotateSelectedImage(90f) },
@@ -4438,6 +4508,12 @@ fun InkCanvasScreen(
                 onToggleHoldToSnap = { enabled ->
                     isShapeSnapOn = enabled
                     canvasView.holdToSnapEnabled = enabled
+                    appSettings.isHoldToShapeEnabled = enabled
+                },
+                isDragToStretchEnabled = isDragToStretchOn,
+                onToggleDragToStretch = { enabled ->
+                    isDragToStretchOn = enabled
+                    appSettings.isShapeDragToStretchEnabled = enabled
                 },
                 isShapeToolActive = selectedTool == CanvasTool.SHAPE,
                 onToggleShapeTool = { active ->
@@ -4446,6 +4522,11 @@ fun InkCanvasScreen(
                     } else {
                         switchToTool(CanvasTool.PRESSURE_PEN)
                     }
+                },
+                onOpenUmlEditor = { template ->
+                    activeUmlDiagram = template
+                    isUmlEditorOpen = true
+                    isShapesDialogOpen = false
                 },
                 viewportCenter = canvasView.getViewportCenter(),
                 onSelectShapePlacement = { placementType ->
@@ -4460,6 +4541,82 @@ fun InkCanvasScreen(
                     Toast.makeText(context, "Inserted ${shape::class.simpleName}", Toast.LENGTH_SHORT).show()
                 },
                 onDismissRequest = { isShapesDialogOpen = false }
+            )
+        }
+
+        // Dedicated Fullscreen UML Canvas Editor
+        if (isUmlEditorOpen && activeUmlDiagram != null) {
+            UmlFullscreenEditorScreen(
+                initialDiagram = activeUmlDiagram!!,
+                onSaveAndClose = { finalDiagram ->
+                    isUmlEditorOpen = false
+                    val curPage = docManager.currentPage.value
+                    if (curPage != null) {
+                        scope.launch(Dispatchers.IO) {
+                            try {
+                                val assetsDir = pageRepo.getAssetsDir(curPage.metadata.notebookId)
+                                assetsDir.mkdirs()
+
+                                // Save serialized JSON
+                                val jsonStr = UmlSerializer.toJson(finalDiagram)
+                                val jsonFile = File(assetsDir, "uml_${finalDiagram.id}.json")
+                                jsonFile.writeText(jsonStr)
+
+                                // Render and save high-DPI preview bitmap
+                                val previewBitmap = UmlExporter.exportToBitmap(finalDiagram, scale = 1.5f)
+                                val pngFileName = "uml_${finalDiagram.id}.png"
+                                val pngFile = File(assetsDir, pngFileName)
+                                FileOutputStream(pngFile).use { out ->
+                                    previewBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                                }
+
+                                withContext(Dispatchers.Main) {
+                                    val bounds = finalDiagram.computeBoundingBox()
+                                    val vpCenter = canvasView.getViewportCenter()
+                                    val imgW = bounds.width().coerceAtLeast(300f).coerceAtMost(900f)
+                                    val imgH = bounds.height().coerceAtLeast(200f).coerceAtMost(700f)
+
+                                    val existingIdx = curPage.images.indexOfFirst { it.id == finalDiagram.id }
+                                    val canvasImg = if (existingIdx >= 0) {
+                                        val old = curPage.images[existingIdx]
+                                        val updated = old.copy(
+                                            assetRef = pngFileName,
+                                            width = imgW,
+                                            height = imgH
+                                        )
+                                        curPage.images[existingIdx] = updated
+                                        canvasView.dryInkView.images.removeAll { it.id == finalDiagram.id }
+                                        updated
+                                    } else {
+                                        val newImg = com.antigravity.note.document.model.CanvasImage(
+                                            id = finalDiagram.id,
+                                            type = "uml_diagram",
+                                            assetRef = pngFileName,
+                                            x = vpCenter.first - imgW / 2f,
+                                            y = vpCenter.second - imgH / 2f,
+                                            width = imgW,
+                                            height = imgH
+                                        )
+                                        curPage.addImage(newImg)
+                                        newImg
+                                    }
+                                    canvasView.dryInkView.addImage(canvasImg)
+                                    canvasView.selectImage(canvasImg)
+                                    canvasView.dryInkView.invalidate()
+                                    canvasView.invalidate()
+                                    pageRepo.savePageAtomic(curPage)
+                                    database.notebookDao().setNotebookDirty(curPage.metadata.notebookId, true)
+                                    Toast.makeText(context, "Saved UML Diagram to note", Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (_: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, "Saved UML Diagram", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    }
+                },
+                onDismissRequest = { isUmlEditorOpen = false }
             )
         }
 

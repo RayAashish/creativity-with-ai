@@ -79,6 +79,14 @@ import androidx.compose.ui.window.DialogProperties
 import com.antigravity.note.inkengine.canvas.ShapePlacementType
 import com.antigravity.note.inkengine.shape.RecognizedShape
 import com.antigravity.note.inkengine.shape.UmlConnectorType
+import com.antigravity.note.ui.shapes.uml.model.UmlDiagram
+import com.antigravity.note.ui.shapes.uml.model.UmlEdge
+import com.antigravity.note.ui.shapes.uml.model.UmlNode
+import com.antigravity.note.ui.shapes.uml.model.UmlNodeType
+import com.antigravity.note.ui.shapes.uml.model.UmlPortPosition
+import com.antigravity.note.ui.shapes.uml.model.UmlRelationshipType
+import com.antigravity.note.ui.shapes.uml.model.UmlRoutingMode
+import java.util.UUID
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -88,10 +96,13 @@ import kotlin.math.sin
 fun ShapesDialog(
     isHoldToSnapEnabled: Boolean,
     onToggleHoldToSnap: (Boolean) -> Unit,
+    isDragToStretchEnabled: Boolean = true,
+    onToggleDragToStretch: (Boolean) -> Unit = {},
     isShapeToolActive: Boolean = false,
     onToggleShapeTool: ((Boolean) -> Unit)? = null,
     onInsertShape: (RecognizedShape) -> Unit,
     onSelectShapePlacement: ((ShapePlacementType) -> Unit)? = null,
+    onOpenUmlEditor: ((UmlDiagram) -> Unit)? = null,
     viewportCenter: Pair<Float, Float> = Pair(1000f, 1200f),
     onDismissRequest: () -> Unit
 ) {
@@ -99,7 +110,6 @@ fun ShapesDialog(
     val cy = viewportCenter.second
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    var useDragToStretchMode by remember { mutableStateOf(true) }
 
     // Parameterized Dynamic Array state
     var arraySize by remember { mutableIntStateOf(5) }
@@ -124,7 +134,7 @@ fun ShapesDialog(
     var treeShowChildren by remember { mutableStateOf(true) }
 
     val handleShapeAction: (ShapePlacementType, () -> RecognizedShape) -> Unit = { type, stampFallback ->
-        if (useDragToStretchMode && onSelectShapePlacement != null) {
+        if (isDragToStretchEnabled && onSelectShapePlacement != null) {
             onSelectShapePlacement(type)
             onDismissRequest()
         } else {
@@ -218,14 +228,14 @@ fun ShapesDialog(
                                     fontSize = 13.sp
                                 )
                                 Text(
-                                    text = if (useDragToStretchMode) "Tap a shape, then drag pen on canvas to stretch dynamically" else "Direct stamp at screen center",
+                                    text = if (isDragToStretchEnabled) "Tap a shape, then drag pen on canvas to stretch dynamically" else "Direct stamp at screen center",
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             Switch(
-                                checked = useDragToStretchMode,
-                                onCheckedChange = { useDragToStretchMode = it }
+                                checked = isDragToStretchEnabled,
+                                onCheckedChange = onToggleDragToStretch
                             )
                         }
 
@@ -424,8 +434,68 @@ fun ShapesDialog(
 
                     1 -> {
                         // ================= 2. FULL UML DIAGRAMS =================
+                        Card(
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f), RoundedCornerShape(20.dp))
+                        ) {
+                            Column(modifier = Modifier.padding(18.dp)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(46.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(MaterialTheme.colorScheme.primary),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Schema,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Dedicated Fullscreen UML Canvas",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 16.sp,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = "120fps hardware-accelerated canvas with magnetic anchor ports, dynamic 90° orthogonal elbow routing, structured bottom-sheet class editing, and high-res vector SVG/PNG export.",
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                Button(
+                                    onClick = {
+                                        onOpenUmlEditor?.invoke(createBlankUmlTemplate())
+                                        onDismissRequest()
+                                    },
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.Fullscreen, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Open Fullscreen UML Canvas", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(18.dp))
                         Text(
-                            text = "UML STENCILS (CLASS & SEQUENCE)",
+                            text = "QUICK-START ARCHITECTURE & DIAGRAM TEMPLATES",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFF59E0B),
@@ -440,172 +510,46 @@ fun ShapesDialog(
                         ) {
                             ShapeInsertItem(
                                 icon = Icons.Default.ViewAgenda,
-                                title = "UML Class",
-                                desc = "3 Compartments: Name, Attributes, Methods",
+                                title = "Class Hierarchy",
+                                desc = "Inheritance: Base & Subclasses with methods",
                                 onClick = {
-                                    handleShapeAction(ShapePlacementType.UML_CLASS) {
-                                        RecognizedShape.UmlClass(centerX = cx, centerY = cy, width = 360f, height = 260f)
-                                    }
+                                    onOpenUmlEditor?.invoke(createClassHierarchyTemplate())
+                                    onDismissRequest()
                                 }
                             )
                             ShapeInsertItem(
                                 icon = Icons.Default.Schema,
-                                title = "UML Interface",
-                                desc = "<<interface>> Header Box",
+                                title = "Clean Architecture",
+                                desc = "Controller ➔ Service ➔ Repository",
                                 onClick = {
-                                    handleShapeAction(ShapePlacementType.UML_INTERFACE) {
-                                        RecognizedShape.UmlInterface(centerX = cx, centerY = cy, width = 360f, height = 220f)
-                                    }
-                                }
-                            )
-                            ShapeInsertItem(
-                                icon = Icons.Default.Person,
-                                title = "Sequence Actor",
-                                desc = "Actor Stick Figure & Label",
-                                onClick = {
-                                    handleShapeAction(ShapePlacementType.UML_ACTOR) {
-                                        RecognizedShape.UmlActor(centerX = cx, centerY = cy, width = 100f, height = 180f)
-                                    }
+                                    onOpenUmlEditor?.invoke(createCleanArchitectureTemplate())
+                                    onDismissRequest()
                                 }
                             )
                             ShapeInsertItem(
                                 icon = Icons.Default.Timeline,
-                                title = "Lifeline",
-                                desc = "Header + Dashed Lifeline",
+                                title = "Sequence Diagram",
+                                desc = "Actors, Lifelines & Call Messages",
                                 onClick = {
-                                    handleShapeAction(ShapePlacementType.UML_LIFELINE) {
-                                        RecognizedShape.UmlLifeline(centerX = cx, centerY = cy, width = 140f, height = 360f)
-                                    }
-                                }
-                            )
-                            ShapeInsertItem(
-                                icon = Icons.Default.CropLandscape,
-                                title = "Activation Bar",
-                                desc = "Execution Focus Box",
-                                onClick = {
-                                    handleShapeAction(ShapePlacementType.UML_ACTIVATION) {
-                                        RecognizedShape.UmlActivationBar(centerX = cx, centerY = cy, width = 32f, height = 240f)
-                                    }
-                                }
-                            )
-                            ShapeInsertItem(
-                                icon = Icons.Default.Fullscreen,
-                                title = "Combined Fragment",
-                                desc = "loop / alt / opt Box",
-                                onClick = {
-                                    handleShapeAction(ShapePlacementType.UML_FRAGMENT) {
-                                        RecognizedShape.UmlCombinedFragment(centerX = cx, centerY = cy, width = 440f, height = 260f, operator = "loop")
-                                    }
-                                }
-                            )
-                            ShapeInsertItem(
-                                icon = Icons.Default.Circle,
-                                title = "Use Case",
-                                desc = "Horizontal Oval Ellipse",
-                                onClick = {
-                                    handleShapeAction(ShapePlacementType.UML_USE_CASE) {
-                                        RecognizedShape.UmlUseCase(centerX = cx, centerY = cy, width = 360f, height = 180f)
-                                    }
-                                }
-                            )
-                            ShapeInsertItem(
-                                icon = Icons.Default.Circle,
-                                title = "Initial Node",
-                                desc = "Activity Solid Start ●",
-                                onClick = {
-                                    handleShapeAction(ShapePlacementType.UML_INITIAL_NODE) {
-                                        RecognizedShape.UmlInitialNode(centerX = cx, centerY = cy, radius = 32f)
-                                    }
-                                }
-                            )
-                            ShapeInsertItem(
-                                icon = Icons.Default.Circle,
-                                title = "Final Node",
-                                desc = "Bullseye Activity End ◉",
-                                onClick = {
-                                    handleShapeAction(ShapePlacementType.UML_FINAL_NODE) {
-                                        RecognizedShape.UmlFinalNode(centerX = cx, centerY = cy, radius = 32f)
-                                    }
-                                }
-                            )
-                            ShapeInsertItem(
-                                icon = Icons.Default.HorizontalRule,
-                                title = "Fork / Join Bar",
-                                desc = "Solid Sync Bar ━",
-                                onClick = {
-                                    handleShapeAction(ShapePlacementType.UML_FORK_JOIN) {
-                                        RecognizedShape.UmlForkJoin(centerX = cx, centerY = cy, width = 260f, height = 18f)
-                                    }
-                                }
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(18.dp))
-                        Text(
-                            text = "SMART UML CONNECTORS",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFF59E0B),
-                            letterSpacing = 1.sp
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            ShapeInsertItem(
-                                icon = Icons.Default.HorizontalRule,
-                                title = "Association",
-                                desc = "Solid Connector Line ―",
-                                onClick = {
-                                    onInsertShape(RecognizedShape.UmlConnector(startX = cx - 180f, startY = cy, endX = cx + 180f, endY = cy, type = UmlConnectorType.ASSOCIATION))
+                                    onOpenUmlEditor?.invoke(createSequenceTemplate())
                                     onDismissRequest()
                                 }
                             )
                             ShapeInsertItem(
-                                icon = Icons.AutoMirrored.Filled.ArrowForward,
-                                title = "Directed / Dependency",
-                                desc = "Dashed Line with Open Arrow",
+                                icon = Icons.Default.Person,
+                                title = "Use Case & Actor",
+                                desc = "System Boundary, Oval Use Cases & Actors",
                                 onClick = {
-                                    onInsertShape(RecognizedShape.UmlConnector(startX = cx - 180f, startY = cy, endX = cx + 180f, endY = cy, type = UmlConnectorType.DIRECTED_ASSOCIATION))
+                                    onOpenUmlEditor?.invoke(createUseCaseTemplate())
                                     onDismissRequest()
                                 }
                             )
                             ShapeInsertItem(
-                                icon = Icons.AutoMirrored.Filled.ArrowForward,
-                                title = "Generalization",
-                                desc = "Inheritance: Hollow Triangle ▷",
+                                icon = Icons.Default.ChangeHistory,
+                                title = "State Machine",
+                                desc = "Initial ➔ States ➔ Decision ➔ Final",
                                 onClick = {
-                                    onInsertShape(RecognizedShape.UmlConnector(startX = cx - 180f, startY = cy, endX = cx + 180f, endY = cy, type = UmlConnectorType.GENERALIZATION))
-                                    onDismissRequest()
-                                }
-                            )
-                            ShapeInsertItem(
-                                icon = Icons.AutoMirrored.Filled.ArrowForward,
-                                title = "Realization",
-                                desc = "Interface Impl: Dashed + Hollow Triangle",
-                                onClick = {
-                                    onInsertShape(RecognizedShape.UmlConnector(startX = cx - 180f, startY = cy, endX = cx + 180f, endY = cy, type = UmlConnectorType.REALIZATION))
-                                    onDismissRequest()
-                                }
-                            )
-                            ShapeInsertItem(
-                                icon = Icons.Default.Diamond,
-                                title = "Aggregation",
-                                desc = "Shared: Hollow Diamond ◇",
-                                onClick = {
-                                    onInsertShape(RecognizedShape.UmlConnector(startX = cx - 180f, startY = cy, endX = cx + 180f, endY = cy, type = UmlConnectorType.AGGREGATION))
-                                    onDismissRequest()
-                                }
-                            )
-                            ShapeInsertItem(
-                                icon = Icons.Default.Diamond,
-                                title = "Composition",
-                                desc = "Owned: Solid Diamond ◆",
-                                onClick = {
-                                    onInsertShape(RecognizedShape.UmlConnector(startX = cx - 180f, startY = cy, endX = cx + 180f, endY = cy, type = UmlConnectorType.COMPOSITION))
+                                    onOpenUmlEditor?.invoke(createStateMachineTemplate())
                                     onDismissRequest()
                                 }
                             )
@@ -700,7 +644,7 @@ fun ShapesDialog(
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text(if (useDragToStretchMode) "Drag to Place Array ($arraySize Cells)" else "Stamp Dynamic Array ($arraySize Cells)", fontWeight = FontWeight.Bold)
+                                    Text(if (isDragToStretchEnabled) "Drag to Place Array ($arraySize Cells)" else "Stamp Dynamic Array ($arraySize Cells)", fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -800,7 +744,7 @@ fun ShapesDialog(
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text(if (useDragToStretchMode) "Drag to Place Linked List ($listNodeCount Nodes)" else "Stamp Linked List ($listNodeCount Nodes)", fontWeight = FontWeight.Bold)
+                                    Text(if (isDragToStretchEnabled) "Drag to Place Linked List ($listNodeCount Nodes)" else "Stamp Linked List ($listNodeCount Nodes)", fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -881,7 +825,7 @@ fun ShapesDialog(
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text(if (useDragToStretchMode) "Drag to Place Stack ($stackSlots Slots)" else "Stamp Stack ($stackSlots Slots)", fontWeight = FontWeight.Bold)
+                                    Text(if (isDragToStretchEnabled) "Drag to Place Stack ($stackSlots Slots)" else "Stamp Stack ($stackSlots Slots)", fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -962,7 +906,7 @@ fun ShapesDialog(
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text(if (useDragToStretchMode) "Drag to Place Queue ($queueSlots Slots)" else "Stamp Queue ($queueSlots Slots)", fontWeight = FontWeight.Bold)
+                                    Text(if (isDragToStretchEnabled) "Drag to Place Queue ($queueSlots Slots)" else "Stamp Queue ($queueSlots Slots)", fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -1017,7 +961,7 @@ fun ShapesDialog(
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text(if (useDragToStretchMode) "Drag to Place Binary Tree" else "Stamp Binary Tree", fontWeight = FontWeight.Bold)
+                                    Text(if (isDragToStretchEnabled) "Drag to Place Binary Tree" else "Stamp Binary Tree", fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -1147,4 +1091,301 @@ private fun NumberStepper(
             }
         }
     }
+}
+
+fun createBlankUmlTemplate(): UmlDiagram {
+    return UmlDiagram(
+        title = "UML Diagram",
+        nodes = listOf(
+            UmlNode(
+                id = UUID.randomUUID().toString(),
+                type = UmlNodeType.CLASS,
+                x = 200f, y = 140f, width = 220f, height = 140f,
+                title = "Entity",
+                attributes = listOf("+ id: Long", "+ createdAt: Date"),
+                methods = listOf("+ save(): Boolean")
+            )
+        )
+    )
+}
+
+fun createClassHierarchyTemplate(): UmlDiagram {
+    val baseId = UUID.randomUUID().toString()
+    val sub1Id = UUID.randomUUID().toString()
+    val sub2Id = UUID.randomUUID().toString()
+
+    return UmlDiagram(
+        title = "Class Hierarchy",
+        nodes = listOf(
+            UmlNode(
+                id = baseId,
+                type = UmlNodeType.CLASS,
+                x = 240f, y = 60f, width = 220f, height = 140f,
+                title = "User",
+                attributes = listOf("+ id: Long", "+ email: String"),
+                methods = listOf("+ getRole(): String")
+            ),
+            UmlNode(
+                id = sub1Id,
+                type = UmlNodeType.CLASS,
+                x = 100f, y = 280f, width = 200f, height = 120f,
+                title = "Customer",
+                attributes = listOf("+ cartId: Long"),
+                methods = listOf("+ checkout(): Order")
+            ),
+            UmlNode(
+                id = sub2Id,
+                type = UmlNodeType.CLASS,
+                x = 380f, y = 280f, width = 200f, height = 120f,
+                title = "Admin",
+                attributes = listOf("+ permissions: List"),
+                methods = listOf("+ banUser(): void")
+            )
+        ),
+        edges = listOf(
+            UmlEdge(
+                sourceNodeId = sub1Id,
+                sourcePortPosition = UmlPortPosition.NORTH,
+                targetNodeId = baseId,
+                targetPortPosition = UmlPortPosition.SOUTH_WEST,
+                relationshipType = UmlRelationshipType.INHERITANCE,
+                routingMode = UmlRoutingMode.ORTHOGONAL
+            ),
+            UmlEdge(
+                sourceNodeId = sub2Id,
+                sourcePortPosition = UmlPortPosition.NORTH,
+                targetNodeId = baseId,
+                targetPortPosition = UmlPortPosition.SOUTH_EAST,
+                relationshipType = UmlRelationshipType.INHERITANCE,
+                routingMode = UmlRoutingMode.ORTHOGONAL
+            )
+        )
+    )
+}
+
+fun createCleanArchitectureTemplate(): UmlDiagram {
+    val cId = UUID.randomUUID().toString()
+    val sId = UUID.randomUUID().toString()
+    val rId = UUID.randomUUID().toString()
+
+    return UmlDiagram(
+        title = "Clean Architecture",
+        nodes = listOf(
+            UmlNode(
+                id = cId,
+                type = UmlNodeType.CLASS,
+                x = 60f, y = 140f, width = 200f, height = 130f,
+                title = "UserController",
+                stereotype = "<<controller>>",
+                attributes = listOf("- service: UserService"),
+                methods = listOf("+ getUser(id): User")
+            ),
+            UmlNode(
+                id = sId,
+                type = UmlNodeType.CLASS,
+                x = 330f, y = 140f, width = 210f, height = 130f,
+                title = "UserService",
+                stereotype = "<<service>>",
+                attributes = listOf("- repo: UserRepository"),
+                methods = listOf("+ findById(id): User")
+            ),
+            UmlNode(
+                id = rId,
+                type = UmlNodeType.INTERFACE,
+                x = 610f, y = 140f, width = 200f, height = 120f,
+                title = "UserRepository",
+                stereotype = "<<interface>>",
+                methods = listOf("+ findById(id): User")
+            )
+        ),
+        edges = listOf(
+            UmlEdge(
+                sourceNodeId = cId,
+                sourcePortPosition = UmlPortPosition.EAST,
+                targetNodeId = sId,
+                targetPortPosition = UmlPortPosition.WEST,
+                relationshipType = UmlRelationshipType.DIRECTED,
+                routingMode = UmlRoutingMode.ORTHOGONAL,
+                label = "uses"
+            ),
+            UmlEdge(
+                sourceNodeId = sId,
+                sourcePortPosition = UmlPortPosition.EAST,
+                targetNodeId = rId,
+                targetPortPosition = UmlPortPosition.WEST,
+                relationshipType = UmlRelationshipType.DEPENDENCY,
+                routingMode = UmlRoutingMode.ORTHOGONAL,
+                label = "calls"
+            )
+        )
+    )
+}
+
+fun createSequenceTemplate(): UmlDiagram {
+    val aId = UUID.randomUUID().toString()
+    val l1Id = UUID.randomUUID().toString()
+    val l2Id = UUID.randomUUID().toString()
+
+    return UmlDiagram(
+        title = "Sequence Flow",
+        nodes = listOf(
+            UmlNode(
+                id = aId,
+                type = UmlNodeType.ACTOR,
+                x = 80f, y = 60f, width = 80f, height = 140f,
+                title = "Client"
+            ),
+            UmlNode(
+                id = l1Id,
+                type = UmlNodeType.LIFELINE,
+                x = 260f, y = 60f, width = 120f, height = 300f,
+                title = "AuthGateway"
+            ),
+            UmlNode(
+                id = l2Id,
+                type = UmlNodeType.LIFELINE,
+                x = 480f, y = 60f, width = 120f, height = 300f,
+                title = "UserDatabase"
+            )
+        ),
+        edges = listOf(
+            UmlEdge(
+                sourceNodeId = aId,
+                sourcePortPosition = UmlPortPosition.EAST,
+                targetNodeId = l1Id,
+                targetPortPosition = UmlPortPosition.WEST,
+                relationshipType = UmlRelationshipType.DIRECTED,
+                routingMode = UmlRoutingMode.STRAIGHT,
+                label = "1: login(credentials)"
+            ),
+            UmlEdge(
+                sourceNodeId = l1Id,
+                sourcePortPosition = UmlPortPosition.EAST,
+                targetNodeId = l2Id,
+                targetPortPosition = UmlPortPosition.WEST,
+                relationshipType = UmlRelationshipType.DIRECTED,
+                routingMode = UmlRoutingMode.STRAIGHT,
+                label = "2: queryUser(email)"
+            )
+        )
+    )
+}
+
+fun createUseCaseTemplate(): UmlDiagram {
+    val aId = UUID.randomUUID().toString()
+    val bId = UUID.randomUUID().toString()
+    val uc1Id = UUID.randomUUID().toString()
+    val uc2Id = UUID.randomUUID().toString()
+
+    return UmlDiagram(
+        title = "Use Case & Actor",
+        nodes = listOf(
+            UmlNode(
+                id = aId,
+                type = UmlNodeType.ACTOR,
+                x = 60f, y = 140f, width = 80f, height = 140f,
+                title = "Customer"
+            ),
+            UmlNode(
+                id = bId,
+                type = UmlNodeType.BOUNDARY,
+                x = 220f, y = 40f, width = 340f, height = 340f,
+                title = "Online Store System"
+            ),
+            UmlNode(
+                id = uc1Id,
+                type = UmlNodeType.USE_CASE,
+                x = 280f, y = 90f, width = 180f, height = 80f,
+                title = "Search Products"
+            ),
+            UmlNode(
+                id = uc2Id,
+                type = UmlNodeType.USE_CASE,
+                x = 280f, y = 230f, width = 180f, height = 80f,
+                title = "Place Order"
+            )
+        ),
+        edges = listOf(
+            UmlEdge(
+                sourceNodeId = aId,
+                sourcePortPosition = UmlPortPosition.EAST,
+                targetNodeId = uc1Id,
+                targetPortPosition = UmlPortPosition.WEST,
+                relationshipType = UmlRelationshipType.ASSOCIATION,
+                routingMode = UmlRoutingMode.STRAIGHT
+            ),
+            UmlEdge(
+                sourceNodeId = aId,
+                sourcePortPosition = UmlPortPosition.EAST,
+                targetNodeId = uc2Id,
+                targetPortPosition = UmlPortPosition.WEST,
+                relationshipType = UmlRelationshipType.ASSOCIATION,
+                routingMode = UmlRoutingMode.STRAIGHT
+            )
+        )
+    )
+}
+
+fun createStateMachineTemplate(): UmlDiagram {
+    val initId = UUID.randomUUID().toString()
+    val s1Id = UUID.randomUUID().toString()
+    val decId = UUID.randomUUID().toString()
+    val finalId = UUID.randomUUID().toString()
+
+    return UmlDiagram(
+        title = "State Machine",
+        nodes = listOf(
+            UmlNode(
+                id = initId,
+                type = UmlNodeType.INITIAL_NODE,
+                x = 80f, y = 140f, width = 40f, height = 40f,
+                title = ""
+            ),
+            UmlNode(
+                id = s1Id,
+                type = UmlNodeType.ACTION_STATE,
+                x = 200f, y = 125f, width = 160f, height = 70f,
+                title = "Processing"
+            ),
+            UmlNode(
+                id = decId,
+                type = UmlNodeType.DECISION,
+                x = 440f, y = 120f, width = 90f, height = 80f,
+                title = "Success?"
+            ),
+            UmlNode(
+                id = finalId,
+                type = UmlNodeType.FINAL_NODE,
+                x = 610f, y = 138f, width = 44f, height = 44f,
+                title = ""
+            )
+        ),
+        edges = listOf(
+            UmlEdge(
+                sourceNodeId = initId,
+                sourcePortPosition = UmlPortPosition.EAST,
+                targetNodeId = s1Id,
+                targetPortPosition = UmlPortPosition.WEST,
+                relationshipType = UmlRelationshipType.DIRECTED,
+                routingMode = UmlRoutingMode.STRAIGHT
+            ),
+            UmlEdge(
+                sourceNodeId = s1Id,
+                sourcePortPosition = UmlPortPosition.EAST,
+                targetNodeId = decId,
+                targetPortPosition = UmlPortPosition.WEST,
+                relationshipType = UmlRelationshipType.DIRECTED,
+                routingMode = UmlRoutingMode.STRAIGHT
+            ),
+            UmlEdge(
+                sourceNodeId = decId,
+                sourcePortPosition = UmlPortPosition.EAST,
+                targetNodeId = finalId,
+                targetPortPosition = UmlPortPosition.WEST,
+                relationshipType = UmlRelationshipType.DIRECTED,
+                routingMode = UmlRoutingMode.STRAIGHT,
+                label = "[yes]"
+            )
+        )
+    )
 }

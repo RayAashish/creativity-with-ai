@@ -7,6 +7,7 @@ import com.antigravity.note.document.model.PaperTemplate
 
 /**
  * Shared renderer for paper backgrounds across the live canvas, PDF exporter, and PNG exporter.
+ * Features high-contrast, mathematically precise grids and patterns for 120Hz tablet screens.
  */
 object PaperBackgroundRenderer {
 
@@ -24,45 +25,80 @@ object PaperBackgroundRenderer {
         }
     }
 
+    // Math Grid / Sub-grid Lines
     private val gridLinePaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#15000000")
-            strokeWidth = 1.5f
+            color = Color.parseColor("#2E000000") // Crisp 18% black in light mode
+            strokeWidth = 1.8f
         }
     }
 
     private val darkGridLinePaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#22FFFFFF")
-            strokeWidth = 1.5f
+            color = Color.parseColor("#38FFFFFF") // Crisp 22% white in dark mode
+            strokeWidth = 1.8f
         }
     }
 
+    // Major Grid Lines (every 5th line)
+    private val majorGridLinePaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#45000000") // 27% black
+            strokeWidth = 2.4f
+        }
+    }
+
+    private val darkMajorGridLinePaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#55FFFFFF") // 33% white
+            strokeWidth = 2.4f
+        }
+    }
+
+    // Margin Lines (Ruled / Cornell)
     private val marginLinePaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#25D32F2F")
-            strokeWidth = 2.0f
+            color = Color.parseColor("#55D32F2F")
+            strokeWidth = 2.4f
         }
     }
 
     private val darkMarginLinePaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#44EF5350")
-            strokeWidth = 2.0f
+            color = Color.parseColor("#77EF5350")
+            strokeWidth = 2.4f
         }
     }
 
+    // Dot Grid
     private val dotPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#35000000")
+            color = Color.parseColor("#4A000000")
             style = Paint.Style.FILL
         }
     }
 
     private val darkDotPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#33FFFFFF")
+            color = Color.parseColor("#55FFFFFF")
             style = Paint.Style.FILL
+        }
+    }
+
+    // Fixed Page Boundary Border
+    private val pageBorderPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#33000000")
+            style = Paint.Style.STROKE
+            strokeWidth = 3f
+        }
+    }
+
+    private val darkPageBorderPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#44FFFFFF")
+            style = Paint.Style.STROKE
+            strokeWidth = 3f
         }
     }
 
@@ -75,18 +111,20 @@ object PaperBackgroundRenderer {
     ) {
         val currentPaperPaint = if (isDark) darkPaperPaint else paperPaint
         val currentGridLinePaint = if (isDark) darkGridLinePaint else gridLinePaint
+        val currentMajorGridLinePaint = if (isDark) darkMajorGridLinePaint else majorGridLinePaint
         val currentMarginLinePaint = if (isDark) darkMarginLinePaint else marginLinePaint
         val currentDotPaint = if (isDark) darkDotPaint else dotPaint
+        val currentBorderPaint = if (isDark) darkPageBorderPaint else pageBorderPaint
 
         // Draw base paper background color
         canvas.drawRect(0f, 0f, width, height, currentPaperPaint)
 
         when (template) {
             PaperTemplate.BLANK -> {
-                // Pure paper
+                // Pure clean paper
             }
             PaperTemplate.RULED -> {
-                val lineSpacing = 44f
+                val lineSpacing = 64f
                 var y = 140f
                 while (y < height) {
                     canvas.drawLine(0f, y, width, y, currentGridLinePaint)
@@ -95,34 +133,40 @@ object PaperBackgroundRenderer {
                 canvas.drawLine(180f, 0f, 180f, height, currentMarginLinePaint)
             }
             PaperTemplate.GRID -> {
-                val gridSize = 36f
+                val gridSize = 64f
+                var lineIdx = 0
                 var y = gridSize
                 while (y < height) {
-                    canvas.drawLine(0f, y, width, y, currentGridLinePaint)
+                    val p = if (lineIdx % 5 == 0) currentMajorGridLinePaint else currentGridLinePaint
+                    canvas.drawLine(0f, y, width, y, p)
                     y += gridSize
+                    lineIdx++
                 }
+                lineIdx = 0
                 var x = gridSize
                 while (x < width) {
-                    canvas.drawLine(x, 0f, x, height, currentGridLinePaint)
+                    val p = if (lineIdx % 5 == 0) currentMajorGridLinePaint else currentGridLinePaint
+                    canvas.drawLine(x, 0f, x, height, p)
                     x += gridSize
+                    lineIdx++
                 }
             }
             PaperTemplate.DOT -> {
-                val dotSpacing = 36f
+                val dotSpacing = 64f
                 var y = dotSpacing
                 while (y < height) {
                     var x = dotSpacing
                     while (x < width) {
-                        canvas.drawCircle(x, y, 1.5f, currentDotPaint)
+                        canvas.drawCircle(x, y, 2.8f, currentDotPaint)
                         x += dotSpacing
                     }
                     y += dotSpacing
                 }
             }
             PaperTemplate.CORNELL -> {
-                val cueColumnX = 320f
+                val cueColumnX = 400f
                 val summaryY = (height - 800f).coerceAtLeast(600f)
-                val lineSpacing = 44f
+                val lineSpacing = 64f
 
                 canvas.drawLine(cueColumnX, 140f, cueColumnX, summaryY, currentMarginLinePaint)
                 canvas.drawLine(0f, 140f, width, 140f, currentMarginLinePaint)
@@ -135,6 +179,9 @@ object PaperBackgroundRenderer {
                 }
             }
         }
+
+        // Draw subtle page boundary border
+        canvas.drawRect(0f, 0f, width, height, currentBorderPaint)
     }
 
     fun drawInfinitePaper(
@@ -144,6 +191,7 @@ object PaperBackgroundRenderer {
         isDark: Boolean = false
     ) {
         val currentGridLinePaint = if (isDark) darkGridLinePaint else gridLinePaint
+        val currentMajorGridLinePaint = if (isDark) darkMajorGridLinePaint else majorGridLinePaint
         val currentMarginLinePaint = if (isDark) darkMarginLinePaint else marginLinePaint
         val currentDotPaint = if (isDark) darkDotPaint else dotPaint
 
@@ -152,58 +200,69 @@ object PaperBackgroundRenderer {
                 // Pure blank infinite canvas
             }
             PaperTemplate.RULED -> {
-                val lineSpacing = 44f
-                val startY = kotlin.math.floor(viewport.top / lineSpacing) * lineSpacing
-                val endY = kotlin.math.ceil(viewport.bottom / lineSpacing) * lineSpacing
+                val lineSpacing = 64f
+                val startY = kotlin.math.floor((viewport.top - 50f) / lineSpacing) * lineSpacing
+                val endY = kotlin.math.ceil((viewport.bottom + 50f) / lineSpacing) * lineSpacing
                 var y = startY
                 while (y <= endY) {
-                    canvas.drawLine(viewport.left - 50f, y, viewport.right + 50f, y, currentGridLinePaint)
+                    canvas.drawLine(viewport.left - 100f, y, viewport.right + 100f, y, currentGridLinePaint)
                     y += lineSpacing
+                }
+                // Optional vertical margin line for ruled layout
+                if (viewport.left <= 200f && viewport.right >= 160f) {
+                    canvas.drawLine(180f, viewport.top - 100f, 180f, viewport.bottom + 100f, currentMarginLinePaint)
                 }
             }
             PaperTemplate.GRID -> {
-                val gridSize = 36f
-                val startY = kotlin.math.floor(viewport.top / gridSize) * gridSize
-                val endY = kotlin.math.ceil(viewport.bottom / gridSize) * gridSize
+                val gridSize = 64f
+                val startY = kotlin.math.floor((viewport.top - 50f) / gridSize) * gridSize
+                val endY = kotlin.math.ceil((viewport.bottom + 50f) / gridSize) * gridSize
                 var y = startY
                 while (y <= endY) {
-                    canvas.drawLine(viewport.left - 50f, y, viewport.right + 50f, y, currentGridLinePaint)
+                    val idx = kotlin.math.round(y / gridSize).toInt()
+                    val p = if (idx % 5 == 0) currentMajorGridLinePaint else currentGridLinePaint
+                    canvas.drawLine(viewport.left - 100f, y, viewport.right + 100f, y, p)
                     y += gridSize
                 }
-                val startX = kotlin.math.floor(viewport.left / gridSize) * gridSize
-                val endX = kotlin.math.ceil(viewport.right / gridSize) * gridSize
+                val startX = kotlin.math.floor((viewport.left - 50f) / gridSize) * gridSize
+                val endX = kotlin.math.ceil((viewport.right + 50f) / gridSize) * gridSize
                 var x = startX
                 while (x <= endX) {
-                    canvas.drawLine(x, viewport.top - 50f, x, viewport.bottom + 50f, currentGridLinePaint)
+                    val idx = kotlin.math.round(x / gridSize).toInt()
+                    val p = if (idx % 5 == 0) currentMajorGridLinePaint else currentGridLinePaint
+                    canvas.drawLine(x, viewport.top - 100f, x, viewport.bottom + 100f, p)
                     x += gridSize
                 }
             }
             PaperTemplate.DOT -> {
-                val dotSpacing = 36f
-                val startY = kotlin.math.floor(viewport.top / dotSpacing) * dotSpacing
-                val endY = kotlin.math.ceil(viewport.bottom / dotSpacing) * dotSpacing
-                val startX = kotlin.math.floor(viewport.left / dotSpacing) * dotSpacing
-                val endX = kotlin.math.ceil(viewport.right / dotSpacing) * dotSpacing
+                val dotSpacing = 64f
+                val startY = kotlin.math.floor((viewport.top - 50f) / dotSpacing) * dotSpacing
+                val endY = kotlin.math.ceil((viewport.bottom + 50f) / dotSpacing) * dotSpacing
+                val startX = kotlin.math.floor((viewport.left - 50f) / dotSpacing) * dotSpacing
+                val endX = kotlin.math.ceil((viewport.right + 50f) / dotSpacing) * dotSpacing
                 var y = startY
                 while (y <= endY) {
                     var x = startX
                     while (x <= endX) {
-                        canvas.drawCircle(x, y, 1.5f, currentDotPaint)
+                        canvas.drawCircle(x, y, 2.8f, currentDotPaint)
                         x += dotSpacing
                     }
                     y += dotSpacing
                 }
             }
             PaperTemplate.CORNELL -> {
-                val lineSpacing = 44f
-                val startY = kotlin.math.floor(viewport.top / lineSpacing) * lineSpacing
-                val endY = kotlin.math.ceil(viewport.bottom / lineSpacing) * lineSpacing
+                val lineSpacing = 64f
+                val startY = kotlin.math.floor((viewport.top - 50f) / lineSpacing) * lineSpacing
+                val endY = kotlin.math.ceil((viewport.bottom + 50f) / lineSpacing) * lineSpacing
                 var y = startY
                 while (y <= endY) {
-                    canvas.drawLine(viewport.left - 50f, y, viewport.right + 50f, y, currentGridLinePaint)
+                    canvas.drawLine(viewport.left - 100f, y, viewport.right + 100f, y, currentGridLinePaint)
                     y += lineSpacing
                 }
-                canvas.drawLine(320f, viewport.top - 50f, 320f, viewport.bottom + 50f, currentMarginLinePaint)
+                // Cue column divider
+                if (viewport.left <= 420f && viewport.right >= 380f) {
+                    canvas.drawLine(400f, viewport.top - 100f, 400f, viewport.bottom + 100f, currentMarginLinePaint)
+                }
             }
         }
     }

@@ -47,8 +47,35 @@ class LaserPointerOverlay(private val hostView: View) {
     var decayType: LaserDecayType = LaserDecayType.FADE_ON_LIFT
     var fadeDurationMs: Long = 1200L
         set(value) {
-            field = value.coerceIn(600L, 2500L)
+            field = value.coerceIn(500L, 600_000L) // Support up to 10 minutes (600,000ms)
         }
+
+    var isLivePermanentGlowActive = false
+        private set
+
+    fun startLivePermanentGlow(x: Float, y: Float, timestamp: Long) {
+        isLivePermanentGlowActive = true
+        onActionDown(x, y, timestamp)
+    }
+
+    fun updateLivePermanentGlow(x: Float, y: Float, timestamp: Long) {
+        if (!isLivePermanentGlowActive) return
+        onActionMove(x, y, timestamp)
+    }
+
+    fun finishLivePermanentGlow() {
+        if (!isLivePermanentGlowActive) return
+        isLivePermanentGlowActive = false
+        if (activeStrokeId in 0 until MAX_STROKES) {
+            strokeIsActive[activeStrokeId] = false
+            strokeLiftTimes[activeStrokeId] = 0L
+        }
+        pointCount = 0
+        pointHead = 0
+        isCurrentStrokeDown = false
+        activeStrokeId = -1
+        hostView.invalidate()
+    }
 
     var neonColor: Int = COLOR_CRIMSON_RED
         set(value) {
