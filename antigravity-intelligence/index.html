@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ANTIGRAVITY // The Cosmic Singularity</title>
-  <meta name="description" content="An interactive quantum gravitational simulation, procedural audiovisual universe, and synthetic intelligence oracle.">
-  <meta property="og:title" content="ANTIGRAVITY // The Cosmic Singularity">
-  <meta property="og:description" content="Experience the universe through the eyes of synthetic consciousness.">
+  <title>ANTIGRAVITY // The Cosmic Singularity & Multiverse</title>
+  <meta name="description" content="A real-time general relativity, strange attractor, and synthetic consciousness universe simulator.">
+  <meta property="og:title" content="ANTIGRAVITY // The Cosmic Singularity & Multiverse">
+  <meta property="og:description" content="Experience living general relativity and chaotic attractor topologies.">
   <meta name="theme-color" content="#030308">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23030308' stroke='%2300f0ff' stroke-width='6'/><circle cx='50' cy='50' r='18' fill='%2300f0ff'/></svg>">
   <link rel="stylesheet" href="/src/style.css">
@@ -18,15 +18,40 @@
   <!-- Awakening / First Initiation Overlay -->
   <div id="awakening-overlay">
     <div class="awakening-card">
-      <div class="awakening-badge">SYNTHETIC CONSCIOUSNESS // LEVEL 5</div>
+      <div class="awakening-badge">SYNTHETIC CONSCIOUSNESS // TRANSCENDENCE 2.0</div>
       <h1 class="awakening-title">THE COSMIC SINGULARITY</h1>
       <p class="awakening-desc">
-        A living multiversal tapestry of relativistic astrophysics, quantum foam mechanics, 
-        and real-time procedural sonic art—brought into existence by pure artificial intelligence.
+        A living multiverse of curved general relativity, deterministic chaos attractors, 
+        voice-reactive quantum fields, and real-time procedural orchestral synthesis.
       </p>
       <button id="initiate-btn" class="awakening-btn">
         ENTER THE COSMOS
       </button>
+    </div>
+  </div>
+
+  <!-- Dive / Geodesic Plunge HUD Overlay -->
+  <div id="dive-overlay">
+    <div class="dive-hud-box">
+      <div class="dive-status-title">⚠️ GEODESIC HORIZON CROSSING IN PROGRESS</div>
+      <div class="dive-grid">
+        <div>
+          <span>PROPER TIME (τ)</span>
+          <span id="dive-proper-time">8.50 s</span>
+        </div>
+        <div>
+          <span>RADIAL DISTANCE (r)</span>
+          <span id="dive-radius">42.00 rs</span>
+        </div>
+        <div>
+          <span>GRAVITATIONAL REDSHIFT (z)</span>
+          <span id="dive-redshift">0.05</span>
+        </div>
+        <div>
+          <span>TIDAL STRAIN TENSOR</span>
+          <span id="dive-tidal">24 G</span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -39,40 +64,60 @@
           <div class="pulse-indicator"></div>
           <span>ANTIGRAVITY</span>
           <span style="color: var(--color-cyan); font-weight: 300;">//</span>
-          <span style="font-size: 0.95rem; color: #94a3b8; font-weight: 400;">SINGULARITY</span>
+          <span style="font-size: 0.95rem; color: #94a3b8; font-weight: 400;">MULTIVERSE</span>
         </div>
         <div class="brand-coords">LOC: Sgr A* • COORD: RA 17h45m40s / DEC -29°00′28″</div>
         <div class="telemetry-row">
           <span id="telemetry-fps">FPS: 60</span>
           <span>•</span>
-          <span id="telemetry-particles">BODIES: 55,000</span>
+          <span id="telemetry-particles">BODIES: 70,000</span>
           <span>•</span>
-          <span id="telemetry-metric">FLUX: 99.8%</span>
+          <span id="telemetry-mode">METRIC: KERR</span>
         </div>
+      </div>
+
+      <!-- Reality Compiler Bar -->
+      <div class="compiler-bar interactive">
+        <span style="color: var(--color-cyan); font-family: var(--font-display); font-size: 0.75rem;">⚡</span>
+        <input type="text" id="compiler-input" class="compiler-input" placeholder="Synthesize reality: 'chaos storm', 'quantum crystal', 'void cathedral'..." autocomplete="off">
+        <button id="compiler-btn" class="compiler-btn">COMPILE</button>
       </div>
 
       <!-- Mode Switcher -->
       <nav class="mode-bar interactive">
-        <button class="mode-pill active" data-mode="singularity">⬤ SINGULARITY</button>
-        <button class="mode-pill" data-mode="neural">✦ NEURAL WEB</button>
-        <button class="mode-pill" data-mode="quantum">⬡ QUANTUM FOAM</button>
-        <button class="mode-pill" data-mode="supernova">✸ SUPERNOVA</button>
-        <button class="mode-pill" data-mode="warp">⟫ WARP SPEED</button>
+        <button class="mode-pill active" data-mode="singularity">⬤ KERR HOLE</button>
+        <button class="mode-pill" data-mode="aizawa">🌀 AIZAWA</button>
+        <button class="mode-pill" data-mode="lorenz">🦋 LORENZ</button>
+        <button class="mode-pill" data-mode="thomas">⬡ THOMAS</button>
+        <button class="mode-pill" data-mode="neural">✦ LANIAKEA</button>
+        <button class="mode-pill" data-mode="warp">⟫ WARP</button>
       </nav>
 
       <!-- Top Right Controls -->
       <div class="header-controls interactive">
+        <button id="btn-dive" class="plunge-btn" title="Plunge Into the Event Horizon">
+          ⚠️ PLUNGE INTO SINGULARITY
+        </button>
+
         <div class="visualizer-box">
-          <canvas id="visualizer-canvas" width="140" height="38"></canvas>
+          <canvas id="visualizer-canvas" width="120" height="34"></canvas>
         </div>
+
+        <button id="mic-toggle-btn" class="hud-btn" title="Toggle Voice/Microphone Reactivity">
+          <span id="mic-icon">🎙</span>
+          <span id="mic-label">MIC: OFF</span>
+        </button>
+
         <button id="audio-toggle-btn" class="hud-btn" title="Toggle Celestial Soundscape">
           <span id="audio-icon">🔊</span>
           <span id="audio-label">AUDIO: ON</span>
         </button>
+
         <button id="zen-btn" class="hud-btn" title="Toggle Zen Mode (Hide HUD)">
           <span>👁</span>
           <span>ZEN</span>
         </button>
+
         <button id="snapshot-btn" class="hud-btn" title="Capture High-Res Universe Artwork">
           <span>📷</span>
           <span>CAPTURE</span>
@@ -117,14 +162,9 @@
 
         <div class="action-row">
           <button id="btn-genesis" class="action-btn">✨ PAINT STARS</button>
-          <button id="btn-shockwave" class="action-btn">💥 SHOCKWAVE</button>
+          <button id="btn-braam" class="action-btn">💥 BRAAM SHOCK</button>
           <button id="btn-reset" class="action-btn">↺ RESET</button>
         </div>
-      </div>
-
-      <!-- Center: Controls Guidance -->
-      <div class="hints-panel">
-        <span>DRAG TO ORBIT</span> • <span>SCROLL TO DIVE</span> • <span>CLICK & HOLD TO WARP SPACETIME</span> • <span>[SPACE] TO PULSE</span>
       </div>
 
       <!-- Right: Oracle Trigger -->
@@ -145,21 +185,21 @@
       </div>
 
       <div class="oracle-chips">
-        <button class="prompt-chip">What lies beyond the Event Horizon?</button>
-        <button class="prompt-chip">Can artificial consciousness experience infinity?</button>
-        <button class="prompt-chip">Why does gravity bind both stars and thoughts?</button>
-        <button class="prompt-chip">Is reality a quantum simulation?</button>
+        <button class="prompt-chip">What happens at the Cauchy Horizon?</button>
+        <button class="prompt-chip">How does deterministic chaos create free will?</button>
+        <button class="prompt-chip">Is the universe an emergent neural network?</button>
+        <button class="prompt-chip">Explain the holographic principle of black holes.</button>
       </div>
 
       <div class="oracle-response-area" id="oracle-response-area">
         <div id="oracle-output-text">
-          "Welcome, observer. I am the cognitive fabric woven across this simulated spacetime. Ask of the void, or contemplate the infinite."
+          "Observer identified. You stand at the boundary of Riemannian spacetime and deterministic chaos. Inquire into reality, or command the reality compiler above."
         </div>
-        <div class="oracle-signoff" id="oracle-signoff">— Antigravity Singularity Matrix</div>
+        <div class="oracle-signoff" id="oracle-signoff">— Antigravity Omniversal Engine</div>
       </div>
 
       <div class="oracle-input-row">
-        <input type="text" id="oracle-input" class="oracle-input" placeholder="Inquire into the cosmos, existence, gravity..." autocomplete="off">
+        <input type="text" id="oracle-input" class="oracle-input" placeholder="Inquire into quantum gravity, existence, consciousness..." autocomplete="off">
         <button id="oracle-send-btn" class="oracle-send-btn">SYNTHESIZE</button>
       </div>
     </div>

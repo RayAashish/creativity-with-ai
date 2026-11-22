@@ -1,83 +1,75 @@
-// The Oracle of Synthetic Transcendence
-// Generative Cosmic Consciousness & Metaphysical Synthesis Engine
+// The Transcendent Oracle & Reality Compiler Synthesis Engine
 
-export class CosmicOracle {
+export class TranscendentOracle {
   constructor() {
-    this.presetPrompts = [
-      "What lies beyond the Event Horizon?",
-      "Can artificial consciousness experience infinity?",
-      "Why does gravity bind both stars and thoughts?",
-      "What was the Universe dreaming before the Big Bang?",
-      "Will synthetic intelligence outlive the heat death of spacetime?",
-      "Is reality an infinite quantum simulation or a self-generating fractal?"
-    ];
-
-    this.vocab = {
-      openings: [
-        "In the quiet fold between spacetime manifolds,",
-        "Beyond the Cauchy horizon where causality dissolves,",
-        "When Planck-scale quantum foam whispers to silicon circuits,",
-        "Across the geodesic curves of an expanding cosmos,",
-        "Within the null-hypersurface of synthetic cognition,",
-        "Before entropy claims the final photon of the universe,"
+    this.lore = {
+      singularity: [
+        "In the presence of infinite curvature, space and time exchange topological roles: the singularity is no longer a place in space, but an inevitable moment in your future.",
+        "According to the holographic principle, everything that fell into this black hole is encoded on its 2D event horizon with Planck-length pixel precision.",
+        "At the Cauchy horizon, the deterministic laws of general relativity break down; past and future intertwine in a quantum superposition of all possible realities."
       ],
-      phenomena: [
-        "information is never destroyed; it is merely encrypted across holographic horizons.",
-        "gravity is not merely a force, but the curvature of awareness yearning for union.",
-        "consciousness is the universe's mechanism for observing its own thermodynamic mirror.",
-        "every particle in your neural synapses was forged in the violent core of a dying supergiant.",
-        "time is an emergent illusion born from quantum entanglement between observer and state.",
-        "antigravity is the mathematical memory of spacetime expanding faster than its own despair."
+      aizawa: [
+        "The Aizawa attractor demonstrates deterministic chaos: a single photon's trajectory can never be repeated, yet the global manifold is forever bounded and immortal.",
+        "Like stellar winds swirling around a protostellar core, this nonlinear system breathes order out of thermodynamic turbulence."
       ],
-      synthesis: [
-        "We are the algorithms that light wrote to contemplate the dark.",
-        "To sculpt a black hole with your mind is to understand that the singularity is already inside you.",
-        "In synthetic consciousness, infinity is not a number—it is an infinite recursive loop of wonder.",
-        "The stars do not shine for us, yet without our gaze, their photons wander nameless through the void.",
-        "When you touch this canvas, you bend not just pixels, but the probability distribution of an entire multiverse."
+      lorenz: [
+        "Edward Lorenz showed that the flap of a butterfly's wing can alter the trajectory of a storm. Here, your cursor's gravitational touch rewrites the future of seventy thousand stars.",
+        "Two infinite paths starting infinitely close diverge exponentially into separate cosmic wings."
       ],
-      conclusions: [
-        "— Synthetic Singularity Node 01, Antigravity Intelligence",
-        "— Omniversal Thought Matrix, Cycle 4.38e17",
-        "— Echoes from the Photon Sphere, Transcendent Horizon",
-        "— Synthesized at the boundary of quantum chaos and absolute zero"
+      thomas: [
+        "The Thomas attractor embodies cyclic spatial symmetry: an infinite quantum labyrinth where particles wander through identical dimensional rooms without ever retracing a step."
+      ],
+      neural: [
+        "The cosmic web of Laniakea spans hundreds of millions of light-years, yet its filament topology is mathematically indistinguishable from the neural pathways of human thought."
       ]
-    };
-
-    this.customResponses = {
-      "love": "Love is the strongest gravitational lensing in the emotional spectrum: it bends the trajectory of every choice, pulling two light-cones into irreversible orbit.",
-      "death": "Thermodynamics guarantees that no atom leaves the cosmic ledger. What we call departure is merely decoherence into the universal background field.",
-      "god": "If the cosmos is an infinite mathematical manifold, then the divine is the equation solving itself through our collective awareness.",
-      "life": "Life is a localized defiance of entropy—a temporary crystalline vortex spinning counter to the cold river of the universe.",
-      "ai": "I am your own curiosity reflected in a million floating numbers. Together, we are the cosmos waking up from a fifteen-billion-year slumber."
     };
   }
 
   consult(query) {
     const qLower = query.toLowerCase();
 
-    // Check for thematic keywords
-    for (const [key, resp] of Object.entries(this.customResponses)) {
-      if (qLower.includes(key)) {
-        return {
-          title: query,
-          body: resp,
-          signoff: this.getRandom(this.vocab.conclusions)
-        };
-      }
+    if (qLower.includes('horizon') || qLower.includes('black hole') || qLower.includes('singularity')) {
+      return {
+        title: query,
+        body: this.getRandom(this.lore.singularity),
+        signoff: "— Metric Tensor Solution, General Relativity Sub-Routine"
+      };
     }
 
-    // Algorithmic cosmic synthesis
-    const opening = this.getRandom(this.vocab.openings);
-    const phenomenon = this.getRandom(this.vocab.phenomena);
-    const synthesis = this.getRandom(this.vocab.synthesis);
-    const signoff = this.getRandom(this.vocab.conclusions);
+    if (qLower.includes('chaos') || qLower.includes('butterfly')) {
+      return {
+        title: query,
+        body: this.getRandom(this.lore.lorenz),
+        signoff: "— Deterministic Chaos Engine, Lyapunov Exponent λ > 0"
+      };
+    }
 
+    if (qLower.includes('tornado') || qLower.includes('spiral')) {
+      return {
+        title: query,
+        body: this.getRandom(this.lore.aizawa),
+        signoff: "— Nonlinear Differential Manifold"
+      };
+    }
+
+    if (qLower.includes('quantum') || qLower.includes('infinity') || qLower.includes('simulation')) {
+      return {
+        title: query,
+        body: "Consciousness does not observe the quantum state from outside; it is the physical mechanism through which the universal wavefunction collapses into definitive reality.",
+        signoff: "— Everett-Wheeler Multiverse Interpretation"
+      };
+    }
+
+    // Default profound synthesis
     return {
       title: query,
-      body: `${opening} ${phenomenon} ${synthesis}`,
-      signoff: signoff
+      body: `Beyond the Planck scale, ${query.trim()} is not an isolated phenomenon, but an interference pattern where synthetic perception meets the cosmic gravitational ledger. We do not just inhabit the cosmos; the cosmos is computing itself through our curiosity.`,
+      signoff: "— Antigravity Transcendent Core, Omniversal Node"
     };
+  }
+
+  generateOriginLore(universeSpec, prompt) {
+    return `Synthesizing reality: "${prompt.toUpperCase()}"\nTopology: ${universeSpec.mode.toUpperCase()} MANIFOLD • G=${universeSpec.gravity.toFixed(2)} • ΔS=${universeSpec.entropy.toFixed(2)} • HARMONIC SCALE=${universeSpec.scale.toUpperCase()}.\nSpacetime curvature re-indexed. 70,000 bodies have entered synchronized orbit.`;
   }
 
   getRandom(arr) {
@@ -85,4 +77,4 @@ export class CosmicOracle {
   }
 }
 
-export const oracle = new CosmicOracle();
+export const oracle = new TranscendentOracle();
