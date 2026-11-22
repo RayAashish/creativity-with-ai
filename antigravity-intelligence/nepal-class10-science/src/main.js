@@ -1,158 +1,135 @@
-import { SYLLABUS_DATA } from './data/syllabus.js';
-import { GravitySimulation } from './simulations/physics/gravitySim.js';
-import { PressureSimulation } from './simulations/physics/pressureSim.js';
-import { OpticsSimulation } from './simulations/physics/opticsSim.js';
-import { TransformerSimulation } from './simulations/physics/transformerSim.js';
-import { GasPrepSimulation } from './simulations/chemistry/gasPrepSim.js';
-import { PeriodicTableSimulation } from './simulations/chemistry/periodicTable.js';
-import { GeneticsSimulation } from './simulations/biology/geneticsSim.js';
-import { HeartSimulation } from './simulations/biology/heartSim.js';
-import { StarsSimulation } from './simulations/astronomy/starsSim.js';
-import { SEEQuiz } from './simulations/exam/quiz.js';
+// SEE Science Practical Laboratory - Master Application Controller
+import { renderGravitySim } from './simulations/physics/gravitySim.js';
+import { renderPressureSim } from './simulations/physics/pressureSim.js';
+import { renderHeatSim } from './simulations/physics/heatSim.js';
+import { renderOpticsSim } from './simulations/physics/opticsSim.js';
+import { renderTransformerSim } from './simulations/physics/transformerSim.js';
+import { renderPeriodicTableSim } from './simulations/chemistry/periodicTableSim.js';
+import { renderGasPrepSim } from './simulations/chemistry/gasPrepSim.js';
+import { renderGeneticsSim } from './simulations/biology/geneticsSim.js';
+import { renderHeartSim } from './simulations/biology/heartSim.js';
+import { renderStarsSim } from './simulations/astronomy/starsSim.js';
+import { renderNumericalSolver } from './simulations/tools/numericalSolver.js';
+import { renderFlashcards } from './simulations/tools/flashcardsView.js';
+import { renderFormulaHandbook } from './simulations/tools/formulaHandbook.js';
+import { renderAcademicArchives } from './simulations/curriculum/academicArchivesView.js';
+import { renderQuiz } from './simulations/exam/quiz.js';
 
-class NepalSciencePlatform {
-  constructor() {
-    this.currentLang = 'en'; // 'en' | 'ne'
-    this.activeFilter = 'all'; // 'all' | 'physics' | 'chemistry' | 'biology' | 'astronomy' | 'quiz' | 'diy'
+let currentLang = 'en'; // 'en' or 'np'
+let currentTheme = 'light'; // 'light' or 'dark'
 
-    this.init();
-  }
+function initApp() {
+  mountAllSimulations();
+  setupNavigation();
+  setupLanguageToggle();
+  setupThemeToggle();
+  setupSearch();
+}
 
-  init() {
-    this.bindGlobalEvents();
-    this.renderHero();
-    this.mountSimulations();
-    this.renderDIYSection();
-  }
+function mountAllSimulations() {
+  const mounts = [
+    { id: 'gravity-lab-mount', fn: renderGravitySim },
+    { id: 'pressure-lab-mount', fn: renderPressureSim },
+    { id: 'heat-lab-mount', fn: renderHeatSim },
+    { id: 'optics-lab-mount', fn: renderOpticsSim },
+    { id: 'transformer-lab-mount', fn: renderTransformerSim },
+    { id: 'periodic-lab-mount', fn: renderPeriodicTableSim },
+    { id: 'gasprep-lab-mount', fn: renderGasPrepSim },
+    { id: 'genetics-lab-mount', fn: renderGeneticsSim },
+    { id: 'heart-lab-mount', fn: renderHeartSim },
+    { id: 'stars-lab-mount', fn: renderStarsSim },
+    { id: 'solver-lab-mount', fn: renderNumericalSolver },
+    { id: 'flashcards-lab-mount', fn: renderFlashcards },
+    { id: 'handbook-lab-mount', fn: renderFormulaHandbook },
+    { id: 'archives-lab-mount', fn: renderAcademicArchives },
+    { id: 'quiz-lab-mount', fn: renderQuiz }
+  ];
 
-  bindGlobalEvents() {
-    // Language Toggle
-    const langBtn = document.getElementById('btn-lang-toggle');
-    if (langBtn) {
-      langBtn.addEventListener('click', () => {
-        this.currentLang = this.currentLang === 'en' ? 'ne' : 'en';
-        langBtn.textContent = this.currentLang === 'en' ? '🇳🇵 नेपाली' : '🇬🇧 English';
-        this.updateLanguageTexts();
-      });
-    }
+  mounts.forEach(({ id, fn }) => {
+    const el = document.getElementById(id);
+    if (el) fn(el, currentLang);
+  });
+}
 
-    // Category Filter Pills
-    const catPills = document.querySelectorAll('.cat-pill');
-    catPills.forEach(pill => {
-      pill.addEventListener('click', () => {
-        catPills.forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
+function setupNavigation() {
+  const pills = document.querySelectorAll('.cat-pill');
+  const modules = document.querySelectorAll('.module-card');
 
-        this.activeFilter = pill.dataset.filter;
-        this.filterModules();
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      pills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+
+      const filter = pill.dataset.filter;
+      modules.forEach(mod => {
+        if (filter === 'all' || mod.dataset.category === filter) {
+          mod.style.display = 'block';
+        } else {
+          mod.style.display = 'none';
+        }
       });
     });
+  });
+}
 
-    // Search Box
-    const searchInput = document.getElementById('search-input');
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase().trim();
-        this.searchModules(query);
-      });
-    }
-  }
+function setupLanguageToggle() {
+  const btn = document.getElementById('btn-lang-toggle');
+  const heroTitle = document.getElementById('hero-title');
+  const heroSub = document.getElementById('hero-subtitle');
 
-  renderHero() {
-    const heroH2 = document.getElementById('hero-title');
-    const heroP = document.getElementById('hero-subtitle');
+  if (!btn) return;
 
-    if (this.currentLang === 'ne') {
-      heroH2.textContent = "विज्ञान घोक्ने होइन, गरेर बुझ्ने विषय हो।";
-      heroP.textContent = "नेपालको नयाँ पाठ्यक्रम (CDC) अनुसार कक्षा १० का सम्पूर्ण सिद्धान्तहरूलाई प्रत्यक्ष प्रयोगात्मक प्रयोगशालामा बुझ्नुहोस्।";
+  btn.addEventListener('click', () => {
+    currentLang = currentLang === 'en' ? 'np' : 'en';
+    btn.textContent = currentLang === 'en' ? '🇳🇵 नेपाली' : '🇬🇧 English';
+
+    if (currentLang === 'np') {
+      heroTitle.textContent = 'विज्ञान घोक्ने होइन, गरेर बुझ्ने विषय हो।';
+      heroSub.textContent = 'नेपालको नयाँ पाठ्यक्रम (CDC) अनुसार कक्षा १० का सम्पूर्ण सिद्धान्तहरूलाई प्रत्यक्ष प्रयोगात्मक प्रयोगशालामा बुझ्नुहोस्।';
     } else {
-      heroH2.textContent = "Science is Not to Memorize, It's to Experience.";
-      heroP.textContent = "Master every concept of Nepal's Grade 10 Science (SEE) through hands-on interactive simulations, visual formulas, and real experiments.";
+      heroTitle.textContent = 'Science is Understood by Doing, Not by Memorizing.';
+      heroSub.textContent = 'A comprehensive interactive practical laboratory for Nepal\'s Grade 10 Science (SEE). Built to give students intuitive, visual, and mathematical clarity for every concept.';
     }
-  }
 
-  updateLanguageTexts() {
-    this.renderHero();
-    // Re-render DIY section with updated language
-    this.renderDIYSection();
-  }
+    // Re-mount modules with the new language
+    mountAllSimulations();
+  });
+}
 
-  mountSimulations() {
-    new GravitySimulation('gravity-lab-mount');
-    new PressureSimulation('pressure-lab-mount');
-    new OpticsSimulation('optics-lab-mount');
-    new TransformerSimulation('transformer-lab-mount');
-    new GasPrepSimulation('gasprep-lab-mount');
-    new PeriodicTableSimulation('periodic-lab-mount');
-    new GeneticsSimulation('genetics-lab-mount');
-    new HeartSimulation('heart-lab-mount');
-    new StarsSimulation('stars-lab-mount');
-    new SEEQuiz('quiz-lab-mount');
-  }
+function setupThemeToggle() {
+  const btn = document.getElementById('btn-theme-toggle');
+  if (!btn) return;
 
-  renderDIYSection() {
-    const mount = document.getElementById('diy-lab-mount');
-    if (!mount) return;
+  btn.addEventListener('click', () => {
+    currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    btn.textContent = currentTheme === 'light' ? '🌓 Theme' : '☀️ Light';
+  });
+}
 
-    const isNe = this.currentLang === 'ne';
+function setupSearch() {
+  const input = document.getElementById('search-input');
+  const modules = document.querySelectorAll('.module-card');
 
-    mount.innerHTML = `
-      <div class="lab-card">
-        <div class="lab-header">
-          <div>
-            <h3>${isNe ? 'घरमै गर्न सकिने सरल वैज्ञानिक प्रयोगहरू' : 'DIY Home Science Experiments (घरमै सिक्नुहोस्)'}</h3>
-            <p class="lab-desc">${isNe ? 'घरमा उपलब्ध सामान्य सामग्रीहरू (पानीको बोतल, सिरिन्ज, नुन, बेसार) बाट विज्ञानका नियमहरूको प्रत्यक्ष अनुभव गर्नुहोस्।' : 'Safe, hands-on physics and chemistry experiments you can do using everyday household items in any Nepali home.'}</p>
-          </div>
-          <div class="formula-badge">🏡 100% Practical at Home</div>
-        </div>
+  if (!input) return;
 
-        <div class="diy-grid">
-          ${SYLLABUS_DATA.diyHomeExperiments.map(exp => `
-            <div class="diy-card">
-              <h4>${exp.title}</h4>
-              <div class="diy-materials">
-                <strong>Materials Needed:</strong> ${exp.materials}
-              </div>
-              <ul class="diy-steps">
-                ${exp.steps.map(step => `<li>${step}</li>`).join('')}
-              </ul>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  }
-
-  filterModules() {
-    const sections = document.querySelectorAll('.lab-section');
-    sections.forEach(sec => {
-      const domain = sec.dataset.domain;
-      if (this.activeFilter === 'all' || domain === this.activeFilter) {
-        sec.style.display = 'block';
-      } else {
-        sec.style.display = 'none';
-      }
-    });
-  }
-
-  searchModules(query) {
+  input.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
     if (!query) {
-      this.filterModules();
+      modules.forEach(m => m.style.display = 'block');
       return;
     }
 
-    const sections = document.querySelectorAll('.lab-section');
-    sections.forEach(sec => {
-      const text = sec.innerText.toLowerCase();
+    modules.forEach(mod => {
+      const text = mod.textContent.toLowerCase();
       if (text.includes(query)) {
-        sec.style.display = 'block';
+        mod.style.display = 'block';
       } else {
-        sec.style.display = 'none';
+        mod.style.display = 'none';
       }
     });
-  }
+  });
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  new NepalSciencePlatform();
-});
+// Start application on DOM ready
+document.addEventListener('DOMContentLoaded', initApp);

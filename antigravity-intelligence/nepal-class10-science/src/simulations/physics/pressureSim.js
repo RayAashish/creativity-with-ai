@@ -1,206 +1,237 @@
-// Interactive Physics: Pascal's Hydraulic Lift & Archimedes' Principle Upthrust Simulator
+// Interactive Pressure, Pascal's Hydraulic Lift & Archimedes Upthrust Tank
 
-export class PressureSimulation {
-  constructor(containerId) {
-    this.container = document.getElementById(containerId);
+export function renderPressureSim(container, lang = 'en') {
+  container.innerHTML = `
+    <div class="sim-card">
+      <div class="sim-header">
+        <div class="sim-badge">PHYSICS LAB // भौतिक विज्ञान</div>
+        <h2 class="sim-title">${lang === 'np' ? 'तरल पदार्थको चाप, पास्कलको नियम र आर्किमिडिजको सिद्धान्त' : 'Pressure, Pascal\'s Hydraulic Lift & Archimedes Lab'}</h2>
+        <p class="sim-desc">
+          ${lang === 'np'
+            ? 'पास्कलको नियममा आधारित हाइड्रोलिक ग्यारेज लिफ्ट र आर्किमिडिजको सिद्धान्तमा आधारित विस्थापित पानीको तौल र उर्ध्वचाप।'
+            : 'Explore Pascal\'s Law through an interactive hydraulic car lift (F₁/A₁ = F₂/A₂) and Archimedes\' immersion tank with real displaced liquid overflow.'}
+        </p>
+      </div>
 
-    // Hydraulic Lift parameters
-    this.a1 = 4.0; // cm²
-    this.a2 = 120.0; // cm²
-    this.f1 = 50.0; // Newtons applied by hand
+      <div class="lab-subtabs">
+        <button class="subtab-btn active" data-sub="pascal">${lang === 'np' ? '🚗 पास्कलको नियम (हाइड्रोलिक लिफ्ट)' : '🚗 Pascal\'s Hydraulic Lift'}</button>
+        <button class="subtab-btn" data-sub="archimedes">${lang === 'np' ? '⚖️ आर्किमिडिज र उर्ध्वचाप (Eureka Can)' : '⚖️ Archimedes & Upthrust Tank'}</button>
+      </div>
 
-    // Archimedes parameters
-    this.selectedMaterial = 'aluminum';
-    this.selectedLiquid = 'water';
-    this.objectVolume = 0.002; // m³ (2 Liters)
+      <!-- 1. PASCAL HYDRAULIC LIFT -->
+      <div id="press-sub-pascal" class="subtab-content active">
+        <div class="minimal-grid">
+          <div class="interactive-panel">
+            <h3 class="panel-heading">${lang === 'np' ? 'हाइड्रोलिक कार लिफ्ट (यान्त्रिक फाइदा)' : 'Hydraulic Garage Lift (Mechanical Advantage)'}</h3>
 
-    this.materials = {
-      wood: { name: 'Wood (काठ)', density: 700, emoji: '🪵' },
-      ice: { name: 'Ice (बरफ)', density: 917, emoji: '🧊' },
-      aluminum: { name: 'Aluminum (अल्युमिनियम)', density: 2700, emoji: '⚙️' },
-      iron: { name: 'Iron (फलाम)', density: 7870, emoji: '🔩' }
-    };
+            <div class="canvas-wrapper">
+              <svg viewBox="0 0 540 260" class="sim-svg">
+                <!-- Hydraulic fluid connecting tube -->
+                <path d="M 90 190 L 90 230 L 420 230 L 420 180" fill="none" stroke="#0284c7" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M 90 190 L 90 230 L 420 230 L 420 180" fill="none" stroke="#e0f2fe" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
 
-    this.liquids = {
-      water: { name: 'Pure Water (शुद्ध पानी)', density: 1000, color: '#38bdf8' },
-      saltWater: { name: 'Dead Sea / Salty Water (नुनिलो पानी)', density: 1080, color: '#0284c7' },
-      kerosene: { name: 'Kerosene (मट्टितेल)', density: 800, color: '#fbbf24' },
-      mercury: { name: 'Mercury (पारो)', density: 13600, color: '#94a3b8' }
-    };
+                <!-- Small Cylinder (Left, Area A1) -->
+                <rect x="75" y="110" width="30" height="90" fill="none" stroke="#18181b" stroke-width="2" />
+                <rect id="piston-small" x="76" y="140" width="28" height="12" fill="#52525b" rx="2" />
+                <line id="piston-small-rod" x1="90" y1="70" x2="90" y2="140" stroke="#18181b" stroke-width="4" />
+                <polygon points="85,60 95,60 90,70" fill="#ef4444" />
+                <text x="90" y="50" text-anchor="middle" font-size="10" fill="#ef4444" font-weight="bold">F₁ (Input)</text>
+                <text x="90" y="215" text-anchor="middle" font-size="9" fill="#0284c7" font-weight="bold">A₁ = 10 cm²</text>
 
-    this.render();
-  }
+                <!-- Large Cylinder (Right, Area A2) -->
+                <rect x="360" y="90" width="120" height="110" fill="none" stroke="#18181b" stroke-width="2" />
+                <rect id="piston-large" x="362" y="130" width="116" height="18" fill="#52525b" rx="3" />
+                <rect id="lift-platform" x="340" y="124" width="160" height="8" fill="#18181b" rx="2" />
+                
+                <!-- Vehicle on platform -->
+                <g id="lift-vehicle" transform="translate(370, 75)">
+                  <!-- Car body -->
+                  <rect x="15" y="20" width="70" height="25" fill="#3b82f6" rx="4" />
+                  <polygon points="25,20 35,5 65,5 75,20" fill="#60a5fa" />
+                  <circle cx="32" cy="46" r="8" fill="#18181b" /><circle cx="32" cy="46" r="3" fill="#ffffff" />
+                  <circle cx="68" cy="46" r="8" fill="#18181b" /><circle cx="68" cy="46" r="3" fill="#ffffff" />
+                  <text x="50" y="2" text-anchor="middle" font-size="10" fill="#18181b" font-weight="bold">Car (15,000 N)</text>
+                </g>
 
-  render() {
-    if (!this.container) return;
-
-    // Hydraulic calculations
-    const pressure = this.f1 / (this.a1 * 0.0001); // Pascals (N/m²)
-    const f2 = pressure * (this.a2 * 0.0001); // Newtons lifted
-    const mechanicalAdvantage = this.a2 / this.a1;
-    const carMass = (f2 / 9.8).toFixed(1);
-
-    // Archimedes calculations
-    const mat = this.materials[this.selectedMaterial];
-    const liq = this.liquids[this.selectedLiquid];
-
-    const massObject = mat.density * this.objectVolume; // kg
-    const weightInAir = massObject * 9.8; // Newtons
-    const upthrust = liq.density * this.objectVolume * 9.8; // U = V * rho * g
-    const apparentWeight = Math.max(0, weightInAir - upthrust);
-    const willFloat = mat.density <= liq.density;
-
-    this.container.innerHTML = `
-      <div class="lab-card">
-        <div class="lab-header">
-          <div>
-            <h3>Pascal's Law & Hydraulic Machines (पास्कलको नियम र हाइड्रोलीक यन्त्र)</h3>
-            <p class="lab-desc">Pressure exerted anywhere in an enclosed liquid is transmitted equally and undiminished in all directions perpendicularly to the walls of the container.</p>
-          </div>
-          <div class="formula-badge">F₁ / A₁ = F₂ / A₂</div>
-        </div>
-
-        <!-- Hydraulic Lift Stage -->
-        <div class="hydraulic-stage">
-          <div class="piston-side small-side">
-            <div class="piston-label">Small Piston (A₁ = ${this.a1} cm²)</div>
-            <div class="piston-shaft small-shaft" id="piston-small" style="width: ${20 + this.a1 * 4}px;">
-              <span class="force-input-badge">Push: ${this.f1} N</span>
+                <text x="420" y="215" text-anchor="middle" font-size="9" fill="#0284c7" font-weight="bold">A₂ = 500 cm² (50x larger)</text>
+              </svg>
             </div>
-          </div>
 
-          <div class="hydraulic-pipe">
-            <span class="fluid-pressure-text">Uniform Fluid Pressure P = ${(pressure / 1000).toFixed(1)} kPa</span>
-          </div>
-
-          <div class="piston-side large-side">
-            <div class="piston-label">Large Piston (A₂ = ${this.a2} cm²)</div>
-            <div class="piston-shaft large-shaft" id="piston-large" style="width: ${Math.min(180, 50 + this.a2 * 0.7)}px;">
-              <span class="lifted-car">🚗 Lifting: ${f2.toFixed(0)} N (${carMass} kg)</span>
+            <div class="control-row">
+              <label class="control-label">
+                <span>Input Force on Small Piston ($F_1$):</span>
+                <span id="f1-val-text" class="value-pill">300 N</span>
+              </label>
+              <input type="range" id="f1-slider" min="50" max="600" value="300" class="minimal-slider" />
             </div>
-          </div>
-        </div>
 
-        <!-- Hydraulic Telemetry -->
-        <div class="calculation-box">
-          <div class="calc-row">
-            <strong>Input Force (F₁):</strong> ${this.f1} N &nbsp;|&nbsp;
-            <strong>Area A₁:</strong> ${this.a1} cm² &nbsp;|&nbsp;
-            <strong>Area A₂:</strong> ${this.a2} cm² &nbsp;|&nbsp;
-            <strong>Mechanical Advantage (MA):</strong> ${mechanicalAdvantage.toFixed(1)}×
-          </div>
-          <div class="calc-formula">
-            Output Force F₂ = F₁ × (A₂ / A₁) = (${this.f1} N) × (${this.a2} / ${this.a1}) = <strong>${f2.toFixed(1)} N</strong>
-          </div>
-        </div>
-
-        <!-- Hydraulic Sliders -->
-        <div class="controls-grid">
-          <div class="ctrl-item">
-            <label>Input Hand Force (F₁): <span id="lbl-f1">${this.f1} N</span></label>
-            <input type="range" id="slider-f1" min="10" max="250" value="${this.f1}">
-          </div>
-
-          <div class="ctrl-item">
-            <label>Small Piston Area (A₁): <span id="lbl-a1">${this.a1} cm²</span></label>
-            <input type="range" id="slider-a1" min="2" max="15" value="${this.a1}">
-          </div>
-
-          <div class="ctrl-item">
-            <label>Large Piston Area (A₂): <span id="lbl-a2">${this.a2} cm²</span></label>
-            <input type="range" id="slider-a2" min="50" max="400" step="10" value="${this.a2}">
-          </div>
-        </div>
-
-        <hr class="lab-divider">
-
-        <!-- Archimedes' Principle & Upthrust Tank -->
-        <div class="archimedes-section">
-          <div class="lab-header">
-            <div>
-              <h3>Archimedes' Principle & Law of Floatation (आर्किमिडिजको सिद्धान्त र तैरने नियम)</h3>
-              <p class="lab-desc">Upthrust (U) on an object immersed in a liquid equals the weight of the displaced liquid: U = V · ρ_liquid · g.</p>
-            </div>
-            <div class="formula-badge">U = V · ρ · g</div>
-          </div>
-
-          <div class="archimedes-tank-grid">
-            <div class="water-tank" style="background: linear-gradient(to bottom, transparent 25%, ${liq.color} 25%);">
-              <div class="submerged-object ${willFloat ? 'floating' : 'sunk'}" style="top: ${willFloat ? '18%' : '75%'};">
-                <span class="obj-emoji">${mat.emoji}</span>
-                <span class="obj-name">${mat.name}</span>
-                <span class="obj-state">${willFloat ? 'FLOATING (तैरन्छ)' : 'SUNKEN (डुब्छ)'}</span>
+            <div class="telemetry-bar">
+              <div class="telemetry-item">
+                <span class="telemetry-label">Output Force ($F_2 = F_1 \times A_2/A_1$):</span>
+                <span id="f2-res-val" class="telemetry-value">15,000 N</span>
+              </div>
+              <div class="telemetry-item">
+                <span class="telemetry-label">Mechanical Advantage:</span>
+                <span class="telemetry-note">50x (50 N lifts 2,500 N!)</span>
               </div>
             </div>
+          </div>
 
-            <div class="archimedes-stats">
-              <div class="stat-pill">
-                <span>Material: </span>
-                <select id="select-mat" class="ctrl-select">
-                  <option value="wood" ${this.selectedMaterial === 'wood' ? 'selected' : ''}>🪵 Wood (700 kg/m³)</option>
-                  <option value="ice" ${this.selectedMaterial === 'ice' ? 'selected' : ''}>🧊 Ice (917 kg/m³)</option>
-                  <option value="aluminum" ${this.selectedMaterial === 'aluminum' ? 'selected' : ''}>⚙️ Aluminum (2700 kg/m³)</option>
-                  <option value="iron" ${this.selectedMaterial === 'iron' ? 'selected' : ''}>🔩 Iron (7870 kg/m³)</option>
-                </select>
-              </div>
-
-              <div class="stat-pill">
-                <span>Liquid Medium: </span>
-                <select id="select-liq" class="ctrl-select">
-                  <option value="water" ${this.selectedLiquid === 'water' ? 'selected' : ''}>💧 Pure Water (1000 kg/m³)</option>
-                  <option value="saltWater" ${this.selectedLiquid === 'saltWater' ? 'selected' : ''}>🌊 Salty Sea Water (1080 kg/m³)</option>
-                  <option value="kerosene" ${this.selectedLiquid === 'kerosene' ? 'selected' : ''}>🛢️ Kerosene (800 kg/m³)</option>
-                  <option value="mercury" ${this.selectedLiquid === 'mercury' ? 'selected' : ''}>🧪 Dense Mercury (13600 kg/m³)</option>
-                </select>
-              </div>
-
-              <div class="balance-sheet">
-                <div>Weight of Object in Air (W₁): <strong>${weightInAir.toFixed(2)} N</strong></div>
-                <div>Upthrust from Liquid (U): <strong>${upthrust.toFixed(2)} N</strong></div>
-                <div>Apparent Weight in Liquid (W₂ = W₁ - U): <strong>${apparentWeight.toFixed(2)} N</strong></div>
-                <div class="density-comparison">
-                  Density of Object: <strong>${mat.density} kg/m³</strong> vs Density of Liquid: <strong>${liq.density} kg/m³</strong>
-                </div>
-              </div>
+          <div class="details-panel">
+            <h4 class="details-heading">${lang === 'np' ? 'पास्कलको नियम र सूत्र' : 'Pascal\'s Formulation'}</h4>
+            <div class="formula-box">
+              <div class="formula-math">P_1 = P_2 \\implies \\frac{F_1}{A_1} = \\frac{F_2}{A_2} \\implies F_2 = F_1 \\cdot \\frac{A_2}{A_1}</div>
             </div>
+            <ul class="clean-list">
+              <li><strong>${lang === 'np' ? 'समान प्रसारण:' : 'Undiminished Transmission:'}</strong> ${lang === 'np' ? 'बन्द भाँडोमा तरलमा दिइएको चाप सबैतिर बराबर फैलिन्छ।' : 'Pressure applied anywhere to an enclosed fluid transmits equally in all directions.'}</li>
+              <li><strong>${lang === 'np' ? 'उपयोगहरू:' : 'SEE Applications:'}</strong> Hydraulic lift, hydraulic press, hydraulic brakes in cars and motorcycles.</li>
+            </ul>
           </div>
         </div>
       </div>
-    `;
 
-    this.bindEvents();
-  }
+      <!-- 2. ARCHIMEDES IMMERSION TANK -->
+      <div id="press-sub-archimedes" class="subtab-content">
+        <div class="minimal-grid">
+          <div class="interactive-panel">
+            <div class="control-grid-3">
+              <div class="control-item">
+                <label class="control-label">Select Solid Object:</label>
+                <select id="solid-select" class="minimal-select">
+                  <option value="iron">Iron Block (7,870 kg/m³) - Sinks</option>
+                  <option value="wood">Wood Block (600 kg/m³) - Floats</option>
+                  <option value="ice">Ice Block (920 kg/m³) - Floats 92%</option>
+                  <option value="alu">Aluminum (2,700 kg/m³) - Sinks</option>
+                </select>
+              </div>
 
-  bindEvents() {
-    const sF1 = document.getElementById('slider-f1');
-    const sA1 = document.getElementById('slider-a1');
-    const sA2 = document.getElementById('slider-a2');
+              <div class="control-item">
+                <label class="control-label">Select Liquid:</label>
+                <select id="liquid-select" class="minimal-select">
+                  <option value="water">Pure Water (1,000 kg/m³)</option>
+                  <option value="salt">Salt Water (1,030 kg/m³)</option>
+                  <option value="kerosene">Kerosene (800 kg/m³)</option>
+                  <option value="mercury">Mercury (13,600 kg/m³)</option>
+                </select>
+              </div>
 
-    const updateHydraulic = () => {
-      this.f1 = parseFloat(sF1.value);
-      this.a1 = parseFloat(sA1.value);
-      this.a2 = parseFloat(sA2.value);
-      this.render();
-    };
+              <div class="control-item">
+                <label class="control-label">Object Volume:</label>
+                <input type="number" id="solid-vol" value="0.002" step="0.001" min="0.001" max="0.01" class="minimal-number-input" />
+                <span class="unit-text">m³ (2 Litres)</span>
+              </div>
+            </div>
 
-    if (sF1) sF1.addEventListener('input', updateHydraulic);
-    if (sA1) sA1.addEventListener('input', updateHydraulic);
-    if (sA2) sA2.addEventListener('input', updateHydraulic);
+            <div class="telemetry-bar" style="margin-top: 1.5rem;">
+              <div class="telemetry-item">
+                <span class="telemetry-label">Upthrust ($U = V \cdot d \cdot g$):</span>
+                <span id="arch-u-res" class="telemetry-value">19.6 N</span>
+              </div>
+              <div class="telemetry-item">
+                <span class="telemetry-label">Weight in Air vs Liquid:</span>
+                <span id="arch-w-res" class="telemetry-note">Air: 154.3 N → Apparent: 134.7 N</span>
+              </div>
+              <div class="telemetry-item">
+                <span class="telemetry-label">Floatation Verdict:</span>
+                <span id="arch-verdict" class="telemetry-value" style="color: #ef4444;">SINKS TO BOTTOM</span>
+              </div>
+            </div>
+          </div>
 
-    const selMat = document.getElementById('select-mat');
-    if (selMat) {
-      selMat.addEventListener('change', (e) => {
-        this.selectedMaterial = e.target.value;
-        this.render();
-      });
+          <div class="details-panel">
+            <h4 class="details-heading">${lang === 'np' ? 'तैरने नियम (Law of Floatation)' : 'Conditions of Floatation'}</h4>
+            <ul class="clean-list">
+              <li><strong>${lang === 'np' ? 'डुब्ने अवस्था:' : 'Sinking Condition:'}</strong> When density of body > density of liquid ($d_{\\text{body}} > d_{\\text{liq}}$), Weight > Upthrust $\\to$ Sinks.</li>
+              <li><strong>${lang === 'np' ? 'तैरने अवस्था:' : 'Floating Condition:'}</strong> When $d_{\\text{body}} \\le d_{\\text{liq}}$, Upthrust balances weight $\\to$ Floats.</li>
+              <li><strong>${lang === 'np' ? 'नुनिलो पानीमा किन सजिलो?' : 'Why is swimming easier in salt water?'}</strong> Salt water has higher density ($1,030\\text{ kg/m}^3$) than fresh water, producing greater upthrust.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Subtabs
+  const tabs = container.querySelectorAll('.subtab-btn');
+  tabs.forEach(t => {
+    t.addEventListener('click', () => {
+      tabs.forEach(tab => tab.classList.remove('active'));
+      container.querySelectorAll('.subtab-content').forEach(c => c.classList.remove('active'));
+      t.classList.add('active');
+      const target = container.querySelector(`#press-sub-${t.dataset.sub}`);
+      if (target) target.classList.add('active');
+    });
+  });
+
+  // Pascal Lift slider
+  const f1Slider = container.querySelector('#f1-slider');
+  const f1Text = container.querySelector('#f1-val-text');
+  const f2Res = container.querySelector('#f2-res-val');
+  const pSmall = container.querySelector('#piston-small');
+  const pSmallRod = container.querySelector('#piston-small-rod');
+  const pLarge = container.querySelector('#piston-large');
+  const liftPlatform = container.querySelector('#lift-platform');
+  const liftVehicle = container.querySelector('#lift-vehicle');
+
+  f1Slider.addEventListener('input', () => {
+    const f1 = parseFloat(f1Slider.value);
+    const ratio = 50; // A2 / A1 = 50
+    const f2 = f1 * ratio;
+
+    f1Text.textContent = `${f1} N`;
+    f2Res.textContent = `${f2.toLocaleString()} N`;
+
+    // Visual displacement
+    const maxPush = 25;
+    const progress = (f1 - 50) / 550;
+    const smallY = 140 + progress * maxPush;
+    pSmall.setAttribute('y', smallY);
+    pSmallRod.setAttribute('y2', smallY);
+
+    const largeRise = progress * (maxPush / 3);
+    const largeY = 130 - largeRise;
+    pLarge.setAttribute('y', largeY);
+    liftPlatform.setAttribute('y', 124 - largeRise);
+    liftVehicle.setAttribute('transform', `translate(370, ${75 - largeRise})`);
+  });
+
+  // Archimedes calculator
+  const solidSelect = container.querySelector('#solid-select');
+  const liquidSelect = container.querySelector('#liquid-select');
+  const volInput = container.querySelector('#solid-vol');
+  const uRes = container.querySelector('#arch-u-res');
+  const wRes = container.querySelector('#arch-w-res');
+  const verdict = container.querySelector('#arch-verdict');
+
+  const solidDensities = { iron: 7870, wood: 600, ice: 920, alu: 2700 };
+  const liquidDensities = { water: 1000, salt: 1030, kerosene: 800, mercury: 13600 };
+
+  const updateArchimedes = () => {
+    const dSolid = solidDensities[solidSelect.value];
+    const dLiq = liquidDensities[liquidSelect.value];
+    const V = parseFloat(volInput.value) || 0.002;
+    const g = 9.8;
+
+    const W_air = V * dSolid * g;
+    const U = V * dLiq * g;
+
+    uRes.textContent = `${U.toFixed(1)} N`;
+
+    if (dSolid > dLiq) {
+      const W_app = W_air - U;
+      wRes.textContent = `Air: ${W_air.toFixed(1)} N → Liquid: ${W_app.toFixed(1)} N`;
+      verdict.textContent = `SINKS (डूब्यो) - d_solid (${dSolid}) > d_liq (${dLiq})`;
+      verdict.style.color = '#ef4444';
+    } else {
+      const subFraction = ((dSolid / dLiq) * 100).toFixed(0);
+      wRes.textContent = `Floats with ${subFraction}% submerged volume`;
+      verdict.textContent = `FLOATS (तैरियो) - Upthrust balances weight`;
+      verdict.style.color = '#10b981';
     }
+  };
 
-    const selLiq = document.getElementById('select-liq');
-    if (selLiq) {
-      selLiq.addEventListener('change', (e) => {
-        this.selectedLiquid = e.target.value;
-        this.render();
-      });
-    }
-  }
+  solidSelect.addEventListener('change', updateArchimedes);
+  liquidSelect.addEventListener('change', updateArchimedes);
+  volInput.addEventListener('input', updateArchimedes);
+  updateArchimedes();
 }

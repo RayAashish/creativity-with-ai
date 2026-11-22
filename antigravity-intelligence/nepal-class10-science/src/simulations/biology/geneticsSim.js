@@ -1,223 +1,169 @@
-// Interactive Biology Module: Mendel's Monohybrid Cross, Punnett Squares & Human Sex Determination
-// Essential SEE Genetics & Heredity Unit
+// Interactive Genetics, Mendel's Cross & Sex Determination Lab (आनुवंशिकी तथा लिंग निर्धारण)
 
-export class GeneticsSimulation {
-  constructor(containerId) {
-    this.container = document.getElementById(containerId);
-    this.mode = 'mendel'; // 'mendel' | 'sex_determination'
-    this.f2Generated = false;
-
-    this.render();
-  }
-
-  render() {
-    if (!this.container) return;
-
-    this.container.innerHTML = `
-      <div class="lab-card">
-        <div class="lab-header">
-          <div>
-            <h3>Heredity & Mendel's Genetics (वंशाणुक्रम र मेन्डेलको नियम)</h3>
-            <p class="lab-desc">Understand how dominant and recessive alleles transfer traits across generations through Gregor Mendel's classic pea experiments and human chromosome sex determination.</p>
-          </div>
-          <div class="gas-selector-tabs">
-            <button id="tab-mendel" class="tab-btn ${this.mode === 'mendel' ? 'active' : ''}">
-              🌱 Mendel's Monohybrid Cross (केराउको प्रयोग)
-            </button>
-            <button id="tab-sex" class="tab-btn ${this.mode === 'sex_determination' ? 'active' : ''}">
-              🧬 Human Sex Determination (मानव लिङ्ग निर्धारण)
-            </button>
-          </div>
-        </div>
-
-        ${this.mode === 'mendel' ? this.renderMendel() : this.renderSexDetermination()}
+export function renderGeneticsSim(container, lang = 'en') {
+  container.innerHTML = `
+    <div class="sim-card">
+      <div class="sim-header">
+        <div class="sim-badge">BIOLOGY LAB // जीव विज्ञान</div>
+        <h2 class="sim-title">${lang === 'np' ? 'मेन्डेलको आनुवंशिकी र मानव लिंग निर्धारण' : 'Mendel\'s Monohybrid Cross & Sex Determination'}</h2>
+        <p class="sim-desc">
+          ${lang === 'np'
+            ? 'केराउको बोटमा मेन्डेलको एकजोडी गुण संकरण (Punnett Square), ३:१ अनुपात र मानव शिशुको लिंग निर्धारणमा बाबुको भूमिका।'
+            : 'Explore Gregor Mendel\'s monohybrid pea plant cross (3:1 phenotypic and 1:2:1 genotypic ratios) and human chromosomal sex determination (XX vs XY).'}
+        </p>
       </div>
-    `;
 
-    this.bindEvents();
-  }
+      <div class="lab-subtabs">
+        <button class="subtab-btn active" data-sub="mendel">${lang === 'np' ? '🌱 मेन्डेलको एकजोडी गुण संकरण' : '🌱 Mendel\'s Monohybrid Cross'}</button>
+        <button class="subtab-btn" data-sub="sexdet">${lang === 'np' ? '👶 मानव लिंग निर्धारण (XX vs XY)' : '👶 Human Sex Determination'}</button>
+      </div>
 
-  renderMendel() {
-    return `
-      <div class="genetics-stage">
-        <!-- P1 Generation (Parents) -->
-        <div class="gen-box">
-          <span class="gen-title">P₁ Generation (जनक पुस्ता)</span>
-          <div class="parents-row">
-            <div class="pea-plant tall">
-              <span class="plant-emoji">🌿</span>
-              <strong>Pure Tall (अग्लो)</strong>
-              <span class="genotype">TT (Homozygous Dominant)</span>
-            </div>
-            <div class="cross-symbol">✖ (Cross-Pollination)</div>
-            <div class="pea-plant dwarf">
-              <span class="plant-emoji">🌱</span>
-              <strong>Pure Dwarf (होचो)</strong>
-              <span class="genotype">tt (Homozygous Recessive)</span>
-            </div>
-          </div>
-        </div>
+      <!-- 1. MENDEL MONOHYBRID CROSS -->
+      <div id="gen-sub-mendel" class="subtab-content active">
+        <div class="minimal-grid">
+          <div class="interactive-panel">
+            <h3 class="panel-heading">${lang === 'np' ? 'F₂ वंशको पुनेट वर्ग (Punnett Square)' : 'F₂ Generation Punnett Square'}</h3>
 
-        <!-- F1 Generation -->
-        <div class="gen-box">
-          <span class="gen-title">F₁ Generation (पहिलो वंशधर)</span>
-          <div class="f1-result">
-            <div class="pea-plant tall hybrid">
-              <span class="plant-emoji">🌿</span>
-              <strong>100% Hybrid Tall (सबै अग्लो)</strong>
-              <span class="genotype">Tt (Heterozygous)</span>
-              <p class="law-tag">✔ Law of Dominance: Tall (T) masks Dwarf (t)</p>
-            </div>
-          </div>
-          <button id="btn-self-f1" class="btn-primary" style="margin-top: 1rem;">
-            🔄 Self-Pollinate F₁ Generation (Tt × Tt)
-          </button>
-        </div>
-
-        <!-- F2 Generation Interactive Punnett Square -->
-        ${this.f2Generated ? `
-          <div class="gen-box f2-highlight">
-            <span class="gen-title">F₂ Generation & Punnett Square (दोस्रो वंशधर)</span>
-            
             <div class="punnett-wrapper">
-              <table class="punnett-square">
+              <table class="punnett-table">
                 <thead>
                   <tr>
-                    <th>Gametes</th>
-                    <th>T (Dominant)</th>
-                    <th>t (Recessive)</th>
+                    <th class="blank-corner">♀ \\ ♂</th>
+                    <th>Gamete T (अग्लो)</th>
+                    <th>Gamete t (पुड्को)</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <th>T</th>
-                    <td class="cell-tall">
-                      <strong>TT</strong>
-                      <span>Pure Tall (२५%)</span>
+                    <th>Gamete T (अग्लो)</th>
+                    <td class="allele-box dominant">
+                      <div class="gene-code">TT</div>
+                      <div class="trait-name">Pure Tall (शुद्ध अग्लो)</div>
                     </td>
-                    <td class="cell-tall">
-                      <strong>Tt</strong>
-                      <span>Hybrid Tall (२५%)</span>
+                    <td class="allele-box hybrid">
+                      <div class="gene-code">Tt</div>
+                      <div class="trait-name">Hybrid Tall (वर्णशङ्कर अग्लो)</div>
                     </td>
                   </tr>
                   <tr>
-                    <th>t</th>
-                    <td class="cell-tall">
-                      <strong>Tt</strong>
-                      <span>Hybrid Tall (२५%)</span>
+                    <th>Gamete t (पुड्को)</th>
+                    <td class="allele-box hybrid">
+                      <div class="gene-code">Tt</div>
+                      <div class="trait-name">Hybrid Tall (वर्णशङ्कर अग्लो)</div>
                     </td>
-                    <td class="cell-dwarf">
-                      <strong>tt</strong>
-                      <span>Pure Dwarf (२५%)</span>
+                    <td class="allele-box recessive">
+                      <div class="gene-code">tt</div>
+                      <div class="trait-name">Pure Dwarf (शुद्ध पुड्को)</div>
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <!-- Ratios Summary -->
-            <div class="ratios-card">
-              <div class="ratio-item">
-                <span>Phenotypic Ratio (स्वरुप अनुपात):</span>
-                <strong>3 Tall : 1 Dwarf (75% : 25%)</strong>
+            <div class="telemetry-bar" style="margin-top: 1.5rem;">
+              <div class="telemetry-item">
+                <span class="telemetry-label">Phenotypic Ratio (स्वरुप अनुपात):</span>
+                <span class="telemetry-value" style="color: #10b981;">3 Tall : 1 Dwarf (३ अग्लो : १ पुड्को)</span>
               </div>
-              <div class="ratio-item">
-                <span>Genotypic Ratio (जिन अनुपात):</span>
-                <strong>1 TT : 2 Tt : 1 tt (25% : 50% : 25%)</strong>
+              <div class="telemetry-item">
+                <span class="telemetry-label">Genotypic Ratio (जिन अनुपात):</span>
+                <span class="telemetry-value" style="color: #0284c7;">1 TT : 2 Tt : 1 tt (१ : २ : १)</span>
               </div>
             </div>
           </div>
-        ` : ''}
-      </div>
-    `;
-  }
 
-  renderSexDetermination() {
-    return `
-      <div class="genetics-stage">
-        <div class="sci-awareness-box">
-          <h4>💡 Scientific Truth for Nepali Society (वैज्ञानिक सत्य):</h4>
-          <p>In human reproduction, the mother provides only an <strong>X</strong> chromosome in every ovum. The father's sperm carries either an <strong>X</strong> (50%) or a <strong>Y</strong> (50%) chromosome. Therefore, the sex of the child is entirely determined by the father's fertilizing sperm. Blaming mothers for having daughters is completely unscientific!</p>
-        </div>
-
-        <div class="punnett-wrapper" style="margin-top: 1.5rem;">
-          <table class="punnett-square">
-            <thead>
-              <tr>
-                <th>Gametes</th>
-                <th>Father's Sperm: X (50%)</th>
-                <th>Father's Sperm: Y (50%)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th>Mother's Ovum: X</th>
-                <td class="cell-female">
-                  <span class="gender-emoji">👧</span>
-                  <strong>XX (Female Child)</strong>
-                  <span>छोरी (२५%)</span>
-                </td>
-                <td class="cell-male">
-                  <span class="gender-emoji">👦</span>
-                  <strong>XY (Male Child)</strong>
-                  <span>छोरा (२५%)</span>
-                </td>
-              </tr>
-              <tr>
-                <th>Mother's Ovum: X</th>
-                <td class="cell-female">
-                  <span class="gender-emoji">👧</span>
-                  <strong>XX (Female Child)</strong>
-                  <span>छोरी (२५%)</span>
-                </td>
-                <td class="cell-male">
-                  <span class="gender-emoji">👦</span>
-                  <strong>XY (Male Child)</strong>
-                  <span>छोरा (२५%)</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="ratios-card" style="margin-top: 1rem;">
-          <div class="ratio-item">
-            <span>Probability of Daughter (XX):</span>
-            <strong>50% Probability (१/२)</strong>
-          </div>
-          <div class="ratio-item">
-            <span>Probability of Son (XY):</span>
-            <strong>50% Probability (१/२)</strong>
+          <div class="details-panel">
+            <h4 class="details-heading">${lang === 'np' ? 'मेन्डेलका नियमहरू' : 'Mendel\'s Laws'}</h4>
+            <ul class="clean-list">
+              <li><strong>${lang === 'np' ? 'प्रबलताको नियम (Dominance):' : 'Law of Dominance:'}</strong> In heterozygous condition ($Tt$), the dominant allele ($T$) masks the expression of the recessive allele ($t$).</li>
+              <li><strong>${lang === 'np' ? 'पृथकीकरणको नियम (Segregation):' : 'Law of Segregation:'}</strong> Alleles separate cleanly during gamete formation so each gamete carries only one allele.</li>
+              <li><strong>${lang === 'np' ? 'केराउ किन रोजे?' : 'Why Pea Plant (Pisum sativum)?'}</strong> Short life cycle, naturally self-pollinating, easy cross-pollination, and distinct contrasting characters.</li>
+            </ul>
           </div>
         </div>
       </div>
-    `;
-  }
 
-  bindEvents() {
-    const tabMendel = document.getElementById('tab-mendel');
-    const tabSex = document.getElementById('tab-sex');
+      <!-- 2. HUMAN SEX DETERMINATION -->
+      <div id="gen-sub-sexdet" class="subtab-content">
+        <div class="minimal-grid">
+          <div class="interactive-panel">
+            <h3 class="panel-heading">${lang === 'np' ? 'क्रोमोजोम संकरण र लिंग निर्धारण' : 'Chromosomal Sex Determination (50% Chance)'}</h3>
 
-    if (tabMendel) {
-      tabMendel.addEventListener('click', () => {
-        this.mode = 'mendel';
-        this.render();
-      });
+            <div class="punnett-wrapper">
+              <table class="punnett-table">
+                <thead>
+                  <tr>
+                    <th class="blank-corner">Mother \\ Father</th>
+                    <th>Sperm 22+X (५०%)</th>
+                    <th>Sperm 22+Y (५०%)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th>Ovum 22+X (१००%)</th>
+                    <td class="allele-box female">
+                      <div class="gene-code">44 + XX</div>
+                      <div class="trait-name">👧 Female Child / छोरी (50%)</div>
+                    </td>
+                    <td class="allele-box male">
+                      <div class="gene-code">44 + XY</div>
+                      <div class="trait-name">👦 Male Child / छोरा (50%)</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="action-bar" style="margin-top: 1.5rem;">
+              <button id="btn-fertilize-random" class="btn-minimal">🎲 ${lang === 'np' ? 'आकस्मिक गर्भाधान गराउनुहोस् (Simulate Conception)' : 'Simulate Random Fertilization'}</button>
+            </div>
+
+            <div id="fertilize-result-box" class="telemetry-bar" style="margin-top: 1rem;">
+              <span class="telemetry-label">Outcome:</span>
+              <span id="fert-outcome-text" class="telemetry-value">Click button to simulate random sperm-egg fusion.</span>
+            </div>
+          </div>
+
+          <div class="details-panel">
+            <h4 class="details-heading">${lang === 'np' ? 'सामाजिक तथा वैज्ञानिक यथार्थ' : 'Societal & Scientific Truth'}</h4>
+            <div class="nepal-context-box">
+              <div class="context-tag">🇳🇵 ${lang === 'np' ? 'नेपाली समाजमा चेतना:' : 'Awareness for Nepal:'}</div>
+              <p class="context-text">
+                ${lang === 'np'
+                  ? 'नेपाली समाजमा छोरी मात्र जन्माएको भन्दै महिलालाई दोष दिने कुप्रथा छ। तर जैविक विज्ञानअनुसार आमाले सधैं X क्रोमोजोम मात्र दिन्छिन्। बाबुको शुक्राणुमा रहने X वा Y क्रोमोजोमले नै शिशुको लिंग निर्धारण गर्दछ। तसर्थ सन्तानको लिंग निर्धारणमा केवल बाबुको शुक्राणु जिम्मेवार हुन्छ।'
+                  : 'In traditional societies, mothers are mistakenly blamed for bearing daughters. Scientifically, mother\'s eggs only have X chromosomes. It is the father\'s sperm (50% X, 50% Y) that strictly determines the sex of the child.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Subtabs
+  const tabs = container.querySelectorAll('.subtab-btn');
+  tabs.forEach(t => {
+    t.addEventListener('click', () => {
+      tabs.forEach(tab => tab.classList.remove('active'));
+      container.querySelectorAll('.subtab-content').forEach(c => c.classList.remove('active'));
+      t.classList.add('active');
+      const target = container.querySelector(`#gen-sub-${t.dataset.sub}`);
+      if (target) target.classList.add('active');
+    });
+  });
+
+  // Fertilization simulation
+  const btnFert = container.querySelector('#btn-fertilize-random');
+  const outcomeText = container.querySelector('#fert-outcome-text');
+
+  btnFert.addEventListener('click', () => {
+    const isY = Math.random() < 0.5;
+    if (isY) {
+      outcomeText.textContent = '👦 SPERM WITH Y CHROMOSOME FERTILIZED THE EGG → 44+XY MALE CHILD (छोरा)!';
+      outcomeText.style.color = '#0284c7';
+    } else {
+      outcomeText.textContent = '👧 SPERM WITH X CHROMOSOME FERTILIZED THE EGG → 44+XX FEMALE CHILD (छोरी)!';
+      outcomeText.style.color = '#ec4899';
     }
-
-    if (tabSex) {
-      tabSex.addEventListener('click', () => {
-        this.mode = 'sex_determination';
-        this.render();
-      });
-    }
-
-    const btnSelf = document.getElementById('btn-self-f1');
-    if (btnSelf) {
-      btnSelf.addEventListener('click', () => {
-        this.f2Generated = true;
-        this.render();
-      });
-    }
-  }
+  });
 }

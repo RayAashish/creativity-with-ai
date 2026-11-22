@@ -1,108 +1,112 @@
-// Interactive Biology Module: 4-Chambered Human Heart & Double Circulation Simulation
-// Essential SEE Physiological Systems Unit
+// Interactive Human Heart & Double Circulation Simulator (मानव मुटु र रक्तसञ्चार)
 
-export class HeartSimulation {
-  constructor(containerId) {
-    this.container = document.getElementById(containerId);
-    this.isBeating = true;
-    this.bpm = 72;
-    this.flowStep = 0;
+export function renderHeartSim(container, lang = 'en') {
+  container.innerHTML = `
+    <div class="sim-card">
+      <div class="sim-header">
+        <div class="sim-badge">BIOLOGY LAB // जीव विज्ञान</div>
+        <h2 class="sim-title">${lang === 'np' ? 'मानव मुटुको संरचना र दोहोरो रक्तसञ्चार' : 'Human Heart Anatomy & Double Circulation'}</h2>
+        <p class="sim-desc">
+          ${lang === 'np'
+            ? 'मुटुका चार कोठाहरू, भल्भहरू (Tricuspid, Bicuspid), फुक्सो र शरीरबीचको दोहोरो रक्तसञ्चार तथा रक्तचाप (१२०/८० mmHg)।'
+            : 'Explore the 4-chambered heart, valves, oxygenated (red) vs deoxygenated (blue) blood paths, and systolic/diastolic blood pressure.'}
+        </p>
+      </div>
 
-    this.render();
-  }
+      <div class="minimal-grid">
+        <div class="interactive-panel">
+          <div class="canvas-wrapper">
+            <svg id="heart-svg" viewBox="0 0 520 280" class="sim-svg">
+              <!-- Double circulation loop paths -->
+              <!-- Lungs at top -->
+              <rect x="210" y="10" width="100" height="30" rx="15" fill="#fecdd3" stroke="#f43f5e" stroke-width="2" />
+              <text x="260" y="30" text-anchor="middle" font-size="11" fill="#be123c" font-weight="bold">🫁 Lungs (फुक्सो)</text>
 
-  render() {
-    if (!this.container) return;
+              <!-- Body tissues at bottom -->
+              <rect x="190" y="240" width="140" height="30" rx="15" fill="#e0f2fe" stroke="#0284c7" stroke-width="2" />
+              <text x="260" y="260" text-anchor="middle" font-size="11" fill="#0369a1" font-weight="bold">Body Tissues (शरीरका अङ्गहरू)</text>
 
-    this.container.innerHTML = `
-      <div class="lab-card">
-        <div class="lab-header">
-          <div>
-            <h3>Human Blood Circulatory System (मानव रक्तसञ्चार प्रणाली)</h3>
-            <p class="lab-desc">Trace deoxygenated blue blood to the lungs and oxygen-rich red blood pumped via the aorta to the entire body in real time.</p>
+              <!-- Central 4-chambered heart box -->
+              <rect x="170" y="65" width="180" height="150" rx="16" fill="#fafafa" stroke="#18181b" stroke-width="3" />
+              
+              <!-- Septum divider (Muscular wall) -->
+              <line x1="260" y1="65" x2="260" y2="215" stroke="#18181b" stroke-width="4" />
+              <!-- Horizontal divider -->
+              <line x1="170" y1="135" x2="350" y2="135" stroke="#71717a" stroke-width="2" stroke-dasharray="4,4" />
+
+              <!-- Right Atrium (Blue - Deoxygenated) -->
+              <rect x="172" y="67" width="86" height="66" fill="#e0f2fe" opacity="0.6" rx="14" />
+              <text x="215" y="95" text-anchor="middle" font-size="10" fill="#0369a1" font-weight="bold">Right Atrium</text>
+              <text x="215" y="112" text-anchor="middle" font-size="9" fill="#0284c7">(Deoxygenated)</text>
+
+              <!-- Left Atrium (Red - Oxygenated) -->
+              <rect x="262" y="67" width="86" height="66" fill="#ffe4e6" opacity="0.6" rx="14" />
+              <text x="305" y="95" text-anchor="middle" font-size="10" fill="#be123c" font-weight="bold">Left Atrium</text>
+              <text x="305" y="112" text-anchor="middle" font-size="9" fill="#f43f5e">(Oxygenated)</text>
+
+              <!-- Right Ventricle -->
+              <rect x="172" y="137" width="86" height="76" fill="#bae6fd" opacity="0.6" rx="14" />
+              <text x="215" y="170" text-anchor="middle" font-size="10" fill="#0369a1" font-weight="bold">Right Ventricle</text>
+              <text x="215" y="188" text-anchor="middle" font-size="8" fill="#0284c7">To Lungs (Pulmonary)</text>
+
+              <!-- Left Ventricle (Thickest wall) -->
+              <rect x="262" y="137" width="86" height="76" fill="#fecdd3" opacity="0.6" rx="14" />
+              <text x="305" y="170" text-anchor="middle" font-size="10" fill="#be123c" font-weight="bold">Left Ventricle</text>
+              <text x="305" y="188" text-anchor="middle" font-size="8" fill="#be123c">Thick Wall (To Body)</text>
+
+              <!-- Flow circulation arrows -->
+              <!-- Vena Cava from body to RA -->
+              <path d="M 190 240 Q 120 180 172 100" fill="none" stroke="#0284c7" stroke-width="3" marker-end="url(#arrow)" />
+              <text x="110" y="170" font-size="9" fill="#0284c7" font-weight="600">Vena Cava</text>
+
+              <!-- Pulmonary Artery from RV to Lungs -->
+              <path d="M 215 137 Q 140 80 210 25" fill="none" stroke="#0284c7" stroke-width="3" />
+              <text x="120" y="55" font-size="9" fill="#0284c7" font-weight="600">Pulmonary Artery</text>
+
+              <!-- Pulmonary Vein from Lungs to LA -->
+              <path d="M 310 25 Q 380 80 348 100" fill="none" stroke="#ef4444" stroke-width="3" />
+              <text x="375" y="55" font-size="9" fill="#ef4444" font-weight="600">Pulmonary Vein</text>
+
+              <!-- Aorta from LV to Body -->
+              <path d="M 305 213 Q 390 240 330 250" fill="none" stroke="#ef4444" stroke-width="3" />
+              <text x="380" y="215" font-size="9" fill="#ef4444" font-weight="600">Aorta (महाधमनी)</text>
+            </svg>
           </div>
-          <div class="formula-badge">Normal BP = 120 / 80 mmHg</div>
+
+          <div class="action-bar">
+            <button id="btn-pulse-heart" class="btn-minimal">💓 ${lang === 'np' ? 'मुटुको चाल महसुस गर्नुहोस् (Simulate Heartbeat)' : 'Simulate Cardiac Cycle'}</button>
+          </div>
+
+          <div class="telemetry-bar" style="margin-top: 1rem;">
+            <div class="telemetry-item">
+              <span class="telemetry-label">Normal Blood Pressure:</span>
+              <span class="telemetry-value" style="color: #10b981;">120 / 80 mmHg</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="telemetry-label">Heart Rate:</span>
+              <span id="heart-rate-text" class="telemetry-note">72 beats/min</span>
+            </div>
+          </div>
         </div>
 
-        <div class="heart-stage">
-          <svg class="heart-svg" viewBox="0 0 640 380">
-            <!-- Background Body Loop Indicator -->
-            <rect x="20" y="20" width="600" height="340" rx="16" fill="rgba(255,255,255,0.03)" stroke="#334155"/>
-
-            <!-- Lungs Schematic (Top) -->
-            <g transform="translate(320, 45)">
-              <rect x="-80" y="-20" width="160" height="40" rx="20" fill="rgba(56, 189, 248, 0.2)" stroke="#38bdf8"/>
-              <text x="0" y="5" fill="#38bdf8" font-size="12" font-weight="bold" text-anchor="middle">🫁 Lungs (फोक्सो - O₂ / CO₂ Exchange)</text>
-            </g>
-
-            <!-- 4-Chambered Heart Diagram -->
-            <g transform="translate(320, 200)">
-              <!-- Heart Muscle Base -->
-              <path d="M -140 -80 C -140 -120, -40 -120, 0 -60 C 40 -120, 140 -120, 140 -80 C 140 20, 50 120, 0 140 C -50 120, -140 20, -140 -80 Z" fill="#1e1b4b" stroke="#6366f1" stroke-width="3"/>
-
-              <!-- Septum (Divider Wall) -->
-              <line x1="0" y1="-60" x2="0" y2="135" stroke="#475569" stroke-width="6"/>
-
-              <!-- 1. Right Atrium (RA) - Blue / Deoxygenated -->
-              <rect x="-110" y="-70" width="90" height="60" rx="8" fill="rgba(59, 130, 246, 0.35)" stroke="#3b82f6" stroke-width="2"/>
-              <text x="-65" y="-45" fill="#93c5fd" font-size="11" font-weight="bold" text-anchor="middle">Right Atrium</text>
-              <text x="-65" y="-30" fill="#bfdbfe" font-size="9" text-anchor="middle">(दायाँ अलिन्द)</text>
-
-              <!-- 2. Right Ventricle (RV) - Blue -->
-              <rect x="-110" y="10" width="90" height="75" rx="8" fill="rgba(59, 130, 246, 0.45)" stroke="#3b82f6" stroke-width="2"/>
-              <text x="-65" y="45" fill="#93c5fd" font-size="11" font-weight="bold" text-anchor="middle">Right Ventricle</text>
-              <text x="-65" y="60" fill="#bfdbfe" font-size="9" text-anchor="middle">(दायाँ निलय)</text>
-
-              <!-- Tricuspid Valve -->
-              <line x1="-100" y1="0" x2="-30" y2="0" stroke="#f59e0b" stroke-width="3" stroke-dasharray="3,3"/>
-              <text x="-65" y="-5" fill="#f59e0b" font-size="9" text-anchor="middle">Tricuspid Valve</text>
-
-              <!-- 3. Left Atrium (LA) - Red / Oxygenated -->
-              <rect x="20" y="-70" width="90" height="60" rx="8" fill="rgba(239, 68, 68, 0.35)" stroke="#ef4444" stroke-width="2"/>
-              <text x="65" y="-45" fill="#fca5a5" font-size="11" font-weight="bold" text-anchor="middle">Left Atrium</text>
-              <text x="65" y="-30" fill="#fecaca" font-size="9" text-anchor="middle">(बायाँ अलिन्द)</text>
-
-              <!-- 4. Left Ventricle (LV) - Red (Thick Muscular Wall!) -->
-              <rect x="20" y="10" width="90" height="75" rx="8" fill="rgba(239, 68, 68, 0.55)" stroke="#ef4444" stroke-width="4"/>
-              <text x="65" y="45" fill="#fca5a5" font-size="11" font-weight="bold" text-anchor="middle">Left Ventricle</text>
-              <text x="65" y="60" fill="#fecaca" font-size="9" text-anchor="middle">(बायाँ निलय - Thickest)</text>
-
-              <!-- Bicuspid / Mitral Valve -->
-              <line x1="30" y1="0" x2="100" y2="0" stroke="#f59e0b" stroke-width="3" stroke-dasharray="3,3"/>
-              <text x="65" y="-5" fill="#f59e0b" font-size="9" text-anchor="middle">Bicuspid Valve</text>
-            </g>
-
-            <!-- Blood Vessels (Flow Paths) -->
-            <!-- Vena Cava (Deoxygenated blue into RA) -->
-            <path d="M 100 320 L 100 150 L 210 150" fill="none" stroke="#3b82f6" stroke-width="4"/>
-            <text x="90" y="240" fill="#3b82f6" font-size="10" transform="rotate(-90, 90, 240)">Vena Cava (महाशिरा)</text>
-
-            <!-- Pulmonary Artery (from RV to Lungs) -->
-            <path d="M 210 240 L 160 240 L 160 50 L 240 50" fill="none" stroke="#3b82f6" stroke-width="4"/>
-            <text x="145" y="150" fill="#3b82f6" font-size="10" transform="rotate(-90, 145, 150)">Pulmonary Artery</text>
-
-            <!-- Pulmonary Vein (from Lungs to LA) -->
-            <path d="M 400 50 L 480 50 L 480 150 L 430 150" fill="none" stroke="#ef4444" stroke-width="4"/>
-            <text x="495" y="150" fill="#ef4444" font-size="10" transform="rotate(90, 495, 150)">Pulmonary Vein</text>
-
-            <!-- Aorta (from LV to Body under High Pressure) -->
-            <path d="M 430 245 L 540 245 L 540 320" fill="none" stroke="#ef4444" stroke-width="5"/>
-            <text x="555" y="270" fill="#ef4444" font-size="10" transform="rotate(90, 555, 270)">Aorta (महाधमनी)</text>
-          </svg>
-        </div>
-
-        <!-- Vital Statistics & Medical Knowledge -->
-        <div class="calculation-box">
-          <div class="calc-row">
-            <strong>Resting Heart Rate:</strong> 72 Beats / minute &nbsp;|&nbsp;
-            <strong>Systolic Pressure:</strong> 120 mmHg (Ventricle Contraction) &nbsp;|&nbsp;
-            <strong>Diastolic Pressure:</strong> 80 mmHg (Heart Relaxation)
-          </div>
-          <div class="calc-result">
-            Double Circulation: <strong>Pulmonary Circulation</strong> (Heart ⇄ Lungs) + <strong>Systemic Circulation</strong> (Heart ⇄ Body).
-          </div>
+        <div class="details-panel">
+          <h4 class="details-heading">${lang === 'np' ? 'दोहोरो रक्तसञ्चारको महत्व' : 'Why Double Circulation?'}</h4>
+          <ul class="clean-list">
+            <li><strong>${lang === 'np' ? 'अक्सिजनयुक्त र विहीन रगत अलग:' : 'Complete Separation:'}</strong> The muscular septum completely separates oxygen-rich blood from carbon-dioxide-rich blood, enabling high metabolic efficiency for warm-blooded humans.</li>
+            <li><strong>${lang === 'np' ? 'बायाँ भेन्ट्रिकलको भित्ता किन बाक्लो?' : 'Why is Left Ventricle wall thickest?'}</strong> Because it must pump blood under high hydrostatic pressure throughout the entire body (from head to toe).</li>
+            <li><strong>${lang === 'np' ? 'मुटुका भल्भहरू:' : 'Heart Valves:'}</strong> Tricuspid valve (Right) and Bicuspid/Mitral valve (Left) prevent backflow of blood during ventricular contraction (systole).</li>
+          </ul>
         </div>
       </div>
-    `;
-  }
+    </div>
+  `;
+
+  const btnPulse = container.querySelector('#btn-pulse-heart');
+  const hrText = container.querySelector('#heart-rate-text');
+
+  btnPulse.addEventListener('click', () => {
+    const bpm = Math.floor(70 + Math.random() * 15);
+    hrText.textContent = `${bpm} beats/min (Systole: Pumping 120 mmHg, Diastole: Filling 80 mmHg)`;
+    hrText.style.color = '#ef4444';
+  });
 }
