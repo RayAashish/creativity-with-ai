@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEE Science Practical Lab // नेपाल कक्षा १० विज्ञान प्रयोगशाला</title>
+  <meta name="description" content="Complete practical, visual, and interactive science laboratory for Grade 10 students of Nepal following the CDC curriculum and SEE examination.">
+  <meta property="og:title" content="Nepal Class 10 Science Practical Lab (SEE)">
+  <meta property="og:description" content="Hands-on interactive simulations for Gravitation, Optics, Hydraulics, Transformers, Gas Preparation, Genetics, and Blood Circulation.">
+  <meta name="theme-color" content="#0b0f17">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇳🇵</text></svg>">
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <!-- Header & Navigation -->
+  <header>
+    <div class="nav-container">
+      <a href="#" class="brand-group">
+        <span class="flag-badge">🇳🇵</span>
+        <div class="brand-text">
+          <h1>SEE SCIENCE LAB <span>// कक्षा १०</span></h1>
+          <p>Curriculum Development Centre (CDC) Nepal • Total Practicality</p>
+        </div>
+      </a>
+
+      <div class="nav-controls">
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" id="search-input" placeholder="Search: 'gravity', 'G', 'lens', 'ammonia'..." autocomplete="off">
+        </div>
+
+        <button id="btn-lang-toggle" class="lang-toggle-btn">🇳🇵 नेपाली</button>
+      </div>
+    </div>
+
+    <!-- Category Filter Pills -->
+    <nav class="nav-categories">
+      <button class="cat-pill active" data-filter="all">⚛️ ALL CONCEPTS (सबै)</button>
+      <button class="cat-pill" data-filter="physics">🔭 PHYSICS (भौतिक विज्ञान)</button>
+      <button class="cat-pill" data-filter="chemistry">🧪 CHEMISTRY (रसायन विज्ञान)</button>
+      <button class="cat-pill" data-filter="biology">🧬 BIOLOGY (जीव विज्ञान)</button>
+      <button class="cat-pill" data-filter="astronomy">🌌 ASTRONOMY (अन्तरिक्ष)</button>
+      <button class="cat-pill" data-filter="quiz">📝 SEE EXAM QUIZ (तयारी परीक्षा)</button>
+      <button class="cat-pill" data-filter="diy">🏡 DIY EXPERIMENTS (घरेलु प्रयोग)</button>
+    </nav>
+  </header>
+
+  <!-- Hero Banner -->
+  <section class="hero-banner">
+    <div class="hero-content">
+      <h2 id="hero-title">Science is Not to Memorize, It's to Experience.</h2>
+      <p id="hero-subtitle">
+        Master every concept of Nepal's Grade 10 Science (SEE) through hands-on interactive simulations, visual formulas, and real experiments.
+      </p>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat-box">
+        <strong>17</strong>
+        <span>CDC Units</span>
+      </div>
+      <div class="stat-box">
+        <strong>100%</strong>
+        <span>Practical Visuals</span>
+      </div>
+      <div class="stat-box">
+        <strong>SEE</strong>
+        <span>High-Yield Prep</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Laboratory Modules -->
+  <main id="main-content">
+    <!-- PHYSICS: Universal Gravitation & G Deep Dive -->
+    <section class="lab-section" data-domain="physics">
+      <div id="gravity-lab-mount"></div>
+    </section>
+
+    <!-- PHYSICS: Pressure, Hydraulics & Upthrust -->
+    <section class="lab-section" data-domain="physics">
+      <div id="pressure-lab-mount"></div>
+    </section>
+
+    <!-- PHYSICS: Optics & Eye Vision Corrections -->
+    <section class="lab-section" data-domain="physics">
+      <div id="optics-lab-mount"></div>
+    </section>
+
+    <!-- PHYSICS: Electricity & Transformers -->
+    <section class="lab-section" data-domain="physics">
+      <div id="transformer-lab-mount"></div>
+    </section>
+
+    <!-- CHEMISTRY: Modern Periodic Table -->
+    <section class="lab-section" data-domain="chemistry">
+      <div id="periodic-lab-mount"></div>
+    </section>
+
+    <!-- CHEMISTRY: Laboratory Gas Preparation (CO2 & NH3) -->
+    <section class="lab-section" data-domain="chemistry">
+      <div id="gasprep-lab-mount"></div>
+    </section>
+
+    <!-- BIOLOGY: Mendel's Genetics & Sex Determination -->
+    <section class="lab-section" data-domain="biology">
+      <div id="genetics-lab-mount"></div>
+    </section>
+
+    <!-- BIOLOGY: Human Heart Circulatory System -->
+    <section class="lab-section" data-domain="biology">
+      <div id="heart-lab-mount"></div>
+    </section>
+
+    <!-- ASTRONOMY: Lifecycle of Stars & Himalayan Climate -->
+    <section class="lab-section" data-domain="astronomy">
+      <div id="stars-lab-mount"></div>
+    </section>
+
+    <!-- EXAM: SEE Practice Mastery Quiz -->
+    <section class="lab-section" data-domain="quiz">
+      <div id="quiz-lab-mount"></div>
+    </section>
+
+    <!-- DIY: Home Science Experiments -->
+    <section class="lab-section" data-domain="diy">
+      <div id="diy-lab-mount"></div>
+    </section>
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
