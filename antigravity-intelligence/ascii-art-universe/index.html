@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animated Flower Bouquet & ASCII Code Art Atelier</title>
+  <meta name="description" content="Interactive procedural animated ASCII art and live code studio. Created by artificial intelligence.">
+  <meta property="og:title" content="Animated Flower Bouquet & ASCII Art Atelier">
+  <meta property="og:description" content="Experience thousands of procedural animated ASCII concepts with live code view.">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌺</text></svg>">
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <!-- Header & Navigation -->
+  <header>
+    <div class="header-top">
+      <a href="#" class="brand">
+        <div class="brand-icon">CW</div>
+        <div>
+          <div class="brand-title">ASCII // KINETIC CODE ATELIER</div>
+        </div>
+        <span class="brand-badge">PRO EVOLUTION</span>
+      </a>
+
+      <!-- Generator & Controls -->
+      <div class="header-actions">
+        <div class="generator-bar">
+          <span>⚡</span>
+          <input type="text" id="gen-input" class="generator-input" placeholder="Generate any concept: 'sakura bouquet', 'phoenix', 'galaxy'..." autocomplete="off">
+          <button id="gen-btn" class="btn-primary">CREATE</button>
+        </div>
+
+        <button id="surprise-btn" class="btn-secondary" title="Surprise with random procedural concept">
+          <span>🎲</span>
+          <span>SURPRISE</span>
+        </button>
+
+        <button id="audio-btn" class="btn-secondary" title="Toggle Lo-fi Ambient Chords">
+          <span id="audio-icon">🎵</span>
+          <span id="audio-label">LOFI: OFF</span>
+        </button>
+
+        <button id="fullscreen-btn" class="btn-secondary" title="Fullscreen Art Mode">
+          <span>👁</span>
+          <span>FULLSCREEN</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Concept Pills Navigation -->
+    <nav class="concept-scroll" id="concept-pills">
+      <button class="concept-pill active" data-id="bouquet">🌺 Animated Flower Bouquet</button>
+      <button class="concept-pill" data-id="jellyfish">🪼 Abyss Jellyfish</button>
+      <button class="concept-pill" data-id="skull">💀 Neuromancer Skull</button>
+      <button class="concept-pill" data-id="dragon">🐉 Celestial Dragon</button>
+      <button class="concept-pill" data-id="saturn">🪐 Saturn & Orrery</button>
+      <button class="concept-pill" data-id="dna">🧬 DNA Double Helix</button>
+      <button class="concept-pill" data-id="heart">❤️ Beating Heart</button>
+    </nav>
+  </header>
+
+  <!-- Main Stage: Dual Frame (Live Art + Live Code Terminal) -->
+  <main>
+    <!-- Left: Art Showcase Box -->
+    <section class="art-container">
+      <div class="art-card">
+        <div class="art-header">
+          <div class="art-title-group">
+            <h2 id="art-title">Animated <span>Flower Bouquet</span></h2>
+            <div id="art-subtitle" class="art-subtitle">ASCII Lilies in Bloom • Interactive Kinetic Canvas</div>
+          </div>
+        </div>
+
+        <div class="canvas-wrapper">
+          <canvas id="main-canvas"></canvas>
+        </div>
+
+        <!-- Quick Controls -->
+        <div class="quick-controls">
+          <div class="ctrl-group">
+            <span class="ctrl-label">PALETTE:</span>
+            <select id="palette-select" class="ctrl-select">
+              <option value="bouquet">🌸 Botanical Bouquet</option>
+              <option value="matrix">🟢 Matrix Green</option>
+              <option value="cyberpunk">🟣 Cyber Neon</option>
+              <option value="amber">🟠 Solar Amber</option>
+              <option value="ocean">🔵 Abyss Ocean</option>
+              <option value="monochrome">⚪ Monochrome</option>
+            </select>
+          </div>
+
+          <div class="ctrl-group">
+            <span class="ctrl-label">GLYPHS:</span>
+            <select id="glyph-select" class="ctrl-select">
+              <option value="botanical">🌿 Botanical Flora</option>
+              <option value="matrix">ｦ Matrix Katakana</option>
+              <option value="ascii">@ Classic ASCII</option>
+              <option value="runic">ᚠ Ancient Runes</option>
+              <option value="math">∫ Calculus / Math</option>
+              <option value="stars">✦ Starlight</option>
+            </select>
+          </div>
+
+          <div class="ctrl-group">
+            <button id="wind-toggle-btn" class="btn-icon">🍃 BREEZE: NORMAL</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: macOS Code Terminal Window (Matches Instagram Layout) -->
+    <section class="code-card">
+      <div class="terminal-header">
+        <div class="mac-buttons">
+          <div class="mac-dot dot-red"></div>
+          <div class="mac-dot dot-yellow"></div>
+          <div class="mac-dot dot-green"></div>
+        </div>
+        <div id="code-filename" class="terminal-title">ascii_lilies.html</div>
+        <div class="code-actions">
+          <button id="copy-btn" class="btn-icon">
+            <span id="copy-icon">📋</span>
+            <span id="copy-text">COPY CODE</span>
+          </button>
+          <button id="download-btn" class="btn-icon">
+            <span>💾</span>
+            <span>DOWNLOAD</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="code-body">
+        <pre><code id="code-display"></code></pre>
+      </div>
+    </section>
+  </main>
+
+  <button id="exit-fullscreen-btn" class="btn-primary">✕ EXIT FULLSCREEN</button>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
