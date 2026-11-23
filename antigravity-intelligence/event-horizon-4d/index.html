@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CHRONOSFERA // 4D Spacetime & Gravitational Lensing Holodeck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./src/style.css">
+</head>
+<body>
+  <!-- WebGL Render Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Ambient Cinematic Grain & Vignette -->
+  <div class="vignette-overlay"></div>
+
+  <!-- HUD Control Deck -->
+  <div id="hud-deck">
+    <!-- Header Brand Bar -->
+    <header class="hud-header">
+      <div class="brand-left">
+        <div class="brand-badge"><span class="pulse-dot"></span>QUANTUM HOLODECK</div>
+        <h1 class="brand-title">CHRONOSFERA <span class="version-tag">4D</span></h1>
+        <p class="brand-sub">Relativistic Kerr Black Hole · Gravitational Lensing · 4D Manifolds</p>
+      </div>
+      <div class="brand-right">
+        <div class="telemetry-pill" id="fps-metric">60 FPS</div>
+        <button id="btn-audio-toggle" class="hud-pill-btn">🔈 COSMIC SOUNDSCAPE</button>
+        <canvas id="audio-spectrum-canvas" width="64" height="20" title="Web Audio Synthesizer Spectrum"></canvas>
+      </div>
+    </header>
+
+    <!-- Center Mode Switcher Tabs -->
+    <nav class="mode-nav">
+      <button class="mode-card active" data-mode="blackhole">
+        <span class="mode-icon">🕳️</span>
+        <div class="mode-meta">
+          <span class="mode-name">Gargantua Singularity</span>
+          <span class="mode-desc">Kerr Metric & Gravitational Lensing</span>
+        </div>
+      </button>
+      <button class="mode-card" data-mode="calabiyau">
+        <span class="mode-icon">🌀</span>
+        <div class="mode-meta">
+          <span class="mode-name">4D Calabi-Yau</span>
+          <span class="mode-desc">6D Compactified String Manifold</span>
+        </div>
+      </button>
+      <button class="mode-card" data-mode="mandelbulb">
+        <span class="mode-icon">🔮</span>
+        <div class="mode-meta">
+          <span class="mode-name">Quantum Foam</span>
+          <span class="mode-desc">3D Mandelbulb Fractal Void</span>
+        </div>
+      </button>
+      <button class="mode-card" data-mode="mycelium">
+        <span class="mode-icon">🧠</span>
+        <div class="mode-meta">
+          <span class="mode-name">Neural Synapse</span>
+          <span class="mode-desc">100k GPU Synaptic Vortex</span>
+        </div>
+      </button>
+    </nav>
+
+    <!-- Interactive Parameter Deck -->
+    <section class="floating-panel glass-panel">
+      <div class="panel-header">
+        <h3 id="dynamic-controls-title">RELATIVISTIC METRIC CONTROLS</h3>
+        <div class="time-control">
+          <label>Time Dilation: <span id="val-time-dilation">1.0x</span></label>
+          <input type="range" id="input-time-dilation" min="0.1" max="3.0" step="0.1" value="1.0">
+        </div>
+      </div>
+
+      <div id="dynamic-controls-content">
+        <!-- Dynamically populated by active mode -->
+      </div>
+
+      <!-- Action Toolbar -->
+      <div class="action-toolbar">
+        <button id="btn-hyperjump" class="action-btn glow-btn">🚀 HYPERJUMP WARP</button>
+        <button id="btn-auto-orbit" class="action-btn active">🔄 AUTO-ORBIT</button>
+        <button id="btn-screenshot" class="action-btn">📸 4K CAPTURE</button>
+        <button id="btn-info-modal" class="action-btn" onclick="document.getElementById('physics-modal').classList.add('visible')">ℹ️ METRIC INTEL</button>
+      </div>
+
+      <!-- Live Theoretical Physics Telemetry -->
+      <div id="telemetry-content" class="telemetry-bar">
+        <!-- Live physical values -->
+      </div>
+    </section>
+
+    <!-- Bottom Instruction Bar -->
+    <footer class="hud-footer">
+      <span>🖱️ Left Click + Drag to Orbit · Scroll Wheel to Zoom Spacetime · WebGL Raymarching 60 FPS</span>
+      <span class="credit-tag">Autonomous AI Engine · DeepMind Antigravity</span>
+    </footer>
+  </div>
+
+  <!-- Theoretical Physics Intel Modal -->
+  <div id="physics-modal" class="modal-backdrop" onclick="if(event.target === this) this.classList.remove('visible')">
+    <div class="modal-box glass-panel">
+      <div class="modal-header">
+        <h2>🔬 THEORETICAL FOUNDATION // GENERAL RELATIVITY & 4D GEOMETRY</h2>
+        <button class="close-btn" onclick="document.getElementById('physics-modal').classList.remove('visible')">✕</button>
+      </div>
+      <div class="modal-body">
+        <h4>1. Relativistic Kerr Metric & Curved Null Geodesics</h4>
+        <p>In General Relativity, a rotating uncharged black hole is governed by the Kerr solution to Einstein's Field Equations:</p>
+        <pre><code>G_{μν} = (8πG / c⁴) T_{μν}</code></pre>
+        <p>Photons grazing the event horizon follow null geodesics deflected by gravitational acceleration:</p>
+        <pre><code>d²x^μ / dλ² + Γ^μ_{αβ} (dx^α / dλ)(dx^β / dλ) = 0</code></pre>
+
+        <h4>2. Relativistic Doppler Beaming</h4>
+        <p>Plasma in the accretion disk orbits at Keplerian velocities up to 0.5c. The approaching disk quadrant is intensely blueshifted and brightened by the Doppler factor:</p>
+        <pre><code>D = 1 / [ γ (1 - β cos θ) ]    where γ = 1 / √(1 - v²/c²)</code></pre>
+
+        <h4>3. 4D Calabi-Yau Compactification</h4>
+        <p>In Superstring Theory, the 6 extra spatial dimensions are compactified into a Kähler manifold with vanishing first Chern class (SU(3) holonomy), modeled here via 4D projection:</p>
+        <pre><code>z₁ⁿ + z₂ⁿ = 1   ⊂  ℂ²</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

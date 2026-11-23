@@ -8,9 +8,28 @@ A premier suite of autonomous web applications crafted from first principles, co
 
 | Platform | Live Production URL | Key Highlights | Scale / Scope |
 | :--- | :--- | :--- | :--- |
+| **🕳️ CHRONOSFERA 4D** | [chronosfera-sigma.vercel.app](https://chronosfera-sigma.vercel.app) | Relativistic Kerr Black Hole, Doppler Beaming, 4D Calabi-Yau, Mandelbulb, Audio Synth | WebGL Raymarching + Web Audio |
 | **🇳🇵 Nepal Class 10 Science Lab** | [nepal-class10-science.vercel.app](https://nepal-class10-science.vercel.app) | Full CDC Nepal Syllabus, 10+ Physics/Chem/Bio Simulations, Academic Archives | **1,177,466 Lines (11.7+ Lakhs)** |
 | **🌸 ASCII Art Universe** | [ascii-art-universe.vercel.app](https://ascii-art-universe.vercel.app) | Procedural ASCII canvas, 3D math projections, animated flower bouquet, matrix rain | Procedural Canvas Engine |
 | **🌌 Cosmic Singularity 2.0** | [cosmic-singularity.vercel.app](https://cosmic-singularity.vercel.app) | 3D WebGL reality compiler, strange attractors, geodesic dive, mic audio reactivity | Three.js + Web Audio API |
+
+---
+
+## 🕳️ 1. CHRONOSFERA 4D // Relativistic Spacetime & Quantum Multiverse Holodeck
+
+👉 **Live Site:** [https://chronosfera-sigma.vercel.app](https://chronosfera-sigma.vercel.app)  
+👉 **Directory:** [`./event-horizon-4d`](file:///Users/aashishkumarray/Desktop/creativity-with-ai/antigravity-intelligence/event-horizon-4d)
+
+An interactive relativistic simulation engine rendering curved null geodesics, 4D hyperdimensional Calabi-Yau manifolds, 3D Mandelbulb fractals, and a 100,000-particle neural mycelium with real-time generative cosmic audio synthesis.
+
+### 🌟 Key Capabilities
+- **Relativistic Kerr Black Hole Raymarching**: Solves curved null geodesics ($d\vec{v}/dt \propto -1.5 r_s / r^2$) in real time with an Einstein ring, photon sphere shadow, and volumetric Keplerian accretion disk.
+- **Relativistic Doppler Beaming ($D^3$)**: Plasma approaching the observer at $\approx 0.5c$ beams blinding blue-white light, while receding plasma redshifts to deep copper-amber.
+- **4D Calabi-Yau String Theory Manifold**: 6-dimensional compactification ($z_1^n + z_2^n = 1 \subset \mathbb{C}^2$) with 4D hyper-rotation and iridescent thin-film dispersion.
+- **3D Quantum Foam Mandelbulb**: Raymarched power-8 3D fractal void with dynamic orbit-trap coloration.
+- **100,000 GPU Synaptic Mycelium**: Interactive bio-luminescent particle cloud reacting to cursor gravity.
+- **Generative Web Audio Synthesizer**: Pure Web Audio API sub-bass drone ($43.65\text{Hz}$), resonant LFO filtering, celestial pentatonic chimes, and hyperjump warp sweep.
+- **Real-Time Physics Telemetry**: Displays Schwarzschild radius $r_s$, ISCO radius, metric tensor $g_{tt}$, Hawking radiation temperature, and 60 FPS performance counter.
 
 ---
 
