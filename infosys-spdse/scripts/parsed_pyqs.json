@@ -1,0 +1,338 @@
+[
+  {
+    "id": "PYQ-01",
+    "title": "RPG Monster Quest",
+    "pattern": "Greedy Optimization, Custom Sorting (Pair by threshold power ascending, break ties by bonus descending).",
+    "summary": "A player starts with an initial experience energy $E$ and must battle $N$ monsters. Each monster requires a threshold power $P[i]$ to defeat and awards a bonus energy $B[i]$ upon victory. The player can engage monsters in any order. Determine the maximum number of monsters that can be defeated.",
+    "constraints": "$1 \\le N \\le 10^5$, $0 \\le E, P[i], B[i] \\le 10^9$.",
+    "source": "https://leetcode.com/discuss/interview-question/1190412/Infosys-or-Specialist-Programmer-or-Interview-Experience"
+  },
+  {
+    "id": "PYQ-02",
+    "title": "Heroes and Villains",
+    "pattern": "Binary Search on Answer / Monotonicity check combined with greedy simulation.",
+    "summary": "$M$ heroes each possess identical starting health $H$. A sequence of $N$ villains with health values $V[0 \\dots N-1]$ arrives in fixed order. In each bout, the active hero fights the next villain: if $H > V[i]$, the villain falls and the hero retains $H - V[i]$; if $H = V[i]$, both perish; if $H < V[i]$, the hero is eliminated and the next fresh hero faces the undamaged villain. To ensure heroes eliminate all remaining villains, you may remove a prefix of $K$ villains from the line. Find the minimum $K \\ge 0$.",
+    "constraints": "$1 \\le N, M \\le 2 \\times 10^5$, $1 \\le H, V[i] \\le 10^9$.",
+    "source": "https://leetcode.com/discuss/interview-question/1691234/Infosys-Specialist-Programmer-Heroes-and-Villains"
+  },
+  {
+    "id": "PYQ-03",
+    "title": "Alternating Vowel Paths",
+    "pattern": "Dynamic Programming with State Transitions (2D DP tracking length, current vowel, and last transition direction `UP/DOWN/NONE`).",
+    "summary": "Construct vowel strings of length $N$ using lowercase vowels `a, e, i, o, u`. Consecutive characters must follow specific graph transitions (`a -> e`, `e -> a, i`, `i -> a, e, o, u`, `o -> i, u`, `u -> a`). Furthermore, steps must alternate strictly between upward transitions (lexicographically greater) and downward transitions (lexicographically smaller). Count total valid strings modulo $10^9+7$.",
+    "constraints": "$1 \\le N \\le 2 \\times 10^4$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-04",
+    "title": "Number of Shortest Unique Paths to Open Door",
+    "pattern": "BFS for multi-source shortest distances + Dynamic Programming / Combinatorics (Shortest Path DAG path counting).",
+    "summary": "Given a 2D grid containing obstacles `#`, an agent start `X`, empty paths `.`, a key `K`, and a door `O`. The agent must reach the key first to unlock the door. Find the number of shortest unique paths modulo $10^9+7$ that start at `X`, visit `K`, and end at `O`.",
+    "constraints": "Grid dimensions $N \\times M \\le 500$, obstacles $\\le 20\\%$.",
+    "source": "https://leetcode.com/discuss/interview-question/1812891/Infosys-Specialist-Programmer-Unique-Paths-With-Keys"
+  },
+  {
+    "id": "PYQ-05",
+    "title": "Peaks and Crates",
+    "pattern": "Dynamic Programming on Sequences (Tracking position, number of peaks created, and state of whether the previous position was modified or kept low).",
+    "summary": "A warehouse floor has crates stacked in $N$ columns of height $H[i]$. A peak is a column strictly taller than both its neighbors. You are given a budget of $K$ modifications where you can either add or remove a crate from a stack. Find the minimum operations to create at least $P$ distinct peaks, or determine if impossible.",
+    "constraints": "$3 \\le N \\le 2000$, $1 \\le P \\le N/2$, $0 \\le H[i] \\le 10^6$.",
+    "source": "https://github.com/MuralidharanGanapathy/InfyTQ-and-HackwithInfy-solutions"
+  },
+  {
+    "id": "PYQ-06",
+    "title": "Range of Towers",
+    "pattern": "Two Pointers / Coordinate Compression / Binary Search with interval intersection.",
+    "summary": "Given $N$ transmission towers arranged along a 1D line with positions $X[i]$ and power ranges $R[i]$. Tower $i$ can transmit signals to tower $j$ if $|X[i] - X[j]| \\le R[i]$. Find the total number of unordered pairs of towers that can mutually transmit signals to each other.",
+    "constraints": "$1 \\le N \\le 10^5$, $1 \\le X[i], R[i] \\le 10^9$.",
+    "source": "https://github.com/MuralidharanGanapathy/InfyTQ-and-HackwithInfy-solutions"
+  },
+  {
+    "id": "PYQ-07",
+    "title": "Maximum Dish Selection (Non-Adjacent Same Type)",
+    "pattern": "Hash Map Grouping + House Robber Dynamic Programming / Greedy selection on indices for each unique type.",
+    "summary": "A conveyor belt carries $N$ dishes of types $A[0 \\dots N-1]$. A customer must choose dishes of **only one single dish type**, subject to the constraint that no two chosen dishes can be adjacent on the original conveyor belt. Determine the maximum count of dishes the customer can pick.",
+    "constraints": "$1 \\le N \\le 10^5$, $1 \\le A[i] \\le 10^5$.",
+    "source": "https://prepinsta.com/hackwithinfy/coding-questions/"
+  },
+  {
+    "id": "PYQ-08",
+    "title": "Delayed Stock Settlement",
+    "pattern": "Suffix Maximum Array or Monotonic Queue / Sliding tracking.",
+    "summary": "Given stock prices $P[0 \\dots N-1]$ across $N$ days. A trader makes at most one transaction: buy on day $i$ and sell on day $j$. However, a regulatory clearing delay dictates that selling on day $j$ is permitted only if $j \\ge i + (P[i] \\bmod 10) + 1$. Compute the maximum achievable profit, or $0$ if unprofitable.",
+    "constraints": "$1 \\le N \\le 10^5$, $1 \\le P[i] \\le 10^6$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-09",
+    "title": "Free Item Purchase (Buy Two Get One with Quota)",
+    "pattern": "Greedy Sorting, Two Pointers / Optimal Partitioning.",
+    "summary": "A shopper buys $N$ items with prices $C[0 \\dots N-1]$. A special promo allows: for every 2 items purchased, receive 1 additional item for free, provided the free item is strictly cheaper than or equal to both purchased items. This promotion can be utilized at most $V$ times. Compute the minimum total expenditure to acquire all $N$ items.",
+    "constraints": "$1 \\le N \\le 10^5$, $0 \\le V \\le N/3$, $1 \\le C[i] \\le 10^9$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-10",
+    "title": "Last Stone Weight II (Resonance Variant)",
+    "pattern": "2D 0/1 Knapsack / Subset Sum Partition DP (tracking sum and count of elements).",
+    "summary": "You are given $N$ stones with weights $W[i]$ and a resonance constant $R$. Partition all stones into Set A and Set B. The effective weight of a set is the sum of its elements plus $R$ times the count of stones in the set. Minimize the absolute difference between the effective weights of Set A and Set B.",
+    "constraints": "$1 \\le N \\le 100$, $1 \\le W[i] \\le 500$, $0 \\le R \\le 100$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-11",
+    "title": "Longest Increasing Path with One Teleport",
+    "pattern": "Graph DAG Topological Sort / DP + Suffix Maximum on sorted grid cells (2-state DP: before and after teleport).",
+    "summary": "Given an $N \\times M$ matrix of integers. Find the length of the longest path where each standard move visits an adjacent cell (up/down/left/right) with strictly greater value. You are also endowed with exactly one teleportation token, allowing you to jump from any cell to any other cell on the entire grid provided the destination cell has a strictly greater value.",
+    "constraints": "$1 \\le N, M \\le 300$, $N \\times M \\le 5 \\times 10^4$, cell values up to $10^9$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-12",
+    "title": "Machine Cooling and Task Scheduling",
+    "pattern": "Greedy Simulation / Sliding Interval check.",
+    "summary": "A machine processes tasks of duration 1 unit. The machine can execute at most $D$ consecutive tasks before overheating, after which it must undergo a mandatory 1 unit cooldown. Given $N$ task arrival times $A[0 \\dots N-1]$, where tasks can only be executed at their exact arrival slot, find the maximum count of tasks the machine can process without violating the consecutive limit.",
+    "constraints": "$1 \\le N \\le 10^5$, $1 \\le D \\le 10^5$, $1 \\le A[i] \\le 10^9$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-13",
+    "title": "Maximum Product of Strictly Increasing Absolute Segments",
+    "pattern": "Two Pointers / Linear Scan / Array Segmentation.",
+    "summary": "Given an array `nums`. Partition into contiguous segments such that a segment continues as long as $|nums[i]| > |nums[i-1]|$. Whenever this is violated, a new segment starts. Output the maximum product of elements inside any single valid segment modulo $10^9+7$.",
+    "constraints": "$1 \\le N \\le 10^5$, $1 \\le |nums[i]| \\le 10^4$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-14",
+    "title": "Maximum Savings via K Fixed Discount Coupons",
+    "pattern": "Greedy Optimization (Apply coupons to items with $P[i] \\ge D$ first).",
+    "summary": "Given $N$ item prices $P[i]$ and $K$ flat coupons each giving discount $D$. At most one coupon can be applied per item, and discount cannot exceed the item's price (final price $\\ge 0$). Find maximum total savings.",
+    "constraints": "$1 \\le N \\le 10^5$, $1 \\le K \\le 10^5$, $1 \\le D, P[i] \\le 10^9$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-15",
+    "title": "Minimum Cost Merge of Two Arrays",
+    "pattern": "2D Dynamic Programming (LCS-style state space `dp[i][j]`).",
+    "summary": "Merge two sequences $A$ of length $M$ and $B$ of length $N$ into a combined array of length $M+N$, preserving relative order within each sequence. Each adjacent inversion in the merged array incurs a pairwise penalty cost $C(x, y)$. Minimize the total penalty.",
+    "constraints": "$1 \\le M, N \\le 500$, penalty costs $0 \\le C \\le 1000$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-16",
+    "title": "Minimum Makespan on M Identical Servers",
+    "pattern": "Binary Search on Answer + Greedy validation (or DP for small $N$).",
+    "summary": "Given $N$ tasks with execution times $T[i]$ and $M$ identical servers. Assign each task to a server such that the maximum load (makespan) across all servers is minimized.",
+    "constraints": "$1 \\le N \\le 10^5$, $1 \\le M \\le 10^5$, $1 \\le T[i] \\le 10^9$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-17",
+    "title": "Partition by Increasing Beauty",
+    "pattern": "LIS via Patient Sorting + Dynamic Programming with coordinate/interval memoization.",
+    "summary": "The beauty of a subarray is defined as the length of its Longest Strictly Increasing Subsequence (LIS). Partition an array $A$ into contiguous subarrays such that the beauty values of the subarrays strictly increase from left to right. Determine if such a partition is possible, and if so, minimize the number of partition cuts.",
+    "constraints": "$1 \\le N \\le 2000$, elements up to $10^9$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-18",
+    "title": "Pizza with 3N Slices (Tolerance Tokens)",
+    "pattern": "Circular DP / State Space Search with token budget parameter.",
+    "summary": "A circular pizza has $3N$ slices. You must pick exactly $N$ slices. Normally, no two adjacent slices may be selected. However, you possess $K$ tolerance tokens; spending 1 token allows choosing a slice immediately adjacent clockwise to an already chosen slice. Maximize the total slice size.",
+    "constraints": "$1 \\le N \\le 100$, $0 \\le K \\le N$, slice sizes up to $10^4$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-19",
+    "title": "Reduce Array Size to Half (Range Variant)",
+    "pattern": "Sorting + Sliding Window on sorted array values.",
+    "summary": "Given an array of $N$ integers ($N$ even). Choose a single contiguous integer range $[X, Y]$ with $X \\le Y$ and remove all elements whose value lies in $[X, Y]$. Find the minimum range length $Y - X + 1$ such that at least $N/2$ elements are eliminated.",
+    "constraints": "$2 \\le N \\le 10^5$, $1 \\le A[i] \\le 10^9$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-20",
+    "title": "Rod Pairing",
+    "pattern": "Two Pointers / Sorting (Sort material 0 and material 1 descending, match greedily).",
+    "summary": "Given $N$ rods, each having length $L[i]$ and material $M[i] \\in \\{0, 1\\}$. Form pairs consisting of one material 0 rod and one material 1 rod. The score of a pair is $\\min(L_0, L_1)$. Maximize the total score across all pairs modulo $10^9+7$.",
+    "constraints": "$1 \\le N \\le 10^5$, $1 \\le L[i] \\le 10^9$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-21",
+    "title": "Split Array by Tension",
+    "pattern": "Dynamic Programming + Monotonic Stack / Segment Tree optimization for range maximums.",
+    "summary": "The tension of a subarray is defined as $(\\sum x) + \\max(x)$. Given threshold `MaxTension`, partition array into the minimum possible number of contiguous subarrays such that every subarray has tension $\\le \\text{MaxTension}$.",
+    "constraints": "$1 \\le N \\le 10^5$, positive array elements up to $10^9$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-22",
+    "title": "Street Lamps with a Generator Truck",
+    "pattern": "Sliding Window + Greedy Interval Covering / Dynamic Programming.",
+    "summary": "$N$ posts line a street. A lamp on post $i$ illuminates posts $i-1, i, i+1$. A string $S$ indicates whether each post is `L` (live power) or `D` (dead). A portable generator can revive at most $K$ consecutive dead posts into live posts. Find the minimum lamps required to illuminate all posts, or $-1$ if impossible.",
+    "constraints": "$1 \\le N \\le 10^5$, $0 \\le K \\le N$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-23",
+    "title": "Two City Scheduling with Adjacency Penalty",
+    "pattern": "3D Dynamic Programming `dp[index][countA][lastCity]`.",
+    "summary": "$N$ candidates ($N$ even) stand in queue. Candidate $i$ costs $A[i]$ if sent to City A and $B[i]$ if sent to City B. Exactly $N/2$ must go to each city. Whenever two consecutive candidates in line are dispatched to the same city, an adjacency congestion penalty $P$ is levied. Find the minimum total assignment cost plus penalty.",
+    "constraints": "$2 \\le N \\le 1000$, $0 \\le A[i], B[i], P \\le 10^6$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-24",
+    "title": "Car Pooling Bus Grouping",
+    "pattern": "Difference Array (Prefix Sum sweep-line) / Event Sorting.",
+    "summary": "A shuttle operates along a straight route with capacity $C$. Given $N$ booking trips $[numPassengers, from, to]$, determine whether the shuttle can satisfy all reservations without at any point exceeding its seat capacity.",
+    "constraints": "$1 \\le N \\le 10^5$, $0 \\le from < to \\le 10^5$, $capacity \\le 10^6$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-25",
+    "title": "Andy's Vacation / Maximum Vacation Days",
+    "pattern": "2D Matrix Dynamic Programming (`dp[week][city]`).",
+    "summary": "Andy can travel between $K$ cities over $N$ consecutive weeks. Flights between city $i$ and city $j$ operate only on specific days according to a connectivity matrix. In week $w$, staying in city $c$ yields $V[c][w]$ vacation days. Find the maximum total vacation days Andy can accrue starting from city 0.",
+    "constraints": "$1 \\le K \\le 100$, $1 \\le N \\le 100$, vacation days up to 7 per week.",
+    "source": "https://github.com/Dhyaneshmohan/Infosys-SP-DSE-resources-"
+  },
+  {
+    "id": "PYQ-26",
+    "title": "Minimize Ugliness of Binary String",
+    "pattern": "Binary Search on Answer (`isPossible(length)`) with greedy flip verification.",
+    "summary": "A binary string $S$ has ugliness defined as the maximum length of consecutive identical characters. You are permitted at most $K$ character flips (`0` to `1` or `1` to `0`). Determine the minimum achievable ugliness of the resulting string.",
+    "constraints": "$1 \\le |S| \\le 2 \\times 10^5$, $0 \\le K \\le |S|$.",
+    "source": "https://github.com/Dhyaneshmohan/Infosys-SP-DSE-resources-"
+  },
+  {
+    "id": "PYQ-27",
+    "title": "Count Arrays with Divisibility Condition",
+    "pattern": "Number Theory + Dynamic Programming with precomputed divisor and multiple graphs.",
+    "summary": "Count integer arrays of length $N$ with elements from $1$ to $M$ such that for all $1 \\le i < N$, either $A[i]$ divides $A[i+1]$ or $A[i+1]$ divides $A[i]$. Return the answer modulo $10^9+7$.",
+    "constraints": "$1 \\le N \\le 200$, $1 \\le M \\le 1000$.",
+    "source": "https://github.com/Dhyaneshmohan/Infosys-SP-DSE-resources-"
+  },
+  {
+    "id": "PYQ-28",
+    "title": "Mountain Array Minimum Changes",
+    "pattern": "Prefix LIS and Suffix LDS (Longest Decreasing Subsequence) via Patient Sorting ($O(N \\log N)$).",
+    "summary": "Given an array $A$ of length $N$. Find the minimum elements that must be removed so that the remaining elements form a strict mountain array (strictly increasing up to peak $i$, then strictly decreasing).",
+    "constraints": "$3 \\le N \\le 10^5$, $1 \\le A[i] \\le 10^9$.",
+    "source": "https://github.com/Dhyaneshmohan/Infosys-SP-DSE-resources-"
+  },
+  {
+    "id": "PYQ-29",
+    "title": "XOR Sum Maximization / Max XOR-Sum(X)",
+    "pattern": "Bit Manipulation / Linear Basis (Gaussian Elimination over GF(2)) or Binary Trie.",
+    "summary": "Given an array $A$ of $N$ integers and $Q$ queries. In query $j$, you receive an integer $X_j$. Select a subset of elements from $A$ such that $(A[i_1] \\oplus A[i_2] \\oplus \\dots) \\oplus X_j$ is maximized.",
+    "constraints": "$1 \\le N \\le 10^5$, $1 \\le Q \\le 10^5$, $0 \\le A[i], X_j < 2^{30}$.",
+    "source": "https://github.com/Dhyaneshmohan/Infosys-SP-DSE-resources-"
+  },
+  {
+    "id": "PYQ-30",
+    "title": "Wine Bottle Transport",
+    "pattern": "Prefix Sum accumulator (Absolute prefix sum aggregation).",
+    "summary": "There are $N$ houses along a road, where house $i$ either wants to buy $W[i]$ units of wine ($W[i] > 0$) or sell $|W[i]|$ units of wine ($W[i] < 0$). The net sum of wine requirements across all houses is zero ($\\sum W[i] = 0$). Moving 1 unit of wine between house $i$ and house $i+1$ costs 1 unit of work. Find the minimum work needed to satisfy all demands.",
+    "constraints": "$2 \\le N \\le 10^5$, $\\sum |W[i]| \\le 10^9$.",
+    "source": "https://github.com/Dhyaneshmohan/Infosys-SP-DSE-resources-"
+  },
+  {
+    "id": "PYQ-31",
+    "title": "LIS with Bitwise Condition",
+    "pattern": "Dynamic Programming + Bit Frequency decomposition / Segment Tree.",
+    "summary": "Find the length of the longest subsequence $A[i_1], A[i_2], \\dots, A[i_k]$ such that for all consecutive pairs in the subsequence, $A[i_j] < A[i_{j+1}]$ AND $(A[i_j] \\text{ AND } A[i_{j+1}]) \\times 2 < (A[i_j] \\text{ OR } A[i_{j+1}])$.",
+    "constraints": "$1 \\le N \\le 10^5$, $1 \\le A[i] \\le 10^9$.",
+    "source": "https://github.com/Dhyaneshmohan/Infosys-SP-DSE-resources-"
+  },
+  {
+    "id": "PYQ-32",
+    "title": "Minimum Base with Identical Digits",
+    "pattern": "Mathematics / Binary Search on polynomial base lengths.",
+    "summary": "Given a large integer $N$ represented as a string. Find the smallest base $B \\ge 2$ such that when $N$ is represented in base $B$, all of its digits are equal to $1$ (a repunit representation).",
+    "constraints": "$3 \\le N \\le 10^{18}$.",
+    "source": "https://github.com/Dhyaneshmohan/Infosys-SP-DSE-resources-"
+  },
+  {
+    "id": "PYQ-33",
+    "title": "Minimum Days for Terrain Road",
+    "pattern": "Binary Search on Answer + BFS/DFS or Disjoint Set Union (Kruskal-like grid sweep).",
+    "summary": "A terrain is modeled as an $N \\times M$ elevation grid. Day $D$ allows workers to build across cells with elevation $\\le D$. Find the minimum days required to connect the top-left cell $(0,0)$ to the bottom-right cell $(N-1, M-1)$.",
+    "constraints": "$1 \\le N, M \\le 500$, elevation up to $10^9$.",
+    "source": "https://github.com/Dhyaneshmohan/Infosys-SP-DSE-resources-"
+  },
+  {
+    "id": "PYQ-34",
+    "title": "Pack Gifts into K Boxes",
+    "pattern": "Binary Search on Answer (Capacity allocation check).",
+    "summary": "You have $N$ gifts with weights $W[i]$ to be distributed into $K$ identical gift hampers. Distribute gifts to minimize the maximum hamper weight.",
+    "constraints": "$1 \\le K \\le N \\le 10^5$, gift weights up to $10^9$.",
+    "source": "https://github.com/Dhyaneshmohan/Infosys-SP-DSE-resources-"
+  },
+  {
+    "id": "PYQ-35",
+    "title": "Grid Path with Switching Costs",
+    "pattern": "Dynamic Programming (2-state linear DP `dp[0][i]` and `dp[1][i]`).",
+    "summary": "A courier travels across two parallel conveyor belts of length $M$. Moving forward on the current belt incurs a cell cost; switching between belt 1 and belt 2 incurs an additional penalty $S$. Find the path of minimal total cost.",
+    "constraints": "Belt length $M \\le 10^5$, switch penalty $S \\le 10^4$.",
+    "source": "https://leetcode.com/discuss/interview-question/1402911/Infosys-Specialist-Programmer-OA-Conveyor-Belts"
+  },
+  {
+    "id": "PYQ-36",
+    "title": "Roads and Libraries Component Reconnection",
+    "pattern": "Graph Connected Components via BFS/DFS or Disjoint Set Union (DSU) + Greedy choice.",
+    "summary": "A district consists of $N$ cities. Building a server in a city costs $C_{server}$; repairing a road between two connected cities costs $C_{road}$. Every city must have access to at least one server either directly or via connected roads. Compute minimum cost.",
+    "constraints": "$1 \\le N \\le 10^5$, $0 \\le \\text{edges} \\le 10^5$.",
+    "source": "https://prepinsta.com/hackwithinfy/coding-questions/"
+  },
+  {
+    "id": "PYQ-37",
+    "title": "Palindrome Insertion Count",
+    "pattern": "Dynamic Programming on Intervals (Length of $S$ minus LCS of $S$ and $\\text{reverse}(S)$).",
+    "summary": "Given string $S$. Determine the minimum number of character insertions needed at any positions to convert $S$ into a palindrome.",
+    "constraints": "$1 \\le |S| \\le 1000$.",
+    "source": "https://prepinsta.com/hackwithinfy/coding-questions/"
+  },
+  {
+    "id": "PYQ-38",
+    "title": "Subarray Sum Modulo K",
+    "pattern": "Prefix Sum modulo arithmetic with Hash Map frequency.",
+    "summary": "Given an array $A$ and integer $K$. Count non-empty contiguous subarrays whose sum is divisible by $K$.",
+    "constraints": "$1 \\le N \\le 10^5$, $2 \\le K \\le 10^4$, elements up to $10^9$.",
+    "source": "https://leetcode.com/discuss/interview-question/2091823/Infosys-DSE-Subarray-Sum"
+  },
+  {
+    "id": "PYQ-39",
+    "title": "Tree Path Node Divisibility",
+    "pattern": "Tree DFS + Prime Factorization decomposition + Disjoint Set Union per prime factor.",
+    "summary": "Given a tree of $N$ nodes where node $i$ carries integer weight $V[i]$. Count paths between pairs of nodes $(u, v)$ such that the greatest common divisor (GCD) of all node values along the simple path is strictly greater than 1.",
+    "constraints": "$1 \\le N \\le 10^5$, $1 \\le V[i] \\le 2 \\times 10^5$.",
+    "source": "https://leetcode.com/discuss/interview-question/1321902/HackWithInfy-Tree-Path-GCD"
+  },
+  {
+    "id": "PYQ-40",
+    "title": "Stress Points",
+    "pattern": "Prefix Maximum and Suffix Minimum precomputations.",
+    "summary": "An index $i$ in array $A$ is termed a stress point if $A[i]$ is strictly greater than the maximum element to its left and strictly smaller than the minimum element to its right. Count all stress points in $O(N)$ time.",
+    "constraints": "$1 \\le N \\le 10^5$, elements up to $10^9$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-41",
+    "title": "Temperature Cooling",
+    "pattern": "Frequency Map / Sorting and cumulative prefix count.",
+    "summary": "Given an array of temperature readings $T$. Each unit of cooling reduces the highest current temperature to the next lower distinct temperature in the array. Find the number of cooling steps to bring all readings to the minimum recorded temperature.",
+    "constraints": "$1 \\le N \\le 10^5$, $0 \\le T[i] \\le 10^6$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  },
+  {
+    "id": "PYQ-42",
+    "title": "Repair Pairs Mismatch",
+    "pattern": "Greedy Linear Scan (Subtract $K$ from the count of initial mismatches, capped at 0).",
+    "summary": "Given two binary sequences $A$ and $B$ of length $N$ and a budget of $K$ operations. Each operation can flip a bit in $A$. Minimize the number of mismatch indices $(A[i] \\neq B[i])$ remaining.",
+    "constraints": "$1 \\le N \\le 10^5$, $0 \\le K \\le N$.",
+    "source": "https://github.com/TousifTamboli/hackwithinfy_questions_and_solutions"
+  }
+]

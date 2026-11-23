@@ -6,3 +6,4 @@ dist-ssr
 verify/tmp_build
 .DS_Store
 .env*
+scratch/
