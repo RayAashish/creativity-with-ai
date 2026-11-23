@@ -1040,7 +1040,6 @@ class InkCanvasView @JvmOverloads constructor(
                         }
                     }
                     inProgressStrokesView.removeFinishedStrokes(strokes.keys)
-                    dryInkView.invalidate()
                 }
             }
         })
@@ -1048,6 +1047,8 @@ class InkCanvasView @JvmOverloads constructor(
         // Enable custom drawing for debug HUD
         setWillNotDraw(false)
     }
+
+    var assetsDirResolver: ((notebookId: String) -> java.io.File)? = null
 
     fun loadPage(page: DocumentPage, openLatencyMs: Long = 0L, assetsDir: java.io.File? = null) {
         pageOpenLatencyMs = openLatencyMs
@@ -1062,8 +1063,9 @@ class InkCanvasView @JvmOverloads constructor(
             val strokeId = page.strokeIds.getOrNull(index)
             strokeId != null && page.isNeonGlowStroke(strokeId)
         }
+        val resolvedAssetsDir = assetsDir ?: assetsDirResolver?.invoke(page.metadata.notebookId)
         dryInkView.loadStrokes(page.strokes, neonStrokesList)
-        dryInkView.setImages(page.images, assetsDir)
+        dryInkView.setImages(page.images, resolvedAssetsDir)
         dryInkView.setTextBoxes(page.textBoxes)
         clearTextBoxSelection()
         dryInkView.setPaperTemplate(page.metadata.template)
@@ -1275,6 +1277,11 @@ class InkCanvasView @JvmOverloads constructor(
             }
         }
         if (event.pointerCount == 1 && selImg != null) {
+            val toolType = event.getToolType(pointerIndex)
+            val isStylusInking = toolType == MotionEvent.TOOL_TYPE_STYLUS &&
+                    (currentTool == CanvasTool.PRESSURE_PEN || currentTool == CanvasTool.MARKER ||
+                     currentTool == CanvasTool.HIGHLIGHTER || currentTool == CanvasTool.GLOW_PEN)
+
             val screenX = event.getX(pointerIndex)
             val screenY = event.getY(pointerIndex)
             dryInkView.transform.screenToWorld(screenX, screenY, tempPoint)
@@ -1282,7 +1289,13 @@ class InkCanvasView @JvmOverloads constructor(
 
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
                 val handle = hitTestImageHandle(selImg, tempPoint.x, tempPoint.y)
-                if (handle != ImageHandle.NONE) {
+                if (isStylusInking && (handle == ImageHandle.BODY || handle == ImageHandle.NONE)) {
+                    // Stylus in Pen Mode touching image body or outside:
+                    // Deselect image immediately and proceed directly to inking!
+                    clearImageSelection()
+                    dryInkView.invalidate()
+                    // DO NOT return true: allow event to proceed directly to inking!
+                } else if (handle != ImageHandle.NONE) {
                     isTransformingImage = true
                     activeImageHandle = handle
                     imageTransformStartBounds.set(selImg.x, selImg.y, selImg.x + selImg.width, selImg.y + selImg.height)
@@ -1290,6 +1303,11 @@ class InkCanvasView @JvmOverloads constructor(
                     imageTransformDownY = tempPoint.y
                     dryInkView.invalidate()
                     return true
+                } else if (isStylusInking) {
+                    // Stylus in Pen Mode: Deselect image and proceed immediately to inking!
+                    clearImageSelection()
+                    dryInkView.invalidate()
+                    // DO NOT return true: allow event to proceed directly to inking!
                 } else {
                     val otherImg = dryInkView.findImageAt(tempPoint.x, tempPoint.y)
                     if (otherImg != null) {
@@ -1303,6 +1321,10 @@ class InkCanvasView @JvmOverloads constructor(
                         return true
                     } else {
                         clearImageSelection()
+                        dryInkView.invalidate()
+                        if (currentTool != CanvasTool.LASSO) {
+                            return true
+                        }
                     }
                 }
             } else if (isTransformingImage) {
@@ -2338,6 +2360,7 @@ class InkCanvasView @JvmOverloads constructor(
 
     fun closePdf() {
         pdfTiler.close()
+        dryInkView.pdfTiler = null
         dryInkView.invalidate()
     }
 

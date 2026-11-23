@@ -73,6 +73,14 @@ object SvgExporter {
                 sb.append("""  <line class="line" x1="520" y1="200" x2="520" y2="${height - 350}"/>""").append("\n")
                 sb.append("""  <line class="line" x1="0" y1="${height - 350}" x2="$width" y2="${height - 350}"/>""").append("\n")
             }
+            PaperTemplate.HEX -> {
+                val spacing = 48f
+                var y = spacing
+                while (y < height) {
+                    sb.append("""  <line class="line" x1="0" y1="$y" x2="$width" y2="$y"/>""").append("\n")
+                    y += spacing
+                }
+            }
             else -> {}
         }
 

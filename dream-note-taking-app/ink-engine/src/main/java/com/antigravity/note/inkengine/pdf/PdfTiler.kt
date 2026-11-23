@@ -34,6 +34,8 @@ class PdfTiler(
     private var renderer: PdfRenderer? = null
     var pageCount: Int = 0
         private set
+    val isPdfOpen: Boolean
+        get() = renderer != null && pageCount > 0
 
     // Dimensions of each PDF page in points (72 dpi)
     private val pageDimensions = mutableListOf<Pair<Int, Int>>()
@@ -219,6 +221,8 @@ class PdfTiler(
         } catch (_: Exception) {}
         renderer = null
         pfd = null
+        pageCount = 0
+        pageDimensions.clear()
         tileCache.evictAll()
         synchronized(inFlightRequests) {
             inFlightRequests.clear()

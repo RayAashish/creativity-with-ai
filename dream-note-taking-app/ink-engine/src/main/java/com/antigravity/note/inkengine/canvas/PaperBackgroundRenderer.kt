@@ -178,6 +178,35 @@ object PaperBackgroundRenderer {
                     y += lineSpacing
                 }
             }
+            PaperTemplate.HEX -> {
+                val hexRadius = 42f
+                val h = hexRadius * kotlin.math.sqrt(3f) / 2f
+                var y = h
+                while (y < height) {
+                    canvas.drawLine(0f, y, width, y, currentGridLinePaint)
+                    y += h
+                }
+                val sqrt3 = kotlin.math.sqrt(3f)
+                val diagSpacing = 2f * h
+                var c1 = -sqrt3 * width
+                while (c1 <= height) {
+                    val y1 = maxOf(0f, c1)
+                    val x1 = (y1 - c1) / sqrt3
+                    val y2 = minOf(height, sqrt3 * width + c1)
+                    val x2 = (y2 - c1) / sqrt3
+                    canvas.drawLine(x1, y1, x2, y2, currentGridLinePaint)
+                    c1 += diagSpacing
+                }
+                var c2 = 0f
+                while (c2 <= height + sqrt3 * width) {
+                    val y1 = maxOf(0f, c2 - sqrt3 * width)
+                    val x1 = (c2 - y1) / sqrt3
+                    val y2 = minOf(height, c2)
+                    val x2 = (c2 - y2) / sqrt3
+                    canvas.drawLine(x1, y1, x2, y2, currentGridLinePaint)
+                    c2 += diagSpacing
+                }
+            }
         }
 
         // Draw subtle page boundary border
@@ -262,6 +291,45 @@ object PaperBackgroundRenderer {
                 // Cue column divider
                 if (viewport.left <= 420f && viewport.right >= 380f) {
                     canvas.drawLine(400f, viewport.top - 100f, 400f, viewport.bottom + 100f, currentMarginLinePaint)
+                }
+            }
+            PaperTemplate.HEX -> {
+                val hexRadius = 42f
+                val h = hexRadius * kotlin.math.sqrt(3f) / 2f
+                val startY = kotlin.math.floor((viewport.top - 50f) / h) * h
+                val endY = kotlin.math.ceil((viewport.bottom + 50f) / h) * h
+                var y = startY
+                while (y <= endY) {
+                    canvas.drawLine(viewport.left - 100f, y, viewport.right + 100f, y, currentGridLinePaint)
+                    y += h
+                }
+
+                val sqrt3 = kotlin.math.sqrt(3f)
+                val diagSpacing = 2f * h
+                val minC1 = (viewport.top - 100f) - sqrt3 * (viewport.right + 100f)
+                val maxC1 = (viewport.bottom + 100f) - sqrt3 * (viewport.left - 100f)
+                val startC1 = kotlin.math.floor(minC1 / diagSpacing) * diagSpacing
+                var c1 = startC1
+                while (c1 <= maxC1) {
+                    val y1 = viewport.top - 100f
+                    val x1 = (y1 - c1) / sqrt3
+                    val y2 = viewport.bottom + 100f
+                    val x2 = (y2 - c1) / sqrt3
+                    canvas.drawLine(x1, y1, x2, y2, currentGridLinePaint)
+                    c1 += diagSpacing
+                }
+
+                val minC2 = (viewport.top - 100f) + sqrt3 * (viewport.left - 100f)
+                val maxC2 = (viewport.bottom + 100f) + sqrt3 * (viewport.right + 100f)
+                val startC2 = kotlin.math.floor(minC2 / diagSpacing) * diagSpacing
+                var c2 = startC2
+                while (c2 <= maxC2) {
+                    val y1 = viewport.top - 100f
+                    val x1 = (c2 - y1) / sqrt3
+                    val y2 = viewport.bottom + 100f
+                    val x2 = (c2 - y2) / sqrt3
+                    canvas.drawLine(x1, y1, x2, y2, currentGridLinePaint)
+                    c2 += diagSpacing
                 }
             }
         }

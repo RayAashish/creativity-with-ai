@@ -310,6 +310,17 @@ object HtmlNoteExporter {
             ctx.fill();
           }
         }
+      } else if (template === "HEX") {
+        const hexR = 40;
+        const h = hexR * Math.sqrt(3) / 2;
+        ctx.strokeStyle = isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let y = h; y < VIRTUAL_HEIGHT; y += h) {
+          ctx.moveTo(0, y);
+          ctx.lineTo(VIRTUAL_WIDTH, y);
+        }
+        ctx.stroke();
       }
     }
 

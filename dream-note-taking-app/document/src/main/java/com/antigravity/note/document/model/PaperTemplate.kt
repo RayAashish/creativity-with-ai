@@ -5,7 +5,8 @@ enum class PaperTemplate(val displayName: String) {
     RULED("Ruled / Lined"),
     GRID("Math Grid"),
     DOT("Dot Grid"),
-    CORNELL("Cornell Note");
+    CORNELL("Cornell Note"),
+    HEX("Hexagonal Grid");
 
     companion object {
         fun fromOrdinal(ordinal: Int): PaperTemplate {

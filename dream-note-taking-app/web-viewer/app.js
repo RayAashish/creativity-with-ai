@@ -343,6 +343,17 @@ function drawPaperSheet(x, y, w, h, templateName) {
         ctx.fill();
       }
     }
+  } else if (effTemplate === "HEX") {
+    const hexRadius = 40;
+    const hh = hexRadius * Math.sqrt(3) / 2;
+    ctx.strokeStyle = isDarkMode ? "rgba(255, 255, 255, 0.04)" : "rgba(40, 30, 20, 0.045)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let py = y + hh; py < y + h; py += hh) {
+      ctx.moveTo(x, py);
+      ctx.lineTo(x + w, py);
+    }
+    ctx.stroke();
   }
 }
 

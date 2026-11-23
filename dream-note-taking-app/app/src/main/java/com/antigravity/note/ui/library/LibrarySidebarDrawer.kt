@@ -997,6 +997,7 @@ fun LibrarySidebarDrawer(
                                 PaperTemplate.RULED to "Ruled",
                                 PaperTemplate.GRID to "Grid",
                                 PaperTemplate.DOT to "Dot",
+                                PaperTemplate.HEX to "Hex",
                                 PaperTemplate.BLANK to "Blank"
                             ).forEach { (tmpl, label) ->
                                 FilterChip(

@@ -2,6 +2,7 @@ package com.antigravity.note.inkengine.canvas
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.DashPathEffect
@@ -29,6 +30,14 @@ import com.antigravity.note.inkengine.eraser.PrecisionEraser
 import com.antigravity.note.inkengine.eraser.SpatialStrokeIndex
 import com.antigravity.note.inkengine.lasso.LassoTool
 import com.antigravity.note.inkengine.pdf.PdfTiler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 data class EraseModification(
@@ -102,17 +111,28 @@ class DryInkCanvasView @JvmOverloads constructor(
     }
     private val eraseQueryRect = RectF()
 
+    companion object {
+        // High-performance memory budget for decoded canvas images (min 64MB, max 256MB)
+        private val BITMAP_CACHE_SIZE_KB: Int by lazy {
+            val maxMemoryKb = (Runtime.getRuntime().maxMemory() / 1024).toInt()
+            (maxMemoryKb / 4).coerceIn(64 * 1024, 256 * 1024)
+        }
+    }
+
     // Canvas Images & Offline Assets
     val images = mutableListOf<CanvasImage>()
     var selectedImage: CanvasImage? = null
     var assetsDir: File? = null
-    private val bitmapCache = object : LruCache<String, Bitmap>(32) {
+    private val bitmapCache = object : LruCache<String, Bitmap>(BITMAP_CACHE_SIZE_KB) {
         override fun sizeOf(key: String, value: Bitmap): Int {
-            return value.byteCount / 1024
+            return (value.byteCount / 1024).coerceAtLeast(1)
         }
     }
     private val imageDstRect = RectF()
+    private val tempViewportRect = RectF()
     private val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+    private val renderScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var prefetchJob: Job? = null
 
     // Image selection paints (Imperial Amber & Gold Luxury Theme - Zero Blue)
     private val imageSelectBorderPaint by lazy {
@@ -376,9 +396,12 @@ class DryInkCanvasView @JvmOverloads constructor(
         canvas.save()
         canvas.concat(transform.worldToScreenMatrix)
 
+        // Draw paper template guidelines (Math Grid, Hex, Dot, Ruled, Cornell)
+        drawPaperGrid(canvas)
+
         // Draw background PDF tiles if loaded
         val tiler = pdfTiler
-        if (tiler != null && tiler.pageCount > 0) {
+        if (tiler != null && tiler.isPdfOpen && tiler.pageCount > 0) {
             viewportRect.set(0f, 0f, width.toFloat(), height.toFloat())
             transform.screenToWorld(viewportRect)
             tiler.drawVisibleTiles(
@@ -388,9 +411,6 @@ class DryInkCanvasView @JvmOverloads constructor(
                 zoomScale = transform.scale,
                 onTileLoaded = { postInvalidateOnAnimation() }
             )
-        } else {
-            // Draw subtle ruled lines / grid
-            drawPaperGrid(canvas)
         }
 
         val lasso = lassoTool
@@ -500,10 +520,33 @@ class DryInkCanvasView @JvmOverloads constructor(
     private fun drawImages(canvas: Canvas) {
         if (images.isEmpty()) return
         val dir = assetsDir ?: return
+
+        // Compute visible world viewport rect for frustum culling
+        tempViewportRect.set(0f, 0f, width.toFloat(), height.toFloat())
+        transform.screenToWorld(tempViewportRect)
+
         for (i in 0 until images.size) {
             val img = images[i]
-            val bitmap = getBitmap(File(dir, img.assetRef))
-            if (bitmap != null) {
+            // Viewport frustum culling: skip images that are completely outside visible screen
+            val imgRight = img.x + img.width
+            val imgBottom = img.y + img.height
+            if (imgRight < tempViewportRect.left || img.x > tempViewportRect.right ||
+                imgBottom < tempViewportRect.top || img.y > tempViewportRect.bottom) {
+                continue
+            }
+
+            val file = File(dir, img.assetRef)
+            val path = file.absolutePath
+            var bitmap = bitmapCache.get(path)
+            if (bitmap == null || bitmap.isRecycled) {
+                // If async prefetch is in flight, do not block UI main thread with synchronous decoding
+                if (prefetchJob?.isActive == true) {
+                    continue
+                }
+                bitmap = getBitmap(file, img.width, img.height)
+            }
+
+            if (bitmap != null && !bitmap.isRecycled) {
                 canvas.save()
                 if (img.rotation != 0f) {
                     canvas.rotate(img.rotation, img.x + img.width / 2f, img.y + img.height / 2f)
@@ -562,13 +605,39 @@ class DryInkCanvasView @JvmOverloads constructor(
         return null
     }
 
-    private fun getBitmap(file: File): Bitmap? {
+    private fun decodeAndCacheBitmap(file: File, targetWidth: Float = 0f, targetHeight: Float = 0f): Bitmap? {
         if (!file.exists()) return null
         val path = file.absolutePath
         val cached = bitmapCache.get(path)
         if (cached != null && !cached.isRecycled) return cached
+
         return try {
-            val bmp = android.graphics.BitmapFactory.decodeFile(path)
+            val boundsOptions = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            BitmapFactory.decodeFile(path, boundsOptions)
+            val origWidth = boundsOptions.outWidth
+            val origHeight = boundsOptions.outHeight
+            if (origWidth <= 0 || origHeight <= 0) return null
+
+            // Downsample to max display size * 2 for retina sharpness (capped at 2048px)
+            val reqW = if (targetWidth > 0f) (targetWidth * 2f).toInt().coerceIn(300, 2048) else 1600
+            val reqH = if (targetHeight > 0f) (targetHeight * 2f).toInt().coerceIn(300, 2048) else 1600
+
+            var sampleSize = 1
+            if (origHeight > reqH || origWidth > reqW) {
+                val halfHeight = origHeight / 2
+                val halfWidth = origWidth / 2
+                while ((halfHeight / sampleSize) >= reqH && (halfWidth / sampleSize) >= reqW) {
+                    sampleSize *= 2
+                }
+            }
+
+            val decodeOptions = BitmapFactory.Options().apply {
+                inSampleSize = sampleSize
+                inPreferredConfig = Bitmap.Config.ARGB_8888
+            }
+            val bmp = BitmapFactory.decodeFile(path, decodeOptions)
             if (bmp != null) {
                 bitmapCache.put(path, bmp)
             }
@@ -578,17 +647,51 @@ class DryInkCanvasView @JvmOverloads constructor(
         }
     }
 
+    private fun getBitmap(file: File, targetWidth: Float = 0f, targetHeight: Float = 0f): Bitmap? {
+        if (!file.exists()) return null
+        val path = file.absolutePath
+        val cached = bitmapCache.get(path)
+        if (cached != null && !cached.isRecycled) return cached
+        return decodeAndCacheBitmap(file, targetWidth, targetHeight)
+    }
+
+    private fun prefetchImagesAsync(imageList: List<CanvasImage>, dir: File?) {
+        if (dir == null || imageList.isEmpty()) return
+        val imagesSnapshot = imageList.toList()
+        prefetchJob?.cancel()
+        prefetchJob = renderScope.launch {
+            var anyLoaded = false
+            for (img in imagesSnapshot) {
+                if (!isActive) break
+                val file = File(dir, img.assetRef)
+                if (file.exists() && bitmapCache.get(file.absolutePath) == null) {
+                    val bmp = decodeAndCacheBitmap(file, img.width, img.height)
+                    if (bmp != null) anyLoaded = true
+                }
+            }
+            if (anyLoaded) {
+                withContext(Dispatchers.Main) {
+                    postInvalidateOnAnimation()
+                }
+            }
+        }
+    }
+
     fun setImages(newImages: List<CanvasImage>, directory: File? = null) {
         images.clear()
         images.addAll(newImages)
         if (directory != null) {
             assetsDir = directory
         }
+        prefetchImagesAsync(newImages, assetsDir)
         invalidate()
     }
 
     fun addImage(image: CanvasImage) {
         images.add(image)
+        assetsDir?.let { dir ->
+            prefetchImagesAsync(listOf(image), dir)
+        }
         invalidate()
     }
 
@@ -869,31 +972,22 @@ class DryInkCanvasView @JvmOverloads constructor(
     }
 
     fun addStroke(stroke: Stroke) {
-        val box = stroke.shape.computeBoundingBox()
-        android.util.Log.d("ANTIGRAVITY_INK", "addStroke: inputs=${stroke.inputs.size}, bbox=$box, brushSize=${stroke.brush.size}, color=${Integer.toHexString(stroke.brush.colorIntArgb)}")
-        if (stroke.inputs.size > 0) {
-            val p0 = stroke.inputs.get(0)
-            android.util.Log.d("ANTIGRAVITY_INK", "  p0: x=${p0.x}, y=${p0.y}, time=${p0.elapsedTimeMillis}, tool=${p0.toolType}, unit=${p0.strokeUnitLengthCm}, p=${p0.pressure}, tilt=${p0.tiltRadians}, ori=${p0.orientationRadians}")
-        }
         strokes.add(stroke)
         spatialIndex.add(stroke)
         invalidate()
     }
 
     fun addStrokes(newStrokes: List<Stroke>) {
-        for (s in newStrokes) {
-            val box = s.shape.computeBoundingBox()
-            android.util.Log.d("ANTIGRAVITY_INK", "addStrokes item: inputs=${s.inputs.size}, bbox=$box, brushSize=${s.brush.size}, color=${Integer.toHexString(s.brush.colorIntArgb)}")
-            if (s.inputs.size > 0) {
-                val p0 = s.inputs.get(0)
-                android.util.Log.d("ANTIGRAVITY_INK", "  p0: x=${p0.x}, y=${p0.y}, time=${p0.elapsedTimeMillis}, tool=${p0.toolType}, unit=${p0.strokeUnitLengthCm}, p=${p0.pressure}, tilt=${p0.tiltRadians}, ori=${p0.orientationRadians}")
-            }
-        }
         strokes.addAll(newStrokes)
         for (s in newStrokes) {
             spatialIndex.add(s)
         }
         invalidate()
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        prefetchJob?.cancel()
     }
 
     fun removeStrokes(strokesToRemove: List<Stroke>) {

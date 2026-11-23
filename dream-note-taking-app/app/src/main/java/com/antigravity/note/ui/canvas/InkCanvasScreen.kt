@@ -253,6 +253,9 @@ fun InkCanvasScreen(
 
     // Repositories & Database
     val pageRepo = remember { PageRepository(File(context.filesDir, "notebooks")) }
+    remember(canvasView, pageRepo) {
+        canvasView.assetsDirResolver = { nbId -> pageRepo.getAssetsDir(nbId) }
+    }
     val database = remember { NoteDatabase.getInstance(context) }
     val localBackupManager = remember { com.antigravity.note.library.backup.local.LocalBackupManager(context, database, pageRepo) }
     val libraryRepo = remember { LibraryRepository(database, pageRepo, localBackupManager = localBackupManager) }

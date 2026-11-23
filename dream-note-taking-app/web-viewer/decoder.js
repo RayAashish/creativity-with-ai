@@ -266,7 +266,7 @@ async function parseInkPage(arrayBuffer) {
     });
   }
 
-  const templateMap = ["BLANK", "RULED", "GRID", "DOT", "CORNELL"];
+  const templateMap = ["BLANK", "RULED", "GRID", "DOT", "CORNELL", "HEX"];
   return {
     id: pageId,
     notebookId: notebookId,
