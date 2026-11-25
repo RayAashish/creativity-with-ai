@@ -13,9 +13,9 @@
 
 <div align="center">
 
-[![Download APK](https://img.shields.io/badge/Download%20APK-VectorForge%20v3.0-00E5FF?style=for-the-badge&logo=android&logoColor=black&labelColor=00E5FF)](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/app-debug.apk)
+[![Download APK](https://img.shields.io/badge/Download%20APK-VectorForge%20v3.0-00E5FF?style=for-the-badge&logo=android&logoColor=black&labelColor=00E5FF)](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.25/app-debug.apk)
 
-**[📥 Direct Download: VectorForge Release v3.0 (app-debug.apk)](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/app-debug.apk)**
+**[📥 Direct Download: VectorForge Release v3.0 (app-debug.apk)](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.25/app-debug.apk)**
 
 *Autonomous, Zero-Telemetry, Native Rust + Jetpack Compose High-Fidelity SVG Vectorization Engine.*
 
