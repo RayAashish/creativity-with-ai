@@ -61,29 +61,30 @@ class VectorViewModel : ViewModel() {
     private var debounceJob: Job? = null
 
     init {
-        loadSample(SamplePreset.LOGO)
+        loadSample(SamplePreset.PORTRAIT)
     }
 
     fun loadSample(preset: SamplePreset) {
         val bitmap = SampleImages.generateSample(preset)
         val suggestedConfig = when (preset) {
+            SamplePreset.PORTRAIT, SamplePreset.PHOTO -> _state.value.config.copy(
+                fitMode = FitMode.SPLINE,
+                filterMode = FilterMode.NONE, // Off by default to preserve crisp details & optical sharpness
+                colorQuantizeK = 0, // Full Color high fidelity by default
+                simplifyTolerance = 0.0f, // 0.0 = Precision mode (sharpest least-squares curves without flattening)
+                filterSpeckle = 0 // 0 = Never discard thin contours (eyelashes, mustache, hair curls)
+            )
             SamplePreset.PIXEL_ART -> _state.value.config.copy(
                 fitMode = FitMode.PIXEL_ART,
                 filterMode = FilterMode.NONE,
+                simplifyTolerance = 0.0f,
                 filterSpeckle = 0
             )
             SamplePreset.LOGO -> _state.value.config.copy(
-                fitMode = FitMode.SPLINE,
+                fitMode = FitMode.POLYGON,
                 filterMode = FilterMode.NONE,
-                filterSpeckle = 4,
-                simplifyTolerance = 1.2f
-            )
-            SamplePreset.PHOTO -> _state.value.config.copy(
-                fitMode = FitMode.SPLINE,
-                filterMode = FilterMode.NONE, // Off by default to preserve crisp details & facial contours
-                colorQuantizeK = 0, // Full Color high fidelity by default
-                simplifyTolerance = 0.8f,
-                filterSpeckle = 2
+                simplifyTolerance = 1.0f,
+                filterSpeckle = 0
             )
         }
         _state.value = _state.value.copy(
@@ -111,8 +112,8 @@ class VectorViewModel : ViewModel() {
                     }
                 }
 
-                // Downscale large camera photos to safe bounds (max 1024px) for sub-800ms on-device vectorization
-                val maxDim = 1024
+                // Downscale large camera photos to safe bounds (max 720px) for sub-second on-device vectorization
+                val maxDim = 720
                 val scaled = withContext(Dispatchers.Default) {
                     if (loadedBitmap.width > maxDim || loadedBitmap.height > maxDim) {
                         val scaleFactor = maxDim.toFloat() / maxOf(loadedBitmap.width, loadedBitmap.height)
@@ -127,8 +128,18 @@ class VectorViewModel : ViewModel() {
                     }
                 }
 
+                // Ensure photographic high-fidelity defaults for gallery/camera imports
+                val photoConfig = _state.value.config.copy(
+                    fitMode = FitMode.SPLINE,
+                    filterMode = FilterMode.NONE,
+                    colorQuantizeK = 0,
+                    simplifyTolerance = 0.0f,
+                    filterSpeckle = 0
+                )
+
                 _state.value = _state.value.copy(
                     bitmap = scaled,
+                    config = photoConfig,
                     error = null
                 )
                 triggerVectorization(immediate = true)
@@ -202,6 +213,7 @@ class VectorViewModel : ViewModel() {
             }
 
             vectorizationJob = launch(Dispatchers.Default) {
+                Log.i("VectorForgeVM", "Starting vectorization for ${currentBitmap.width}x${currentBitmap.height}, fitMode=${currentConfig.fitMode}")
                 _state.value = _state.value.copy(isProcessing = true, error = null)
 
                 val startTime = System.currentTimeMillis()
@@ -211,10 +223,19 @@ class VectorViewModel : ViewModel() {
                     ensureActive()
 
                     val elapsed = System.currentTimeMillis() - startTime
+                    Log.i("VectorForgeVM", "Vectorization returned in ${elapsed}ms, result len=${result.length}")
                     if (result.isNotEmpty() && isActive) {
-                        val pathMatches = "<path".toRegex().findAll(result).count()
-                        val sizeBytes = result.toByteArray(Charsets.UTF_8).size
-                        val nodeEstimate = countSvgNodes(result)
+                        var pathMatches = 0
+                        var searchIdx = 0
+                        while (true) {
+                            searchIdx = result.indexOf("<path", searchIdx)
+                            if (searchIdx == -1) break
+                            pathMatches++
+                            searchIdx += 5
+                        }
+                        val sizeBytes = result.length
+                        val nodeEstimate = pathMatches * 4
+                        Log.i("VectorForgeVM", "Vectorization SUCCESS: $pathMatches paths, size approx ${sizeBytes}B")
 
                         _state.value = _state.value.copy(
                             svgContent = result,
@@ -229,17 +250,18 @@ class VectorViewModel : ViewModel() {
                             )
                         )
                     } else if (isActive) {
+                        Log.w("VectorForgeVM", "Vectorization result was empty!")
                         _state.value = _state.value.copy(
                             isProcessing = false,
                             error = "Vectorization produced empty output."
                         )
                     }
-                } catch (e: Exception) {
+                } catch (t: Throwable) {
                     if (isActive) {
-                        Log.e("CurvifyViewModel", "Vectorization failed", e)
+                        Log.e("VectorForgeVM", "Vectorization failed with error", t)
                         _state.value = _state.value.copy(
                             isProcessing = false,
-                            error = "Vectorization error: ${e.message}"
+                            error = "Vectorization error: ${t.message}"
                         )
                     }
                 }

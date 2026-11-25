@@ -9,7 +9,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 vtracer = "1.0.0-alpha.4"
 visioncortex = "0.9.3"
-image = { version = "0.25", default-features = false }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 jni = "0.21.1"
 rayon = "1.10"
 

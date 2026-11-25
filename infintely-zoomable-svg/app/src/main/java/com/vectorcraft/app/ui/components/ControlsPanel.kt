@@ -79,19 +79,19 @@ fun ControlsPanel(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             PresetChip(
-                selected = config.fitMode == FitMode.SPLINE && config.colorQuantizeK == 0 && config.filterMode == FilterMode.NONE,
+                selected = config.fitMode == FitMode.SPLINE && config.colorQuantizeK == 0 && config.filterSpeckle == 0 && config.simplifyTolerance == 0f,
                 onClick = {
                     onConfigChange(
                         config.copy(
                             fitMode = FitMode.SPLINE,
                             filterMode = FilterMode.NONE,
                             colorQuantizeK = 0,
-                            simplifyTolerance = 0.8f,
-                            filterSpeckle = 2
+                            simplifyTolerance = 0.0f,
+                            filterSpeckle = 0
                         )
                     )
                 },
-                label = "👤 Portrait / Photo"
+                label = "👤 Portrait / Photo (HD)"
             )
 
             PresetChip(
@@ -102,6 +102,7 @@ fun ControlsPanel(
                             fitMode = FitMode.PIXEL_ART,
                             filterMode = FilterMode.NONE,
                             colorQuantizeK = 0,
+                            simplifyTolerance = 0.0f,
                             filterSpeckle = 0
                         )
                     )
@@ -110,20 +111,19 @@ fun ControlsPanel(
             )
 
             PresetChip(
-                selected = config.fitMode == FitMode.SPLINE && config.colorQuantizeK == 0 && config.filterMode == FilterMode.NONE,
+                selected = config.fitMode == FitMode.POLYGON,
                 onClick = {
                     onConfigChange(
                         config.copy(
-                            fitMode = FitMode.SPLINE,
+                            fitMode = FitMode.POLYGON,
                             filterMode = FilterMode.NONE,
-                            filterStrength = 1.0f,
                             colorQuantizeK = 0,
-                            simplifyTolerance = 1.0f,
-                            filterSpeckle = 3
+                            simplifyTolerance = 1.2f,
+                            filterSpeckle = 0
                         )
                     )
                 },
-                label = "✨ High Fidelity"
+                label = "📐 Geometric / Logo"
             )
 
             PresetChip(
@@ -134,8 +134,8 @@ fun ControlsPanel(
                             fitMode = FitMode.SPLINE,
                             filterMode = FilterMode.NONE,
                             colorQuantizeK = 16,
-                            simplifyTolerance = 1.8f,
-                            filterSpeckle = 6
+                            simplifyTolerance = 1.0f,
+                            filterSpeckle = 2
                         )
                     )
                 },
@@ -315,17 +315,17 @@ fun ControlsPanel(
                 letterSpacing = 1.sp
             )
             Text(
-                text = "${String.format("%.1f", config.simplifyTolerance)} px",
+                text = if (config.simplifyTolerance == 0f) "0.0 px (Off / Precision)" else "${String.format("%.1f", config.simplifyTolerance)} px",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = if (config.simplifyTolerance == 0f) AccentCyan else Color.White
             )
         }
         Slider(
             value = config.simplifyTolerance,
             onValueChange = { onConfigChange(config.copy(simplifyTolerance = it)) },
-            valueRange = 0.2f..8.0f,
-            steps = 38,
+            valueRange = 0.0f..8.0f,
+            steps = 40,
             colors = SliderDefaults.colors(
                 thumbColor = AccentCyan,
                 activeTrackColor = AccentCyan
@@ -348,10 +348,10 @@ fun ControlsPanel(
                 letterSpacing = 1.sp
             )
             Text(
-                text = "${config.filterSpeckle} px",
+                text = if (config.filterSpeckle == 0) "0 px (Ultra Detail / Off)" else "${config.filterSpeckle} px",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = if (config.filterSpeckle == 0) AccentCyan else Color.White
             )
         }
         Slider(

@@ -5,7 +5,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val CurvifyDarkColorScheme = darkColorScheme(
+private val VectorForgeDarkColorScheme = darkColorScheme(
     primary = AccentCyan,
     secondary = AccentGold,
     tertiary = AccentPurple,
@@ -18,11 +18,16 @@ private val CurvifyDarkColorScheme = darkColorScheme(
 )
 
 @Composable
-fun CurvifyTheme(
+fun VectorForgeTheme(
     content: @Composable () -> Unit
 ) {
     MaterialTheme(
-        colorScheme = CurvifyDarkColorScheme,
+        colorScheme = VectorForgeDarkColorScheme,
         content = content
     )
 }
+
+@Composable
+fun CurvifyTheme(
+    content: @Composable () -> Unit
+) = VectorForgeTheme(content)

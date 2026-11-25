@@ -1,5 +1,5 @@
-# Curvify ⚡
-### High-Fidelity On-Device Image-to-SVG Vectorization Engine for Android
+# VectorForge ❖
+### High-Fidelity On-Device Image-to-SVG Vectorization Studio for Android
 
 [![Platform](https://img.shields.io/badge/Platform-Android%2014%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org)
@@ -13,11 +13,11 @@
 
 <div align="center">
 
-[![Download APK](https://img.shields.io/badge/Download%20APK-v2026.11.14-00E5FF?style=for-the-badge&logo=android&logoColor=black&labelColor=00E5FF)](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/app-debug.apk)
+[![Download APK](https://img.shields.io/badge/Download%20APK-VectorForge%20v3.0-00E5FF?style=for-the-badge&logo=android&logoColor=black&labelColor=00E5FF)](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/app-debug.apk)
 
-**[📥 Direct Download: Curvify Release v2026.11.14 (app-debug.apk)](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/app-debug.apk)**
+**[📥 Direct Download: VectorForge Release v3.0 (app-debug.apk)](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/app-debug.apk)**
 
-*Autonomous, Zero-Telemetry, Native Rust + Jetpack Compose SVG Vectorization Engine.*
+*Autonomous, Zero-Telemetry, Native Rust + Jetpack Compose High-Fidelity SVG Vectorization Engine.*
 
 </div>
 
@@ -26,35 +26,38 @@
 ## 1. Executive Overview & Key Highlights
 
 ### The Problem
-Most raster-to-vector (Image-to-SVG) tools rely either on heavy, privacy-invasive cloud APIs or sluggish web-view wrappers that posterize delicate gradients, crush skin-tone gamuts, and choke mobile GPUs when rendering high-path vector files. Photographic portraits become muddy masks, astrophotography loses lunar surface features, and gesture pans stutter at under 15 FPS.
+Most raster-to-vector (Image-to-SVG) tools rely either on heavy, privacy-invasive cloud APIs or sluggish web-view wrappers that posterize delicate gradients, crush skin-tone gamuts, and choke mobile GPUs when rendering high-path vector files. Photographic portraits become muddy masks, thin features (hair strands, eyelashes, stubble) vanish, and gesture pans stutter at under 15 FPS.
 
-### The Solution: Curvify
-**Curvify** is an industrial-grade, fully air-gapped Android application designed for photographers, digital artists, and graphic designers. It combines a high-performance **native Rust vectorization core** (compiled via `cargo-ndk` into JNI binaries) with a modern **Jetpack Compose Material 3** interface. 
+### The Solution: VectorForge
+**VectorForge** is an industrial-grade, fully air-gapped Android application designed for photographers, digital artists, and graphic designers. It combines a high-performance **native Rust vectorization core** (compiled via `cargo-ndk` into multi-arch JNI binaries) with a modern **Jetpack Compose Material 3** glassmorphic interface. 
 
-Curvify turns high-resolution photographs, line art, and pixel graphics into scalable SVG paths with sub-second turnaround, zero network permissions, and hardware-accelerated 120 FPS multi-touch viewport exploration.
+VectorForge turns high-resolution photographs, portraits, line art, and pixel graphics into scalable SVG paths with sub-second turnaround, zero network permissions, and hardware-accelerated 120 FPS multi-touch viewport exploration.
 
 ### Core Value Propositions
 - 🔒 **100% On-Device & Air-Gapped:** Zero cloud calls. No `android.permission.INTERNET` requested. Your photos never leave your device memory.
-- ⚡ **Sub-Second Native Processing:** Native Rust engine powered by `visioncortex` / `vtracer`, vectorized color clustering, and Rayon/multithreaded path synthesis.
-- 🎨 **Adaptive OKLab Perceptual Quantization:** Luminance-weighted color clustering ($\Delta E = \sqrt{2.5 \cdot (\Delta L)^2 + (\Delta a)^2 + (\Delta b)^2}$) that preserves human facial contours and dark-sky astro details without posterization.
-- 🔍 **Hardware-Accelerated Infinite Zoom Viewport:** Custom dual-tier `android.graphics.Picture` DisplayList cache delivering fluid $0.5\times$ to $50.0\times$ pinch-to-zoom and pan across 10,000+ Bézier curves.
+- ⚡ **Sub-Second Native Processing:** Native Rust engine powered by `visioncortex` / `vtracer`, stacked painter's algorithm layering, and Rayon multithreaded path synthesis.
+- 👤 **Portrait & Micro-Detail Preservation:** Stacked continuous silhouette hierarchy with zero speckle rejection (`filter_speckle = 0`) guarantees that thin facial contours—eyelashes, mustache, beard stubble, and fine hair curls—are faithfully preserved without flattening or blur.
+- 🎨 **Adaptive OKLab Perceptual Quantization:** Luminance-weighted color clustering ($\Delta E = \sqrt{2.5 \cdot (\Delta L)^2 + (\Delta a)^2 + (\Delta b)^2}$) that prevents skin midtones and shadows from collapsing into posterized bands.
+- 🔍 **Hardware-Accelerated Infinite Zoom Viewport:** Custom dual-tier `android.graphics.Picture` DisplayList cache delivering fluid $0.5\times$ to $50.0\times$ pinch-to-zoom and pan across 5,000+ Bézier curves.
 - 🎚️ **Zero-Conflict Split Comparison Viewport:** Custom pointer arbitration layer isolating the interactive before/after divider from the zoomable canvas.
-- 💾 **Scoped Storage MediaStore Direct Download:** Exports standards-compliant `<svg>` files directly to the public `Downloads/` directory with zero legacy storage permissions.
+- 💾 **Scoped Storage MediaStore Direct Download:** Exports standards-compliant `<svg>` files directly to the public `Downloads/VectorForge/` directory with zero legacy storage permissions.
 
 ---
 
 ## 2. Feature Matrix
 
-| Feature | Curvify Native Engine | Cloud Vectorizers | Web/JS Port Wrappers |
+| Feature | VectorForge Native Engine | Cloud Vectorizers | Web/JS Port Wrappers |
 | :--- | :---: | :---: | :---: |
 | **Execution Environment** | **100% Offline (Local NDK/Rust)** | Remote Server | Client WebAssembly |
 | **Internet Access Needed** | **None (No INTERNET Permission)** | Mandatory | Often Required |
 | **Viewport Zoom Range** | **$0.5\times$ to $50.0\times$ Infinite** | $1.0\times$ to $4.0\times$ (Fixed) | Sluggish beyond $4.0\times$ |
 | **DisplayList Acceleration** | **Android `Picture` GPU Cache (120 FPS)** | N/A | DOM/Canvas thrashing |
+| **Layering Algorithm** | **Continuous Stacked Painter's Model** | Planar Polygons | Planar Polygons |
+| **Thin Feature Preservation** | **Zero Speckle Loss (Hair, Eyes, Stubble)** | Discarded as Noise | Discarded as Noise |
 | **Gesture Arbitration** | **Isolated Pointer Filter Layer** | Basic | Pan/Split Collisions |
 | **Color Quantization Gamut** | **Luminance-Biased OKLab Gamut** | Naive sRGB Euclidean | sRGB Euclidean |
 | **Export Formats** | **Clean W3C SVG (`fill-rule="nonzero"`)** | Proprietary / Watermarked | Bloated SVG |
-| **Processing Latency** | **Sub-second (~80ms - 800ms)** | 3s - 15s + Network RTT | 4s - 12s |
+| **Processing Latency** | **Sub-second (~200ms - 500ms on-device)** | 3s - 15s + Network RTT | 4s - 12s |
 
 ---
 

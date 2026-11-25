@@ -115,7 +115,7 @@ fun MasteryManualSheet(
                     title = "PERCEPTUAL COLOR QUANTIZATION (OKLab)",
                     accent = AccentCyan,
                     items = listOf(
-                        "OKLab Color Space" to "Standard RGB distance does not match the human eye. Curvify clusters colors in OKLab perceptual color space, ensuring subtle gradients and skin tones do not suffer harsh banding when reducing to 2–64 colors.",
+                        "OKLab Color Space" to "Standard RGB distance does not match the human eye. VectorForge clusters colors in OKLab perceptual color space, ensuring subtle gradients and skin tones do not suffer harsh banding when reducing to 2–64 colors.",
                         "Palette Optimization" to "Limiting palette size dramatically reduces SVG path counts and file sizes while retaining rich visual impact."
                     )
                 )

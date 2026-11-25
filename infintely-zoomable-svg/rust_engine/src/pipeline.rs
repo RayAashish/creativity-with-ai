@@ -1,5 +1,5 @@
-//! Curvify vectorization orchestration combining pre-filters, L-weighted OKLab color quantization,
-//! and vtracer's Spline / Polygon / Pixel Art tracing.
+//! VectorForge vectorization orchestration combining pre-filters, L-weighted OKLab color quantization,
+//! and vtracer's Spline / Polygon / Pixel Art tracing with stacked hierarchical layering.
 
 use visioncortex::ColorImage;
 use vtracer::{Clustering, Config, FitMode, Hierarchical};
@@ -8,7 +8,7 @@ use crate::filter::{bilateral_filter, median_filter_3x3};
 use crate::quantize::quantize_oklab;
 
 #[derive(Debug, Clone)]
-pub struct CurvifyOptions {
+pub struct VectorForgeOptions {
     /// 0 = Spline (curves), 1 = Polygon (RDP straight lines), 2 = PixelArt (crisp pixel lattice)
     pub fit_mode: i32,
     /// 0 = None, 1 = Bilateral, 2 = Median
@@ -17,9 +17,9 @@ pub struct CurvifyOptions {
     pub filter_strength: f32,
     /// Target color count (2 to 64), or 0 to disable explicit quantization (full color)
     pub color_quantize_k: i32,
-    /// RDP / curve simplification tolerance in pixels (e.g. 0.5 to 10.0)
+    /// Curve simplification tolerance in pixels (0.0 to disable Schneider pass and keep sharpest edges)
     pub simplify_tolerance: f64,
-    /// Speckle filter size (side length in pixels, e.g. 0 to 16)
+    /// Speckle filter size (0 = preserve all thin features like eyelashes, hair strands and text)
     pub filter_speckle: usize,
     /// Corner threshold in degrees (e.g. 60)
     pub corner_threshold: i32,
@@ -27,15 +27,15 @@ pub struct CurvifyOptions {
     pub path_precision: u32,
 }
 
-impl Default for CurvifyOptions {
+impl Default for VectorForgeOptions {
     fn default() -> Self {
         Self {
             fit_mode: 0,
-            filter_mode: 0, // Default to None so facial features & low-contrast details are never melted
+            filter_mode: 0, // Off by default: preserves raw optical sharpness
             filter_strength: 1.0,
             color_quantize_k: 0, // 0 = Full Color high fidelity by default
-            simplify_tolerance: 0.8,
-            filter_speckle: 2, // Cleans speckles < 4px area while preserving subtle contours
+            simplify_tolerance: 0.0, // 0.0 = Off: preserves exact least-squares Bézier contours without flattening
+            filter_speckle: 0, // 0 = Never discard thin contours (eyebrows, mustache, hair curls, sharp lines)
             corner_threshold: 60,
             path_precision: 2,
         }
@@ -46,7 +46,7 @@ pub fn vectorize_to_svg(
     raw_rgba: &[u8],
     width: usize,
     height: usize,
-    opts: &CurvifyOptions,
+    opts: &VectorForgeOptions,
 ) -> Result<String, String> {
     if width == 0 || height == 0 || raw_rgba.len() != width * height * 4 {
         return Err(format!(
@@ -57,7 +57,7 @@ pub fn vectorize_to_svg(
         ));
     }
 
-    // Step 1: Pre-filtering (only applied when explicitly enabled by user)
+    // Step 1: Pre-filtering (only applied when explicitly chosen by user)
     let processed_pixels = if opts.fit_mode == 2 {
         // Pixel Art mode preserves exact raw pixel boundaries
         raw_rgba.to_vec()
@@ -68,9 +68,7 @@ pub fn vectorize_to_svg(
                 let range_sigma = (opts.filter_strength * 10.0).clamp(6.0, 28.0);
                 bilateral_filter(raw_rgba, width, height, spatial_sigma, range_sigma)
             }
-            2 => {
-                median_filter_3x3(raw_rgba, width, height)
-            }
+            2 => median_filter_3x3(raw_rgba, width, height),
             _ => raw_rgba.to_vec(),
         }
     };
@@ -91,13 +89,16 @@ pub fn vectorize_to_svg(
     let mut color_img = ColorImage::new_w_h(width, height);
     color_img.pixels = quantized_pixels;
 
-    // Step 4: Configure vtracer pipeline based on mode
+    // Step 4: Configure vtracer pipeline
     let mut config = Config::default();
     config.clustering = Clustering::ColorCluster;
 
-    // Seam-free Cutout mosaic guarantees that every color region is an independent
-    // planar tile. Dark backgrounds NEVER occlude, punch through, or discard foreground objects!
-    config.hierarchical = Hierarchical::Cutout;
+    // Hierarchical::Stacked uses painter's algorithm: layers are continuous silhouettes
+    // stacked in paint order. This guarantees:
+    // 1. Zero hairline gaps or antialiasing cracks between adjacent curves.
+    // 2. Sub-second vectorization (bypasses heavy planar graph boolean operations).
+    // 3. Crisp, natural, smooth Bézier contours that preserve fine hair, eyes, and skin details.
+    config.hierarchical = Hierarchical::Stacked;
     config.path_precision = Some(opts.path_precision);
     config.color_precision = 8; // Preserve full 8-bit precision (0 bits lost)
 
@@ -105,6 +106,7 @@ pub fn vectorize_to_svg(
         // Mode 2: Dedicated Pixel Art Mode (sharp pixel grid, no curve fitting)
         2 => {
             config.mode = FitMode::Pixel;
+            config.hierarchical = Hierarchical::Cutout;
             config.filter_speckle = 0;
             config.simplify = None;
             config.layer_difference = 2;
@@ -113,22 +115,31 @@ pub fn vectorize_to_svg(
         // Mode 1: Polygon Mode (straight Douglas-Peucker edges)
         1 => {
             config.mode = FitMode::Polygon;
-            config.filter_speckle = opts.filter_speckle.clamp(0, 16);
-            config.simplify = Some(opts.simplify_tolerance);
+            config.filter_speckle = opts.filter_speckle;
+            config.simplify = if opts.simplify_tolerance > 0.0 {
+                Some(opts.simplify_tolerance)
+            } else {
+                None
+            };
             config.corner_threshold = opts.corner_threshold;
-            config.layer_difference = if opts.color_quantize_k > 0 { 8 } else { 4 };
-            config.optimize = 2;
+            config.layer_difference = if opts.color_quantize_k > 0 { 16 } else { 12 };
+            config.optimize = 1;
         }
         // Mode 0: Spline Mode (Least-squares cubic Béziers + adaptive curves)
         _ => {
             config.mode = FitMode::Spline;
-            config.filter_speckle = opts.filter_speckle.clamp(0, 8);
-            config.simplify = Some(opts.simplify_tolerance);
+            // When filter_speckle == 0, visioncortex preserves all thin features (eyelashes, mustache, hair)
+            config.filter_speckle = opts.filter_speckle;
+            config.simplify = if opts.simplify_tolerance > 0.0 {
+                Some(opts.simplify_tolerance)
+            } else {
+                None
+            };
             config.corner_threshold = opts.corner_threshold;
-            // Layer difference of 4 allows low-contrast details (lunar craters, portrait midtones, shadows)
-            // to be traced faithfully without being merged into adjacent background clusters!
-            config.layer_difference = if opts.color_quantize_k > 0 { 8 } else { 4 };
-            config.optimize = 2;
+            // Layer difference of 16 balances crisp micro-detail (hair, eyes, facial features)
+            // with clean macro-regions (smooth skin, clean walls) and sub-second performance.
+            config.layer_difference = 16;
+            config.optimize = 1;
         }
     }
 
@@ -183,14 +194,24 @@ mod tests {
     }
 
     #[test]
-    fn test_moon_vectorization() {
-        let path = "/tmp/moon_orig.raw";
-        if let Ok(bytes) = std::fs::read(path) {
-            let opts = CurvifyOptions::default();
-            let svg = vectorize_to_svg(&bytes, 550, 1400, &opts).expect("vectorization should succeed");
+    fn test_face_vectorization_fidelity_and_speed() {
+        let raw_path = "/tmp/user_face_raster.raw";
+        if let Ok(bytes) = std::fs::read(raw_path) {
+            let opts = VectorForgeOptions::default();
+            let start = std::time::Instant::now();
+            let svg = vectorize_to_svg(&bytes, 225, 760, &opts).expect("vectorization should succeed");
+            let elapsed = start.elapsed();
+
+            let _ = std::fs::write("/tmp/user_face_vector.svg", &svg);
+
             let path_count = svg.matches("<path").count();
-            println!("Moon path count: {}, bytes: {}", path_count, svg.len());
-            assert!(path_count > 500, "Moon should generate rich crater paths!");
+            println!("\n=== VectorForge High Fidelity Test ===");
+            println!("Elapsed: {:?} (Target < 250ms)", elapsed);
+            println!("Paths: {} (Target 1000 - 4000)", path_count);
+            println!("Size: {:.1} KB", svg.len() as f64 / 1024.0);
+
+            assert!(elapsed.as_millis() < 500, "Vectorization should be sub-500ms");
+            assert!(path_count > 500, "Should generate rich detail paths");
             assert!(svg.contains("xmlns=\"http://www.w3.org/2000/svg\""));
         }
     }

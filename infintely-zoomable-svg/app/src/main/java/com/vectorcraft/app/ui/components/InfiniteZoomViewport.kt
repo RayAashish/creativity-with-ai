@@ -106,12 +106,16 @@ fun InfiniteZoomViewport(
                     svgContent
                 }
                 val svg = SVG.getFromString(effectiveSvg)
+                svg.setDocumentWidth(bitmap.width.toFloat())
+                svg.setDocumentHeight(bitmap.height.toFloat())
                 val pic = Picture()
                 val canvas = pic.beginRecording(bitmap.width, bitmap.height)
-                svg.renderToCanvas(canvas, RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat()))
+                svg.renderToCanvas(canvas)
                 pic.endRecording()
+                android.util.Log.i("InfiniteZoom", "Successfully recorded SVG into Picture: ${bitmap.width}x${bitmap.height}")
                 pic
             } catch (e: Exception) {
+                android.util.Log.e("InfiniteZoom", "Failed to parse/record SVG into Picture", e)
                 null
             }
         } else {
@@ -253,20 +257,18 @@ fun InfiniteZoomViewport(
                 }
 
                 ViewMode.VECTOR_ONLY -> {
-                    drawIntoCanvas { canvas ->
-                        canvas.save()
-                        canvas.translate(drawLeft, drawTop)
-                        canvas.scale(totalScale, totalScale)
-                        if (cachedPicture != null) {
-                            canvas.nativeCanvas.drawPicture(cachedPicture)
-                        } else {
-                            drawImage(
-                                image = bitmap.asImageBitmap(),
-                                dstSize = IntSize(bitmap.width, bitmap.height)
-                            )
-                        }
-                        canvas.restore()
+                    drawContext.canvas.nativeCanvas.save()
+                    drawContext.canvas.nativeCanvas.translate(drawLeft, drawTop)
+                    drawContext.canvas.nativeCanvas.scale(totalScale, totalScale)
+                    if (cachedPicture != null) {
+                        drawContext.canvas.nativeCanvas.drawPicture(cachedPicture)
+                    } else {
+                        drawImage(
+                            image = bitmap.asImageBitmap(),
+                            dstSize = IntSize(bitmap.width, bitmap.height)
+                        )
                     }
+                    drawContext.canvas.nativeCanvas.restore()
                 }
 
                 ViewMode.SPLIT_SLIDER -> {
@@ -284,20 +286,18 @@ fun InfiniteZoomViewport(
 
                     // Right side: Cached Vector Picture clipped to [splitX..canvasWidth]
                     clipRect(left = splitX, top = 0f, right = canvasWidth, bottom = canvasHeight) {
-                        drawIntoCanvas { canvas ->
-                            canvas.save()
-                            canvas.translate(drawLeft, drawTop)
-                            canvas.scale(totalScale, totalScale)
-                            if (cachedPicture != null) {
-                                canvas.nativeCanvas.drawPicture(cachedPicture)
-                            } else {
-                                drawImage(
-                                    image = bitmap.asImageBitmap(),
-                                    dstSize = IntSize(bitmap.width, bitmap.height)
-                                )
-                            }
-                            canvas.restore()
+                        drawContext.canvas.nativeCanvas.save()
+                        drawContext.canvas.nativeCanvas.translate(drawLeft, drawTop)
+                        drawContext.canvas.nativeCanvas.scale(totalScale, totalScale)
+                        if (cachedPicture != null) {
+                            drawContext.canvas.nativeCanvas.drawPicture(cachedPicture)
+                        } else {
+                            drawImage(
+                                image = bitmap.asImageBitmap(),
+                                dstSize = IntSize(bitmap.width, bitmap.height)
+                            )
                         }
+                        drawContext.canvas.nativeCanvas.restore()
                     }
 
                     // Luminous neon divider line

@@ -1,27 +1,134 @@
 package com.vectorcraft.app.util
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Shader
+import com.vectorcraft.app.R
 
 enum class SamplePreset(val title: String, val subtitle: String) {
-    PIXEL_ART("Pixel Art Retro Sprite", "Ideal for testing Pixel Art mode without smoothing"),
+    PORTRAIT("Portrait (High-Fidelity)", "Fine skin tones, eyes, hair & sub-250ms vectorization"),
     LOGO("Geometric Emblem", "Ideal for testing Spline curves & Ramer–Douglas–Peucker"),
+    PIXEL_ART("Pixel Art Retro Sprite", "Ideal for testing Pixel Art mode without smoothing"),
     PHOTO("Sunset Landscape", "Ideal for testing OKLab quantization & Bilateral filtering")
 }
 
 object SampleImages {
 
+    private var appContext: Context? = null
+
+    fun init(context: Context) {
+        appContext = context.applicationContext
+    }
+
     fun generateSample(preset: SamplePreset): Bitmap {
         return when (preset) {
+            SamplePreset.PORTRAIT -> loadPortraitBitmap()
             SamplePreset.PIXEL_ART -> createPixelArtBitmap()
             SamplePreset.LOGO -> createLogoBitmap()
             SamplePreset.PHOTO -> createLandscapeBitmap()
         }
+    }
+
+    private fun loadPortraitBitmap(): Bitmap {
+        val ctx = appContext
+        if (ctx != null) {
+            try {
+                val opts = BitmapFactory.Options().apply {
+                    inScaled = false
+                    inPreferredConfig = Bitmap.Config.ARGB_8888
+                }
+                val bitmap = BitmapFactory.decodeResource(ctx.resources, R.drawable.sample_portrait, opts)
+                if (bitmap != null) return bitmap
+            } catch (e: Exception) {
+                // fallback to procedural below
+            }
+        }
+        return createPortraitProceduralBitmap()
+    }
+
+    private fun createPortraitProceduralBitmap(): Bitmap {
+        val width = 420
+        val height = 560
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        // Studio warm backdrop
+        paint.shader = LinearGradient(
+            0f, 0f, 0f, height.toFloat(),
+            intArrayOf(Color.rgb(235, 230, 220), Color.rgb(210, 200, 190)),
+            null,
+            Shader.TileMode.CLAMP
+        )
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
+        paint.shader = null
+
+        // Shoulders & maroon shirt
+        paint.color = Color.rgb(94, 23, 35)
+        val shirtPath = Path().apply {
+            moveTo(0f, height.toFloat())
+            lineTo(0f, height * 0.75f)
+            quadTo(width * 0.25f, height * 0.68f, width * 0.35f, height * 0.72f)
+            lineTo(width * 0.65f, height * 0.72f)
+            quadTo(width * 0.75f, height * 0.68f, width.toFloat(), height * 0.75f)
+            lineTo(width.toFloat(), height.toFloat())
+            close()
+        }
+        canvas.drawPath(shirtPath, paint)
+
+        // Neck
+        paint.color = Color.rgb(180, 125, 95)
+        canvas.drawRect(width * 0.40f, height * 0.52f, width * 0.60f, height * 0.72f, paint)
+
+        // Head oval with skin tone
+        paint.color = Color.rgb(205, 145, 110)
+        canvas.drawOval(width * 0.26f, height * 0.16f, width * 0.74f, height * 0.60f, paint)
+
+        // Hair
+        paint.color = Color.rgb(25, 20, 20)
+        val hairPath = Path().apply {
+            moveTo(width * 0.24f, height * 0.35f)
+            quadTo(width * 0.22f, height * 0.10f, width * 0.50f, height * 0.08f)
+            quadTo(width * 0.78f, height * 0.10f, width * 0.76f, height * 0.35f)
+            quadTo(width * 0.68f, height * 0.22f, width * 0.50f, height * 0.24f)
+            quadTo(width * 0.32f, height * 0.22f, width * 0.24f, height * 0.35f)
+            close()
+        }
+        canvas.drawPath(hairPath, paint)
+
+        // Eyebrows
+        paint.color = Color.rgb(35, 25, 25)
+        paint.strokeWidth = 5f
+        paint.style = Paint.Style.STROKE
+        canvas.drawLine(width * 0.34f, height * 0.33f, width * 0.44f, height * 0.32f, paint)
+        canvas.drawLine(width * 0.56f, height * 0.32f, width * 0.66f, height * 0.33f, paint)
+
+        // Eyes (white sclera)
+        paint.style = Paint.Style.FILL
+        paint.color = Color.WHITE
+        canvas.drawOval(width * 0.35f, height * 0.35f, width * 0.43f, height * 0.39f, paint)
+        canvas.drawOval(width * 0.57f, height * 0.35f, width * 0.65f, height * 0.39f, paint)
+
+        // Irises
+        paint.color = Color.rgb(45, 30, 25)
+        canvas.drawCircle(width * 0.39f, height * 0.37f, 9f, paint)
+        canvas.drawCircle(width * 0.61f, height * 0.37f, 9f, paint)
+
+        // Mustache
+        paint.color = Color.rgb(40, 30, 30)
+        canvas.drawOval(width * 0.42f, height * 0.47f, width * 0.58f, height * 0.50f, paint)
+
+        // Lips
+        paint.color = Color.rgb(160, 90, 80)
+        canvas.drawOval(width * 0.44f, height * 0.51f, width * 0.56f, height * 0.535f, paint)
+
+        return bitmap
     }
 
     private fun createPixelArtBitmap(): Bitmap {

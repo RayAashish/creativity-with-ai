@@ -6,7 +6,7 @@ use jni::objects::{JByteArray, JClass};
 use jni::sys::{jfloat, jint, jstring};
 use jni::JNIEnv;
 
-use crate::pipeline::{vectorize_to_svg, CurvifyOptions};
+use crate::pipeline::{vectorize_to_svg, VectorForgeOptions};
 
 fn run_vectorize_rgba(
     mut env: JNIEnv,
@@ -46,7 +46,7 @@ fn run_vectorize_rgba(
             std::slice::from_raw_parts(raw_bytes.as_ptr() as *const u8, raw_bytes.len())
         };
 
-        let opts = CurvifyOptions {
+        let opts = VectorForgeOptions {
             fit_mode,
             filter_mode,
             filter_strength,
@@ -66,22 +66,22 @@ fn run_vectorize_rgba(
             Err(_) => std::ptr::null_mut(),
         },
         Ok(Err(err_msg)) => {
-            eprintln!("[Curvify Native] Error: {}", err_msg);
+            eprintln!("[VectorForge Native] Error: {}", err_msg);
             let _ = env.throw_new("java/lang/RuntimeException", err_msg);
             std::ptr::null_mut()
         }
         Err(_) => {
-            eprintln!("[Curvify Native] Panic during vectorization!");
+            eprintln!("[VectorForge Native] Panic during vectorization!");
             let _ = env.throw_new("java/lang/RuntimeException", "Native panic during vectorization");
             std::ptr::null_mut()
         }
     }
 }
 
-// ----------------- Curvify JNI Exports -----------------
+// ----------------- VectorForge JNI Exports -----------------
 
 #[no_mangle]
-pub extern "system" fn Java_com_curvify_app_engine_NativeBridge_vectorizeRgba(
+pub extern "system" fn Java_com_vectorforge_app_engine_NativeBridge_vectorizeRgba(
     env: JNIEnv,
     _class: JClass,
     pixels: JByteArray,
@@ -109,18 +109,18 @@ pub extern "system" fn Java_com_curvify_app_engine_NativeBridge_vectorizeRgba(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_com_curvify_app_engine_NativeBridge_getEngineVersion(
+pub extern "system" fn Java_com_vectorforge_app_engine_NativeBridge_getEngineVersion(
     env: JNIEnv,
     _class: JClass,
 ) -> jstring {
-    let version_str = "Curvify Native Rust Core v2.0 (vtracer + OKLab + Bilateral/Median)";
+    let version_str = "VectorForge Native Rust Core v3.0 (vtracer + Stacked Painter + OKLab)";
     match env.new_string(version_str) {
         Ok(s) => s.into_raw(),
         Err(_) => std::ptr::null_mut(),
     }
 }
 
-// ----------------- VectorCraft Aliases for Backward Compatibility -----------------
+// ----------------- Backward Compatibility Aliases (Curvify & VectorCraft) -----------------
 
 #[no_mangle]
 pub extern "system" fn Java_com_vectorcraft_app_engine_NativeBridge_vectorizeRgba(
@@ -155,7 +155,47 @@ pub extern "system" fn Java_com_vectorcraft_app_engine_NativeBridge_getEngineVer
     env: JNIEnv,
     _class: JClass,
 ) -> jstring {
-    let version_str = "Curvify Native Rust Core v2.0 (vtracer + OKLab + Bilateral/Median)";
+    let version_str = "VectorForge Native Rust Core v3.0 (vtracer + Stacked Painter + OKLab)";
+    match env.new_string(version_str) {
+        Ok(s) => s.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_com_curvify_app_engine_NativeBridge_vectorizeRgba(
+    env: JNIEnv,
+    _class: JClass,
+    pixels: JByteArray,
+    width: jint,
+    height: jint,
+    fit_mode: jint,
+    filter_mode: jint,
+    filter_strength: jfloat,
+    color_quantize_k: jint,
+    simplify_tolerance: jfloat,
+    filter_speckle: jint,
+) -> jstring {
+    run_vectorize_rgba(
+        env,
+        pixels,
+        width,
+        height,
+        fit_mode,
+        filter_mode,
+        filter_strength,
+        color_quantize_k,
+        simplify_tolerance,
+        filter_speckle,
+    )
+}
+
+#[no_mangle]
+pub extern "system" fn Java_com_curvify_app_engine_NativeBridge_getEngineVersion(
+    env: JNIEnv,
+    _class: JClass,
+) -> jstring {
+    let version_str = "VectorForge Native Rust Core v3.0 (vtracer + Stacked Painter + OKLab)";
     match env.new_string(version_str) {
         Ok(s) => s.into_raw(),
         Err(_) => std::ptr::null_mut(),

@@ -56,7 +56,7 @@ import com.vectorcraft.app.util.SamplePreset
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CurvifyTopBar(
+fun VectorForgeTopBar(
     viewMode: ViewMode,
     onViewModeChange: (ViewMode) -> Unit,
     onPickImage: () -> Unit,
@@ -77,41 +77,69 @@ fun CurvifyTopBar(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(end = 4.dp)
             ) {
-                // Sleek glowing geometric brand badge
+                // High-precision glowing VectorForge emblem
                 Box(
                     modifier = Modifier
-                        .size(28.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(9.dp))
                         .background(
-                            Brush.linearGradient(listOf(AccentCyan, AccentGold))
+                            Brush.linearGradient(
+                                listOf(
+                                    Color(0xFF0F172A),
+                                    Color(0xFF1E293B)
+                                )
+                            )
+                        )
+                        .border(
+                            1.2.dp,
+                            Brush.linearGradient(listOf(AccentCyan, AccentGold)),
+                            RoundedCornerShape(9.dp)
                         ),
                     contentAlignment = Alignment.Center
                 ) {
+                    // Stylized glowing Forge Diamond Vector Anchor
                     Text(
-                        text = "C",
-                        color = Color.Black,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Black
+                        text = "❖",
+                        color = AccentCyan,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(9.dp))
 
                 Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "VectorForge",
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            fontSize = 17.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(AccentCyan.copy(alpha = 0.15f))
+                                .border(0.5.dp, AccentCyan.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
+                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                        ) {
+                            Text(
+                                text = "PRO",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Black,
+                                color = AccentCyan
+                            )
+                        }
+                    }
                     Text(
-                        text = "Curvify",
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        fontSize = 17.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "PRECISION STUDIO",
+                        text = "HIGH-FIDELITY VECTOR CORE",
                         fontSize = 8.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = AccentCyan,
-                        letterSpacing = 1.2.sp,
+                        color = AccentGold,
+                        letterSpacing = 1.1.sp,
                         maxLines = 1
                     )
                 }
@@ -121,7 +149,7 @@ fun CurvifyTopBar(
             containerColor = DarkBackdrop
         ),
         actions = {
-            // View Mode Toggle
+            // 1. View Mode Toggle (Split / Vector / Original)
             IconButton(
                 onClick = {
                     val nextMode = when (viewMode) {
@@ -131,7 +159,7 @@ fun CurvifyTopBar(
                     }
                     onViewModeChange(nextMode)
                 },
-                modifier = Modifier.size(38.dp)
+                modifier = Modifier.size(36.dp)
             ) {
                 Icon(
                     imageVector = when (viewMode) {
@@ -145,10 +173,10 @@ fun CurvifyTopBar(
                 )
             }
 
-            // Pick Image
+            // 2. Pick Image from Gallery
             IconButton(
                 onClick = onPickImage,
-                modifier = Modifier.size(38.dp)
+                modifier = Modifier.size(36.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Collections,
@@ -158,103 +186,104 @@ fun CurvifyTopBar(
                 )
             }
 
-            // SVG Studio Viewer & Code Inspector
-            IconButton(
-                onClick = onToggleStudio,
-                modifier = Modifier.size(38.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Code,
-                    contentDescription = "SVG Studio & Code",
-                    tint = if (isStudioOpen) AccentGold else Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            // Quick Download to Scoped Storage
+            // 3. Quick Download to Scoped Storage
             IconButton(
                 onClick = onSaveToDownloads,
-                modifier = Modifier.size(38.dp)
+                modifier = Modifier.size(36.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Download,
                     contentDescription = "Export SVG",
-                    tint = Color.White,
+                    tint = AccentGold,
                     modifier = Modifier.size(20.dp)
                 )
             }
 
-            // Share Sheet
-            IconButton(
-                onClick = onShareSvg,
-                modifier = Modifier.size(38.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Share,
-                    contentDescription = "Share SVG",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            // Tuning Sliders Drawer
+            // 4. Sliders Drawer Toggle
             IconButton(
                 onClick = onToggleControls,
-                modifier = Modifier.size(38.dp)
+                modifier = Modifier.size(36.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Tune,
-                    contentDescription = "Tuning Parameters",
+                    contentDescription = "Tuning Sliders",
                     tint = if (isControlsOpen) AccentCyan else Color.White,
                     modifier = Modifier.size(20.dp)
                 )
             }
 
-            // Overflow Menu
-            IconButton(
-                onClick = { showMenu = true },
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = "More Options",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+            // 5. Overflow Menu (Studio, Share, Presets, Manual)
+            Box {
+                IconButton(
+                    onClick = { showMenu = true },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "More Options",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
 
-            DropdownMenu(
-                expanded = showMenu,
-                onDismissRequest = { showMenu = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("📖 Mastery Manual (Guide)") },
-                    onClick = {
-                        showMenu = false
-                        onToggleManual()
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("👾 Preset: Pixel Art Hero") },
-                    onClick = {
-                        showMenu = false
-                        onSelectSample(SamplePreset.PIXEL_ART)
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("📐 Preset: Geometric Emblem") },
-                    onClick = {
-                        showMenu = false
-                        onSelectSample(SamplePreset.LOGO)
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("🌅 Preset: Sunset Landscape") },
-                    onClick = {
-                        showMenu = false
-                        onSelectSample(SamplePreset.PHOTO)
-                    }
-                )
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false },
+                    modifier = Modifier.background(DarkBackdrop)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("SVG Studio & Code", color = Color.White) },
+                        leadingIcon = { Icon(Icons.Default.Code, contentDescription = null, tint = AccentCyan) },
+                        onClick = {
+                            showMenu = false
+                            onToggleStudio()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Share SVG Export", color = Color.White) },
+                        leadingIcon = { Icon(Icons.Default.Share, contentDescription = null, tint = AccentCyan) },
+                        onClick = {
+                            showMenu = false
+                            onShareSvg()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("👤 Preset: Portrait (High-Fidelity)", color = Color.White) },
+                        onClick = {
+                            showMenu = false
+                            onSelectSample(SamplePreset.PORTRAIT)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("🌅 Preset: Sunset Landscape", color = Color.White) },
+                        onClick = {
+                            showMenu = false
+                            onSelectSample(SamplePreset.PHOTO)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("📐 Preset: Geometric Logo", color = Color.White) },
+                        onClick = {
+                            showMenu = false
+                            onSelectSample(SamplePreset.LOGO)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("👾 Preset: Pixel Art Sprite", color = Color.White) },
+                        onClick = {
+                            showMenu = false
+                            onSelectSample(SamplePreset.PIXEL_ART)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("📖 Mastery Manual (Guide)", color = Color.White) },
+                        leadingIcon = { Icon(Icons.Default.HelpOutline, contentDescription = null, tint = AccentGold) },
+                        onClick = {
+                            showMenu = false
+                            onToggleManual()
+                        }
+                    )
+                }
             }
         }
     )

@@ -37,8 +37,9 @@ object NativeBridge {
     fun vectorizeBitmap(
         bitmap: Bitmap,
         config: VectorizationConfig,
-        maxDimension: Int = 1024
+        maxDimension: Int = 720
     ): String {
+        Log.i(TAG, "vectorizeBitmap invoked: bitmap=${bitmap.width}x${bitmap.height}, config=$config")
         // Enforce safe memory footprint & sub-second compute time for on-device vectorization
         val source = if (bitmap.width > maxDimension || bitmap.height > maxDimension) {
             val scale = maxDimension.toFloat() / maxOf(bitmap.width, bitmap.height)
@@ -74,7 +75,8 @@ object NativeBridge {
             byteIdx += 4
         }
 
-        return vectorizeRgba(
+        Log.i(TAG, "Calling vectorizeRgba with ${width}x${height} (${rgbaBytes.size} bytes)...")
+        val result = vectorizeRgba(
             pixels = rgbaBytes,
             width = width,
             height = height,
@@ -85,6 +87,8 @@ object NativeBridge {
             simplifyTolerance = config.simplifyTolerance,
             filterSpeckle = config.filterSpeckle
         )
+        Log.i(TAG, "vectorizeRgba returned string length=${result.length}")
+        return result
     }
 }
 
@@ -102,9 +106,9 @@ enum class FilterMode(val id: Int, val displayName: String, val description: Str
 
 data class VectorizationConfig(
     val fitMode: FitMode = FitMode.SPLINE,
-    val filterMode: FilterMode = FilterMode.NONE, // Default to NONE so portraits and low-contrast images are never blurred
+    val filterMode: FilterMode = FilterMode.NONE, // Default to NONE: preserves sharp optical contours
     val filterStrength: Float = 1.0f,
     val colorQuantizeK: Int = 0, // 0 = Full Color high fidelity by default
-    val simplifyTolerance: Float = 0.8f,
-    val filterSpeckle: Int = 2
+    val simplifyTolerance: Float = 0.0f, // 0.0f = Off (precision least-squares curves without flattening)
+    val filterSpeckle: Int = 0 // 0 = Keep all thin contours (eyelashes, mustache, hair curls)
 )

@@ -43,14 +43,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vectorcraft.app.ui.components.ControlsPanel
-import com.vectorcraft.app.ui.components.CurvifyTopBar
+import com.vectorcraft.app.ui.components.VectorForgeTopBar
 import com.vectorcraft.app.ui.components.InfiniteZoomViewport
 import com.vectorcraft.app.ui.components.MasteryManualSheet
 import com.vectorcraft.app.ui.components.SvgStudioSheet
 import com.vectorcraft.app.ui.theme.AccentCyan
-import com.vectorcraft.app.ui.theme.CurvifyTheme
+import com.vectorcraft.app.ui.theme.VectorForgeTheme
 import com.vectorcraft.app.ui.theme.DarkBackdrop
 import com.vectorcraft.app.ui.theme.GlassBorderSubtle
+import com.vectorcraft.app.util.SampleImages
 import com.vectorcraft.app.util.StorageHelper
 import kotlinx.coroutines.launch
 
@@ -60,10 +61,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SampleImages.init(applicationContext)
         enableEdgeToEdge()
 
         setContent {
-            CurvifyTheme {
+            VectorForgeTheme {
                 val state by viewModel.state.collectAsState()
                 val context = LocalContext.current
                 val snackbarHostState = remember { SnackbarHostState() }
@@ -83,7 +85,7 @@ class MainActivity : ComponentActivity() {
                     containerColor = DarkBackdrop,
                     snackbarHost = { SnackbarHost(snackbarHostState) },
                     topBar = {
-                        CurvifyTopBar(
+                        VectorForgeTopBar(
                             viewMode = state.viewMode,
                             onViewModeChange = { viewModel.setViewMode(it) },
                             onPickImage = {
@@ -95,10 +97,10 @@ class MainActivity : ComponentActivity() {
                             onSaveToDownloads = {
                                 val svg = state.svgContent
                                 if (!svg.isNullOrBlank()) {
-                                    val uri = StorageHelper.saveSvgToDownloads(context, svg, "curvify")
+                                    val uri = StorageHelper.saveSvgToDownloads(context, svg, "vectorforge")
                                     if (uri != null) {
                                         scope.launch {
-                                            snackbarHostState.showSnackbar("Export saved to Downloads/VectorCraft/")
+                                            snackbarHostState.showSnackbar("Export saved to Downloads/VectorForge/")
                                         }
                                     } else {
                                         Toast.makeText(context, "Failed to save SVG", Toast.LENGTH_SHORT).show()
@@ -110,7 +112,7 @@ class MainActivity : ComponentActivity() {
                             onShareSvg = {
                                 val svg = state.svgContent
                                 if (!svg.isNullOrBlank()) {
-                                    StorageHelper.shareSvg(context, svg, "curvify")
+                                    StorageHelper.shareSvg(context, svg, "vectorforge")
                                 } else {
                                     Toast.makeText(context, "Vectorizing... please wait", Toast.LENGTH_SHORT).show()
                                 }
@@ -172,7 +174,7 @@ class MainActivity : ComponentActivity() {
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "Curvify engine tracing...",
+                                        text = "VectorForge engine tracing...",
                                         fontSize = 11.sp,
                                         color = Color.White
                                     )

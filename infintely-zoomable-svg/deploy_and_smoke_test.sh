@@ -7,7 +7,7 @@ PACKAGE_NAME="com.vectorcraft.app"
 APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
 
 echo "========================================================"
-echo "      Curvify Autonomous Deployment & Test Engine      "
+echo "    VectorForge Autonomous Deployment & Test Engine    "
 echo "========================================================"
 
 # 1. Audible signal & notification
@@ -69,10 +69,10 @@ done
 
 if [ $CRASH_DETECTED -eq 0 ]; then
   echo "========================================================"
-  echo "SUCCESS: VectorCraft launched cleanly with zero runtime crashes or JNI linkage errors!"
+  echo "SUCCESS: VectorForge launched cleanly with zero runtime crashes or JNI linkage errors!"
   echo "Native Rust engine successfully loaded and functional on $DEVICE_ID."
   echo "========================================================"
-  osascript -e 'display notification "VectorCraft installed and running on device!" with title "Testing Active"' 2>/dev/null || true
+  osascript -e 'display notification "VectorForge installed and running on device!" with title "Testing Active"' 2>/dev/null || true
   afplay /System/Library/Sounds/Ping.aiff 2>/dev/null || true
 else
   echo "Smoke test encountered errors."
