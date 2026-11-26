@@ -1,7 +1,6 @@
 // app/src/main/java/com/raysi/launcher/ui/home/HomeViewModel.kt
 package com.raysi.launcher.ui.home
 
-import android.content.ComponentName
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.raysi.launcher.data.model.AppInfo
@@ -11,8 +10,12 @@ import com.raysi.launcher.data.repository.PreferencesRepository
 import com.raysi.launcher.data.repository.QuarantineRepository
 import com.raysi.launcher.data.repository.SettingsRepository
 import com.raysi.launcher.data.repository.TelemetryRepository
+import com.raysi.launcher.domain.model.AppIconMode
 import com.raysi.launcher.domain.model.DailyProgress
 import com.raysi.launcher.domain.model.PinnedAppItem
+import com.raysi.launcher.domain.model.StatusBarMode
+import com.raysi.launcher.domain.model.SwipeDownAction
+import com.raysi.launcher.domain.model.SystemStatusState
 import com.raysi.launcher.domain.model.TelemetryUiState
 import com.raysi.launcher.util.SystemThemingHelper
 import kotlinx.coroutines.CoroutineScope
@@ -21,6 +24,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -41,6 +45,9 @@ sealed interface HomeDialogState {
         val pin: PinnedAppItem,
         val currentLimit: Int
     ) : HomeDialogState
+    data class DockOptions(
+        val dockItem: PinnedAppItem
+    ) : HomeDialogState
 }
 
 class HomeViewModel(
@@ -58,11 +65,25 @@ class HomeViewModel(
     private val _dialogState = MutableStateFlow<HomeDialogState>(HomeDialogState.None)
     val dialogState: StateFlow<HomeDialogState> = _dialogState.asStateFlow()
 
-    val isStealthMode: StateFlow<Boolean> = preferencesRepository.isStealthModeFlow
-        .stateIn(scope, SharingStarted.Lazily, true)
+    val statusBarMode: StateFlow<StatusBarMode> = preferencesRepository.statusBarModeFlow
+        .stateIn(scope, SharingStarted.Lazily, StatusBarMode.CUSTOM)
 
-    val customStatusBarLine: StateFlow<String> = (systemThemingHelper?.customStatusBarLine ?: flowOf(""))
-        .stateIn(scope, SharingStarted.Lazily, "")
+    val isStealthMode: StateFlow<Boolean> = preferencesRepository.isStealthModeFlow
+        .stateIn(scope, SharingStarted.Lazily, false)
+
+    val appIconMode: StateFlow<AppIconMode> = preferencesRepository.appIconModeFlow
+        .stateIn(scope, SharingStarted.Lazily, AppIconMode.REAL)
+
+    val swipeDownAction: StateFlow<SwipeDownAction> = preferencesRepository.swipeDownActionFlow
+        .stateIn(scope, SharingStarted.Lazily, SwipeDownAction.NOTIFICATION_SHADE)
+
+    val systemStatusState: StateFlow<SystemStatusState> =
+        (systemThemingHelper?.systemStatusState ?: flowOf(SystemStatusState()))
+            .stateIn(scope, SharingStarted.Lazily, SystemStatusState())
+
+    val customStatusBarLine: StateFlow<String> =
+        (systemThemingHelper?.customStatusBarLine ?: flowOf(""))
+            .stateIn(scope, SharingStarted.Lazily, "")
 
     val telemetryUiState: StateFlow<TelemetryUiState> = telemetryRepository.telemetryUiStateFlow
     val dailyProgress: StateFlow<DailyProgress> = telemetryRepository.dailyProgressFlow
@@ -91,46 +112,160 @@ class HomeViewModel(
         telemetryRepository.perAppDurationsFlow,
         preferencesRepository.customAppLimitsFlow
     ) { snapshot, appsMap, perAppDurations, customLimits ->
-        val sortedPins = snapshot.pinnedApps.sortedBy { it.displayOrder }.take(5)
+        val sortedPins = snapshot.pinnedApps.sortedBy { it.displayOrder }.take(8)
         sortedPins.map { pin ->
-            val app = appsMap["${pin.componentName}#${pin.userSerialNumber}"]
-            val parts = pin.componentName.split('/')
-            val pkg = parts.getOrNull(0) ?: pin.componentName
-            val cls = parts.getOrNull(1) ?: ""
-            val fullCls = if (cls.startsWith(".")) "$pkg$cls" else cls
-
-            val cleanLabel = when {
-                pin.customLabel.isNotBlank() -> pin.customLabel
-                app != null -> app.label
-                else -> pkg
-            }
-
-            val durationMs = perAppDurations[pkg] ?: 0L
-            val durationMinutes = durationMs / 60000L
-            val timeLimit = customLimits[pkg] ?: 45
-            val isSatiated = durationMinutes >= timeLimit
-            val usageFormatted = if (durationMinutes >= 15L) "${durationMinutes}m" else null
-
-            PinnedAppItem(
-                id = "${pin.componentName}#${pin.userSerialNumber}",
-                packageName = pkg,
-                className = fullCls,
-                componentNameStr = pin.componentName,
-                label = cleanLabel,
-                userSerialNumber = pin.userSerialNumber,
-                isWorkProfile = app?.isWorkProfile ?: false,
-                isInstalled = app != null,
-                usageDurationMinutes = durationMinutes,
-                usageFormatted = usageFormatted,
-                isSatiated = isSatiated,
-                timeLimitMinutes = timeLimit
-            )
+            buildPinnedItem(pin.componentName, pin.userSerialNumber, pin.customLabel, appsMap, perAppDurations, customLimits)
         }
     }.stateIn(scope, SharingStarted.Lazily, emptyList())
+
+    val dockApps: StateFlow<List<PinnedAppItem>> = combine(
+        preferencesRepository.dockAppsFlow,
+        appInventoryRepository.appsMapFlow,
+        telemetryRepository.perAppDurationsFlow,
+        preferencesRepository.customAppLimitsFlow
+    ) { dockKeys, appsMap, perAppDurations, customLimits ->
+        dockKeys.take(5).mapNotNull { uniqueKey ->
+            val app = appsMap[uniqueKey] ?: return@mapNotNull null
+            val compStr = app.componentName?.flattenToString() ?: "${app.packageName}/${app.className}"
+            buildPinnedItem(compStr, app.userSerialNumber, app.label, appsMap, perAppDurations, customLimits)
+        }
+    }.stateIn(scope, SharingStarted.Lazily, emptyList())
+
+    init {
+        seedDefaultsOnFirstRun()
+    }
+
+    private fun seedDefaultsOnFirstRun() {
+        scope.launch {
+            val apps = appInventoryRepository.appsFlow.first { it.isNotEmpty() }
+            val alreadySeeded = preferencesRepository.hasSeededDefaultsFlow.first()
+            if (alreadySeeded) return@launch
+
+            // Seed Bottom Favorites Dock if empty (Phone, Messages, Browser, Camera)
+            val existingDock = preferencesRepository.dockAppsFlow.first()
+            if (existingDock.isEmpty()) {
+                val seededDock = pickMatchingApps(
+                    apps = apps,
+                    queries = listOf(
+                        listOf("dialer", "phone", "contacts"),
+                        listOf("messaging", "messages", "mms", "sms"),
+                        listOf("chrome", "browser", "firefox", "brave", "opera"),
+                        listOf("camera")
+                    ),
+                    limit = 4
+                )
+                if (seededDock.isNotEmpty()) {
+                    preferencesRepository.setDockApps(seededDock.map { it.uniqueKey })
+                }
+            }
+
+            // Seed Pinned Essentials if empty (useful daily utilities so screen is never dead void)
+            val currentPins = settingsRepository.snapshotFlow.first().pinnedApps
+            if (currentPins.isEmpty()) {
+                val seededEssentials = pickMatchingApps(
+                    apps = apps,
+                    queries = listOf(
+                        listOf("calendar"),
+                        listOf("notes", "keep", "memo"),
+                        listOf("clock", "alarm"),
+                        listOf("calculator"),
+                        listOf("files", "gallery", "photos")
+                    ),
+                    limit = 5
+                )
+                if (seededEssentials.isNotEmpty()) {
+                    val entries = seededEssentials.mapIndexed { idx, app ->
+                        val compStr = app.componentName?.flattenToString()
+                            ?: "${app.packageName}/${app.className}"
+                        PinnedAppEntry(
+                            componentName = compStr,
+                            userSerialNumber = app.userSerialNumber,
+                            customLabel = app.label,
+                            displayOrder = idx
+                        )
+                    }
+                    settingsRepository.updatePinnedApps(entries)
+                }
+            }
+
+            preferencesRepository.markDefaultsSeeded()
+        }
+    }
+
+    private fun pickMatchingApps(
+        apps: List<AppInfo>,
+        queries: List<List<String>>,
+        limit: Int
+    ): List<AppInfo> {
+        val chosen = mutableListOf<AppInfo>()
+        val usedPackages = mutableSetOf<String>()
+        for (keywords in queries) {
+            if (chosen.size >= limit) break
+            // Iterate keywords in priority order (e.g. "dialer" before "phone" before "contacts")
+            var match: AppInfo? = null
+            for (kw in keywords) {
+                match = apps.firstOrNull { app ->
+                    !usedPackages.contains(app.packageName) &&
+                        (app.packageName.contains(kw, ignoreCase = true) ||
+                            app.label.equals(kw, ignoreCase = true) ||
+                            app.label.contains(kw, ignoreCase = true))
+                }
+                if (match != null) break
+            }
+            if (match != null) {
+                chosen.add(match)
+                usedPackages.add(match.packageName)
+            }
+        }
+        return chosen
+    }
+
+    private fun buildPinnedItem(
+        componentName: String,
+        userSerialNumber: Long,
+        customLabel: String,
+        appsMap: Map<String, AppInfo>,
+        perAppDurations: Map<String, Long>,
+        customLimits: Map<String, Int>
+    ): PinnedAppItem {
+        val app = appsMap["$componentName#$userSerialNumber"]
+        val parts = componentName.split('/')
+        val pkg = parts.getOrNull(0) ?: componentName
+        val cls = parts.getOrNull(1) ?: ""
+        val fullCls = if (cls.startsWith(".")) "$pkg$cls" else cls
+
+        val cleanLabel = when {
+            customLabel.isNotBlank() -> customLabel
+            app != null -> app.label
+            else -> pkg.substringAfterLast('.')
+        }
+
+        val durationMs = perAppDurations[pkg] ?: 0L
+        val durationMinutes = durationMs / 60000L
+        val timeLimit = customLimits[pkg] ?: 45
+        val isSatiated = durationMinutes >= timeLimit
+        val usageFormatted = if (durationMinutes >= 15L) "${durationMinutes}m" else null
+
+        return PinnedAppItem(
+            id = "$componentName#$userSerialNumber",
+            packageName = pkg,
+            className = fullCls,
+            componentNameStr = componentName,
+            label = cleanLabel,
+            userSerialNumber = userSerialNumber,
+            isWorkProfile = app?.isWorkProfile ?: false,
+            isInstalled = app != null,
+            usageDurationMinutes = durationMinutes,
+            usageFormatted = usageFormatted,
+            isSatiated = isSatiated,
+            timeLimitMinutes = timeLimit
+        )
+    }
 
     fun onResume() {
         refreshDefaultLauncherStatus()
         telemetryRepository.onScreenResumed()
+        systemThemingHelper?.refreshSystemStatus()
     }
 
     fun onPause() {
@@ -157,14 +292,44 @@ class HomeViewModel(
         }
     }
 
+    fun setStatusBarMode(mode: StatusBarMode) {
+        scope.launch {
+            preferencesRepository.setStatusBarMode(mode)
+        }
+    }
+
+    fun setAppIconMode(mode: AppIconMode) {
+        scope.launch {
+            preferencesRepository.setAppIconMode(mode)
+        }
+    }
+
     fun toggleStealthMode() {
         scope.launch {
-            preferencesRepository.setStealthMode(!isStealthMode.value)
+            val next = if (statusBarMode.value == StatusBarMode.STEALTH) {
+                StatusBarMode.CUSTOM
+            } else {
+                StatusBarMode.STEALTH
+            }
+            preferencesRepository.setStatusBarMode(next)
         }
     }
 
     fun getAppInfoForPin(pin: PinnedAppItem): AppInfo? {
         return appInventoryRepository.findApp(pin.componentNameStr, pin.userSerialNumber)
+            ?: appInventoryRepository.appsFlow.value.firstOrNull { it.packageName == pin.packageName }
+    }
+
+    fun onDockLongClick(item: PinnedAppItem) {
+        _dialogState.value = HomeDialogState.DockOptions(item)
+    }
+
+    fun removeFromDock(item: PinnedAppItem) {
+        scope.launch {
+            val current = preferencesRepository.dockAppsFlow.first()
+            preferencesRepository.setDockApps(current.filterNot { it == item.id })
+        }
+        dismissDialog()
     }
 
     fun onPinLongClick(pin: PinnedAppItem) {
@@ -268,7 +433,7 @@ class HomeViewModel(
 
     private fun saveUpdatedPins(updatedList: List<PinnedAppEntry>) {
         scope.launch {
-            val reordered = updatedList.take(5).mapIndexed { i, entry ->
+            val reordered = updatedList.take(8).mapIndexed { i, entry ->
                 entry.copy(displayOrder = i)
             }
             settingsRepository.updatePinnedApps(reordered)

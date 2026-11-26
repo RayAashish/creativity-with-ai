@@ -193,7 +193,7 @@ class DrawerViewModelTest {
     }
 
     @Test
-    fun pinFromDrawer_addsPinnedAppUpToFive() = runTest(testDispatcher) {
+    fun pinFromDrawer_addsPinnedAppUpToEight() = runTest(testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -207,12 +207,12 @@ class DrawerViewModelTest {
     }
 
     @Test
-    fun pinFromDrawer_rejectsWhenAlreadyFive() = runTest(testDispatcher) {
-        // Pre-fill 5 pins
-        val fivePins = List(5) { i ->
+    fun pinFromDrawer_rejectsWhenAlreadyEight() = runTest(testDispatcher) {
+        // Pre-fill 8 pins
+        val eightPins = List(8) { i ->
             PinnedAppEntry("com.pkg.$i/.Activity", 0L, "App $i", i)
         }
-        fakeSettingsRepo.updatePinnedApps(fivePins)
+        fakeSettingsRepo.updatePinnedApps(eightPins)
 
         val viewModel = createViewModel()
         advanceUntilIdle()
@@ -222,7 +222,7 @@ class DrawerViewModelTest {
         advanceUntilIdle()
 
         val pinned = fakeSettingsRepo.snapshot.pinnedApps
-        assertEquals(5, pinned.size)
+        assertEquals(8, pinned.size)
     }
 }
 

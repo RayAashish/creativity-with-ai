@@ -8,12 +8,16 @@ import com.raysi.launcher.core.dispatchers.StandardFocusDispatchers
 import com.raysi.launcher.data.model.AppInfo
 import com.raysi.launcher.data.model.PinnedAppEntry
 import com.raysi.launcher.data.repository.AppInventoryRepository
+import com.raysi.launcher.data.repository.PreferencesRepository
 import com.raysi.launcher.data.repository.SettingsRepository
 import com.raysi.launcher.data.search.SearchEngine
+import com.raysi.launcher.domain.model.AppIconMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -23,23 +27,30 @@ sealed interface DrawerDialogState {
     data class AppOptions(
         val app: AppInfo,
         val isPinned: Boolean,
-        val canPin: Boolean
+        val canPin: Boolean,
+        val isInDock: Boolean = false,
+        val canPinToDock: Boolean = true,
+        val isDistracting: Boolean = false
     ) : DrawerDialogState
 }
 
 /**
- * DrawerViewModel manages keyboard-first drawer state, fast in-frame search queries,
- * and app launching.
+ * DrawerViewModel manages keyboard/A-Z drawer state, sub-millisecond search queries,
+ * app pinning (Home & Bottom Dock), distracting gate toggles, and app launching.
  */
 class DrawerViewModel(
     private val appInventoryRepository: AppInventoryRepository,
     private val searchEngine: SearchEngine,
     private val settingsRepository: SettingsRepository,
+    private val preferencesRepository: PreferencesRepository? = null,
     private val dispatchers: FocusDispatchers = StandardFocusDispatchers()
 ) : ViewModel() {
 
     private val _isDrawerOpen = MutableStateFlow(false)
     val isDrawerOpen: StateFlow<Boolean> = _isDrawerOpen.asStateFlow()
+
+    private val _focusSearchOnOpen = MutableStateFlow(false)
+    val focusSearchOnOpen: StateFlow<Boolean> = _focusSearchOnOpen.asStateFlow()
 
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
@@ -52,6 +63,14 @@ class DrawerViewModel(
 
     private var allAppsCached: List<AppInfo> = emptyList()
 
+    val appIconMode: StateFlow<AppIconMode> =
+        (preferencesRepository?.appIconModeFlow ?: flowOf(AppIconMode.REAL))
+            .stateIn(viewModelScope, SharingStarted.Lazily, AppIconMode.REAL)
+
+    val autoOpenKeyboardPref: StateFlow<Boolean> =
+        (preferencesRepository?.autoOpenDrawerKeyboardFlow ?: flowOf(false))
+            .stateIn(viewModelScope, SharingStarted.Lazily, false)
+
     val pinnedKeys: StateFlow<Set<String>> = settingsRepository.snapshotFlow
         .map { snapshot ->
             snapshot.pinnedApps.map { "${it.componentName}#${it.userSerialNumber}" }.toSet()
@@ -63,12 +82,21 @@ class DrawerViewModel(
         )
 
     val canPinMore: StateFlow<Boolean> = settingsRepository.snapshotFlow
-        .map { it.pinnedApps.size < 5 }
+        .map { it.pinnedApps.size < 8 }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.Lazily,
             initialValue = true
         )
+
+    val dockKeys: StateFlow<Set<String>> =
+        (preferencesRepository?.dockAppsFlow ?: flowOf(emptyList()))
+            .map { it.toSet() }
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptySet())
+
+    val distractingPackages: StateFlow<Set<String>> = settingsRepository.snapshotFlow
+        .map { it.distractingPackages }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptySet())
 
     init {
         // Observe app inventory updates and index off the main thread
@@ -77,7 +105,6 @@ class DrawerViewModel(
                 allAppsCached = apps
                 searchEngine.updateIndex(apps)
 
-                // Re-evaluate current search query
                 val currentQ = _query.value.trim()
                 val results = if (currentQ.isEmpty()) {
                     apps
@@ -89,7 +116,8 @@ class DrawerViewModel(
         }
     }
 
-    fun openDrawer() {
+    fun openDrawer(focusSearch: Boolean = false) {
+        _focusSearchOnOpen.value = focusSearch || autoOpenKeyboardPref.value
         _isDrawerOpen.value = true
         _query.value = ""
         _searchResults.value = allAppsCached
@@ -97,6 +125,7 @@ class DrawerViewModel(
 
     fun closeDrawer() {
         _isDrawerOpen.value = false
+        _focusSearchOnOpen.value = false
         _query.value = ""
         _dialogState.value = DrawerDialogState.None
     }
@@ -107,7 +136,6 @@ class DrawerViewModel(
         val results = if (trimmed.isEmpty()) {
             allAppsCached
         } else {
-            // Synchronous sub-millisecond query evaluation
             searchEngine.search(trimmed)
         }
         _searchResults.value = results
@@ -128,17 +156,23 @@ class DrawerViewModel(
         val key = appInfo.uniqueKey
         val isPinned = pinnedKeys.value.contains(key)
         val canPin = canPinMore.value && !isPinned
+        val isInDock = dockKeys.value.contains(key)
+        val canPinDock = dockKeys.value.size < 5 && !isInDock
+        val isDistracting = distractingPackages.value.contains(appInfo.packageName)
         _dialogState.value = DrawerDialogState.AppOptions(
             app = appInfo,
             isPinned = isPinned,
-            canPin = canPin
+            canPin = canPin,
+            isInDock = isInDock,
+            canPinToDock = canPinDock,
+            isDistracting = isDistracting
         )
     }
 
     fun pinApp(appInfo: AppInfo) {
         viewModelScope.launch(dispatchers.mainImmediate) {
             val currentPinned = settingsRepository.snapshot.pinnedApps
-            if (currentPinned.size >= 5) {
+            if (currentPinned.size >= 8) {
                 dismissDialog()
                 return@launch
             }
@@ -169,6 +203,39 @@ class DrawerViewModel(
                 it.componentName == compStr && it.userSerialNumber == appInfo.userSerialNumber
             }.mapIndexed { index, entry -> entry.copy(displayOrder = index) }
             settingsRepository.updatePinnedApps(updated)
+            dismissDialog()
+        }
+    }
+
+    fun pinToDock(appInfo: AppInfo) {
+        val repo = preferencesRepository ?: return
+        viewModelScope.launch(dispatchers.mainImmediate) {
+            val current = repo.dockAppsFlow.first()
+            if (current.size < 5 && !current.contains(appInfo.uniqueKey)) {
+                repo.setDockApps(current + appInfo.uniqueKey)
+            }
+            dismissDialog()
+        }
+    }
+
+    fun unpinFromDock(appInfo: AppInfo) {
+        val repo = preferencesRepository ?: return
+        viewModelScope.launch(dispatchers.mainImmediate) {
+            val current = repo.dockAppsFlow.first()
+            repo.setDockApps(current.filterNot { it == appInfo.uniqueKey })
+            dismissDialog()
+        }
+    }
+
+    fun toggleDistractingPackage(appInfo: AppInfo) {
+        viewModelScope.launch(dispatchers.io) {
+            val current = settingsRepository.snapshot.distractingPackages
+            val updated = if (current.contains(appInfo.packageName)) {
+                current - appInfo.packageName
+            } else {
+                current + appInfo.packageName
+            }
+            settingsRepository.updateDistractingPackages(updated)
             dismissDialog()
         }
     }

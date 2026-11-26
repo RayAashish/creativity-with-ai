@@ -1,12 +1,12 @@
 // app/src/main/java/com/raysi/launcher/ui/MainActivity.kt
 package com.raysi.launcher.ui
 
+import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,9 +14,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.AbstractSavedStateViewModelFactory
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.SavedStateHandle
@@ -26,7 +23,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
 import com.raysi.launcher.FocusApplication
-import com.raysi.launcher.service.FocusAccessibilityService
 import com.raysi.launcher.service.notification.NotificationUtils
 import com.raysi.launcher.util.SystemThemingHelper
 import com.raysi.launcher.ui.drawer.DrawerScreen
@@ -91,6 +87,7 @@ class MainActivity : ComponentActivity() {
                     appInventoryRepository = locator.appInventoryRepository,
                     searchEngine = locator.searchEngine,
                     settingsRepository = locator.settingsRepository,
+                    preferencesRepository = locator.preferencesRepository,
                     dispatchers = locator.dispatchers
                 ) as T
             }
@@ -142,6 +139,13 @@ class MainActivity : ComponentActivity() {
         homeViewModel.refreshDefaultLauncherStatus()
     }
 
+    private val phonePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) {
+        homeViewModel.onResume()
+        settingsViewModel.refreshPermissions(this)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -149,14 +153,14 @@ class MainActivity : ComponentActivity() {
             isQuarantineOpen.value = true
         }
 
-        // Enforce edge-to-edge rendering across all supported API levels (28-35)
-        SystemThemingHelper.configureEdgeToEdge(this, homeViewModel.isStealthMode.value)
+        // Enforce edge-to-edge rendering and selected status bar mode across API levels 28-36
+        SystemThemingHelper.configureEdgeToEdge(this, homeViewModel.statusBarMode.value)
         SystemThemingHelper.applyZeroJankTransition(this)
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                homeViewModel.isStealthMode.collect { stealth ->
-                    SystemThemingHelper.configureEdgeToEdge(this@MainActivity, stealth)
+                homeViewModel.statusBarMode.collect { mode ->
+                    SystemThemingHelper.configureEdgeToEdge(this@MainActivity, mode)
                 }
             }
         }
@@ -182,6 +186,7 @@ class MainActivity : ComponentActivity() {
                         SettingsScreen(
                             viewModel = settingsViewModel,
                             onRequestDefaultLauncher = { requestDefaultLauncher() },
+                            onRequestPhonePermission = { requestPhonePermission() },
                             onDismiss = { isSettingsOpen.value = false }
                         )
                     } else if (showQuarantine) {
@@ -221,7 +226,10 @@ class MainActivity : ComponentActivity() {
                         HomeScreen(
                             viewModel = homeViewModel,
                             onOpenDrawer = {
-                                drawerViewModel.openDrawer()
+                                drawerViewModel.openDrawer(focusSearch = false)
+                            },
+                            onOpenDrawerSearch = {
+                                drawerViewModel.openDrawer(focusSearch = true)
                             },
                             onOpenSettings = {
                                 isSettingsOpen.value = true
@@ -234,6 +242,9 @@ class MainActivity : ComponentActivity() {
                             },
                             onRequestDefaultLauncher = {
                                 requestDefaultLauncher()
+                            },
+                            onRequestPhonePermission = {
+                                requestPhonePermission()
                             },
                             onOpenUsageAccessSettings = {
                                 openUsageAccessSettings()
@@ -256,7 +267,13 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun applyImmersiveStatusBar() {
-        SystemThemingHelper.configureEdgeToEdge(this, homeViewModel.isStealthMode.value)
+        SystemThemingHelper.configureEdgeToEdge(this, homeViewModel.statusBarMode.value)
+    }
+
+    private fun requestPhonePermission() {
+        try {
+            phonePermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE)
+        } catch (_: Exception) {}
     }
 
     override fun onPause() {

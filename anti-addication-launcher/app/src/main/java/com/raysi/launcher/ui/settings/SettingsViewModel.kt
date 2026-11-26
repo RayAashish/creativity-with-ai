@@ -12,6 +12,9 @@ import com.raysi.launcher.data.repository.AppInventoryRepository
 import com.raysi.launcher.data.repository.PreferencesRepository
 import com.raysi.launcher.data.repository.SettingsRepository
 import com.raysi.launcher.data.repository.UsageRepository
+import com.raysi.launcher.domain.model.AppIconMode
+import com.raysi.launcher.domain.model.StatusBarMode
+import com.raysi.launcher.domain.model.SwipeDownAction
 import com.raysi.launcher.service.AccessibilityUtils
 import com.raysi.launcher.service.notification.DigestScheduler
 import com.raysi.launcher.service.notification.NotificationUtils
@@ -35,7 +38,8 @@ data class SettingsPermissionsState(
     val isUsageGranted: Boolean = false,
     val isAccessibilityEnabled: Boolean = false,
     val isNotificationListenerEnabled: Boolean = false,
-    val isSecureSettingsGranted: Boolean = false
+    val isSecureSettingsGranted: Boolean = false,
+    val hasPhoneStatePermission: Boolean = false
 )
 
 class SettingsViewModel(
@@ -50,8 +54,20 @@ class SettingsViewModel(
 
     val allApps: StateFlow<List<AppInfo>> = appInventoryRepository.appsFlow
 
+    val statusBarMode: StateFlow<StatusBarMode> = preferencesRepository.statusBarModeFlow
+        .stateIn(viewModelScope, SharingStarted.Lazily, StatusBarMode.CUSTOM)
+
+    val appIconMode: StateFlow<AppIconMode> = preferencesRepository.appIconModeFlow
+        .stateIn(viewModelScope, SharingStarted.Lazily, AppIconMode.REAL)
+
+    val swipeDownAction: StateFlow<SwipeDownAction> = preferencesRepository.swipeDownActionFlow
+        .stateIn(viewModelScope, SharingStarted.Lazily, SwipeDownAction.NOTIFICATION_SHADE)
+
+    val autoOpenDrawerKeyboard: StateFlow<Boolean> = preferencesRepository.autoOpenDrawerKeyboardFlow
+        .stateIn(viewModelScope, SharingStarted.Lazily, false)
+
     val isStealthMode: StateFlow<Boolean> = preferencesRepository.isStealthModeFlow
-        .stateIn(viewModelScope, SharingStarted.Lazily, true)
+        .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
     val isSystemGrayscale: StateFlow<Boolean> = preferencesRepository.isSystemGrayscaleEnabledFlow
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
@@ -96,14 +112,40 @@ class SettingsViewModel(
         val isA11y = AccessibilityUtils.isAccessibilityServiceEnabled(context)
         val isNotif = NotificationUtils.isNotificationListenerEnabled(context)
         val isSecure = SystemThemingHelper.isSecureSettingsGranted(context)
+        val hasPhone = SystemThemingHelper.hasPhoneStatePermission(context)
 
         _permissionsState.value = SettingsPermissionsState(
             isDefaultLauncher = isDefault,
             isUsageGranted = isUsage,
             isAccessibilityEnabled = isA11y,
             isNotificationListenerEnabled = isNotif,
-            isSecureSettingsGranted = isSecure
+            isSecureSettingsGranted = isSecure,
+            hasPhoneStatePermission = hasPhone
         )
+    }
+
+    fun setStatusBarMode(mode: StatusBarMode) {
+        viewModelScope.launch(dispatchers.io) {
+            preferencesRepository.setStatusBarMode(mode)
+        }
+    }
+
+    fun setAppIconMode(mode: AppIconMode) {
+        viewModelScope.launch(dispatchers.io) {
+            preferencesRepository.setAppIconMode(mode)
+        }
+    }
+
+    fun setSwipeDownAction(action: SwipeDownAction) {
+        viewModelScope.launch(dispatchers.io) {
+            preferencesRepository.setSwipeDownAction(action)
+        }
+    }
+
+    fun setAutoOpenDrawerKeyboard(enabled: Boolean) {
+        viewModelScope.launch(dispatchers.io) {
+            preferencesRepository.setAutoOpenDrawerKeyboard(enabled)
+        }
     }
 
     fun setStealthMode(enabled: Boolean) {

@@ -65,6 +65,24 @@ class FocusAccessibilityService : AccessibilityService() {
             val service = instanceRef?.get() ?: return false
             return service.performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
         }
+
+        /**
+         * Expands the Android notification shade natively via AccessibilityService.
+         */
+        fun expandNotifications(): Boolean {
+            val service = instanceRef?.get() ?: return false
+            return service.performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS)
+        }
+
+        /**
+         * Expands Android Quick Settings natively via AccessibilityService.
+         */
+        fun expandQuickSettings(): Boolean {
+            val service = instanceRef?.get() ?: return false
+            return service.performGlobalAction(GLOBAL_ACTION_QUICK_SETTINGS)
+        }
+
+        fun isConnected(): Boolean = instanceRef?.get() != null
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)

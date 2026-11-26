@@ -10,12 +10,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
@@ -59,9 +63,9 @@ fun QuarantineScreen(
         modifier = modifier
             .fillMaxSize()
             .background(OledBlack)
-            .statusBarsPadding()
+            .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout))
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
         // Top navigation bar
         Row(

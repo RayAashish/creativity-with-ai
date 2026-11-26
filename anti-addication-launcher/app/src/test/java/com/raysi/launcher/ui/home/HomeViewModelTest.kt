@@ -13,8 +13,11 @@ import com.raysi.launcher.data.repository.AppInventoryRepository
 import com.raysi.launcher.data.repository.PreferencesRepository
 import com.raysi.launcher.data.repository.SettingsRepository
 import com.raysi.launcher.data.repository.TelemetryRepository
+import com.raysi.launcher.domain.model.AppIconMode
 import com.raysi.launcher.domain.model.DailyProgress
 import com.raysi.launcher.domain.model.PinnedAppItem
+import com.raysi.launcher.domain.model.StatusBarMode
+import com.raysi.launcher.domain.model.SwipeDownAction
 import com.raysi.launcher.domain.model.TelemetryUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -78,10 +81,10 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun pinnedApps_capsAtFive_andRespectsDisplayOrder() = runTest(testDispatcher) {
+    fun pinnedApps_capsAtEight_andRespectsDisplayOrder() = runTest(testDispatcher) {
         val viewModel = createViewModel(backgroundScope)
 
-        val pins = (0 until 7).map { i ->
+        val pins = (0 until 10).map { i ->
             PinnedAppEntry(
                 componentName = "com.test.pkg$i/.Activity",
                 userSerialNumber = 0L,
@@ -91,10 +94,10 @@ class HomeViewModelTest {
         }
         fakeSettingsRepo.updatePinnedApps(pins)
 
-        val result = viewModel.pinnedApps.first { it.size == 5 }
-        assertEquals(5, result.size)
+        val result = viewModel.pinnedApps.first { it.size == 8 }
+        assertEquals(8, result.size)
         assertEquals("App 0", result[0].label)
-        assertEquals("App 4", result[4].label)
+        assertEquals("App 7", result[7].label)
     }
 
     @Test
@@ -284,6 +287,38 @@ class HomeViewModelTest {
         val content = viewModel.scratchpadContent.first { it.isNotBlank() }
         assertEquals("Quick memo line 1\nLine 2", content)
     }
+
+    @Test
+    fun firstRun_seedsDockAndEssentials_automatically() = runTest(testDispatcher) {
+        val freshPrefs = FakePreferencesRepository().apply {
+            setHasSeededForTest(false)
+        }
+        val apps = listOf(
+            AppInfo(label = "Phone", packageName = "com.android.dialer", className = "DialerActivity"),
+            AppInfo(label = "Messages", packageName = "com.google.android.apps.messaging", className = "ConversationList"),
+            AppInfo(label = "Chrome", packageName = "com.android.chrome", className = "Main"),
+            AppInfo(label = "Camera", packageName = "com.android.camera", className = "CameraActivity"),
+            AppInfo(label = "Calendar", packageName = "com.google.android.calendar", className = "AllInOneActivity"),
+            AppInfo(label = "Clock", packageName = "com.android.deskclock", className = "DeskClock")
+        )
+        fakeInventoryRepo.setApps(apps)
+
+        val viewModel = HomeViewModel(
+            appInventoryRepository = fakeInventoryRepo,
+            settingsRepository = fakeSettingsRepo,
+            telemetryRepository = fakeTelemetryRepo,
+            preferencesRepository = freshPrefs,
+            quarantineRepository = null,
+            coroutineScope = backgroundScope
+        )
+        testScheduler.advanceUntilIdle()
+
+        val dock = viewModel.dockApps.first { it.isNotEmpty() }
+        val pins = viewModel.pinnedApps.first { it.isNotEmpty() }
+        assertEquals(4, dock.size)
+        assertTrue(pins.isNotEmpty())
+        assertTrue(freshPrefs.hasSeededDefaultsFlow.first())
+    }
 }
 
 // Test Fakes
@@ -316,6 +351,11 @@ private class FakeAppInventoryRepository : AppInventoryRepository {
 
     private val _appsMapFlow = MutableStateFlow<Map<String, AppInfo>>(emptyMap())
     override val appsMapFlow: StateFlow<Map<String, AppInfo>> = _appsMapFlow.asStateFlow()
+
+    fun setApps(apps: List<AppInfo>) {
+        _appsFlow.value = apps
+        _appsMapFlow.value = apps.associateBy { it.uniqueKey }
+    }
 
     override suspend fun reloadInventory() {}
     override fun launchApp(componentName: ComponentName, userHandle: UserHandle, sourceBounds: Rect?): Boolean = true
@@ -365,8 +405,31 @@ private class FakePreferencesRepository : PreferencesRepository {
     private val _unlockCount = MutableStateFlow(0)
     override val dailyUnlockCountFlow: Flow<Int> = _unlockCount.asStateFlow()
 
-    private val _stealthMode = MutableStateFlow(true)
-    override val isStealthModeFlow: Flow<Boolean> = _stealthMode.asStateFlow()
+    private val _statusBarMode = MutableStateFlow(StatusBarMode.CUSTOM)
+    override val statusBarModeFlow: Flow<StatusBarMode> = _statusBarMode.asStateFlow()
+
+    override val isStealthModeFlow: Flow<Boolean> = kotlinx.coroutines.flow.flow {
+        _statusBarMode.collect { emit(it == StatusBarMode.STEALTH) }
+    }
+
+    private val _appIconMode = MutableStateFlow(AppIconMode.REAL)
+    override val appIconModeFlow: Flow<AppIconMode> = _appIconMode.asStateFlow()
+
+    private val _swipeDownAction = MutableStateFlow(SwipeDownAction.NOTIFICATION_SHADE)
+    override val swipeDownActionFlow: Flow<SwipeDownAction> = _swipeDownAction.asStateFlow()
+
+    private val _dockApps = MutableStateFlow<List<String>>(emptyList())
+    override val dockAppsFlow: Flow<List<String>> = _dockApps.asStateFlow()
+
+    private val _hasSeeded = MutableStateFlow(true)
+    override val hasSeededDefaultsFlow: Flow<Boolean> = _hasSeeded.asStateFlow()
+
+    fun setHasSeededForTest(seeded: Boolean) {
+        _hasSeeded.value = seeded
+    }
+
+    private val _autoKb = MutableStateFlow(false)
+    override val autoOpenDrawerKeyboardFlow: Flow<Boolean> = _autoKb.asStateFlow()
 
     private val _systemGrayscale = MutableStateFlow(false)
     override val isSystemGrayscaleEnabledFlow: Flow<Boolean> = _systemGrayscale.asStateFlow()
@@ -394,7 +457,31 @@ private class FakePreferencesRepository : PreferencesRepository {
     }
 
     override suspend fun setStealthMode(enabled: Boolean) {
-        _stealthMode.value = enabled
+        _statusBarMode.value = if (enabled) StatusBarMode.STEALTH else StatusBarMode.CUSTOM
+    }
+
+    override suspend fun setStatusBarMode(mode: StatusBarMode) {
+        _statusBarMode.value = mode
+    }
+
+    override suspend fun setAppIconMode(mode: AppIconMode) {
+        _appIconMode.value = mode
+    }
+
+    override suspend fun setSwipeDownAction(action: SwipeDownAction) {
+        _swipeDownAction.value = action
+    }
+
+    override suspend fun setDockApps(keys: List<String>) {
+        _dockApps.value = keys
+    }
+
+    override suspend fun markDefaultsSeeded() {
+        _hasSeeded.value = true
+    }
+
+    override suspend fun setAutoOpenDrawerKeyboard(enabled: Boolean) {
+        _autoKb.value = enabled
     }
 
     override suspend fun setSystemGrayscaleEnabled(enabled: Boolean) {

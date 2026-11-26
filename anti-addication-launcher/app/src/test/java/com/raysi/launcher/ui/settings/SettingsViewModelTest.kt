@@ -16,6 +16,9 @@ import com.raysi.launcher.data.repository.HudState
 import com.raysi.launcher.data.repository.PreferencesRepository
 import com.raysi.launcher.data.repository.SettingsRepository
 import com.raysi.launcher.data.repository.UsageRepository
+import com.raysi.launcher.domain.model.AppIconMode
+import com.raysi.launcher.domain.model.StatusBarMode
+import com.raysi.launcher.domain.model.SwipeDownAction
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -119,7 +122,12 @@ class SettingsViewModelTest {
     }
 
     private class FakePreferencesRepo : PreferencesRepository {
-        val stealthFlow = MutableStateFlow(true)
+        val statusBarModeFlowInner = MutableStateFlow(StatusBarMode.CUSTOM)
+        val appIconModeFlowInner = MutableStateFlow(AppIconMode.REAL)
+        val swipeDownActionFlowInner = MutableStateFlow(SwipeDownAction.NOTIFICATION_SHADE)
+        val dockAppsFlowInner = MutableStateFlow<List<String>>(emptyList())
+        val seededFlow = MutableStateFlow(false)
+        val autoKbFlow = MutableStateFlow(false)
         val grayscaleFlow = MutableStateFlow(false)
 
         override val dailyFocusGoalFlow: Flow<String> = flowOf("")
@@ -127,14 +135,30 @@ class SettingsViewModelTest {
         override val customAppLimitsFlow: Flow<Map<String, Int>> = flowOf(emptyMap())
         override val lastAwayDurationFlow: Flow<Long> = flowOf(0L)
         override val dailyUnlockCountFlow: Flow<Int> = flowOf(0)
-        override val isStealthModeFlow: Flow<Boolean> = stealthFlow.asStateFlow()
+        override val statusBarModeFlow: Flow<StatusBarMode> = statusBarModeFlowInner.asStateFlow()
+        override val isStealthModeFlow: Flow<Boolean> = statusBarModeFlowInner.asStateFlow().let {
+            kotlinx.coroutines.flow.flow { it.collect { mode -> emit(mode == StatusBarMode.STEALTH) } }
+        }
+        override val appIconModeFlow: Flow<AppIconMode> = appIconModeFlowInner.asStateFlow()
+        override val swipeDownActionFlow: Flow<SwipeDownAction> = swipeDownActionFlowInner.asStateFlow()
+        override val dockAppsFlow: Flow<List<String>> = dockAppsFlowInner.asStateFlow()
+        override val hasSeededDefaultsFlow: Flow<Boolean> = seededFlow.asStateFlow()
+        override val autoOpenDrawerKeyboardFlow: Flow<Boolean> = autoKbFlow.asStateFlow()
         override val isSystemGrayscaleEnabledFlow: Flow<Boolean> = grayscaleFlow.asStateFlow()
 
         override suspend fun setDailyFocusGoal(goal: String) {}
         override suspend fun clearDailyFocusGoal() {}
         override suspend fun saveScratchpadContent(content: String) {}
         override suspend fun setCustomAppLimit(packageName: String, limitMinutes: Int) {}
-        override suspend fun setStealthMode(enabled: Boolean) { stealthFlow.value = enabled }
+        override suspend fun setStealthMode(enabled: Boolean) {
+            statusBarModeFlowInner.value = if (enabled) StatusBarMode.STEALTH else StatusBarMode.CUSTOM
+        }
+        override suspend fun setStatusBarMode(mode: StatusBarMode) { statusBarModeFlowInner.value = mode }
+        override suspend fun setAppIconMode(mode: AppIconMode) { appIconModeFlowInner.value = mode }
+        override suspend fun setSwipeDownAction(action: SwipeDownAction) { swipeDownActionFlowInner.value = action }
+        override suspend fun setDockApps(keys: List<String>) { dockAppsFlowInner.value = keys }
+        override suspend fun markDefaultsSeeded() { seededFlow.value = true }
+        override suspend fun setAutoOpenDrawerKeyboard(enabled: Boolean) { autoKbFlow.value = enabled }
         override suspend fun setSystemGrayscaleEnabled(enabled: Boolean) { grayscaleFlow.value = enabled }
         override suspend fun recordScreenOff(timestampMs: Long) {}
         override suspend fun recordUserPresent(timestampMs: Long): Int = 0
@@ -272,10 +296,18 @@ class SettingsViewModelTest {
     fun testStealthModeAndGrayscaleToggles() = runTest(testDispatcher) {
         viewModel.setStealthMode(false)
         advanceUntilIdle()
-        assertFalse(fakePreferences.stealthFlow.value)
+        assertEquals(StatusBarMode.CUSTOM, fakePreferences.statusBarModeFlowInner.value)
 
         viewModel.setStealthMode(true)
         advanceUntilIdle()
-        assertTrue(fakePreferences.stealthFlow.value)
+        assertEquals(StatusBarMode.STEALTH, fakePreferences.statusBarModeFlowInner.value)
+
+        viewModel.setStatusBarMode(StatusBarMode.SYSTEM)
+        advanceUntilIdle()
+        assertEquals(StatusBarMode.SYSTEM, fakePreferences.statusBarModeFlowInner.value)
+
+        viewModel.setAppIconMode(AppIconMode.MONOCHROME)
+        advanceUntilIdle()
+        assertEquals(AppIconMode.MONOCHROME, fakePreferences.appIconModeFlowInner.value)
     }
 }

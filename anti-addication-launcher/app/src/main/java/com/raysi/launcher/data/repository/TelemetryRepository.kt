@@ -73,6 +73,8 @@ class TelemetryRepositoryImpl(
 
     private var baseScreenTimeMs: Long = 0L
     private var baseElapsedRealtime: Long = 0L
+    private var receiverUnlockCount: Int = 0
+    private var systemEventUnlockCount: Int = 0
     private var isScreenResumed = false
     private var tickerJob: Job? = null
 
@@ -106,8 +108,9 @@ class TelemetryRepositoryImpl(
         // Observe unlock count
         scope.launch {
             preferencesRepository.dailyUnlockCountFlow.collectLatest { count ->
+                receiverUnlockCount = count
                 _telemetryUiState.value = _telemetryUiState.value.copy(
-                    unlockCount = count
+                    unlockCount = maxOf(receiverUnlockCount, systemEventUnlockCount)
                 )
             }
         }
@@ -226,6 +229,7 @@ class TelemetryRepositoryImpl(
 
         baseScreenTimeMs = aggregation.totalScreenTimeMs
         baseElapsedRealtime = SystemClock.elapsedRealtime()
+        systemEventUnlockCount = aggregation.unlockCount
 
         _perAppDurations.value = aggregation.perAppDurationsMs
 
@@ -261,6 +265,7 @@ class TelemetryRepositoryImpl(
 
         _telemetryUiState.value = _telemetryUiState.value.copy(
             screenTimeFormatted = formatScreenTime(baseScreenTimeMs),
+            unlockCount = maxOf(receiverUnlockCount, systemEventUnlockCount),
             topDrain = culprit,
             hasUsagePermission = true,
             hasNotificationPermission = hasNotif

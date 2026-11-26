@@ -12,6 +12,9 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.raysi.launcher.core.dispatchers.FocusDispatchers
+import com.raysi.launcher.domain.model.AppIconMode
+import com.raysi.launcher.domain.model.StatusBarMode
+import com.raysi.launcher.domain.model.SwipeDownAction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -31,6 +34,12 @@ interface PreferencesRepository {
     val lastAwayDurationFlow: Flow<Long>
     val dailyUnlockCountFlow: Flow<Int>
     val isStealthModeFlow: Flow<Boolean>
+    val statusBarModeFlow: Flow<StatusBarMode>
+    val appIconModeFlow: Flow<AppIconMode>
+    val swipeDownActionFlow: Flow<SwipeDownAction>
+    val dockAppsFlow: Flow<List<String>>
+    val hasSeededDefaultsFlow: Flow<Boolean>
+    val autoOpenDrawerKeyboardFlow: Flow<Boolean>
     val isSystemGrayscaleEnabledFlow: Flow<Boolean>
 
     suspend fun setDailyFocusGoal(goal: String)
@@ -38,6 +47,12 @@ interface PreferencesRepository {
     suspend fun saveScratchpadContent(content: String)
     suspend fun setCustomAppLimit(packageName: String, limitMinutes: Int)
     suspend fun setStealthMode(enabled: Boolean)
+    suspend fun setStatusBarMode(mode: StatusBarMode)
+    suspend fun setAppIconMode(mode: AppIconMode)
+    suspend fun setSwipeDownAction(action: SwipeDownAction)
+    suspend fun setDockApps(keys: List<String>)
+    suspend fun markDefaultsSeeded()
+    suspend fun setAutoOpenDrawerKeyboard(enabled: Boolean)
     suspend fun setSystemGrayscaleEnabled(enabled: Boolean)
     suspend fun recordScreenOff(timestampMs: Long = System.currentTimeMillis())
     suspend fun recordUserPresent(timestampMs: Long = System.currentTimeMillis()): Int
@@ -60,6 +75,12 @@ class PreferencesRepositoryImpl(
         val KEY_LAST_UNLOCK_DAY_OF_YEAR = intPreferencesKey("last_unlock_day_of_year")
         val KEY_LAST_UNLOCK_YEAR = intPreferencesKey("last_unlock_year")
         val KEY_STEALTH_MODE = booleanPreferencesKey("stealth_mode")
+        val KEY_STATUS_BAR_MODE = intPreferencesKey("status_bar_mode")
+        val KEY_APP_ICON_MODE = intPreferencesKey("app_icon_mode")
+        val KEY_SWIPE_DOWN_ACTION = intPreferencesKey("swipe_down_action")
+        val KEY_DOCK_APPS = stringPreferencesKey("dock_apps")
+        val KEY_HAS_SEEDED_DEFAULTS = booleanPreferencesKey("has_seeded_defaults")
+        val KEY_AUTO_OPEN_DRAWER_KEYBOARD = booleanPreferencesKey("auto_open_drawer_keyboard")
         val KEY_SYSTEM_GRAYSCALE = booleanPreferencesKey("system_grayscale")
 
         /**
@@ -166,11 +187,55 @@ class PreferencesRepositoryImpl(
             }
         }
 
-    override val isStealthModeFlow: Flow<Boolean> = dataStore.data
+    override val statusBarModeFlow: Flow<StatusBarMode> = dataStore.data
         .catch { exception ->
             if (exception is IOException) emit(emptyPreferences()) else throw exception
         }
-        .map { prefs -> prefs[KEY_STEALTH_MODE] ?: true }
+        .map { prefs ->
+            val explicit = prefs[KEY_STATUS_BAR_MODE]
+            if (explicit != null) {
+                StatusBarMode.fromStorage(explicit)
+            } else {
+                // Default to FocusLauncher's own Custom Status Bar
+                StatusBarMode.CUSTOM
+            }
+        }
+
+    override val isStealthModeFlow: Flow<Boolean> = statusBarModeFlow
+        .map { it == StatusBarMode.STEALTH }
+
+    override val appIconModeFlow: Flow<AppIconMode> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { prefs -> AppIconMode.fromStorage(prefs[KEY_APP_ICON_MODE] ?: 0) }
+
+    override val swipeDownActionFlow: Flow<SwipeDownAction> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { prefs -> SwipeDownAction.fromStorage(prefs[KEY_SWIPE_DOWN_ACTION] ?: 0) }
+
+    override val dockAppsFlow: Flow<List<String>> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { prefs ->
+            val raw = prefs[KEY_DOCK_APPS].orEmpty()
+            if (raw.isBlank()) emptyList() else raw.split(";;").filter { it.isNotBlank() }
+        }
+
+    override val hasSeededDefaultsFlow: Flow<Boolean> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { prefs -> prefs[KEY_HAS_SEEDED_DEFAULTS] ?: false }
+
+    override val autoOpenDrawerKeyboardFlow: Flow<Boolean> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { prefs -> prefs[KEY_AUTO_OPEN_DRAWER_KEYBOARD] ?: false }
 
     override val isSystemGrayscaleEnabledFlow: Flow<Boolean> = dataStore.data
         .catch { exception ->
@@ -181,6 +246,44 @@ class PreferencesRepositoryImpl(
     override suspend fun setStealthMode(enabled: Boolean): Unit = withContext(dispatchers.io) {
         dataStore.edit { prefs ->
             prefs[KEY_STEALTH_MODE] = enabled
+            prefs[KEY_STATUS_BAR_MODE] = if (enabled) StatusBarMode.STEALTH.storageValue else StatusBarMode.CUSTOM.storageValue
+        }
+    }
+
+    override suspend fun setStatusBarMode(mode: StatusBarMode): Unit = withContext(dispatchers.io) {
+        dataStore.edit { prefs ->
+            prefs[KEY_STATUS_BAR_MODE] = mode.storageValue
+            prefs[KEY_STEALTH_MODE] = (mode == StatusBarMode.STEALTH)
+        }
+    }
+
+    override suspend fun setAppIconMode(mode: AppIconMode): Unit = withContext(dispatchers.io) {
+        dataStore.edit { prefs ->
+            prefs[KEY_APP_ICON_MODE] = mode.storageValue
+        }
+    }
+
+    override suspend fun setSwipeDownAction(action: SwipeDownAction): Unit = withContext(dispatchers.io) {
+        dataStore.edit { prefs ->
+            prefs[KEY_SWIPE_DOWN_ACTION] = action.storageValue
+        }
+    }
+
+    override suspend fun setDockApps(keys: List<String>): Unit = withContext(dispatchers.io) {
+        dataStore.edit { prefs ->
+            prefs[KEY_DOCK_APPS] = keys.take(5).joinToString(";;")
+        }
+    }
+
+    override suspend fun markDefaultsSeeded(): Unit = withContext(dispatchers.io) {
+        dataStore.edit { prefs ->
+            prefs[KEY_HAS_SEEDED_DEFAULTS] = true
+        }
+    }
+
+    override suspend fun setAutoOpenDrawerKeyboard(enabled: Boolean): Unit = withContext(dispatchers.io) {
+        dataStore.edit { prefs ->
+            prefs[KEY_AUTO_OPEN_DRAWER_KEYBOARD] = enabled
         }
     }
 

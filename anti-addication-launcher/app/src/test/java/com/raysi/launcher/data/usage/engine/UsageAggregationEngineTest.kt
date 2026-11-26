@@ -167,4 +167,23 @@ class UsageAggregationEngineTest {
 
         assertEquals(3, result.unlockCount)
     }
+
+    @Test
+    fun delayedPauseAfterScreenOff_doesNotCountFullDayDuration() {
+        val startOfDay = 0L
+        val now = 22 * 3600_000L // 22 hours elapsed
+
+        val events = listOf(
+            UsageEventRecord(UsageEventRecord.SCREEN_INTERACTIVE, 1_000L, "", ""),
+            UsageEventRecord(UsageEventRecord.ACTIVITY_RESUMED, 1_000L, "com.example.vector", "Main"),
+            UsageEventRecord(UsageEventRecord.SCREEN_NON_INTERACTIVE, 61_000L, "", ""),
+            // Delayed OS activity pause emitted hours later when app process is trimmed
+            UsageEventRecord(UsageEventRecord.ACTIVITY_PAUSED, 21 * 3600_000L, "com.example.vector", "Main")
+        )
+
+        val result = UsageAggregationEngine.aggregate(events, startOfDay, now, ownPackage)
+
+        assertEquals(60_000L, result.totalScreenTimeMs)
+        assertEquals(60_000L, result.perAppDurationsMs["com.example.vector"])
+    }
 }

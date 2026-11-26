@@ -14,13 +14,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
@@ -38,6 +42,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.raysi.launcher.R
 import com.raysi.launcher.data.model.AppInfo
+import com.raysi.launcher.domain.model.AppIconMode
+import com.raysi.launcher.domain.model.StatusBarMode
+import com.raysi.launcher.domain.model.SwipeDownAction
 import com.raysi.launcher.service.AccessibilityUtils
 import com.raysi.launcher.service.notification.NotificationUtils
 import com.raysi.launcher.ui.theme.DimGray
@@ -50,6 +57,7 @@ import com.raysi.launcher.ui.theme.PureWhite
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onRequestDefaultLauncher: () -> Unit,
+    onRequestPhonePermission: () -> Unit = {},
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -57,7 +65,10 @@ fun SettingsScreen(
     val snapshot by viewModel.snapshot.collectAsState()
     val permissions by viewModel.permissionsState.collectAsState()
     val activePicker by viewModel.activePicker.collectAsState()
-    val isStealthMode by viewModel.isStealthMode.collectAsState()
+    val statusBarMode by viewModel.statusBarMode.collectAsState()
+    val appIconMode by viewModel.appIconMode.collectAsState()
+    val swipeDownAction by viewModel.swipeDownAction.collectAsState()
+    val autoOpenDrawerKeyboard by viewModel.autoOpenDrawerKeyboard.collectAsState()
     val isSystemGrayscale by viewModel.isSystemGrayscale.collectAsState()
 
     LaunchedEffect(Unit) {
@@ -83,9 +94,9 @@ fun SettingsScreen(
             modifier = modifier
                 .fillMaxSize()
                 .background(OledBlack)
-                .statusBarsPadding()
+                .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout))
                 .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .padding(horizontal = 24.dp, vertical = 12.dp)
         ) {
             // Top Bar
             Row(
@@ -179,6 +190,15 @@ fun SettingsScreen(
                                 } catch (ignored: Exception) {
                                 }
                             }
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        PermissionRow(
+                            label = "Dual-SIM & Network Labels (Phone)",
+                            description = "Shows independent SIM1/SIM2 carriers and 5G/LTE signal bars",
+                            isGranted = permissions.hasPhoneStatePermission,
+                            onFix = onRequestPhonePermission
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
@@ -410,17 +430,105 @@ fun SettingsScreen(
                     }
                 }
 
-                // Section 5: System Bar & Hardware Display
+                // Section 5: System Bar, Icons & Navigation
                 item {
-                    SettingsSection(title = "SYSTEM BAR & DISPLAY") {
+                    SettingsSection(title = "SYSTEM BAR, ICONS & NAVIGATION") {
                         SettingSelectorRow(
-                            title = "Status bar style",
-                            subtitle = "Stealth pure black or custom monospaced telemetry bar",
-                            options = listOf(true, false),
-                            selected = isStealthMode,
-                            labelFormatter = { if (it) "Stealth (Hidden)" else "Monospace Bar" },
-                            onSelect = { viewModel.setStealthMode(it) }
+                            title = "Top status bar style",
+                            subtitle = "FocusLauncher custom SIM/Wi-Fi/battery bar, Android bar, or hidden",
+                            options = listOf(
+                                StatusBarMode.CUSTOM,
+                                StatusBarMode.SYSTEM,
+                                StatusBarMode.STEALTH
+                            ),
+                            selected = statusBarMode,
+                            labelFormatter = { mode ->
+                                when (mode) {
+                                    StatusBarMode.CUSTOM -> "Focus Bar"
+                                    StatusBarMode.SYSTEM -> "System Bar"
+                                    StatusBarMode.STEALTH -> "Hidden"
+                                }
+                            },
+                            onSelect = { viewModel.setStatusBarMode(it) }
                         )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        SettingSelectorRow(
+                            title = "App icon style",
+                            subtitle = "Standard app icons, grayscale monochrome, or text only",
+                            options = listOf(
+                                AppIconMode.REAL,
+                                AppIconMode.MONOCHROME,
+                                AppIconMode.TEXT_ONLY
+                            ),
+                            selected = appIconMode,
+                            labelFormatter = { mode ->
+                                when (mode) {
+                                    AppIconMode.REAL -> "Real Icons"
+                                    AppIconMode.MONOCHROME -> "Monochrome"
+                                    AppIconMode.TEXT_ONLY -> "Text Only"
+                                }
+                            },
+                            onSelect = { viewModel.setAppIconMode(it) }
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        SettingSelectorRow(
+                            title = "Swipe down on Home",
+                            subtitle = "Choose Notification Shade (standard launcher) or Scratchpad",
+                            options = listOf(
+                                SwipeDownAction.NOTIFICATION_SHADE,
+                                SwipeDownAction.SCRATCHPAD
+                            ),
+                            selected = swipeDownAction,
+                            labelFormatter = { action ->
+                                when (action) {
+                                    SwipeDownAction.NOTIFICATION_SHADE -> "Notifications"
+                                    SwipeDownAction.SCRATCHPAD -> "Scratchpad"
+                                }
+                            },
+                            onSelect = { viewModel.setSwipeDownAction(it) }
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setAutoOpenDrawerKeyboard(!autoOpenDrawerKeyboard)
+                                }
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Auto-open keyboard in App Drawer",
+                                    style = FocusTypography.bodyMedium,
+                                    color = PureWhite
+                                )
+                                Text(
+                                    text = if (autoOpenDrawerKeyboard) {
+                                        "Keyboard pops up immediately on Swipe Up"
+                                    } else {
+                                        "Browse A–Z icons cleanly; tap Search to type"
+                                    },
+                                    style = FocusTypography.bodySmall,
+                                    color = DimGray
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Text(
+                                text = if (autoOpenDrawerKeyboard) "[ON]" else "[OFF]",
+                                style = FocusTypography.bodyMedium,
+                                color = if (autoOpenDrawerKeyboard) PureWhite else DimGray
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -630,9 +738,9 @@ private fun AppPickerDialog(
         modifier = Modifier
             .fillMaxSize()
             .background(OledBlack)
-            .statusBarsPadding()
+            .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout))
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
         // Dialog Top Bar
         Row(
