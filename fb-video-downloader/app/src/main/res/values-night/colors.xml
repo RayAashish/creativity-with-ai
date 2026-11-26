@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="oled_black">#000000</color>
+    <color name="surface_elevated">#0D0D0F</color>
+    <color name="surface_card">#141417</color>
+    <color name="surface_card_pressed">#1C1C21</color>
+    <color name="stroke_subtle">#222226</color>
+    <color name="drag_handle">#3A3A3F</color>
+
+    <color name="text_primary">#F4F4F6</color>
+    <color name="text_secondary">#8E8E93</color>
+    <color name="text_tertiary">#636368</color>
+
+    <color name="accent_emerald">#10B981</color>
+    <color name="accent_emerald_pressed">#059669</color>
+    <color name="accent_emerald_muted">#2E10B981</color>
+    <color name="accent_surface_tint">#1410B981</color>
+    <color name="on_accent_dark">#041A12</color>
+
+    <color name="status_error">#EF4444</color>
+    <color name="status_error_surface">#1AEF4444</color>
+    <color name="status_warning">#D97706</color>
+    <color name="progress_track">#222226</color>
+
+    <color name="transparent">#00000000</color>
+    <color name="scrim_dark">#99000000</color>
+</resources>

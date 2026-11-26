@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compact phones (< 360dp, e.g. 5-inch devices) -->
+    <dimen name="page_horizontal_padding">12dp</dimen>
+    <dimen name="input_horizontal_padding">10dp</dimen>
+    <dimen name="queue_thumb_size">52dp</dimen>
+    <dimen name="share_thumb_size">72dp</dimen>
+    <dimen name="empty_padding">20dp</dimen>
+    <dimen name="sheet_horizontal_padding">16dp</dimen>
+    <dimen name="sheet_max_width">520dp</dimen>
+    <dimen name="content_max_width">760dp</dimen>
+</resources>

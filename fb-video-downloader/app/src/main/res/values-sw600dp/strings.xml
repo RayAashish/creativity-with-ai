@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auto_download_toggle">Instant Auto-Download</string>
+    <string name="hint_paste_url">Paste link from Facebook, Instagram, X, Reddit, or any public site…</string>
+</resources>

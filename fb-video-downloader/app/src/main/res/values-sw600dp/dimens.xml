@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Foldables & mid-size tablets (600dp - 839dp) -->
+    <dimen name="page_horizontal_padding">24dp</dimen>
+    <dimen name="input_horizontal_padding">16dp</dimen>
+    <dimen name="queue_thumb_size">64dp</dimen>
+    <dimen name="share_thumb_size">92dp</dimen>
+    <dimen name="empty_padding">40dp</dimen>
+    <dimen name="sheet_horizontal_padding">24dp</dimen>
+</resources>

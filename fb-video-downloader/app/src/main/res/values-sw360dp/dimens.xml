@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Standard phones (360dp - 599dp) -->
+    <dimen name="page_horizontal_padding">16dp</dimen>
+    <dimen name="input_horizontal_padding">14dp</dimen>
+    <dimen name="queue_thumb_size">60dp</dimen>
+    <dimen name="share_thumb_size">84dp</dimen>
+    <dimen name="empty_padding">32dp</dimen>
+    <dimen name="sheet_horizontal_padding">20dp</dimen>
+</resources>

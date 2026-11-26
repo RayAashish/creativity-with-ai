@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Anchor</string>
+    <string name="tab_queue">Queue</string>
+    <string name="tab_library">Library</string>
+
+    <string name="hint_paste_url">Paste media link…</string>
+    <string name="action_paste_fetch">Paste</string>
+    <string name="action_fetch">Fetch</string>
+    <string name="action_clear">Clear URL</string>
+    <string name="action_download">Download</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_resume">Resume</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_share">Share</string>
+    <string name="action_open_post">Open Original Post</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_dismiss">Dismiss</string>
+
+    <string name="clipboard_banner_title">Link Detected — Download</string>
+    <string name="clipboard_banner_action">Fetch</string>
+
+    <string name="share_resolving_link">Resolving public media…</string>
+    <string name="share_select_quality">Format &amp; Quality</string>
+    <string name="share_auto_download">Instant Auto-Download (Best Quality)</string>
+    <string name="share_auto_download_started">Anchoring best quality in background…</string>
+    <string name="share_duplicate_warning">Already saved or queued from this link</string>
+
+    <string name="queue_empty_title">No active transfers</string>
+    <string name="queue_empty_subtitle">Share any public link to Anchor or paste a URL above.</string>
+    <string name="library_empty_title">Library is empty</string>
+    <string name="library_empty_subtitle">Completed videos and images are stored directly in your gallery.</string>
+
+    <string name="filter_all">All</string>
+    <string name="filter_facebook">Facebook</string>
+    <string name="filter_instagram">Instagram</string>
+    <string name="filter_x">X</string>
+    <string name="filter_reddit">Reddit</string>
+    <string name="filter_other">Other</string>
+
+    <string name="status_queued">Queued</string>
+    <string name="status_downloading">Downloading</string>
+    <string name="status_paused">Paused</string>
+    <string name="status_completed">Saved</string>
+    <string name="status_failed">Failed</string>
+
+    <string name="notif_channel_name">Media Downloads</string>
+    <string name="notif_channel_desc">Background progress and completion notifications for Anchor</string>
+    <string name="notif_downloading_title">Downloading %1$d item(s)</string>
+    <string name="notif_action_pause_all">Pause All</string>
+    <string name="notif_action_cancel_all">Cancel All</string>
+
+    <string name="dialog_delete_title">Delete saved media?</string>
+    <string name="dialog_delete_message">This removes the file from your device storage and Anchor library.</string>
+
+    <string name="auto_download_toggle">Auto-save</string>
+</resources>

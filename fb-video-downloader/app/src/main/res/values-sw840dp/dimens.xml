@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Large tablets up to 14.2-inch+ (840dp+) -->
+    <dimen name="page_horizontal_padding">32dp</dimen>
+    <dimen name="input_horizontal_padding">18dp</dimen>
+    <dimen name="queue_thumb_size">68dp</dimen>
+    <dimen name="share_thumb_size">96dp</dimen>
+    <dimen name="empty_padding">48dp</dimen>
+    <dimen name="sheet_horizontal_padding">24dp</dimen>
+</resources>
