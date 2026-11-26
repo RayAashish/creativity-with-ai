@@ -13,9 +13,9 @@
 
 <div align="center">
 
-[![Download APK](https://img.shields.io/badge/Download%20APK-VectorForge%20v4.0-00E5FF?style=for-the-badge&logo=android&logoColor=black&labelColor=00E5FF)](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.26/app-debug.apk)
+[![Download APK](https://img.shields.io/badge/Download%20APK-VectorForge%20v4.0-00E5FF?style=for-the-badge&logo=android&logoColor=black&labelColor=00E5FF)](https://github.com/RayAashish/creativity-with-ai/releases/download/vectorforge-v4.0/vectorforge-v4.0.apk)
 
-**[📥 Direct Download: VectorForge Release v4.0 (app-debug.apk)](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.26/app-debug.apk)**
+**[📥 Direct Download: VectorForge Release v4.0 (vectorforge-v4.0.apk)](https://github.com/RayAashish/creativity-with-ai/releases/download/vectorforge-v4.0/vectorforge-v4.0.apk)**
 
 *Autonomous, Zero-Telemetry, Native Rust Neural-Gradient Mosaic + Jetpack Compose High-Fidelity SVG Engine.*
 
@@ -231,8 +231,8 @@ VectorForge adheres to the highest security and data privacy standards:
 
 Ready-to-install APKs are available directly from the official GitHub Releases page:
 
-- **Latest Release:** [VectorForge v4.0 (`v2026.11.26`)](https://github.com/RayAashish/creativity-with-ai/releases/tag/v2026.11.26)
-- **Direct APK Asset:** [app-debug.apk](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.26/app-debug.apk)
+- **Latest Release:** [VectorForge v4.0 (`vectorforge-v4.0`)](https://github.com/RayAashish/creativity-with-ai/releases/tag/vectorforge-v4.0)
+- **Direct APK Asset:** [vectorforge-v4.0.apk](https://github.com/RayAashish/creativity-with-ai/releases/download/vectorforge-v4.0/vectorforge-v4.0.apk)
 
 ---
 
