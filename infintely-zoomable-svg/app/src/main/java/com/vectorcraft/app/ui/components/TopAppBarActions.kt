@@ -1,38 +1,37 @@
 package com.vectorcraft.app.ui.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Collections
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.ViewCarousel
-import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.rounded.AddPhotoAlternate
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Polyline
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,250 +40,287 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.vectorcraft.app.ui.theme.AccentAmber
 import com.vectorcraft.app.ui.theme.AccentCyan
-import com.vectorcraft.app.ui.theme.AccentGold
-import com.vectorcraft.app.ui.theme.DarkBackdrop
-import com.vectorcraft.app.ui.theme.GlassBorderSubtle
-import com.vectorcraft.app.ui.theme.GlassFrostedLow
+import com.vectorcraft.app.ui.theme.AccentCyanMuted
+import com.vectorcraft.app.ui.theme.GlassBorder
+import com.vectorcraft.app.ui.theme.ObsidianBg
+import com.vectorcraft.app.ui.theme.ObsidianCard
+import com.vectorcraft.app.ui.theme.ObsidianElevated
+import com.vectorcraft.app.ui.theme.ObsidianSurface
+import com.vectorcraft.app.ui.theme.TextPrimary
+import com.vectorcraft.app.ui.theme.TextSecondary
 import com.vectorcraft.app.util.SamplePreset
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VectorForgeTopBar(
-    viewMode: ViewMode,
-    onViewModeChange: (ViewMode) -> Unit,
-    onPickImage: () -> Unit,
-    onSelectSample: (SamplePreset) -> Unit,
-    onSaveToDownloads: () -> Unit,
+    hasSvg: Boolean,
+    isWireframe: Boolean,
+    backgroundStyle: BackgroundStyle,
+    onImportImage: () -> Unit,
+    onExportSvg: () -> Unit,
     onShareSvg: () -> Unit,
-    onToggleControls: () -> Unit,
-    isControlsOpen: Boolean,
-    onToggleStudio: () -> Unit,
-    isStudioOpen: Boolean,
-    onToggleManual: () -> Unit
+    onLoadSample: (SamplePreset) -> Unit,
+    onToggleWireframe: () -> Unit,
+    onBackgroundStyleChange: (BackgroundStyle) -> Unit,
+    onOpenManual: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    var showMenu by remember { mutableStateOf(false) }
+    var menuExpanded by remember { mutableStateOf(false) }
 
-    TopAppBar(
-        title = {
+    Surface(
+        color = ObsidianSurface,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column {
             Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(end = 4.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // High-precision glowing VectorForge emblem
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(9.dp))
-                        .background(
-                            Brush.linearGradient(
-                                listOf(
-                                    Color(0xFF0F172A),
-                                    Color(0xFF1E293B)
-                                )
-                            )
-                        )
-                        .border(
-                            1.2.dp,
-                            Brush.linearGradient(listOf(AccentCyan, AccentGold)),
-                            RoundedCornerShape(9.dp)
-                        ),
-                    contentAlignment = Alignment.Center
+                // Brand Mark + Wordmark (never wraps!)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
                 ) {
-                    // Stylized glowing Forge Diamond Vector Anchor
-                    Text(
-                        text = "❖",
-                        color = AccentCyan,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(9.dp))
-
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    VectorForgeBrandMark(modifier = Modifier.size(32.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
                         Text(
                             text = "VectorForge",
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color.White,
                             fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(AccentCyan.copy(alpha = 0.15f))
-                                .border(0.5.dp, AccentCyan.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
-                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                        Text(
+                            text = "RUST GRADIENT MOSAIC",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.8.sp,
+                            color = AccentCyan,
+                            maxLines = 1
+                        )
+                    }
+                }
+
+                // Primary Actions
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    // Open Photo Pill
+                    Surface(
+                        color = ObsidianElevated,
+                        shape = RoundedCornerShape(50),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorder),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .clickable(onClick = onImportImage)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
                         ) {
+                            Icon(
+                                imageVector = Icons.Rounded.AddPhotoAlternate,
+                                contentDescription = "Open Photo",
+                                tint = AccentCyan,
+                                modifier = Modifier.size(16.dp)
+                            )
                             Text(
-                                text = "PRO",
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.Black,
-                                color = AccentCyan
+                                text = "Open",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextPrimary
                             )
                         }
                     }
-                    Text(
-                        text = "HIGH-FIDELITY VECTOR CORE",
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = AccentGold,
-                        letterSpacing = 1.1.sp,
-                        maxLines = 1
-                    )
-                }
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = DarkBackdrop
-        ),
-        actions = {
-            // 1. View Mode Toggle (Split / Vector / Original)
-            IconButton(
-                onClick = {
-                    val nextMode = when (viewMode) {
-                        ViewMode.SPLIT_SLIDER -> ViewMode.VECTOR_ONLY
-                        ViewMode.VECTOR_ONLY -> ViewMode.ORIGINAL_ONLY
-                        ViewMode.ORIGINAL_ONLY -> ViewMode.SPLIT_SLIDER
+
+                    // Export SVG Pill
+                    Surface(
+                        color = if (hasSvg) AccentCyanMuted else ObsidianCard,
+                        shape = RoundedCornerShape(50),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (hasSvg) AccentCyan.copy(alpha = 0.7f) else GlassBorder
+                        ),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .clickable(enabled = hasSvg, onClick = onExportSvg)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Download,
+                                contentDescription = "Save SVG",
+                                tint = if (hasSvg) AccentCyan else TextSecondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "Save",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (hasSvg) AccentCyan else TextSecondary
+                            )
+                        }
                     }
-                    onViewModeChange(nextMode)
-                },
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    imageVector = when (viewMode) {
-                        ViewMode.SPLIT_SLIDER -> Icons.Default.ViewCarousel
-                        ViewMode.VECTOR_ONLY -> Icons.Default.Visibility
-                        ViewMode.ORIGINAL_ONLY -> Icons.Default.Image
-                    },
-                    contentDescription = "Switch View Mode",
-                    tint = AccentCyan,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
 
-            // 2. Pick Image from Gallery
-            IconButton(
-                onClick = onPickImage,
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Collections,
-                    contentDescription = "Pick Image",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+                    // Overflow Menu (Samples, Backdrop, Share, Guide)
+                    Box {
+                        IconButton(
+                            onClick = { menuExpanded = true },
+                            modifier = Modifier.size(34.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = "Studio Options",
+                                tint = TextSecondary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
 
-            // 3. Quick Download to Scoped Storage
-            IconButton(
-                onClick = onSaveToDownloads,
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Download,
-                    contentDescription = "Export SVG",
-                    tint = AccentGold,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false },
+                            modifier = Modifier.background(ObsidianCard)
+                        ) {
+                            Text(
+                                text = "SHOWCASE SCENES",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.8.sp,
+                                color = AccentCyan,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                            )
+                            SamplePreset.entries.forEach { preset ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Column {
+                                            Text(preset.title, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                            Text(preset.subtitle, color = TextSecondary, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        }
+                                    },
+                                    leadingIcon = {
+                                        Icon(Icons.Rounded.AutoAwesome, null, tint = AccentAmber, modifier = Modifier.size(18.dp))
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onLoadSample(preset)
+                                    }
+                                )
+                            }
 
-            // 4. Sliders Drawer Toggle
-            IconButton(
-                onClick = onToggleControls,
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Tune,
-                    contentDescription = "Tuning Sliders",
-                    tint = if (isControlsOpen) AccentCyan else Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+                            HorizontalDivider(color = GlassBorder)
 
-            // 5. Overflow Menu (Studio, Share, Presets, Manual)
-            Box {
-                IconButton(
-                    onClick = { showMenu = true },
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "More Options",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                            DropdownMenuItem(
+                                text = { Text("Wireframe Outlines", color = TextPrimary, fontSize = 13.sp) },
+                                leadingIcon = { Icon(Icons.Rounded.Polyline, null, tint = if (isWireframe) AccentCyan else TextSecondary) },
+                                trailingIcon = { if (isWireframe) Icon(Icons.Rounded.Check, null, tint = AccentCyan, modifier = Modifier.size(16.dp)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onToggleWireframe()
+                                }
+                            )
 
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false },
-                    modifier = Modifier.background(DarkBackdrop)
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("SVG Studio & Code", color = Color.White) },
-                        leadingIcon = { Icon(Icons.Default.Code, contentDescription = null, tint = AccentCyan) },
-                        onClick = {
-                            showMenu = false
-                            onToggleStudio()
+                            if (hasSvg) {
+                                DropdownMenuItem(
+                                    text = { Text("Share SVG File", color = TextPrimary, fontSize = 13.sp) },
+                                    leadingIcon = { Icon(Icons.Rounded.Share, null, tint = AccentCyan) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onShareSvg()
+                                    }
+                                )
+                            }
+
+                            HorizontalDivider(color = GlassBorder)
+
+                            Text(
+                                text = "CANVAS BACKDROP",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.8.sp,
+                                color = AccentCyan,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                            )
+                            BackgroundStyle.entries.forEach { bg ->
+                                DropdownMenuItem(
+                                    text = { Text(bg.displayName, color = TextPrimary, fontSize = 13.sp) },
+                                    leadingIcon = {
+                                        Icon(Icons.Rounded.Palette, null, tint = if (backgroundStyle == bg) AccentCyan else TextSecondary, modifier = Modifier.size(18.dp))
+                                    },
+                                    trailingIcon = {
+                                        if (backgroundStyle == bg) Icon(Icons.Rounded.Check, null, tint = AccentCyan, modifier = Modifier.size(16.dp))
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onBackgroundStyleChange(bg)
+                                    }
+                                )
+                            }
+
+                            HorizontalDivider(color = GlassBorder)
+
+                            DropdownMenuItem(
+                                text = { Text("Engine & Gesture Guide", color = TextPrimary, fontSize = 13.sp) },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, null, tint = AccentAmber) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onOpenManual()
+                                }
+                            )
                         }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Share SVG Export", color = Color.White) },
-                        leadingIcon = { Icon(Icons.Default.Share, contentDescription = null, tint = AccentCyan) },
-                        onClick = {
-                            showMenu = false
-                            onShareSvg()
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("👤 Preset: Portrait (High-Fidelity)", color = Color.White) },
-                        onClick = {
-                            showMenu = false
-                            onSelectSample(SamplePreset.PORTRAIT)
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("🌅 Preset: Sunset Landscape", color = Color.White) },
-                        onClick = {
-                            showMenu = false
-                            onSelectSample(SamplePreset.PHOTO)
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("📐 Preset: Geometric Logo", color = Color.White) },
-                        onClick = {
-                            showMenu = false
-                            onSelectSample(SamplePreset.LOGO)
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("👾 Preset: Pixel Art Sprite", color = Color.White) },
-                        onClick = {
-                            showMenu = false
-                            onSelectSample(SamplePreset.PIXEL_ART)
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("📖 Mastery Manual (Guide)", color = Color.White) },
-                        leadingIcon = { Icon(Icons.Default.HelpOutline, contentDescription = null, tint = AccentGold) },
-                        onClick = {
-                            showMenu = false
-                            onToggleManual()
-                        }
-                    )
+                    }
                 }
             }
+            HorizontalDivider(color = GlassBorder)
         }
-    )
+    }
+}
+
+@Composable
+fun VectorForgeBrandMark(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(9.dp))
+            .background(ObsidianBg)
+            .border(1.dp, AccentCyan.copy(alpha = 0.5f), RoundedCornerShape(9.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.size(22.dp)) {
+            val w = size.width
+            val h = size.height
+            val curve = Path().apply {
+                moveTo(w * 0.14f, h * 0.78f)
+                cubicTo(w * 0.36f, h * 0.78f, w * 0.42f, h * 0.50f, w * 0.50f, h * 0.50f)
+                cubicTo(w * 0.58f, h * 0.50f, w * 0.64f, h * 0.22f, w * 0.86f, h * 0.22f)
+            }
+            drawPath(
+                path = curve,
+                brush = Brush.linearGradient(listOf(AccentCyan, AccentAmber)),
+                style = Stroke(width = 2.6.dp.toPx(), cap = StrokeCap.Round)
+            )
+            drawCircle(color = AccentCyan, radius = 2.4.dp.toPx(), center = Offset(w * 0.16f, h * 0.76f))
+            drawCircle(color = AccentAmber, radius = 2.4.dp.toPx(), center = Offset(w * 0.84f, h * 0.24f))
+        }
+    }
 }

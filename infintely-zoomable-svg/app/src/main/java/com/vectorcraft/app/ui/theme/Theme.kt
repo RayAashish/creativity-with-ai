@@ -3,18 +3,20 @@ package com.vectorcraft.app.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 
-private val VectorForgeDarkColorScheme = darkColorScheme(
+private val VectorForgeColorScheme = darkColorScheme(
     primary = AccentCyan,
-    secondary = AccentGold,
-    tertiary = AccentPurple,
-    background = DarkBackdrop,
-    surface = DarkSurfaceElevated,
-    onPrimary = Color.Black,
-    onSecondary = Color.Black,
+    onPrimary = ObsidianBg,
+    secondary = AccentAmber,
+    onSecondary = ObsidianBg,
+    tertiary = AccentIndigo,
+    background = ObsidianBg,
     onBackground = TextPrimary,
-    onSurface = TextPrimary
+    surface = ObsidianSurface,
+    onSurface = TextPrimary,
+    surfaceVariant = ObsidianCard,
+    onSurfaceVariant = TextSecondary,
+    outline = GlassBorder
 )
 
 @Composable
@@ -22,7 +24,7 @@ fun VectorForgeTheme(
     content: @Composable () -> Unit
 ) {
     MaterialTheme(
-        colorScheme = VectorForgeDarkColorScheme,
+        colorScheme = VectorForgeColorScheme,
         content = content
     )
 }
@@ -30,4 +32,6 @@ fun VectorForgeTheme(
 @Composable
 fun CurvifyTheme(
     content: @Composable () -> Unit
-) = VectorForgeTheme(content)
+) {
+    VectorForgeTheme(content = content)
+}

@@ -1,184 +1,132 @@
 package com.vectorcraft.app.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.rounded.AutoFixHigh
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Gesture
+import androidx.compose.material.icons.rounded.Speed
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.vectorcraft.app.ui.theme.AccentAmber
 import com.vectorcraft.app.ui.theme.AccentCyan
-import com.vectorcraft.app.ui.theme.AccentGold
+import com.vectorcraft.app.ui.theme.AccentEmerald
+import com.vectorcraft.app.ui.theme.AccentIndigo
 import com.vectorcraft.app.ui.theme.GlassBorder
+import com.vectorcraft.app.ui.theme.ObsidianCard
+import com.vectorcraft.app.ui.theme.ObsidianSurface
+import com.vectorcraft.app.ui.theme.TextPrimary
+import com.vectorcraft.app.ui.theme.TextSecondary
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MasteryManualSheet(
-    onClose: () -> Unit,
-    modifier: Modifier = Modifier
+    onDismiss: () -> Unit
 ) {
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .border(1.dp, GlassBorder, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        color = Color(0xF20A0D14),
-        shadowElevation = 24.dp
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = ObsidianSurface,
+        contentColor = TextPrimary
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.MenuBook,
-                        contentDescription = null,
-                        tint = AccentCyan,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "MASTERY MANUAL",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        letterSpacing = 1.sp
-                    )
-                }
+            Text(
+                text = "VectorForge v4 Studio Guide",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
+            )
+            Text(
+                text = "100% offline Rust engine compiled directly for ARM64 & x86_64 devices.",
+                fontSize = 12.sp,
+                color = TextSecondary
+            )
 
-                IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Close",
-                        tint = Color.LightGray
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                ManualSection(
-                    title = "VECTOR GEOMETRY PRESETS",
-                    accent = AccentCyan,
-                    items = listOf(
-                        "Spline (Smooth)" to "Fits least-squares cubic Bézier splines through detected edge contours. Best for illustrations, photos, organic shapes, and portraits.",
-                        "Polygon (RDP)" to "Approximates contours using straight Douglas–Peucker line segments. Ideal for sharp architectural diagrams, logos, and geometric artwork.",
-                        "Pixel Art" to "Preserves exact orthogonal pixel lattices with zero smoothing or anti-aliasing. Crucial for retro video game sprites, pixel fonts, and 8-bit icons."
-                    )
-                )
-
-                ManualSection(
-                    title = "ARTIFACT SUPPRESSION (LOW-RES / JPEG NOISE)",
-                    accent = AccentGold,
-                    items = listOf(
-                        "Bilateral Filter" to "A dual-domain Gaussian filter that smooths flat regions while preserving high-contrast edge boundaries. Highly effective at erasing JPEG 8x8 block ringing and mosquito noise without dulling vector paths.",
-                        "Median Blur" to "Replaces each pixel with the statistical median of its 3x3 neighborhood. Strips isolated salt-and-pepper sensor specks and isolated noisy pixels prior to tracing."
-                    )
-                )
-
-                ManualSection(
-                    title = "PERCEPTUAL COLOR QUANTIZATION (OKLab)",
-                    accent = AccentCyan,
-                    items = listOf(
-                        "OKLab Color Space" to "Standard RGB distance does not match the human eye. VectorForge clusters colors in OKLab perceptual color space, ensuring subtle gradients and skin tones do not suffer harsh banding when reducing to 2–64 colors.",
-                        "Palette Optimization" to "Limiting palette size dramatically reduces SVG path counts and file sizes while retaining rich visual impact."
-                    )
-                )
-
-                ManualSection(
-                    title = "PATH SIMPLIFICATION (RDP TOLERANCE)",
-                    accent = AccentGold,
-                    items = listOf(
-                        "RDP Threshold (0.2 – 8.0 px)" to "Controls the maximum allowable distance between the simplified vector curve and original raster pixels. Higher values yield leaner, smaller SVGs; lower values capture intricate microscopic detail."
-                    )
-                )
-
-                ManualSection(
-                    title = "SPECKLE SUPPRESSION",
-                    accent = AccentCyan,
-                    items = listOf(
-                        "Area Cutoff (0 – 20 px)" to "Discards isolated stray regions smaller than the threshold. Eliminates camera sensor dust and compression artifacts from contaminating the output document."
-                    )
-                )
-            }
+            GuideCard(
+                icon = Icons.Rounded.AutoFixHigh,
+                accent = AccentCyan,
+                title = "Neural-Gradient Mosaic (Photo HD)",
+                body = "Instead of posterizing photos into coarse muddy bands, VectorForge builds a luminance-weighted perceptual watershed graph, extracts watertight topological boundaries across all CPU cores, fits tight cubic Béziers, and solves clamped 2D linear gradients per region."
+            )
+            GuideCard(
+                icon = Icons.Rounded.Gesture,
+                accent = AccentAmber,
+                title = "50× Focal Zoom & Split Inspection",
+                body = "• Drag the center split handle left/right to compare Original pixels against Vector geometry.\n• Two-finger pinch zooms centered cleanly beneath your fingers up to 50× with live Skia curve tessellation.\n• Double-tap any feature to inspect at 4×, or double-tap again to fit screen."
+            )
+            GuideCard(
+                icon = Icons.Rounded.Speed,
+                accent = AccentEmerald,
+                title = "Engine Presets",
+                body = "• Photo HD: Cubic Béziers + Clamped Linear Gradients (best for portraits & photography).\n• Flat Vector: Solid-fill watertight Béziers (great for illustrations & editorial art).\n• Polygon: Sharp Douglas–Peucker faceted planes (logos & geometric graphics).\n• Pixel Art: Unsmoothed pixel-lattice boundaries for sprites."
+            )
+            GuideCard(
+                icon = Icons.Rounded.Download,
+                accent = AccentIndigo,
+                title = "Direct Scoped Storage SVG Export",
+                body = "Tap Save to write standard W3C SVG 1.1 files directly into Downloads/VectorForge/ ready for Figma, Illustrator, Affinity, Inkscape, or web browsers."
+            )
         }
     }
 }
 
 @Composable
-fun ManualSection(
-    title: String,
+private fun GuideCard(
+    icon: ImageVector,
     accent: Color,
-    items: List<Pair<String, String>>
+    title: String,
+    body: String
 ) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
-        color = Color(0x22101624)
+        color = ObsidianCard,
+        shape = RoundedCornerShape(14.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorder)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = title,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = accent,
-                letterSpacing = 1.sp
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-
-            items.forEach { (heading, body) ->
-                Text(
-                    text = "• $heading",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = body,
-                    fontSize = 11.sp,
-                    color = Color(0xFFCBD5E1),
-                    lineHeight = 16.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(18.dp))
+                Text(title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = accent)
             }
+            Text(body, fontSize = 12.sp, color = TextSecondary, lineHeight = 17.sp)
         }
     }
 }

@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import com.vectorcraft.app.engine.FilterMode
 import com.vectorcraft.app.engine.FitMode
 import com.vectorcraft.app.engine.NativeBridge
+import com.vectorcraft.app.engine.StudioPreset
 import com.vectorcraft.app.engine.VectorizationConfig
 import com.vectorcraft.app.ui.components.BackgroundStyle
 import com.vectorcraft.app.ui.components.ViewMode
@@ -31,13 +32,14 @@ import kotlinx.coroutines.withContext
 data class VectorStats(
     val durationMs: Long = 0L,
     val pathCount: Int = 0,
+    val gradientCount: Int = 0,
     val svgSizeBytes: Int = 0,
     val viewBoxWidth: Int = 0,
     val viewBoxHeight: Int = 0,
     val nodeCount: Int = 0
 )
 
-data class CurvifyState(
+data class VectorForgeState(
     val bitmap: Bitmap? = null,
     val svgContent: String? = null,
     val isProcessing: Boolean = false,
@@ -54,36 +56,47 @@ data class CurvifyState(
 )
 
 class VectorViewModel : ViewModel() {
-    private val _state = MutableStateFlow(CurvifyState())
-    val state: StateFlow<CurvifyState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(VectorForgeState())
+    val state: StateFlow<VectorForgeState> = _state.asStateFlow()
 
     private var vectorizationJob: Job? = null
     private var debounceJob: Job? = null
 
     init {
-        loadSample(SamplePreset.PORTRAIT)
+        loadSample(SamplePreset.STUDIO_HORIZON)
     }
 
     fun loadSample(preset: SamplePreset) {
         val bitmap = SampleImages.generateSample(preset)
         val suggestedConfig = when (preset) {
-            SamplePreset.PORTRAIT, SamplePreset.PHOTO -> _state.value.config.copy(
+            SamplePreset.STUDIO_HORIZON, SamplePreset.MOON -> VectorizationConfig(
                 fitMode = FitMode.SPLINE,
-                filterMode = FilterMode.NONE, // Off by default to preserve crisp details & optical sharpness
-                colorQuantizeK = 0, // Full Color high fidelity by default
-                simplifyTolerance = 0.0f, // 0.0 = Precision mode (sharpest least-squares curves without flattening)
-                filterSpeckle = 0 // 0 = Never discard thin contours (eyelashes, mustache, hair curls)
-            )
-            SamplePreset.PIXEL_ART -> _state.value.config.copy(
-                fitMode = FitMode.PIXEL_ART,
+                gradientShading = true,
+                detailLevel = 0.85f,
+                sharpenAmount = 0.22f,
                 filterMode = FilterMode.NONE,
+                colorQuantizeK = 0,
                 simplifyTolerance = 0.0f,
                 filterSpeckle = 0
             )
-            SamplePreset.LOGO -> _state.value.config.copy(
+            SamplePreset.LOGO -> VectorizationConfig(
                 fitMode = FitMode.POLYGON,
+                gradientShading = false,
+                detailLevel = 0.78f,
+                sharpenAmount = 0.20f,
                 filterMode = FilterMode.NONE,
-                simplifyTolerance = 1.0f,
+                colorQuantizeK = 0,
+                simplifyTolerance = 0.8f,
+                filterSpeckle = 1
+            )
+            SamplePreset.PIXEL_ART -> VectorizationConfig(
+                fitMode = FitMode.PIXEL_ART,
+                gradientShading = false,
+                detailLevel = 0.80f,
+                sharpenAmount = 0.0f,
+                filterMode = FilterMode.NONE,
+                colorQuantizeK = 0,
+                simplifyTolerance = 0.0f,
                 filterSpeckle = 0
             )
         }
@@ -112,11 +125,12 @@ class VectorViewModel : ViewModel() {
                     }
                 }
 
-                // Downscale large camera photos to safe bounds (max 720px) for sub-second on-device vectorization
-                val maxDim = 720
-                val scaled = withContext(Dispatchers.Default) {
-                    if (loadedBitmap.width > maxDim || loadedBitmap.height > maxDim) {
-                        val scaleFactor = maxDim.toFloat() / maxOf(loadedBitmap.width, loadedBitmap.height)
+                // Keep display bitmap crystal-sharp up to 2048px so Original raster comparisons
+                // stay crisp at zoom; NativeBridge independently traces at up to 1080px for speed.
+                val maxDisplayDim = 2048
+                val displayBitmap = withContext(Dispatchers.Default) {
+                    if (loadedBitmap.width > maxDisplayDim || loadedBitmap.height > maxDisplayDim) {
+                        val scaleFactor = maxDisplayDim.toFloat() / maxOf(loadedBitmap.width, loadedBitmap.height)
                         Bitmap.createScaledBitmap(
                             loadedBitmap,
                             (loadedBitmap.width * scaleFactor).toInt().coerceAtLeast(1),
@@ -128,9 +142,11 @@ class VectorViewModel : ViewModel() {
                     }
                 }
 
-                // Ensure photographic high-fidelity defaults for gallery/camera imports
-                val photoConfig = _state.value.config.copy(
+                val photoConfig = VectorizationConfig(
                     fitMode = FitMode.SPLINE,
+                    gradientShading = true,
+                    detailLevel = 0.85f,
+                    sharpenAmount = 0.24f,
                     filterMode = FilterMode.NONE,
                     colorQuantizeK = 0,
                     simplifyTolerance = 0.0f,
@@ -138,19 +154,60 @@ class VectorViewModel : ViewModel() {
                 )
 
                 _state.value = _state.value.copy(
-                    bitmap = scaled,
+                    bitmap = displayBitmap,
                     config = photoConfig,
                     error = null
                 )
                 triggerVectorization(immediate = true)
             } catch (e: Exception) {
-                Log.e("CurvifyViewModel", "Failed to load image from URI", e)
+                Log.e("VectorForgeVM", "Failed to load image from URI", e)
                 _state.value = _state.value.copy(
                     isProcessing = false,
                     error = "Failed to load image: ${e.message}"
                 )
             }
         }
+    }
+
+    fun applyStudioPreset(preset: StudioPreset) {
+        val next = when (preset) {
+            StudioPreset.PHOTO_HD -> _state.value.config.copy(
+                fitMode = FitMode.SPLINE,
+                gradientShading = true,
+                detailLevel = 0.85f,
+                sharpenAmount = 0.24f,
+                colorQuantizeK = 0,
+                simplifyTolerance = 0.0f,
+                filterSpeckle = 0
+            )
+            StudioPreset.FLAT_VECTOR -> _state.value.config.copy(
+                fitMode = FitMode.SPLINE,
+                gradientShading = false,
+                detailLevel = 0.72f,
+                sharpenAmount = 0.20f,
+                colorQuantizeK = 0,
+                simplifyTolerance = 0.4f,
+                filterSpeckle = 2
+            )
+            StudioPreset.POLYGON -> _state.value.config.copy(
+                fitMode = FitMode.POLYGON,
+                gradientShading = false,
+                detailLevel = 0.70f,
+                sharpenAmount = 0.20f,
+                simplifyTolerance = 1.2f,
+                filterSpeckle = 2
+            )
+            StudioPreset.PIXEL_ART -> _state.value.config.copy(
+                fitMode = FitMode.PIXEL_ART,
+                gradientShading = false,
+                sharpenAmount = 0.0f,
+                filterMode = FilterMode.NONE,
+                colorQuantizeK = 0,
+                simplifyTolerance = 0.0f,
+                filterSpeckle = 0
+            )
+        }
+        updateConfig(next, immediate = true)
     }
 
     fun updateConfig(newConfig: VectorizationConfig, immediate: Boolean = false) {
@@ -190,6 +247,14 @@ class VectorViewModel : ViewModel() {
         )
     }
 
+    fun dismissSheets() {
+        _state.value = _state.value.copy(
+            isControlsOpen = false,
+            isStudioOpen = false,
+            isManualOpen = false
+        )
+    }
+
     fun toggleWireframe() {
         _state.value = _state.value.copy(isWireframe = !_state.value.isWireframe)
     }
@@ -202,18 +267,16 @@ class VectorViewModel : ViewModel() {
         val currentBitmap = _state.value.bitmap ?: return
         val currentConfig = _state.value.config
 
-        // Cancel pending debounce or active vectorization job
         debounceJob?.cancel()
         vectorizationJob?.cancel()
 
         debounceJob = viewModelScope.launch {
             if (!immediate) {
-                // Debounce rapid slider updates by 200ms so we never bottleneck the CPU
-                delay(200)
+                delay(180)
             }
 
             vectorizationJob = launch(Dispatchers.Default) {
-                Log.i("VectorForgeVM", "Starting vectorization for ${currentBitmap.width}x${currentBitmap.height}, fitMode=${currentConfig.fitMode}")
+                Log.i("VectorForgeVM", "Tracing ${currentBitmap.width}x${currentBitmap.height}, preset=${currentConfig.activePreset}")
                 _state.value = _state.value.copy(isProcessing = true, error = null)
 
                 val startTime = System.currentTimeMillis()
@@ -223,19 +286,15 @@ class VectorViewModel : ViewModel() {
                     ensureActive()
 
                     val elapsed = System.currentTimeMillis() - startTime
-                    Log.i("VectorForgeVM", "Vectorization returned in ${elapsed}ms, result len=${result.length}")
                     if (result.isNotEmpty() && isActive) {
-                        var pathMatches = 0
-                        var searchIdx = 0
-                        while (true) {
-                            searchIdx = result.indexOf("<path", searchIdx)
-                            if (searchIdx == -1) break
-                            pathMatches++
-                            searchIdx += 5
-                        }
+                        val pathMatches = countTagOccurrences(result, "<path")
+                        val gradientMatches = countTagOccurrences(result, "<linearGradient")
                         val sizeBytes = result.length
-                        val nodeEstimate = pathMatches * 4
-                        Log.i("VectorForgeVM", "Vectorization SUCCESS: $pathMatches paths, size approx ${sizeBytes}B")
+                        val nodeEstimate = countSvgNodes(result)
+                        Log.i(
+                            "VectorForgeVM",
+                            "VectorForge SUCCESS in ${elapsed}ms: $pathMatches paths, $gradientMatches gradients, ${sizeBytes / 1024}KB"
+                        )
 
                         _state.value = _state.value.copy(
                             svgContent = result,
@@ -243,6 +302,7 @@ class VectorViewModel : ViewModel() {
                             stats = VectorStats(
                                 durationMs = elapsed,
                                 pathCount = pathMatches,
+                                gradientCount = gradientMatches,
                                 svgSizeBytes = sizeBytes,
                                 viewBoxWidth = currentBitmap.width,
                                 viewBoxHeight = currentBitmap.height,
@@ -250,7 +310,6 @@ class VectorViewModel : ViewModel() {
                             )
                         )
                     } else if (isActive) {
-                        Log.w("VectorForgeVM", "Vectorization result was empty!")
                         _state.value = _state.value.copy(
                             isProcessing = false,
                             error = "Vectorization produced empty output."
@@ -269,11 +328,29 @@ class VectorViewModel : ViewModel() {
         }
     }
 
-    private fun countSvgNodes(svg: String): Int {
-        // Approximate count of Bézier curve commands: C, S, Q, T, L, M, Z
+    private fun countTagOccurrences(text: String, tag: String): Int {
         var count = 0
-        for (ch in svg) {
-            if (ch in "cCsSqQtTlLmMzZ") count++
+        var searchIdx = 0
+        while (true) {
+            searchIdx = text.indexOf(tag, searchIdx)
+            if (searchIdx == -1) break
+            count++
+            searchIdx += tag.length
+        }
+        return count
+    }
+
+    private fun countSvgNodes(svg: String): Int {
+        var count = 0
+        val sampleLimit = minOf(svg.length, 400_000)
+        for (i in 0 until sampleLimit) {
+            val ch = svg[i]
+            if (ch == 'c' || ch == 'C' || ch == 'l' || ch == 'L' || ch == 'q' || ch == 'm' || ch == 'M') {
+                count++
+            }
+        }
+        if (svg.length > sampleLimit) {
+            count = (count.toLong() * svg.length / sampleLimit).toInt()
         }
         return count.coerceAtLeast(1)
     }

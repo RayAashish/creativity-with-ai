@@ -1,29 +1,36 @@
 //! VectorForge vectorization orchestration combining pre-filters, L-weighted OKLab color quantization,
-//! and vtracer's Spline / Polygon / Pixel Art tracing with stacked hierarchical layering.
+//! and the high-precision Neural-Gradient Mosaic / Polygon / Pixel Art engines.
 
 use visioncortex::ColorImage;
 use vtracer::{Clustering, Config, FitMode, Hierarchical};
 
 use crate::filter::{bilateral_filter, median_filter_3x3};
+use crate::mosaic_engine::vectorize_gradient_mosaic_svg;
 use crate::quantize::quantize_oklab;
 
 #[derive(Debug, Clone)]
 pub struct VectorForgeOptions {
-    /// 0 = Spline (curves), 1 = Polygon (RDP straight lines), 2 = PixelArt (crisp pixel lattice)
+    /// 0 = Spline (Photo HD / Smooth curves), 1 = Polygon (RDP straight lines), 2 = PixelArt (crisp pixel lattice)
     pub fit_mode: i32,
+    /// Enable per-region clamped 2D linear color gradients (rich photographic shading)
+    pub gradient_shading: bool,
+    /// Micro-detail fidelity from 0.05 (coarse minimalist shapes) to 1.0 (maximum photographic precision)
+    pub detail_level: f32,
+    /// Optical edge unsharp mask before tracing (0.0 to 1.0)
+    pub sharpen_amount: f32,
     /// 0 = None, 1 = Bilateral, 2 = Median
     pub filter_mode: i32,
     /// Strength multiplier for filters (e.g. 1.0 to 5.0)
     pub filter_strength: f32,
     /// Target color count (2 to 64), or 0 to disable explicit quantization (full color)
     pub color_quantize_k: i32,
-    /// Curve simplification tolerance in pixels (0.0 to disable Schneider pass and keep sharpest edges)
+    /// Curve simplification tolerance in pixels (0.0 for tightest fidelity)
     pub simplify_tolerance: f64,
-    /// Speckle filter size (0 = preserve all thin features like eyelashes, hair strands and text)
+    /// Speckle filter size (0 = preserve finest 2px+ features like eye catchlights & hair strands)
     pub filter_speckle: usize,
-    /// Corner threshold in degrees (e.g. 60)
+    /// Corner threshold in degrees (e.g. 130 for mosaic spline junctions)
     pub corner_threshold: i32,
-    /// Path precision decimal places (e.g. 2)
+    /// Path precision decimal places (e.g. 1 or 2)
     pub path_precision: u32,
 }
 
@@ -31,12 +38,15 @@ impl Default for VectorForgeOptions {
     fn default() -> Self {
         Self {
             fit_mode: 0,
+            gradient_shading: true,
+            detail_level: 0.80,
+            sharpen_amount: 0.38,
             filter_mode: 0, // Off by default: preserves raw optical sharpness
             filter_strength: 1.0,
             color_quantize_k: 0, // 0 = Full Color high fidelity by default
-            simplify_tolerance: 0.0, // 0.0 = Off: preserves exact least-squares Bézier contours without flattening
-            filter_speckle: 0, // 0 = Never discard thin contours (eyebrows, mustache, hair curls, sharp lines)
-            corner_threshold: 60,
+            simplify_tolerance: 0.0,
+            filter_speckle: 0,
+            corner_threshold: 62,
             path_precision: 2,
         }
     }
@@ -57,9 +67,8 @@ pub fn vectorize_to_svg(
         ));
     }
 
-    // Step 1: Pre-filtering (only applied when explicitly chosen by user)
+    // Step 1: Pre-filtering (only applied when explicitly chosen by user; never on Pixel Art)
     let processed_pixels = if opts.fit_mode == 2 {
-        // Pixel Art mode preserves exact raw pixel boundaries
         raw_rgba.to_vec()
     } else {
         match opts.filter_mode {
@@ -73,8 +82,9 @@ pub fn vectorize_to_svg(
         }
     };
 
-    // Step 2: Perceptual Color Quantization (only when user specifies a target palette k in 2..=64)
-    let quantized_pixels = if opts.color_quantize_k >= 2 && opts.color_quantize_k <= 64 {
+    // Step 2: Perceptual OKLab Color Quantization (when user selects a 2..=64 flat palette)
+    let has_palette_quantization = opts.color_quantize_k >= 2 && opts.color_quantize_k <= 64;
+    let tracing_pixels = if has_palette_quantization {
         quantize_oklab(
             &processed_pixels,
             width,
@@ -85,76 +95,62 @@ pub fn vectorize_to_svg(
         processed_pixels
     };
 
-    // Step 3: Wrap into visioncortex ColorImage
-    let mut color_img = ColorImage::new_w_h(width, height);
-    color_img.pixels = quantized_pixels;
+    // Mode 2: Dedicated Pixel Art lattice via vtracer Cutout (preserves exact crisp square pixels + alpha)
+    if opts.fit_mode == 2 {
+        let mut color_img = ColorImage::new_w_h(width, height);
+        color_img.pixels = tracing_pixels;
 
-    // Step 4: Configure vtracer pipeline
-    let mut config = Config::default();
-    config.clustering = Clustering::ColorCluster;
+        let mut config = Config::default();
+        config.clustering = Clustering::ColorCluster;
+        config.mode = FitMode::Pixel;
+        config.hierarchical = Hierarchical::Cutout;
+        config.path_precision = Some(opts.path_precision);
+        config.color_precision = 8;
+        config.filter_speckle = 0;
+        config.simplify = None;
+        config.layer_difference = 2;
+        config.optimize = 1;
 
-    // Hierarchical::Stacked uses painter's algorithm: layers are continuous silhouettes
-    // stacked in paint order. This guarantees:
-    // 1. Zero hairline gaps or antialiasing cracks between adjacent curves.
-    // 2. Sub-second vectorization (bypasses heavy planar graph boolean operations).
-    // 3. Crisp, natural, smooth Bézier contours that preserve fine hair, eyes, and skin details.
-    config.hierarchical = Hierarchical::Stacked;
-    config.path_precision = Some(opts.path_precision);
-    config.color_precision = 8; // Preserve full 8-bit precision (0 bits lost)
-
-    match opts.fit_mode {
-        // Mode 2: Dedicated Pixel Art Mode (sharp pixel grid, no curve fitting)
-        2 => {
-            config.mode = FitMode::Pixel;
-            config.hierarchical = Hierarchical::Cutout;
-            config.filter_speckle = 0;
-            config.simplify = None;
-            config.layer_difference = 2;
-            config.optimize = 1;
-        }
-        // Mode 1: Polygon Mode (straight Douglas-Peucker edges)
-        1 => {
-            config.mode = FitMode::Polygon;
-            config.filter_speckle = opts.filter_speckle;
-            config.simplify = if opts.simplify_tolerance > 0.0 {
-                Some(opts.simplify_tolerance)
-            } else {
-                None
-            };
-            config.corner_threshold = opts.corner_threshold;
-            config.layer_difference = if opts.color_quantize_k > 0 { 16 } else { 12 };
-            config.optimize = 1;
-        }
-        // Mode 0: Spline Mode (Least-squares cubic Béziers + adaptive curves)
-        _ => {
-            config.mode = FitMode::Spline;
-            // When filter_speckle == 0, visioncortex preserves all thin features (eyelashes, mustache, hair)
-            config.filter_speckle = opts.filter_speckle;
-            config.simplify = if opts.simplify_tolerance > 0.0 {
-                Some(opts.simplify_tolerance)
-            } else {
-                None
-            };
-            config.corner_threshold = opts.corner_threshold;
-            // Layer difference of 16 balances crisp micro-detail (hair, eyes, facial features)
-            // with clean macro-regions (smooth skin, clean walls) and sub-second performance.
-            config.layer_difference = 16;
-            config.optimize = 1;
-        }
+        let pipeline = config
+            .build()
+            .map_err(|e| format!("Failed to build pixel pipeline: {:?}", e))?;
+        let raw_svg = pipeline
+            .to_svg(&color_img)
+            .map_err(|e| format!("Pixel vectorization error: {:?}", e))?;
+        return Ok(enrich_svg_header(&raw_svg, width, height));
     }
 
-    let pipeline = config
-        .build()
-        .map_err(|e| format!("Failed to build vtracer pipeline: {:?}", e))?;
+    // Mode 0 (Spline / Photo HD) & Mode 1 (Polygon RDP):
+    // Powered by the parallel Neural-Gradient Mosaic watershed + topological boundary graph.
+    let polygon_only = opts.fit_mode == 1;
+    let use_gradients = opts.gradient_shading && !has_palette_quantization;
+    let effective_sharpen = if has_palette_quantization {
+        0.0
+    } else if opts.filter_mode == 0 {
+        opts.sharpen_amount.clamp(0.0, 1.0)
+    } else {
+        // Gentle sharpening after explicit denoising avoids amplifying suppressed compression noise
+        (opts.sharpen_amount * 0.45).clamp(0.0, 0.45)
+    };
+    let min_area = 2usize.saturating_add(opts.filter_speckle.clamp(0, 64));
+    let corner_deg = opts.corner_threshold.clamp(45, 175);
 
-    let raw_svg = pipeline
-        .to_svg(&color_img)
-        .map_err(|e| format!("Vectorization error: {:?}", e))?;
+    let svg = vectorize_gradient_mosaic_svg(
+        &tracing_pixels,
+        width,
+        height,
+        effective_sharpen,
+        opts.detail_level.clamp(0.05, 1.0),
+        min_area,
+        polygon_only,
+        use_gradients,
+        corner_deg,
+        1.20,
+        1.05,
+        opts.simplify_tolerance.clamp(0.0, 8.0),
+    );
 
-    // Step 5: Post-process SVG to guarantee 100% compliant SVG root metadata
-    let enriched_svg = enrich_svg_header(&raw_svg, width, height);
-
-    Ok(enriched_svg)
+    Ok(svg)
 }
 
 /// Ensures the root <svg> element contains full metadata attributes:
@@ -194,25 +190,96 @@ mod tests {
     }
 
     #[test]
-    fn test_face_vectorization_fidelity_and_speed() {
-        let raw_path = "/tmp/user_face_raster.raw";
+    fn test_invalid_buffer_returns_error() {
+        let err = vectorize_to_svg(&[0u8; 10], 4, 4, &VectorForgeOptions::default())
+            .expect_err("should reject mismatched buffer length");
+        assert!(err.contains("Invalid buffer dimension"));
+    }
+
+    #[test]
+    fn test_all_vector_modes_produce_clean_svg() {
+        let w = 96usize;
+        let h = 96usize;
+        let mut rgba = vec![0u8; w * h * 4];
+        for y in 0..h {
+            for x in 0..w {
+                let idx = (y * w + x) * 4;
+                let dx = x as f32 - 48.0;
+                let dy = y as f32 - 48.0;
+                let r2 = dx * dx + dy * dy;
+                if r2 < 32.0 * 32.0 {
+                    // Warm shaded portrait-like sphere
+                    let nx = dx / 32.0;
+                    let ny = dy / 32.0;
+                    let light = (0.65 - 0.35 * nx - 0.35 * ny).clamp(0.15, 1.0);
+                    rgba[idx] = (230.0 * light) as u8;
+                    rgba[idx + 1] = (172.0 * light) as u8;
+                    rgba[idx + 2] = (130.0 * light) as u8;
+                } else {
+                    // Cool twilight sky backdrop
+                    rgba[idx] = (24 + (y / 4) as u8).min(255);
+                    rgba[idx + 1] = (40 + (x / 5) as u8).min(255);
+                    rgba[idx + 2] = (75 + (y / 2) as u8).min(255);
+                }
+                rgba[idx + 3] = 255;
+            }
+        }
+
+        // 1. Photo HD (Spline + Linear Gradients)
+        let hd_svg = vectorize_to_svg(&rgba, w, h, &VectorForgeOptions::default())
+            .expect("Photo HD mode should succeed");
+        assert!(hd_svg.contains("viewBox=\"0 0 96 96\""));
+        assert!(hd_svg.contains("<linearGradient"));
+        assert!(hd_svg.contains("<path"));
+
+        // 2. Crisp Flat Vector (Spline without gradients)
+        let flat_opts = VectorForgeOptions {
+            gradient_shading: false,
+            ..VectorForgeOptions::default()
+        };
+        let flat_svg = vectorize_to_svg(&rgba, w, h, &flat_opts)
+            .expect("Flat Vector mode should succeed");
+        assert!(!flat_svg.contains("<linearGradient"));
+        assert!(flat_svg.contains("<path"));
+
+        // 3. Polygon RDP
+        let poly_opts = VectorForgeOptions {
+            fit_mode: 1,
+            gradient_shading: false,
+            simplify_tolerance: 1.5,
+            ..VectorForgeOptions::default()
+        };
+        let poly_svg = vectorize_to_svg(&rgba, w, h, &poly_opts)
+            .expect("Polygon mode should succeed");
+        assert!(poly_svg.contains("<path"));
+
+        // 4. Pixel Art
+        let pixel_opts = VectorForgeOptions {
+            fit_mode: 2,
+            ..VectorForgeOptions::default()
+        };
+        let pixel_svg = vectorize_to_svg(&rgba, w, h, &pixel_opts)
+            .expect("Pixel Art mode should succeed");
+        assert!(pixel_svg.contains("xmlns=\"http://www.w3.org/2000/svg\""));
+    }
+
+    #[test]
+    fn test_selfie_mosaic_speed_and_detail() {
+        let raw_path = "/tmp/bench_selfie.raw";
         if let Ok(bytes) = std::fs::read(raw_path) {
             let opts = VectorForgeOptions::default();
             let start = std::time::Instant::now();
-            let svg = vectorize_to_svg(&bytes, 225, 760, &opts).expect("vectorization should succeed");
+            let svg = vectorize_to_svg(&bytes, 206, 685, &opts)
+                .expect("vectorization should succeed");
             let elapsed = start.elapsed();
-
-            let _ = std::fs::write("/tmp/user_face_vector.svg", &svg);
-
             let path_count = svg.matches("<path").count();
-            println!("\n=== VectorForge High Fidelity Test ===");
-            println!("Elapsed: {:?} (Target < 250ms)", elapsed);
-            println!("Paths: {} (Target 1000 - 4000)", path_count);
-            println!("Size: {:.1} KB", svg.len() as f64 / 1024.0);
-
-            assert!(elapsed.as_millis() < 500, "Vectorization should be sub-500ms");
-            assert!(path_count > 500, "Should generate rich detail paths");
-            assert!(svg.contains("xmlns=\"http://www.w3.org/2000/svg\""));
+            assert!(
+                elapsed.as_millis() < 300,
+                "Expected sub-300ms vectorization, got {:?}",
+                elapsed
+            );
+            assert!(path_count > 1000, "Expected rich mosaic paths, got {}", path_count);
+            assert!(svg.contains("<linearGradient"));
         }
     }
 }

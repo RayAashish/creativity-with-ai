@@ -13,11 +13,11 @@
 
 <div align="center">
 
-[![Download APK](https://img.shields.io/badge/Download%20APK-VectorForge%20v3.0-00E5FF?style=for-the-badge&logo=android&logoColor=black&labelColor=00E5FF)](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.25/app-debug.apk)
+[![Download APK](https://img.shields.io/badge/Download%20APK-VectorForge%20v4.0-00E5FF?style=for-the-badge&logo=android&logoColor=black&labelColor=00E5FF)](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.26/app-debug.apk)
 
-**[📥 Direct Download: VectorForge Release v3.0 (app-debug.apk)](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.25/app-debug.apk)**
+**[📥 Direct Download: VectorForge Release v4.0 (app-debug.apk)](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.26/app-debug.apk)**
 
-*Autonomous, Zero-Telemetry, Native Rust + Jetpack Compose High-Fidelity SVG Vectorization Engine.*
+*Autonomous, Zero-Telemetry, Native Rust Neural-Gradient Mosaic + Jetpack Compose High-Fidelity SVG Engine.*
 
 </div>
 
@@ -35,12 +35,12 @@ VectorForge turns high-resolution photographs, portraits, line art, and pixel gr
 
 ### Core Value Propositions
 - 🔒 **100% On-Device & Air-Gapped:** Zero cloud calls. No `android.permission.INTERNET` requested. Your photos never leave your device memory.
-- ⚡ **Sub-Second Native Processing:** Native Rust engine powered by `visioncortex` / `vtracer`, stacked painter's algorithm layering, and Rayon multithreaded path synthesis.
-- 👤 **Portrait & Micro-Detail Preservation:** Stacked continuous silhouette hierarchy with zero speckle rejection (`filter_speckle = 0`) guarantees that thin facial contours—eyelashes, mustache, beard stubble, and fine hair curls—are faithfully preserved without flattening or blur.
-- 🎨 **Adaptive OKLab Perceptual Quantization:** Luminance-weighted color clustering ($\Delta E = \sqrt{2.5 \cdot (\Delta L)^2 + (\Delta a)^2 + (\Delta b)^2}$) that prevents skin midtones and shadows from collapsing into posterized bands.
-- 🔍 **Hardware-Accelerated Infinite Zoom Viewport:** Custom dual-tier `android.graphics.Picture` DisplayList cache delivering fluid $0.5\times$ to $50.0\times$ pinch-to-zoom and pan across 5,000+ Bézier curves.
-- 🎚️ **Zero-Conflict Split Comparison Viewport:** Custom pointer arbitration layer isolating the interactive before/after divider from the zoomable canvas.
-- 💾 **Scoped Storage MediaStore Direct Download:** Exports standards-compliant `<svg>` files directly to the public `Downloads/VectorForge/` directory with zero legacy storage permissions.
+- ⚡ **Sub-Second Native Parallel Core:** Native Rust engine powered by Rayon multi-core Neural-Gradient Mosaic segmentation (`mosaic_engine.rs`) + `visioncortex`/`vtracer`, cutting mobile conversion latency from multi-second stalls down to **~300ms**.
+- 👤 **Photorealistic Clamped Gradients & Hairline Detail:** Luminance-weighted perceptual watershed segmentation (`segment_perceptual_watershed`), corner-locked sub-pixel Bézier smoothing (`[0.25, 0.50, 0.25]` relaxation + RDP simplification), and per-region clamped 2D `<linearGradient>` solvers eliminate flat posterization mud while preserving eyelashes, skin highlights, and architecture.
+- 🎨 **Flexible Engine Modes & OKLab Palette Quantization:** One-tap presets (**Photo HD**, **Flat Vector**, **Polygon**, **Pixel Art**) plus optional luminance-biased OKLab quantization (`2..64` colors) and bilateral/median artifact filtering.
+- 🔍 **Hardware-Accelerated `50.0x` Focal Zoom Viewport:** Async `Dispatchers.Default` `android.graphics.Picture` recording + Skia matrix rendering centered at your multi-touch pinch centroid (plus `4.0x` focal double-tap) and fast linear cyan wireframe inspection.
+- 🎚️ **Zero-Conflict Split Comparison Viewport:** Isolated pointer arbitration separates interactive before/after divider dragging from multi-touch pinch-zoom, while retaining sharp `2048px` display bitmaps paired with `1080px` trace precision.
+- 💾 **Scoped Storage Direct Export & Share Intents:** Writes clean W3C SVG 1.1 files directly into `Downloads/VectorForge/` via `MediaStore.Downloads` and supports incoming `ACTION_VIEW` / `ACTION_SEND` `image/*` sharing.
 
 ---
 
@@ -66,32 +66,31 @@ VectorForge turns high-resolution photographs, portraits, line art, and pixel gr
 ```mermaid
 flowchart TD
     subgraph UI ["Presentation Layer (Jetpack Compose + Material 3)"]
-        A[Bitmap Ingestion / Camera / Gallery] --> B[Dimension Guard: Downscale to <= 1920px]
+        A[Bitmap Ingestion / Photo Picker / View & Send Intents] --> B[Dual-Res Guard: 2048px Display + 1080px Trace]
         B --> C[VectorViewModel: StateFlow Dispatchers.Default]
         C --> D[Pointer Arbitration Layer]
-        D --> E[Split Viewport: Before Bitmap / After Vector]
-        D --> F[Infinite Zoom & Pan: 0.5x to 50.0x]
+        D --> E[Split Viewport: Original Raster / Vector Picture]
+        D --> F[Focal Pinch Zoom & Pan: 1.0x to 50.0x]
     end
 
     subgraph NATIVE ["Native Rust Engine (librust_engine.so via JNI)"]
-        C -->|Raw ARGB Pixel Buffer| G[NativeBridge JNI Entry Point]
-        G --> H[Artifact Suppression: Bilateral / Median / None]
-        H --> I[Adaptive Color Quantization: OKLab Multi-Scale Gamut]
-        I --> J[Layer Decomposition: Cutout Mosaic]
-        J --> K[Bézier Spline Contour Tracing]
-        K --> L[RDP Path Simplification & Hierarchical Stacking]
-        L --> M[SVG Header Enrichment & XML Serializer]
+        C -->|Raw RGBA Buffer via vectorizeRgbaV2| G[NativeBridge JNI Entry Point]
+        G --> H[Optical Unsharp & Optional Bilateral/Median Filter]
+        H --> I[Luminance-Weighted Watershed & BoundaryGraph]
+        I --> J[Corner-Locked Sub-Pixel Smoothing & Cubic Bézier / RDP Fit]
+        J --> K[Clamped 2D Linear Gradient Solver / Solid Fills]
+        K --> L[Compact W3C SVG 1.1 XML Serializer]
     end
 
     subgraph CACHE ["DisplayList Rendering Pipeline"]
-        M -->|W3C SVG String| N[AndroidSVG Parser]
+        L -->|Async Dispatchers.Default| N[AndroidSVG Parser / Wireframe Builder]
         N --> O[Hardware Picture DisplayList Cache]
-        O -->|Zero-Allocation Draw Call| E
+        O -->|Clipped GPU Transform Draw Call| E
     end
 
     subgraph IO ["Data & I/O Pipeline"]
-        M --> P[StorageHelper: MediaStore.Downloads Scoped Storage]
-        P --> Q[Public Downloads/ Directory]
+        L --> P[StorageHelper: MediaStore.Downloads Scoped Storage]
+        P --> Q[Public Downloads/VectorForge Directory]
     end
 ```
 
@@ -103,12 +102,11 @@ flowchart TD
 - **Active Cancellation Watchdog:** Conversions execute strictly within Kotlin Coroutines on `Dispatchers.Default`. Changing a parameter slider or toggling presets cancels previous in-flight vectorization tasks immediately, preventing main-thread ANR.
 
 #### B. Native Rust Core (`rust_engine/src/`)
-- **`lib.rs` (JNI Interop):** Direct C-ABI bridge taking primitive integer pixel buffers (`jintArray`) and parameter primitives, eliminating memory duplication or base64 serialization overhead.
-- **`filter.rs` (Artifact Suppression):** Optional bilateral and median smoothing routines designed to remove JPEG compression ringing and high-frequency artifacts without blunting critical structural edges.
-- **`quantize.rs` (Perceptual OKLab Clustering):** Implements color clustering in the perceptual OKLab space with elevated luminance weighting:
-  $$\Delta E = \sqrt{2.5 \cdot (\Delta L)^2 + (\Delta a)^2 + (\Delta b)^2}$$
-  This prevents facial midtones and shadows from collapsing into muddy posterized pools while preserving astrophotography highlights.
-- **`pipeline.rs` (Vectorization & W3C Synthesis):** Utilizes `vtracer` / `visioncortex` contour tracers with hierarchical stacking (largest background paths to smallest foreground details), `fill-rule="nonzero"`, and automated `<svg>` XML namespace and dimension enrichment.
+- **`lib.rs` (JNI Interop):** Direct C-ABI bridge (`vectorizeRgbaV2` + legacy `vectorizeRgba` aliases) transferring raw RGBA byte buffers without base64 overhead.
+- **`mosaic_engine.rs` (Neural-Gradient Mosaic v4.0):** Implements optical sharpening, Kruskal perceptual watershed segmentation, watertight `BoundaryGraph` face assembly, Rayon-parallel corner-locked sub-pixel Bézier/polygon fitting, and clamped 2D `<linearGradient>` emission.
+- **`filter.rs` (Artifact Suppression):** Optional edge-preserving bilateral and `3×3` median denoise filters prior to tracing.
+- **`quantize.rs` (Perceptual OKLab Clustering):** Luminance-weighted OKLab clustering ($\Delta E = \sqrt{2.5 \cdot (\Delta L)^2 + (\Delta a)^2 + (\Delta b)^2}$) for posterized flat palette styles (`2..64` colors).
+- **`pipeline.rs` (Vectorization Orchestrator):** Routes `Photo HD`, `Flat Vector`, `Polygon`, and `Pixel Art` (`vtracer` Cutout lattice) modes cleanly with `fill-rule="nonzero"`.
 
 #### C. Data & I/O Pipeline (`StorageHelper.kt`)
 - Exports compliant SVG files through Android's `MediaStore.Downloads` API.
@@ -148,15 +146,16 @@ infintely-zoomable-svg/
 │       │   │       ├── Color.kt        # Deep space dark neon palette
 │       │   │       └── Theme.kt        # Glassmorphic Material 3 dynamic theme
 │       │   └── util/
-│       │       ├── SampleImages.kt     # Bundled benchmark test images (Portrait, Moon, Logo)
+│       │       ├── SampleImages.kt     # Built-in procedural showcase scenes (Coast, Moon, Prism, Knight)
 │       │       └── StorageHelper.kt    # Scoped Storage MediaStore.Downloads export engine
 │       └── res/                        # Vector drawables, mipmaps, and string resources
 └── rust_engine/
-    ├── Cargo.toml                      # Rust crate configuration (cdylib, jni, visioncortex, vtracer)
+    ├── Cargo.toml                      # Rust crate configuration (cdylib, jni, rayon, visioncortex, vtracer)
     ├── Cargo.lock
     └── src/
-        ├── lib.rs                      # JNI entry point: Java_com_vectorcraft_app_engine_NativeBridge
-        ├── pipeline.rs                 # Vectorization orchestrator & SVG post-processor
+        ├── lib.rs                      # JNI entry points (vectorizeRgbaV2 & legacy aliases)
+        ├── mosaic_engine.rs            # Parallel Neural-Gradient Mosaic & clamped linear gradient engine
+        ├── pipeline.rs                 # Vectorization orchestrator & SVG header enrichment
         ├── quantize.rs                 # Luminance-weighted OKLab perceptual color quantizer
         └── filter.rs                   # Bilateral filter & median blur implementations
 ```
@@ -217,23 +216,23 @@ The script will:
 
 ## 6. Privacy, Permissions & Security
 
-Curvify adheres to the highest security and data privacy standards:
+VectorForge adheres to the highest security and data privacy standards:
 
 | Permission | Status | Justification |
 | :--- | :---: | :--- |
 | `android.permission.INTERNET` | ❌ **NOT REQUESTED** | The app has zero network access. No data can physically leave the device. |
-| `READ_MEDIA_IMAGES` / Gallery | ✅ Handled via Photo Picker | Uses Android's modern photo picker (`ActivityResultContracts.PickVisualMedia`); the app never receives broad filesystem read permissions. |
-| `WRITE_EXTERNAL_STORAGE` | ❌ **NOT REQUESTED** | SVG exports use Scoped Storage `MediaStore.Downloads`, eliminating legacy storage permissions. |
+| Gallery & Media Access | ✅ Photo Picker + Optional Read | Uses Android's Photo Picker (`ActivityResultContracts.PickVisualMedia`); handles incoming `ACTION_VIEW`/`ACTION_SEND` media safely. |
+| `WRITE_EXTERNAL_STORAGE` | ❌ **NOT REQUESTED** | SVG exports use Scoped Storage `MediaStore.Downloads` (`Downloads/VectorForge/`), eliminating legacy write permissions. |
 | Telemetry / Analytics | ❌ **NONE** | Zero Firebase, zero Crashlytics, zero ad networks, and zero tracking SDKs. |
 
 ---
 
 ## 7. Direct Download & Release Distribution
 
-Ready-to-install debug binaries are available directly from the repository's official GitHub Releases page:
+Ready-to-install APKs are available directly from the official GitHub Releases page:
 
-- **Latest Release:** [Curvify v2026.11.14](https://github.com/RayAashish/creativity-with-ai/releases/tag/v2026.11.14)
-- **Direct APK Asset:** [app-debug.apk](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.14/app-debug.apk)
+- **Latest Release:** [VectorForge v4.0 (`v2026.11.26`)](https://github.com/RayAashish/creativity-with-ai/releases/tag/v2026.11.26)
+- **Direct APK Asset:** [app-debug.apk](https://github.com/RayAashish/creativity-with-ai/releases/download/v2026.11.26/app-debug.apk)
 
 ---
 
